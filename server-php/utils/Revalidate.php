@@ -9,10 +9,15 @@ class Revalidate {
      * @return bool True if revalidation succeeded, false otherwise.
      */
     public static function path($path) {
-        $nextUrl = $_ENV['NEXT_JS_URL'] ?? getenv('NEXT_JS_URL') ?: 'http://127.0.0.1:5173';
-        $token = $_ENV['REVALIDATION_TOKEN'] ?? getenv('REVALIDATION_TOKEN') ?: 'ksubzone_reval_secret_2026';
+        $nextUrl = trim($_ENV['NEXT_JS_URL'] ?? getenv('NEXT_JS_URL') ?: '');
+        $token = trim($_ENV['REVALIDATION_TOKEN'] ?? getenv('REVALIDATION_TOKEN') ?: '');
+
+        if ($nextUrl === '' || $token === '') {
+            error_log('Revalidation skipped: NEXT_JS_URL and REVALIDATION_TOKEN must be configured.');
+            return false;
+        }
         
-        $url = rtrim($nextUrl, '/') . '/api/revalidate?secret=' . urlencode($token);
+        $url = rtrim($nextUrl, '/') . '/api/revalidate';
         
         // 1. Attempt non-blocking fire-and-forget socket connection (extremely fast)
         $socketSucceeded = false;
@@ -32,6 +37,7 @@ class Revalidate {
                 $out = "POST " . $pathQuery . " HTTP/1.1\r\n";
                 $out .= "Host: " . $host . "\r\n";
                 $out .= "Content-Type: application/json\r\n";
+                $out .= "X-Revalidate-Secret: " . $token . "\r\n";
                 $out .= "Content-Length: " . strlen($postData) . "\r\n";
                 $out .= "Connection: Close\r\n\r\n";
                 $out .= $postData;
@@ -55,9 +61,10 @@ class Revalidate {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['path' => $path]));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json'
+            'Content-Type: application/json',
+            'X-Revalidate-Secret: ' . $token
         ]);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, 150);
         curl_setopt($ch, CURLOPT_TIMEOUT_MS, 300);
         

@@ -33,13 +33,27 @@ $allowedOrigins = [
     'https://ksubzone.com'
 ];
 
+// The deployed frontend URL can be changed without editing PHP code. Multiple
+// extra origins may be supplied as a comma-separated CORS_ALLOWED_ORIGINS value.
+$configuredOrigins = [
+    $_ENV['NEXT_JS_URL'] ?? getenv('NEXT_JS_URL') ?: '',
+    $_ENV['CORS_ALLOWED_ORIGINS'] ?? getenv('CORS_ALLOWED_ORIGINS') ?: ''
+];
+
+foreach ($configuredOrigins as $configuredOriginList) {
+    foreach (explode(',', $configuredOriginList) as $configuredOrigin) {
+        $configuredOrigin = rtrim(trim($configuredOrigin), '/');
+        if ($configuredOrigin !== '' && preg_match('#^https?://#i', $configuredOrigin)) {
+            $allowedOrigins[] = $configuredOrigin;
+        }
+    }
+}
+
+$allowedOrigins = array_values(array_unique($allowedOrigins));
+
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins)) {
+if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: " . $origin);
-    header("Access-Control-Allow-Credentials: true");
-} else {
-    $isProd = (strtolower($_ENV['NODE_ENV'] ?? '') === 'production');
-    header("Access-Control-Allow-Origin: " . ($isProd ? 'https://www.ksubzone.com' : 'http://localhost:3000'));
     header("Access-Control-Allow-Credentials: true");
 }
 

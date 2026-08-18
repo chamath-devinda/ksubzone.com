@@ -34,6 +34,8 @@ server/*.log
 # Next.js build output
 client/.next/
 client/out/
+.vercel/
+client/.vercel/
 
 # Generated deployment archives
 *.zip

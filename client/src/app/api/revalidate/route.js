@@ -5,7 +5,11 @@ export async function POST(request) {
   try {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get('secret') || request.headers.get('x-revalidate-secret');
-    const expectedSecret = process.env.REVALIDATION_TOKEN || 'ksubzone_reval_secret_2026';
+    const expectedSecret = process.env.REVALIDATION_TOKEN?.trim();
+
+    if (!expectedSecret) {
+      return NextResponse.json({ message: 'Revalidation is not configured' }, { status: 503 });
+    }
 
     if (secret !== expectedSecret) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
@@ -30,7 +34,11 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get('secret');
     const path = searchParams.get('path');
-    const expectedSecret = process.env.REVALIDATION_TOKEN || 'ksubzone_reval_secret_2026';
+    const expectedSecret = process.env.REVALIDATION_TOKEN?.trim();
+
+    if (!expectedSecret) {
+      return NextResponse.json({ message: 'Revalidation is not configured' }, { status: 503 });
+    }
 
     if (secret !== expectedSecret) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
