@@ -20,3 +20,15 @@
     Deny from all
   </IfModule>
 </FilesMatch>
+
+# Diagnostic and local test scripts must never be opened directly in production.
+# PHP can still include debug-log.php internally through the protected admin route.
+<FilesMatch "^(debug-log|check-db|test-db|test-show)\.php$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
