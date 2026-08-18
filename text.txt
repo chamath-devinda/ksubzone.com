@@ -1,0 +1,92 @@
+Note: මෙම ව්‍යාපෘතියේ Backend එක සඳහා PHP භාවිතා කර ඇත (server-php). 
+ව්‍යාපෘතිය ධාවනය කිරීමට ඔබේ පරිගණකයේ PHP ස්ථාපනය කර තිබිය යුතුය.
+
+මේ project එක run කරන්න root folder එකේ terminal එක open කරලා මේ commands දාන්න:
+
+```powershell
+cd "D:\New folder (5)\Project\kdrama"
+npm run install-all
+npm run dev
+```
+
+ඊට පස්සේ browser එකෙන් open කරන්න:
+
+```text
+http://localhost:5173
+```
+
+Backend API (PHP server-php) එක run වෙන්නේ:
+
+```text
+http://localhost:5000
+```
+
+වෙන වෙනම run කරන්න ඕන නම්:
+
+```powershell
+npm run dev:server
+npm run dev:client
+```
+
+Note: `server-php\.env` file එකෙහි configurations බලන්න. MongoDB සක්‍රිය නැතිනම් PHP backend එක විසින් ස්වයංක්‍රීයව SQLite (ksubzone.sqlite) database එකක් සාදා ක්‍රියාත්මක වේ.
+
+
+
+Admin login details:
+
+```text
+Email / Username: admin@ksubzone.com
+Password: adminpassword123
+```
+
+Admin panel link:
+
+```text
+http://192.168.8.102:5173/management/login
+```
+
+Main website network link:
+
+```text
+http://192.168.8.102:5173
+```
+
+Local machine එකෙන් නම්:
+
+```text
+http://localhost:5173
+```
+
+
+Viewed text.txt:17-50
+Viewed DramaManager.jsx:1-736
+
+TMDB එකේ හැම K-Drama එකක්ම නැතිවිට, website එකට details එකතු කිරීමට ඔබට විකල්ප ක්‍රම සහ මූලාශ්‍ර කිහිපයක් භාවිතා කළ හැකිය:
+
+### 1. Admin Panel එක හරහා manually (මතින්) ඇතුලත් කිරීම (ප්‍රධාන විකල්පය)
+ඔබේ website එකේ Admin Panel එක තුළ දැනටමත් **Manually** (ස්වයංක්‍රීයව තොරතුරු ලබා නොගෙන) dramas එකතු කිරීමට පහසුකම් සලසා ඇත.
+* **Manage Dramas** පිටුවට ගොස් ඉහළ දකුණු කෙලවරේ ඇති **"+ Add Drama Series"** button එක ක්ලික් කරන්න.
+* එහිදී ඔබට Drama එකෙහි නම (Title), සාරාංශය (Description), Director, Ratings, සහ Poster/Banner URLs ආදිය manually ඇතුලත් කළ හැකිය.
+* ඉන්පසු අදාළ Drama එක Expand කර **Seasons** සහ **Episodes** ද manually එකතු කළ හැකිය.
+
+---
+
+### 2. K-Drama Details සහ Metadata සොයාගත හැකි වෙනත් වෙබ් අඩවි (Alternatives)
+TMDB එකට අමතරව ඔබට පහත මූලාශ්‍රවලින් තොරතුරු ලබාගෙන, ඉහත සඳහන් කළ manual form එක පුරවා වෙබ් අඩවියට ඇතුලත් කළ හැක:
+
+* **MyDramaList (MDL) [mydramalist.com]:** 
+  * K-Dramas සඳහා ලෝකයේ ඇති විශාලතම සහ සාර්ථකම database එක මෙයයි. 
+  * TMDB එකෙහි නොමැති ඕනෑම පැරණි හෝ අලුත්ම K-Drama එකක නිවැරදි විස්තර (Synopsis, Cast, Release Date, Rating) MDL වෙබ් අඩවියෙන් සොයාගෙන කොපි කරගත හැක.
+* **AsianWiki [asianwiki.com]:**
+  * K-Dramas වල Cast (නළු නිළියන්), Episodes ගණන, Network එක (tvN, SBS, Netflix ආදී), සහ Episode Ratings පිළිබඳ ඉතාමත් පැහැදිලි විස්තර මෙහි අඩංගු වේ.
+* **OMDb API [omdbapi.com]:**
+  * IMDb (Internet Movie Database) එකෙහි ඇති තොරතුරු ලබා ගැනීමට OMDb API එක භාවිතා කළ හැක. බොහෝ K-Dramas IMDb එකෙහි ඇති බැවින් මෙයින් ද දත්ත ලබාගත හැක.
+* **Korean Movie Database (KMDb) API [kmdb.or.kr]:**
+  * විශේෂයෙන්ම කොරියානු සිනමාව සහ ටෙලි නාට්‍ය සඳහාම වෙන්වූ නිල කොරියානු රජයේ database එකකි.
+
+---
+
+### 3. Posters සහ Banner Images ලබාගන්නේ කෙසේද?
+* **Google Images** හෝ **MyDramaList** හරහා අදාළ Drama එකෙහි හොඳම තත්ත්වයේ poster එකක් සොයාගන්න.
+* එම image එකෙහි image link එක (URL) copy කරගෙන Admin panel එකෙහි **Poster URL** හෝ **Banner URL** යන තැන්වලට ඇතුලත් කරන්න. 
+* නැතහොත් image එක download කර [ImgBB](https://imgbb.com/) වැනි free image hosting සේවාවකට upload කර එමගින් ලැබෙන link එක (direct link) ඔබේ website එකට ලබා දෙන්න.

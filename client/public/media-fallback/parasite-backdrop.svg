@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1000" viewBox="0 0 1800 1000">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06252f"/><stop offset=".55" stop-color="#06111f"/><stop offset="1" stop-color="#365314"/></linearGradient></defs>
+  <rect width="1800" height="1000" fill="url(#g)"/>
+  <path d="M245 570h840V300l-420-210-420 210z" fill="#f8fafc" opacity=".14"/>
+  <path d="M350 450h230v260H350zM685 420h300v150H685z" fill="#020617" opacity=".54"/>
+  <path d="M0 770h1800v230H0z" fill="#030008" opacity=".78"/>
+  <text x="130" y="210" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="800" letter-spacing="14">PARASITE</text>
+</svg>

@@ -1,0 +1,45 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Force WWW redirect
+  RewriteCond %{HTTP_HOST} ^ksubzone\.com$ [NC]
+  RewriteRule ^(.*)$ https://www.ksubzone.com/$1 [R=301,L]
+
+  # Force HTTPS redirect (Cloudflare Flexible SSL friendly)
+  # Redirect if visitor is on HTTP behind Cloudflare
+  RewriteCond %{HTTP:X-Forwarded-Proto} ^http$ [NC]
+  RewriteRule ^(.*)$ https://www.ksubzone.com/$1 [R=301,L]
+
+  # Redirect if visitor is on HTTP directly
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} ^$
+  RewriteRule ^(.*)$ https://www.ksubzone.com/$1 [R=301,L]
+
+  # Pass the Authorization header to PHP
+  CGIPassAuth On
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+
+  # 1. Route API, upload, robots.txt, and sitemap requests to the PHP backend
+  RewriteRule ^api/(.*)$ server-php/index.php [QSA,L]
+  RewriteRule ^uploads/(.*)$ server-php/index.php [QSA,L]
+  RewriteRule ^robots\.txt$ server-php/index.php [QSA,L]
+  RewriteRule ^(.*sitemap.*\.xml)$ server-php/index.php [QSA,L]
+
+  # 2. Serve the Vite production build from client/dist
+  RewriteRule ^assets/(.*)$ client/dist/assets/$1 [L]
+  RewriteRule ^media-fallback/(.*)$ client/dist/media-fallback/$1 [L]
+
+  # 3. Intercept Social Media Bot Crawlers and Search Engine Bots for dynamic SEO tags
+  RewriteCond %{HTTP_USER_AGENT} (googlebot|bingbot|yandex|baiduspider|facebookexternalhit|whatsapp|twitterbot|linkedinbot|pinterest|discordbot|slackbot|telegrambot|viber|vkShare|slack) [NC]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ server-php/bot-seo.php [QSA,L]
+
+  # 4. Route all other non-file requests to the React build index.html (React Router fallback)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ client/dist/index.html [L]
+</IfModule>

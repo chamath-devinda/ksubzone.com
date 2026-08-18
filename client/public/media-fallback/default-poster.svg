@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1350" viewBox="0 0 900 1350">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2d0f61"/>
+      <stop offset="0.52" stop-color="#05010d"/>
+      <stop offset="1" stop-color="#c9184a"/>
+    </linearGradient>
+    <radialGradient id="r" cx="64%" cy="24%" r="52%">
+      <stop offset="0" stop-color="#f9c74f" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#f9c74f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="900" height="1350" fill="url(#g)"/>
+  <rect width="900" height="1350" fill="url(#r)"/>
+  <circle cx="248" cy="328" r="146" fill="#8b5cf6" opacity=".24"/>
+  <circle cx="642" cy="775" r="280" fill="#ec4899" opacity=".16"/>
+  <path d="M135 1010h630v94H135z" fill="#ffffff" opacity=".08"/>
+  <path d="M135 1128h420v22H135zM135 1180h560v16H135zM135 1218h500v16H135z" fill="#ffffff" opacity=".42"/>
+  <text x="135" y="230" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" letter-spacing="6">KDRAMA</text>
+  <text x="135" y="300" fill="#f9c74f" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="800" letter-spacing="10">FEATURE</text>
+</svg>

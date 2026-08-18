@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1350" viewBox="0 0 900 1350">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/><stop offset=".58" stop-color="#020617"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs>
+  <rect width="900" height="1350" fill="url(#g)"/>
+  <path d="M175 160h550c48 0 86 38 86 86v810c0 48-38 86-86 86H175c-48 0-86-38-86-86V246c0-48 38-86 86-86z" fill="#111827" stroke="#f8fafc" stroke-opacity=".18" stroke-width="8"/>
+  <path d="M145 310h610v250H145z" fill="#64748b" opacity=".28"/>
+  <path d="M190 625h520v115H190zM190 790h520v115H190z" fill="#020617" opacity=".74"/>
+  <path d="M250 1140h-90l-80 160h95zM650 1140h90l80 160h-95z" fill="#e11d48" opacity=".55"/>
+  <circle cx="275" cy="1010" r="46" fill="#f8fafc" opacity=".7"/><circle cx="625" cy="1010" r="46" fill="#f8fafc" opacity=".7"/>
+  <text x="95" y="103" fill="#f8fafc" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="800" letter-spacing="5">TRAIN TO BUSAN</text>
+  <text x="95" y="1235" fill="#fca5a5" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" letter-spacing="8">SURVIVAL THRILLER</text>
+</svg>

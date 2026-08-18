@@ -1,0 +1,54 @@
+# Dependency directories
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production build outputs
+client/dist/
+
+# Environment variables
+.env
+.env.*
+**/.env
+**/.env.*
+LIVE-SERVER-ENV.txt
+
+# Local Codex workspace files
+.agents/
+scratch/
+
+# Local logs
+*.log
+client/*.log
+server/*.log
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Next.js build output
+client/.next/
+client/out/
+
+# Generated deployment archives
+*.zip
+
+# Server uploads
+server-php/uploads/
+
+# SQLite Databases & initialized flags
+server-php/*.sqlite
+server-php/*.sqlite-*
+server-php/config/.db_initialized_*
+
+# Temporary build artifacts
+temp-update-build/
+backend-update.zip
+
+# Runtime temporary files (deduplication, DB query caches)
+server-php/temp/

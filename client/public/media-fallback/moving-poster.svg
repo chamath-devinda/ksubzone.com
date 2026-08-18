@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1350" viewBox="0 0 900 1350">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#312e81"/><stop offset=".55" stop-color="#030008"/><stop offset="1" stop-color="#be185d"/></linearGradient><radialGradient id="r" cx="50%" cy="28%" r="38%"><stop offset="0" stop-color="#a78bfa" stop-opacity=".7"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></radialGradient></defs>
+  <rect width="900" height="1350" fill="url(#g)"/><rect width="900" height="1350" fill="url(#r)"/>
+  <path d="M450 235c85 165 65 300-62 408 144-28 249-114 315-258 30 194-26 358-168 491 90-16 168-54 234-114-60 205-189 345-387 420 68-135 76-250 25-346-46 74-105 128-177 163 70-123 88-244 54-363-30-104 25-244 166-401z" fill="#f8fafc" opacity=".23"/>
+  <path d="M120 1080h660v42H120zM120 1150h470v20H120zM120 1190h530v20H120z" fill="#fff" opacity=".45"/>
+  <text x="120" y="170" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" letter-spacing="10">MOVING</text>
+  <text x="120" y="1265" fill="#f0abfc" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" letter-spacing="8">SUPERPOWER DRAMA</text>
+</svg>

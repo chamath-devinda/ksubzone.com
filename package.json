@@ -1,0 +1,25 @@
+{
+  "name": "ksubzone",
+  "version": "1.0.0",
+  "description": "KDrama Streaming & Review Platform - Workspace structure",
+  "scripts": {
+    "install:client": "npm --prefix client install",
+    "install:server": "npm --prefix server install",
+    "install-all": "npm run install:client && npm run install:server",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "node server-php/run-server.js",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "build:client": "npm --prefix client run build",
+    "import:mongo": "node scripts/import-mongo-to-sqlite.js",
+    "start:server": "node server-php/run-server.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "mongodb": "^7.2.0",
+    "sqlite3": "^6.0.1"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "pg": "^8.22.0"
+  }
+}

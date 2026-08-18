@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1000" viewBox="0 0 1800 1000">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070111"/>
+      <stop offset=".55" stop-color="#20104d"/>
+      <stop offset="1" stop-color="#c9184a"/>
+    </linearGradient>
+    <radialGradient id="r" cx="72%" cy="30%" r="45%">
+      <stop offset="0" stop-color="#f9c74f" stop-opacity=".44"/>
+      <stop offset="1" stop-color="#f9c74f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1800" height="1000" fill="url(#g)"/>
+  <rect width="1800" height="1000" fill="url(#r)"/>
+  <path d="M0 760c230-100 385-130 620-65 248 70 410 86 650-55 235-137 375-156 530-70v430H0z" fill="#030008" opacity=".75"/>
+  <path d="M170 560h180v280H170zM420 460h150v380H420zM650 520h210v320H650zM950 405h170v435H950zM1230 510h230v330h-230z" fill="#08051a" opacity=".82"/>
+  <text x="140" y="230" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="10">KDRAMAVERSE</text>
+  <text x="144" y="305" fill="#f9c74f" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" letter-spacing="12">CINEMATIC FALLBACK</text>
+</svg>

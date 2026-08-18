@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1350" viewBox="0 0 900 1350">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#164e63"/><stop offset=".5" stop-color="#06111f"/><stop offset="1" stop-color="#365314"/></linearGradient></defs>
+  <rect width="900" height="1350" fill="url(#g)"/>
+  <rect x="120" y="310" width="660" height="400" fill="#f8fafc" opacity=".13"/>
+  <path d="M120 310l330-190 330 190z" fill="#f8fafc" opacity=".18"/>
+  <rect x="210" y="430" width="160" height="280" fill="#020617" opacity=".65"/>
+  <rect x="455" y="430" width="235" height="130" fill="#020617" opacity=".45"/>
+  <path d="M90 865h720v95H90z" fill="#000" opacity=".42"/>
+  <path d="M150 1050h600v26H150zM150 1104h390v18H150zM150 1144h500v18H150z" fill="#f8fafc" opacity=".45"/>
+  <text x="110" y="170" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="800" letter-spacing="12">PARASITE</text>
+  <text x="110" y="1240" fill="#bbf7d0" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" letter-spacing="9">CLASS DARK COMEDY</text>
+</svg>
