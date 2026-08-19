@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 lg:pt-32 pb-16 text-left flex flex-col gap-10 min-h-screen bg-transparent">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-16 text-left flex flex-col gap-8 sm:gap-10 min-h-screen bg-transparent">
       {/* Header Banner */}
       <div>
         <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight flex items-center gap-2">
@@ -28,7 +28,7 @@ export default function ContactPage() {
         {/* Contact Info Panels */}
         <div className="flex flex-col gap-6">
           {/* Email Card */}
-          <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col gap-3">
+          <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 flex flex-col gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary">
               <Mail className="w-5 h-5" />
             </div>
@@ -45,7 +45,7 @@ export default function ContactPage() {
           </div>
 
           {/* Subtitle Request Notice */}
-          <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col gap-3 bg-brand-accent/5">
+          <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 flex flex-col gap-3 bg-brand-accent/5">
             <div className="w-10 h-10 rounded-xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center text-brand-accent">
               <ShieldAlert className="w-5 h-5" />
             </div>
@@ -58,7 +58,7 @@ export default function ContactPage() {
           </div>
 
           {/* Editorial Note */}
-          <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col gap-3 bg-white/[0.01]">
+          <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-white/5 flex flex-col gap-3 bg-white/[0.01]">
             <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
               <MessageCircleHeart className="w-5 h-5" />
             </div>

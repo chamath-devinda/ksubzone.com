@@ -429,12 +429,12 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       </div>
 
       {/* Media Metadata Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full -mt-20 sm:-mt-52 lg:-mt-64 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full -mt-16 sm:-mt-52 lg:-mt-64 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 items-start">
           
           {/* LEFT: POSTER CARD */}
-          <div className="flex flex-col gap-4 max-w-xs mx-auto md:max-w-none md:w-full w-full">
-            <div className="glass-panel border border-white/10 rounded-3xl overflow-hidden shadow-2xl aspect-[2/3] w-full">
+          <div className="flex flex-col gap-4 max-w-[230px] sm:max-w-xs mx-auto md:max-w-none md:w-full w-full">
+            <div className="glass-panel border border-white/10 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl aspect-[2/3] w-full">
               <img
                 src={posterImage}
                 alt={media.title}
@@ -502,7 +502,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">{media.title}</h1>
+              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">{media.title}</h1>
               {media.originalTitle && media.originalTitle !== media.title && (
                 <p className="text-lg font-semibold text-slate-400 mt-1">{media.originalTitle}</p>
               )}
@@ -540,7 +540,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               </div>
             </div>
             {/* AI SEO Unique Rewrite Block */}
-            <div className="glass-panel p-6 rounded-3xl border border-white/5 text-slate-300 flex flex-col gap-4 text-xs sm:text-sm">
+            <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 text-slate-300 flex flex-col gap-4 text-xs sm:text-sm">
               <div>
                 <h2 className="font-extrabold text-white text-sm sm:text-base uppercase tracking-wider mb-2">Synopsis</h2>
                 <p className="leading-relaxed speakable-synopsis">{media.synopsisRewrite || media.description}</p>
@@ -553,10 +553,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             </div>
 
             {/* Quick Facts & AI Summary Table (GEO Optimized) */}
-            <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+            <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 flex flex-col gap-4">
               <h2 className="font-black text-white text-sm sm:text-base uppercase tracking-wider">Quick Facts & Subtitle Details</h2>
               <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.01]">
-                <table className="min-w-full text-xs text-left divide-y divide-white/5 text-slate-300">
+                <table className="detail-facts-table min-w-full text-xs text-left divide-y divide-white/5 text-slate-300">
                   <tbody className="divide-y divide-white/[0.02]">
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider w-1/3">Title</td>
@@ -725,7 +725,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   const daysUntil = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
 
                   return (
-                    <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 p-4 flex items-center gap-4">
+                    <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_50%,rgba(139,92,246,0.12),transparent_60%)]" />
                       <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center flex-shrink-0">
                         <CalendarClock className="w-5 h-5 text-violet-400" />
@@ -738,7 +738,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                         </p>
                         <p className="text-[11px] text-slate-400 mt-0.5">{formattedDate}</p>
                       </div>
-                      <div className="flex-shrink-0 text-right">
+                      <div className="flex-shrink-0 text-left sm:text-right">
                         <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-[10px] font-black uppercase tracking-wider">
                           {daysUntil === 0 ? 'Today!' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
                         </span>
@@ -772,7 +772,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                       return (
                         <div
                           key={ep._id}
-                          className="rounded-3xl border border-white/10 bg-luxury-900/60 p-4 sm:p-5 transition-all duration-200 hover:border-brand-primary/40 hover:bg-luxury-900/90 shadow-lg flex flex-col gap-3.5"
+                          className="rounded-2xl sm:rounded-3xl border border-white/10 bg-luxury-900/60 p-4 sm:p-5 transition-all duration-200 hover:border-brand-primary/40 hover:bg-luxury-900/90 shadow-lg flex flex-col gap-3.5"
                         >
                           {/* Top Row: Episode Info & Direct Download */}
                           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -884,7 +884,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                       return (
                         <div
                           key={sub._id}
-                          className="p-6 sm:p-8 rounded-3xl bg-luxury-900/70 border border-white/10 flex flex-col items-center justify-center text-center gap-4 shadow-2xl backdrop-blur-xl"
+                          className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-luxury-900/70 border border-white/10 flex flex-col items-center justify-center text-center gap-4 shadow-2xl backdrop-blur-xl"
                         >
                           {/* Release Compatibility Notice */}
                           <p className="text-xs sm:text-sm font-semibold text-slate-300 max-w-lg leading-relaxed">
@@ -897,7 +897,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                           <button
                             type="button"
                             onClick={() => handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName)}
-                            className="group relative w-full max-w-md h-14 rounded-full bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 text-white font-black text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
+                            className="group relative w-full max-w-md min-h-14 rounded-2xl sm:rounded-full px-4 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
                           >
                             <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
                             <span>{sub.language || 'SINHALA'} උපසිරැසිය (DOWNLOAD)</span>
@@ -974,7 +974,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               </h2>
               
               {/* Form upload comment */}
-              <form onSubmit={handleSubmitComment} className="glass-panel p-4 rounded-3xl border border-white/5 flex flex-col gap-3">
+              <form onSubmit={handleSubmitComment} className="glass-panel p-4 rounded-2xl sm:rounded-3xl border border-white/5 flex flex-col gap-3">
                 {commentError && (
                   <div className="p-2 bg-brand-secondary/10 border border-brand-secondary/20 rounded-xl text-brand-secondary text-xs font-bold">
                     {commentError}
@@ -1043,7 +1043,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
                       {/* Replies List */}
                       {comment.replies && comment.replies.length > 0 && (
-                        <div className="ml-6 pl-4 border-l border-white/5 flex flex-col gap-3 mt-1">
+                        <div className="ml-2 sm:ml-6 pl-3 sm:pl-4 border-l border-white/5 flex flex-col gap-3 mt-1">
                           {comment.replies.map((reply) => (
                             <div key={reply._id} className="flex flex-col gap-1.5">
                               <div className="flex items-center gap-2">
@@ -1063,7 +1063,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
                       {/* Reply Input Box */}
                       {activeReplyBox === comment._id && (
-                        <div className="ml-6 pl-4 border-l border-white/5 mt-2 flex flex-col gap-2">
+                        <div className="ml-2 sm:ml-6 pl-3 sm:pl-4 border-l border-white/5 mt-2 flex flex-col gap-2">
                           <textarea
                             placeholder={user ? "Write a reply..." : "Please log in to reply."}
                             disabled={!user}
@@ -1104,9 +1104,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       </div>
 
       {!topOnly && (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col gap-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full flex flex-col gap-10">
         {recommendationsLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
             {[...Array(12)].map((_, i) => (
               <div key={i} className="aspect-[2/3] bg-luxury-900 rounded-2xl border border-white/5 animate-pulse" />
             ))}
@@ -1122,7 +1122,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     <Icon className="w-5 h-5 text-brand-primary" /> {section.title}
                   </h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
                   {section.items.map((item) => (
                     <GlassCard key={`${section.id}-${item.mediaType}-${item._id}`} item={item} type={item.mediaType} />
                   ))}

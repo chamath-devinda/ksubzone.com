@@ -25,10 +25,10 @@ export default function Footer() {
     <footer className="relative overflow-hidden border-t border-white/10 bg-luxury-950">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-primary/60 to-transparent" />
       <div className="bg-luxury-900/70">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-14">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
             <div className="space-y-5">
-              <Link href="/" className="inline-flex items-center gap-3">
+              <Link href="/" className="inline-flex min-w-0 items-center gap-3">
                 {resolveLogoUrl(brand.logoUrl) ? (
                   <img src={resolveLogoUrl(brand.logoUrl)} alt={brand.siteName || 'Site logo'} className="h-14 w-auto object-contain shadow-glass-neon" />
                 ) : (
@@ -36,7 +36,7 @@ export default function Footer() {
                     <Clapperboard className="h-7 w-7 text-brand-primary" />
                   </span>
                 )}
-                <span className="text-2xl font-black uppercase tracking-wider bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent font-milker">
+                <span className="min-w-0 truncate text-xl sm:text-2xl font-black uppercase tracking-wider bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent font-milker">
                   {brand.logoText || brand.siteName || 'KSUBZONE'}
                 </span>
               </Link>
@@ -67,7 +67,7 @@ export default function Footer() {
                   <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-accent" />
                   {footer.contactText}
                 </p>
-                <a href={`mailto:${footer.email}`} className="flex gap-3 transition hover:text-brand-primary">
+                <a href={`mailto:${footer.email}`} className="flex min-w-0 gap-3 transition hover:text-brand-primary break-all">
                   <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-secondary" />
                   {footer.email}
                 </a>

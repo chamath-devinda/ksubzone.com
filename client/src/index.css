@@ -9,6 +9,10 @@
     --font-outfit: 'Outfit';
   }
 
+  html {
+    scroll-padding-top: 5.5rem;
+  }
+
   body {
     background-color: #030303;
     color: #f8fafc;
@@ -138,13 +142,29 @@
    page itself grow wider than the phone viewport. */
 html,
 body {
+  width: 100%;
   max-width: 100%;
   overflow-x: hidden;
 }
 
+img,
+video,
+iframe,
+canvas {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (max-width: 639px) {
   body {
-    min-width: 320px;
+    min-width: 0;
   }
 
   main,
@@ -153,6 +173,13 @@ body {
   header,
   footer {
     max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    /* Prevent Safari from zooming the whole page when a field receives focus. */
+    font-size: 16px !important;
   }
 
   input,
@@ -173,5 +200,41 @@ body {
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+  }
+
+  /* Turn metadata tables into readable stacked rows on narrow screens. */
+  .detail-facts-table,
+  .detail-facts-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .detail-facts-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem 0.875rem;
+  }
+
+  .detail-facts-table td {
+    display: block;
+    width: 100% !important;
+    padding: 0.15rem 0 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .detail-facts-table td:first-child {
+    font-size: 0.625rem;
+  }
+
+  .detail-facts-table td:last-child {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+}
+
+@supports (min-height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
   }
 }

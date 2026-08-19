@@ -12,15 +12,15 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 lg:pt-32 pb-16 text-left flex flex-col gap-14 min-h-screen bg-transparent">
+    <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-16 text-left flex flex-col gap-10 sm:gap-14 min-h-screen bg-transparent">
       {/* Hero Header */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-r from-brand-primary/10 via-white/[0.02] to-brand-secondary/5 p-8 sm:p-12">
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/5 bg-gradient-to-r from-brand-primary/10 via-white/[0.02] to-brand-secondary/5 p-5 sm:p-12">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.15),transparent_40%)]" />
         <div className="relative z-10 max-w-3xl">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">
             <Info className="w-3.5 h-3.5" /> Our Journey
           </span>
-          <h1 className="mt-5 text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight">
+          <h1 className="mt-5 text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight">
             Connecting South Asian Fans with Korean Cinema
           </h1>
           <p className="mt-4 text-sm sm:text-base text-slate-300 leading-7 font-light">
@@ -30,7 +30,7 @@ export default function AboutPage() {
       </section>
 
       {/* Core Mission Grid */}
-      <section className="grid md:grid-cols-2 gap-8">
+      <section className="grid md:grid-cols-2 gap-5 sm:gap-8">
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/5 flex flex-col gap-4">
           <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
             <Sparkles className="w-5.5 h-5.5 text-brand-accent animate-pulse" /> Our Mission

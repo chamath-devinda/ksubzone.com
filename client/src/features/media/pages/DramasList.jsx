@@ -27,14 +27,14 @@ export default function DramasList({ initialData }) {
   const dramasMapped = (data?.dramas || []).map(d => ({ ...d, mediaType: 'drama' }));
   const totalPages = data?.totalPages || 1;
 
-  const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,180px))] justify-center gap-x-3.5 sm:gap-x-5 gap-y-6 sm:gap-y-8 items-start';
+  const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,180px))] justify-center gap-x-3 sm:gap-x-5 gap-y-6 sm:gap-y-8 items-start';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-28 pb-8 text-left flex flex-col gap-8 min-h-screen bg-transparent">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-28 pb-8 text-left flex flex-col gap-7 sm:gap-8 min-h-screen bg-transparent">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-          <Tv className="w-8 h-8 text-brand-primary" /> Korean TV Dramas Catalog
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-start sm:items-center gap-2.5 leading-tight">
+          <Tv className="w-7 h-7 sm:w-8 sm:h-8 text-brand-primary flex-shrink-0" /> Korean TV Dramas Catalog
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 mt-1">
           Browse the complete catalog of Korean TV dramas with synchronized Sinhala and English subtitles.
@@ -42,7 +42,7 @@ export default function DramasList({ initialData }) {
       </div>
 
       {/* Filters and Sorting */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-6">
+      <div className="flex flex-col items-stretch justify-between gap-4 border-b border-white/5 pb-6 sm:flex-row sm:flex-wrap sm:items-center">
         {/* Sort pills */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
@@ -73,9 +73,9 @@ export default function DramasList({ initialData }) {
         </div>
 
         {/* Region Filters */}
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto">
           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Region:</span>
-          <div className="bg-luxury-900 border border-white/5 p-1 rounded-xl flex items-center gap-1">
+          <div className="bg-luxury-900 border border-white/5 p-1 rounded-xl flex min-w-max items-center gap-1">
             {[
               { id: '', label: 'All' },
               { id: 'KR', label: '🇰🇷 South Korea' },
@@ -153,15 +153,15 @@ export default function DramasList({ initialData }) {
           <button
             disabled={page === 1 || isLoading}
             onClick={() => setPage(p => Math.max(1, p - 1))}
-            className="px-4 h-9 bg-white/5 border border-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white hover:bg-white/10 transition"
+            className="px-3 sm:px-4 h-10 flex-1 max-w-28 bg-white/5 border border-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white hover:bg-white/10 transition"
           >
             Previous
           </button>
-          <span className="text-xs text-slate-400 font-semibold px-2">Page {page} of {totalPages}</span>
+          <span className="text-[11px] sm:text-xs text-slate-400 font-semibold px-1 sm:px-2 whitespace-nowrap">Page {page} of {totalPages}</span>
           <button
             disabled={page === totalPages || isLoading}
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            className="px-4 h-9 bg-white/5 border border-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white hover:bg-white/10 transition"
+            className="px-3 sm:px-4 h-10 flex-1 max-w-28 bg-white/5 border border-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white hover:bg-white/10 transition"
           >
             Next
           </button>

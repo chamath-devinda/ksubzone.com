@@ -220,7 +220,7 @@ export default function Home({
   const seo = content?.seo || {};
   const home = content?.home || {};
   const seoKeywords = (seo.keywords || '').split(',').map((item) => item.trim()).filter(Boolean);
-  const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,190px))] justify-center gap-x-4 sm:gap-x-6 gap-y-7 sm:gap-y-9 items-start';
+  const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,190px))] justify-center gap-x-3 sm:gap-x-6 gap-y-6 sm:gap-y-9 items-start';
 
   let primaryUrl = brand.primaryUrl || 'https://www.ksubzone.com';
   primaryUrl = primaryUrl.trim().toLowerCase();
@@ -240,7 +240,7 @@ export default function Home({
   };
 
   return (
-    <div className="w-full flex flex-col gap-12 bg-transparent pb-20">
+    <div className="w-full flex flex-col gap-10 sm:gap-12 bg-transparent pb-12 sm:pb-20">
       
       {/* Dynamic SEO Tags */}
       <SeoTags
@@ -256,10 +256,10 @@ export default function Home({
       <HeroSlider items={slideItems} loading={homeCatalogLoading} />
 
       {/* Main Page Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col gap-16 mt-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full flex flex-col gap-12 sm:gap-16 mt-2 sm:mt-4">
         
         {/* Curated Category Rows */}
-        <section className="flex flex-col gap-14 border-t border-white/[0.07] pt-12">
+        <section className="flex flex-col gap-10 sm:gap-14 border-t border-white/[0.07] pt-9 sm:pt-12">
           {categoryRowsLoading ? (
             <div className={mediaGridClass}>
               {[...Array(12)].map((_, i) => (
@@ -271,7 +271,7 @@ export default function Home({
               const Icon = section.icon;
               return (
                 <div key={section.id} className="flex flex-col gap-5">
-                  <div className="flex items-end justify-between gap-4 border-b border-white/[0.04] pb-3">
+                  <div className="flex flex-col items-start gap-3 border-b border-white/[0.04] pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                     <div>
                       <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 font-display">
                         <span className={`p-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] ${section.iconColor || 'text-brand-primary'}`}>
@@ -288,7 +288,7 @@ export default function Home({
                     </div>
                     <Link
                       href={section.link}
-                      className="h-9 px-4 rounded-xl bg-white/[0.03] border border-white/10 text-slate-300 hover:text-white hover:border-brand-primary/40 hover:bg-brand-primary/10 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-200 flex-shrink-0"
+                      className="h-9 px-4 rounded-xl bg-white/[0.03] border border-white/10 text-slate-300 hover:text-white hover:border-brand-primary/40 hover:bg-brand-primary/10 text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-200 flex-shrink-0 self-start"
                     >
                       Explore All <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -327,7 +327,7 @@ export default function Home({
             </div>
 
             {/* Content Type Tabs (Spring Pill) */}
-            <div className="bg-luxury-900/90 border border-white/10 p-1.5 rounded-2xl flex items-center gap-1 self-start md:self-auto backdrop-blur-xl shadow-lg">
+            <div className="bg-luxury-900/90 border border-white/10 p-1.5 rounded-2xl flex w-full items-center gap-1 self-start overflow-x-auto md:w-auto md:self-auto backdrop-blur-xl shadow-lg">
               {[
                 { id: 'all', label: 'All Catalog', icon: Layers },
                 { id: 'dramas', label: 'TV Dramas', icon: Tv },
@@ -339,7 +339,7 @@ export default function Home({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2 ${
+                    className={`relative min-w-max flex-1 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
                       active ? 'text-white font-black' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -359,7 +359,7 @@ export default function Home({
           </div>
 
           {/* Advanced Filtering Options Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 -mt-2">
+          <div className="flex flex-col items-start justify-between gap-4 -mt-2 sm:flex-row sm:flex-wrap sm:items-center">
             
             {/* Sort pills */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -391,9 +391,9 @@ export default function Home({
             </div>
 
             {/* Region / Country Filters */}
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto">
               <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider">Origin:</span>
-              <div className="bg-luxury-900/90 border border-white/10 p-1 rounded-xl flex items-center gap-1">
+              <div className="bg-luxury-900/90 border border-white/10 p-1 rounded-xl flex min-w-max items-center gap-1">
                 {[
                   { id: '', label: 'All' },
                   { id: 'KR', label: '🇰🇷 S. Korea' },
@@ -502,7 +502,7 @@ export default function Home({
                 {subtitleQueue.map((sub) => (
                   <div
                     key={sub._id}
-                    className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-2xl flex items-center justify-between hover:bg-white/[0.05] hover:border-brand-primary/30 transition-all duration-300 group"
+                    className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-2xl flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.05] hover:border-brand-primary/30 transition-all duration-300 group"
                   >
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -529,7 +529,7 @@ export default function Home({
                         Version: <span className="text-slate-300 font-bold">{sub.version}</span> • Uploader: <span className="text-brand-primary/90 font-bold">{sub.adminUploader?.username || sub.uploader?.username || 'Translator'}</span>
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
                       <span className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-black rounded-xl flex items-center gap-1 shadow-sm">
                         <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Approved
                       </span>

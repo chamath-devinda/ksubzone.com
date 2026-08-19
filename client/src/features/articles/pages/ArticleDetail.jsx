@@ -432,7 +432,7 @@ export default function ArticleDetail({ initialData }) {
     <div className="min-h-screen bg-transparent pb-16">
       <article>
         {/* Hero Banner */}
-        <section className="relative min-h-[72vh] lg:min-h-[80vh] overflow-hidden flex items-end border-b border-white/5">
+        <section className="relative min-h-[620px] sm:min-h-[72vh] lg:min-h-[80vh] overflow-hidden flex items-end border-b border-white/5">
           <img
             src={article.coverImage || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1800&auto=format&fit=crop'}
             alt={article.title}
@@ -441,7 +441,7 @@ export default function ArticleDetail({ initialData }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/80 to-black/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-luxury-950/40 to-transparent" />
-          <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-14 pt-32 text-left">
+          <div className="relative max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 w-full pb-10 sm:pb-14 pt-28 sm:pt-32 text-left">
             <Link href="/articles" className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-white mb-8 transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Articles
             </Link>
@@ -453,7 +453,7 @@ export default function ArticleDetail({ initialData }) {
                 <span className="text-slate-400 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> {article.viewCount} Views</span>
               )}
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight max-w-4xl">{article.title}</h1>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight max-w-4xl">{article.title}</h1>
             {article.excerpt && (
               <p className="mt-5 text-base sm:text-lg text-slate-300 leading-8 max-w-3xl font-light">{article.excerpt}</p>
             )}
@@ -461,9 +461,9 @@ export default function ArticleDetail({ initialData }) {
         </section>
 
         {/* Content Area */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 text-left">
+        <section className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 text-left">
           {/* Tags & Theme Toggle Bar */}
-          <div className="flex items-center justify-between gap-4 mb-8 py-4 border-b border-white/5">
+          <div className="flex flex-col items-start gap-4 mb-6 sm:mb-8 py-4 border-b border-white/5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-2">
               {(article.tags || []).map((tag) => (
                 <span key={tag} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:border-brand-primary/30 hover:text-slate-200 transition-colors cursor-default">
@@ -486,7 +486,7 @@ export default function ArticleDetail({ initialData }) {
                 ? 'bg-gradient-to-r from-brand-primary via-violet-500 to-brand-secondary'
                 : 'bg-gradient-to-r from-brand-primary/80 via-violet-500/80 to-brand-secondary/80'
             }`} />
-            <div className="p-6 sm:p-10 lg:p-14">
+            <div className="p-4 sm:p-10 lg:p-14">
               {parsedBlocks.map((block, index) => renderBlock(block, index, theme === 'dark'))}
             </div>
           </div>

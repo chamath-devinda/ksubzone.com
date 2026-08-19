@@ -60,12 +60,12 @@ export default function Articles({ initialData }) {
 
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(124,58,237,0.22),transparent_34%),radial-gradient(circle_at_82%_10%,rgba(236,72,153,0.14),transparent_32%)]" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 lg:pt-32 pb-16 sm:pb-20">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-20">
           <div className="max-w-3xl text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-brand-primary">
               <BookOpenText className="w-3.5 h-3.5" /> KSubZone Journal
             </span>
-            <h1 className="mt-5 text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+            <h1 className="mt-5 text-3xl sm:text-6xl font-black tracking-tight text-white leading-tight">
               K-Drama articles, guides, and watch notes
             </h1>
             <p className="mt-4 text-sm sm:text-base text-slate-300 leading-7">
@@ -75,7 +75,7 @@ export default function Articles({ initialData }) {
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 flex flex-col gap-10">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10 flex flex-col gap-8 sm:gap-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
             {categories.map((category) => {
@@ -110,14 +110,14 @@ export default function Articles({ initialData }) {
             animate={{ opacity: 1, y: 0 }}
             className="grid lg:grid-cols-[1.2fr_0.8fr] gap-0 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035] shadow-2xl shadow-black/30"
           >
-            <div className="relative min-h-[320px]">
+            <div className="relative min-h-[220px] sm:min-h-[320px]">
               <img src={featuredArticle.image} alt={featuredArticle.title} className="absolute inset-0 h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/45 to-transparent" />
               <span className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200">
                 <Flame className="w-3.5 h-3.5" /> Featured
               </span>
             </div>
-            <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-center text-left">
+            <div className="p-5 sm:p-8 lg:p-10 flex flex-col justify-center text-left">
               <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                 <span className="rounded-full bg-brand-primary/15 border border-brand-primary/30 px-3 py-1 text-brand-primary">{featuredArticle.category}</span>
                 <span className="text-slate-500 flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" /> {featuredArticle.date}</span>
@@ -126,7 +126,7 @@ export default function Articles({ initialData }) {
                   <span className="text-slate-500 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> {featuredArticle.viewCount} Views</span>
                 )}
               </div>
-              <h2 className="mt-4 text-3xl sm:text-4xl font-black text-white leading-tight">{featuredArticle.title}</h2>
+              <h2 className="mt-4 text-2xl sm:text-4xl font-black text-white leading-tight">{featuredArticle.title}</h2>
               <p className="mt-4 text-sm text-slate-300 leading-7">{featuredArticle.excerpt}</p>
               <Link href={featuredArticle.slug ? `/articles/${featuredArticle.slug}` : '#'} className="mt-6 h-11 w-fit px-5 rounded-2xl bg-white text-black hover:bg-brand-primary hover:text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 transition">
                 Read Article <ArrowRight className="w-4 h-4" />
@@ -135,7 +135,7 @@ export default function Articles({ initialData }) {
           </motion.article>
         )}
 
-        <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {otherArticles.map((article, index) => (
             <motion.article
               key={article.id}

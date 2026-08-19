@@ -152,7 +152,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-[85vh] w-full flex items-center justify-center pt-24 lg:pt-28 pb-16 px-4 relative">
+    <div className="min-h-[85vh] w-full flex items-center justify-center pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 px-3 sm:px-4 relative">
       {/* Dynamic Background Glow elements */}
       <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-brand-primary/10 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-1/3 w-72 h-72 bg-brand-secondary/5 rounded-full blur-3xl" />
@@ -160,7 +160,7 @@ export default function Auth() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden z-10"
+        className="w-full max-w-md glass-panel p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden z-10"
       >
         {/* Banner Title */}
         <div className="flex flex-col items-center gap-2 mb-6">

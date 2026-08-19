@@ -56,12 +56,12 @@ export default async function GenresPage() {
       {/* Header Banner */}
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.15),transparent_40%)]" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 lg:pt-32 pb-12 text-left">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-10 sm:pb-12 text-left">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-brand-primary">
               <Grid className="w-3.5 h-3.5" /> Genre Navigation
             </span>
-            <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            <h1 className="mt-4 text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
               Browse by Genre
             </h1>
             <p className="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
@@ -72,19 +72,19 @@ export default async function GenresPage() {
       </section>
 
       {/* Main Grid Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10">
         {genres.length === 0 ? (
-          <div className="glass-panel p-20 rounded-3xl border border-white/5 text-center text-slate-400">
+          <div className="glass-panel p-8 sm:p-20 rounded-2xl sm:rounded-3xl border border-white/5 text-center text-slate-400">
             <p className="text-sm font-bold">No genres found in the database.</p>
             <p className="text-xs text-slate-500 mt-1">Please seed or import content from TMDB first.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {genres.map((genre) => (
               <Link
                 key={genre._id || genre.slug}
                 href={`/search?category=all&genre=${encodeURIComponent(genre.slug)}`}
-                className="glass-panel group relative overflow-hidden rounded-3xl border border-white/10 hover:border-brand-primary/40 h-36 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-500 hover:shadow-glass-neon hover:shadow-brand-primary/15"
+                className="glass-panel group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 hover:border-brand-primary/40 h-28 sm:h-36 flex flex-col items-center justify-center p-3 sm:p-6 text-center cursor-pointer transition-all duration-500 hover:shadow-glass-neon hover:shadow-brand-primary/15"
               >
                 {/* Dynamically Loaded Banner Backdrop from High-Rated Media */}
                 {genre.banner && (

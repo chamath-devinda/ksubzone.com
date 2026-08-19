@@ -126,11 +126,11 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 pt-24 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent text-slate-100 pt-20 sm:pt-24 px-3 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         
         {/* Profile Header */}
-        <div className="bg-luxury-900 bg-opacity-40 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white border-opacity-5 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 mb-8">
+        <div className="bg-luxury-900 bg-opacity-40 backdrop-blur-md rounded-2xl p-4 sm:p-8 border border-white border-opacity-5 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 mb-8">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="relative group">
               <img 
@@ -156,7 +156,7 @@ export default function Profile() {
                   </span>
                 )}
               </div>
-              <p className="text-slate-400 mt-1">{user.email}</p>
+              <p className="text-slate-400 mt-1 break-all">{user.email}</p>
               <p className="text-xs text-slate-500 mt-2">Member since {new Date(user.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
@@ -184,7 +184,7 @@ export default function Profile() {
                 initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 20 }}
-                className="bg-luxury-900 border border-white border-opacity-15 rounded-2xl w-full max-w-lg p-6 overflow-y-auto max-h-[90vh]"
+                className="bg-luxury-900 border border-white border-opacity-15 rounded-2xl w-full max-w-lg p-4 sm:p-6 overflow-y-auto max-h-[90dvh]"
               >
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-slate-100">Update Profile Details</h2>
@@ -205,7 +205,7 @@ export default function Profile() {
                 <form onSubmit={handleUpdateProfile} className="space-y-5">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Select an Avatar</label>
-                    <div className="grid grid-cols-6 gap-3 mb-3">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mb-3">
                       {AVATAR_PRESETS.map((preset) => (
                         <button
                           key={preset}
@@ -261,7 +261,7 @@ export default function Profile() {
                     />
                   </div>
 
-                  <div className="flex gap-3 justify-end pt-4">
+                  <div className="grid grid-cols-2 gap-3 pt-4 sm:flex sm:justify-end">
                     <button
                       type="button"
                       onClick={() => setEditingProfile(false)}
@@ -296,7 +296,7 @@ export default function Profile() {
                 initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 20 }}
-                className="bg-luxury-900 border border-white border-opacity-15 rounded-2xl w-full max-w-md p-6 text-center"
+                className="bg-luxury-900 border border-white border-opacity-15 rounded-2xl w-full max-w-md p-4 sm:p-6 text-center"
               >
                 <div className="w-16 h-16 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
                   ✓
@@ -325,7 +325,7 @@ export default function Profile() {
         )}
 
         {/* Tab Selection */}
-        <div className="flex border-b border-white border-opacity-10 gap-6 mb-8 overflow-x-auto scrollbar-none">
+        <div className="flex border-b border-white border-opacity-10 gap-5 sm:gap-6 mb-8 overflow-x-auto scrollbar-none">
           {['watchlist', 'favorites', 'continue-watching', 'security', 'notifications'].map((tab) => (
             <button
               key={tab}
@@ -357,7 +357,7 @@ export default function Profile() {
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6">
                   {user.watchlist.map((item) => {
                     const media = item.details || {};
                     return (

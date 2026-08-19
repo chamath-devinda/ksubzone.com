@@ -49,6 +49,7 @@ export default function Search() {
   const [page, setPage] = useState(1);
   const [isAiMode, setIsAiMode] = useState(false);
   const [aiKeywords, setAiKeywords] = useState([]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Sync state if query param changes externally
   useEffect(() => {
@@ -174,6 +175,7 @@ export default function Search() {
       ...(isHistorical ? { isHistorical: 'true' } : {})
     });
     setPage(1);
+    setShowMobileFilters(false);
   };
 
   const handleReset = () => {
@@ -198,7 +200,7 @@ export default function Search() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-28 pb-8 text-left flex flex-col gap-8 min-h-screen">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-28 pb-8 text-left flex flex-col gap-7 sm:gap-8 min-h-screen">
       
       <SeoTags
         title="Advanced Search - KSubZone Catalog"
@@ -208,8 +210,8 @@ export default function Search() {
 
       {/* Header Banner */}
       <div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2">
-          {isAiMode ? <Sparkles className="w-6 h-6 text-brand-accent" /> : <SearchIcon className="w-6 h-6 text-brand-primary" />} 
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-start sm:items-center gap-2 leading-tight">
+          {isAiMode ? <Sparkles className="w-6 h-6 text-brand-accent flex-shrink-0" /> : <SearchIcon className="w-6 h-6 text-brand-primary flex-shrink-0" />}
           {isAiMode ? 'AI Smart Search' : 'Advanced Catalog Search'}
         </h1>
         <p className="text-xs text-slate-400 mt-1">
@@ -233,12 +235,12 @@ export default function Search() {
             <SearchIcon className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           {enableSmartSearch && (
             <button
               type="button"
               onClick={() => { setIsAiMode(!isAiMode); setPage(1); }}
-              className={`h-11 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg flex items-center gap-1.5 ${isAiMode ? 'bg-brand-accent text-white' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}`}
+              className={`h-11 px-3 sm:px-4 rounded-xl text-xs font-bold uppercase tracking-wide sm:tracking-wider transition shadow-lg flex items-center justify-center gap-1.5 ${isAiMode ? 'bg-brand-accent text-white' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}`}
               title="Toggle AI Search Mode"
             >
               <Sparkles className="w-3.5 h-3.5" /> AI Mode
@@ -246,7 +248,7 @@ export default function Search() {
           )}
           <button
             type="submit"
-            className={`h-11 px-5 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg ${isAiMode ? 'bg-brand-accent/80 hover:bg-brand-accent' : 'bg-brand-primary hover:bg-brand-primary/80'}`}
+            className={`h-11 px-4 sm:px-5 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg ${isAiMode ? 'bg-brand-accent/80 hover:bg-brand-accent' : 'bg-brand-primary hover:bg-brand-primary/80'}`}
           >
             Search
           </button>
@@ -267,9 +269,20 @@ export default function Search() {
 
       {/* Search Grid Area */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+
+        <button
+          type="button"
+          onClick={() => setShowMobileFilters((value) => !value)}
+          aria-expanded={showMobileFilters}
+          aria-controls="catalog-filters"
+          className="md:hidden h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-black uppercase tracking-wider text-slate-200 flex items-center justify-between"
+        >
+          <span className="flex items-center gap-2"><SlidersHorizontal className="w-4 h-4 text-brand-primary" /> Catalog Filters</span>
+          <span className="text-brand-primary">{showMobileFilters ? 'Hide' : 'Show'}</span>
+        </button>
         
         {/* Sidebar Filters */}
-        <div className={`glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-5 ${isAiMode ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div id="catalog-filters" className={`glass-panel p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-white/5 flex-col gap-5 ${showMobileFilters ? 'flex' : 'hidden'} md:flex ${isAiMode ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Filters
@@ -290,7 +303,7 @@ export default function Search() {
           {/* Category Selector */}
           <div>
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1.5 block">Category</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => handleCategoryChange('all')}
@@ -399,19 +412,19 @@ export default function Search() {
         {/* Results grid */}
         <div className="md:col-span-3 flex flex-col gap-6">
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-luxury-800 rounded-2xl animate-pulse border border-white/5" />
               ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="glass-panel p-16 rounded-3xl border border-white/5 text-center text-slate-400">
+            <div className="glass-panel p-8 sm:p-16 rounded-2xl sm:rounded-3xl border border-white/5 text-center text-slate-400">
               <p className="text-sm font-bold">No results match your search.</p>
               <p className="text-xs text-slate-500 mt-1">Try adjusting your filters or search keywords.</p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {items.map((item) => (
                   <GlassCard key={`${item._mediaType || category}-${item._id}`} item={item} type={item._mediaType || category} />
                 ))}
@@ -423,15 +436,15 @@ export default function Search() {
                   <button
                     disabled={page === 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="px-3 h-8 bg-white/5 border border-white/10 disabled:bg-transparent disabled:text-slate-600 disabled:border-white/5 rounded-xl text-xs font-bold text-white transition"
+                    className="px-3 h-10 flex-1 max-w-24 bg-white/5 border border-white/10 disabled:bg-transparent disabled:text-slate-600 disabled:border-white/5 rounded-xl text-xs font-bold text-white transition"
                   >
                     Prev
                   </button>
-                  <span className="text-xs text-slate-400 font-semibold px-2">Page {page} of {totalPages}</span>
+                  <span className="text-[11px] sm:text-xs text-slate-400 font-semibold px-1 sm:px-2 whitespace-nowrap">Page {page} of {totalPages}</span>
                   <button
                     disabled={page === totalPages}
                     onClick={() => setPage(p => p + 1)}
-                    className="px-3 h-8 bg-white/5 border border-white/10 disabled:bg-transparent disabled:text-slate-600 disabled:border-white/5 rounded-xl text-xs font-bold text-white transition"
+                    className="px-3 h-10 flex-1 max-w-24 bg-white/5 border border-white/10 disabled:bg-transparent disabled:text-slate-600 disabled:border-white/5 rounded-xl text-xs font-bold text-white transition"
                   >
                     Next
                   </button>

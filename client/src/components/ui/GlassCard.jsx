@@ -131,16 +131,16 @@ export default function GlassCard({ item, type, priority = false }) {
           />
 
           {/* Top Badges */}
-          <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-1.5 z-20">
+          <div className="absolute top-1.5 left-1.5 right-1.5 sm:top-2.5 sm:left-2.5 sm:right-2.5 flex items-start justify-between gap-1 z-20">
             {/* Left Status Tags */}
             <div className="flex flex-col items-start gap-1 flex-shrink-0">
               {item.status === 'Upcoming' && (
-                <span className="h-5 px-2 inline-flex items-center justify-center rounded-full border border-indigo-500/40 bg-indigo-950/80 backdrop-blur-md text-indigo-300 text-[9px] font-black uppercase tracking-wider shadow-sm">
+                <span className="h-5 max-w-[74px] sm:max-w-none px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border border-indigo-500/40 bg-indigo-950/80 backdrop-blur-md text-indigo-300 text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider shadow-sm truncate">
                   Upcoming
                 </span>
               )}
               {mediaType === 'drama' && hasSubtitles && (
-                <span className={`h-5 px-2 inline-flex items-center justify-center rounded-full border backdrop-blur-md text-[9px] font-black uppercase tracking-wider shadow-sm ${
+                <span className={`h-5 max-w-[74px] sm:max-w-none px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border backdrop-blur-md text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider shadow-sm truncate ${
                   subtitleSummary.seasonStatus === 'Complete'
                     ? 'bg-rose-950/80 border-rose-500/50 text-rose-300'
                     : 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
@@ -149,14 +149,14 @@ export default function GlassCard({ item, type, priority = false }) {
                 </span>
               )}
               {item.isNew && (
-                <span className="h-5 px-2 inline-flex items-center justify-center rounded-full border border-purple-500/40 bg-purple-950/80 backdrop-blur-md text-purple-200 text-[9px] font-black uppercase tracking-wider">
+                <span className="h-5 px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border border-purple-500/40 bg-purple-950/80 backdrop-blur-md text-purple-200 text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider">
                   New
                 </span>
               )}
             </div>
 
             {/* Right IMDb rating badge */}
-            <div className={`h-5 px-2 inline-flex items-center justify-center gap-1 rounded-full border backdrop-blur-md text-[9px] font-black uppercase tracking-wider ${getRatingBadgeClass(rating)}`}>
+            <div className={`h-5 px-1.5 sm:px-2 inline-flex items-center justify-center gap-1 rounded-full border backdrop-blur-md text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider flex-shrink-0 ${getRatingBadgeClass(rating)}`}>
               <Star className="w-2.5 h-2.5 fill-current flex-shrink-0" />
               <span>{rating > 0 ? rating.toFixed(1) : 'NR'}</span>
             </div>

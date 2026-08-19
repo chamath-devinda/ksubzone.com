@@ -192,7 +192,7 @@ export default function Watch({ initialDramaData }) {
       <Detail type="Drama" initialData={dramaData} topOnly />
 
       {/* Match the episode content to the same right-hand column used above. */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
           <div className="hidden md:block" aria-hidden="true" />
           <div id="episode-download" className="md:col-span-3 w-full flex flex-col gap-7">
@@ -217,7 +217,7 @@ export default function Watch({ initialDramaData }) {
                 const customFileName = `${cleanTitle}_${formattedSeason}_${formattedEpisode}_${subLang}.${sub.format || 'srt'}`;
                 handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName);
               }}
-              className="group relative w-full max-w-md h-14 rounded-full bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 text-white font-black text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
+              className="group relative w-full max-w-md min-h-14 rounded-2xl sm:rounded-full px-4 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
             >
               <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
               <span>සිංහල උපසිරැසිය (DOWNLOAD)</span>
@@ -234,7 +234,7 @@ export default function Watch({ initialDramaData }) {
           </span>
 
           {/* Verified Cloudflare Badge */}
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/10 mt-1">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/10 mt-1">
             <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" /> VERIFIED
             </span>
@@ -272,7 +272,7 @@ export default function Watch({ initialDramaData }) {
           )}
 
           {/* Telegram Channel CTA Banner */}
-          <div className="w-full max-w-md p-4 rounded-2xl bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent border border-sky-500/20 flex items-center justify-between gap-3 mt-2 text-left">
+          <div className="w-full max-w-md p-4 rounded-2xl bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent border border-sky-500/20 flex flex-col items-stretch gap-3 mt-2 text-left sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center flex-shrink-0 text-sky-400">
                 <Send className="w-5 h-5" />
@@ -286,7 +286,7 @@ export default function Watch({ initialDramaData }) {
               href="https://t.me/ksubzone"
               target="_blank"
               rel="noopener noreferrer"
-              className="h-8 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold flex items-center gap-1.5 transition flex-shrink-0"
+              className="h-10 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition flex-shrink-0"
             >
               Join <ExternalLink className="w-3 h-3" />
             </a>
@@ -295,17 +295,17 @@ export default function Watch({ initialDramaData }) {
         </div>
 
         {/* ─── 3-PILL EPISODE NAVIGATION ─── */}
-        <div className="w-full max-w-xl mx-auto flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-luxury-900/80 border border-white/10 backdrop-blur-xl shadow-lg mt-2">
+        <div className="w-full max-w-xl mx-auto grid grid-cols-3 items-stretch gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-luxury-900/80 border border-white/10 backdrop-blur-xl shadow-lg mt-2">
           {prevEp ? (
             <button
               onClick={() => router.push(`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${prevEp.episodeNumber}`)}
-              className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center justify-center gap-1"
+              className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center justify-center gap-1"
             >
               <ChevronLeft className="w-4 h-4 text-brand-primary" />
               <span>කලින් කොටස</span>
             </button>
           ) : (
-            <div className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-slate-600 flex items-center justify-center gap-1 pointer-events-none">
+            <div className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1 pointer-events-none">
               <ChevronLeft className="w-4 h-4 opacity-40" />
               <span>කලින් කොටස</span>
             </div>
@@ -313,7 +313,7 @@ export default function Watch({ initialDramaData }) {
 
           <Link
             href={`/drama/${dramaPermalink}#subtitles`}
-            className="flex-1 py-2.5 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-brand-primary/30 to-brand-secondary/30 hover:from-brand-primary/50 hover:to-brand-secondary/50 border border-brand-primary/40 transition flex items-center justify-center text-center shadow-sm"
+            className="min-w-0 py-2.5 px-2 sm:px-4 rounded-xl text-[10px] sm:text-xs font-black text-white bg-gradient-to-r from-brand-primary/30 to-brand-secondary/30 hover:from-brand-primary/50 hover:to-brand-secondary/50 border border-brand-primary/40 transition flex items-center justify-center text-center shadow-sm"
           >
             සියලුම කොටස්
           </Link>
@@ -321,13 +321,13 @@ export default function Watch({ initialDramaData }) {
           {nextEp ? (
             <button
               onClick={() => router.push(`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${nextEp.episodeNumber}`)}
-              className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center justify-center gap-1"
+              className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center justify-center gap-1"
             >
               <span>ඊළඟ කොටස</span>
               <ChevronRight className="w-4 h-4 text-brand-primary" />
             </button>
           ) : (
-            <div className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-slate-600 flex items-center justify-center gap-1 pointer-events-none">
+            <div className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1 pointer-events-none">
               <span>ඊළඟ කොටස</span>
               <ChevronRight className="w-4 h-4 opacity-40" />
             </div>
@@ -380,11 +380,11 @@ export default function Watch({ initialDramaData }) {
               required
               className="w-full p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-primary focus:bg-white/[0.06] transition resize-none"
             />
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <button
                 type="submit"
                 disabled={commentStatus.loading}
-                className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 hover:from-purple-600 hover:to-brand-primary disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-lg shadow-brand-primary/25"
+                className="h-11 px-6 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 hover:from-purple-600 hover:to-brand-primary disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-brand-primary/25"
               >
                 <Send className="w-3.5 h-3.5" />
                 {commentStatus.loading ? 'Posting...' : 'Post Comment'}
@@ -437,7 +437,7 @@ export default function Watch({ initialDramaData }) {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
               {relatedDramas.map((item) => (
                 <GlassCard key={item._id} item={item} type="drama" />
               ))}

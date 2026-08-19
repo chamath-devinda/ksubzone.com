@@ -44,7 +44,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
   if (loading || items.length === 0) {
     return (
-      <section className="relative w-full min-h-screen overflow-hidden bg-luxury-950 flex items-center pt-24 lg:pt-32 pb-12 sm:pb-20 -mt-20">
+      <section className="relative w-full min-h-[620px] sm:min-h-screen overflow-hidden bg-luxury-950 flex items-center pt-24 lg:pt-32 pb-12 sm:pb-20 -mt-16 sm:-mt-20">
         <div className="absolute inset-0 bg-luxury-900/60 animate-pulse" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(139,92,246,0.12),transparent_40%),linear-gradient(90deg,#030008_0%,rgba(3,0,8,0.75)_35%,rgba(3,0,8,0.3)_70%,rgba(3,0,8,0.5)_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/15 to-black/30" />
@@ -76,7 +76,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
             </div>
 
             {/* Right Poster Skeleton */}
-            <div className="flex justify-center w-full lg:block order-first lg:order-none">
+            <div className="hidden sm:flex justify-center w-full lg:block order-first lg:order-none">
               <div className="relative rounded-[2rem] border border-white/5 bg-white/[0.02] p-3 max-w-[220px] sm:max-w-[300px] lg:max-w-none mx-auto w-full animate-pulse">
                 <div className="relative overflow-hidden rounded-2xl aspect-[2/3] bg-white/5 flex items-center justify-center">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
@@ -107,7 +107,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
   const openDownloads = () => router.push(`/${type}/${currentSlug}?scrollTo=subtitles`);
 
   return (
-    <section className="relative w-full min-h-[680px] sm:min-h-screen overflow-hidden group bg-luxury-950 -mt-16 sm:-mt-20">
+    <section className="relative w-full min-h-[620px] sm:min-h-screen overflow-hidden group bg-luxury-950 -mt-16 sm:-mt-20">
       {/* Background Cinematic Backdrop */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -124,7 +124,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
             fill
             priority={currentIndex === 0}
             sizes="100vw"
-            className="w-full h-full object-cover object-center filter brightness-[0.58] contrast-[1.08] saturate-[0.9]"
+            className="w-full h-full object-cover object-[65%_center] sm:object-center filter brightness-[0.5] sm:brightness-[0.58] contrast-[1.08] saturate-[0.9]"
             onError={() => {
               const fallback = imageFallbackFor(current, 'backdrop');
               if (backdropUrl !== fallback) {
@@ -140,9 +140,9 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 flex min-h-[680px] sm:min-h-screen items-center pt-24 sm:pt-28 lg:pt-36 pb-16 sm:pb-20 lg:pb-24">
+      <div className="relative z-10 flex min-h-[620px] sm:min-h-screen items-center pt-24 sm:pt-28 lg:pt-36 pb-16 sm:pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_370px] gap-10 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_370px] gap-7 sm:gap-10 lg:gap-16 items-center">
             
             {/* Left Hero Details */}
             <AnimatePresence mode="wait">
@@ -156,7 +156,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
               >
                 {/* Eyebrow Pill */}
                 <div className="mb-5 flex flex-wrap items-center gap-2.5">
-                  <span className="px-3.5 py-1.5 rounded-xl border border-white/10 bg-black/30 text-violet-200 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 backdrop-blur-xl">
+                  <span className="px-3 sm:px-3.5 py-1.5 rounded-xl border border-white/10 bg-black/30 text-violet-200 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.12em] sm:tracking-[0.2em] flex items-center gap-2 backdrop-blur-xl">
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-60 animate-ping" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-primary" />
@@ -211,12 +211,12 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 </div>
 
                 {/* Synopsis */}
-                <p className="mt-5 max-w-2xl border-l-2 border-brand-primary/60 pl-4 text-sm sm:text-[15px] text-slate-300 leading-7 line-clamp-3 font-normal">
+                <p className="mt-4 sm:mt-5 max-w-2xl border-l-2 border-brand-primary/60 pl-3 sm:pl-4 text-sm sm:text-[15px] text-slate-300 leading-6 sm:leading-7 line-clamp-2 sm:line-clamp-3 font-normal">
                   {current.synopsisRewrite || current.description}
                 </p>
 
                 {/* Fast Meta Info Cards */}
-                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-2xl text-xs text-slate-300">
+                <div className="mt-5 hidden sm:grid grid-cols-2 gap-2.5 max-w-2xl text-xs text-slate-300">
                   <div className="group flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-3.5 backdrop-blur-xl hover:bg-white/[0.04] hover:border-brand-primary/25 transition">
                     <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-brand-primary/15 border border-brand-primary/20">
                       <Clock3 className="w-4 h-4 text-brand-primary" />
@@ -244,16 +244,16 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 </div>
 
                 {/* Action CTA Buttons */}
-                <div className="mt-6 flex flex-wrap items-center gap-3">
+                <div className="mt-5 sm:mt-6 grid w-full max-w-md grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                   <button
                     onClick={openDownloads}
-                    className="h-12 px-6 sm:px-8 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:brightness-110 text-white text-[11px] font-black uppercase tracking-[0.08em] rounded-xl flex items-center justify-center gap-2.5 transition-all duration-200 shadow-xl shadow-brand-primary/25 ring-1 ring-white/15 hover:-translate-y-0.5 active:translate-y-0"
+                    className="min-h-12 px-3 sm:px-8 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:brightness-110 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.04em] sm:tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-xl shadow-brand-primary/25 ring-1 ring-white/15 hover:-translate-y-0.5 active:translate-y-0 text-center"
                   >
                     <Download className="w-4 h-4" /> Download Subtitles
                   </button>
                   <button
                     onClick={openDetails}
-                    className="h-12 px-5 sm:px-7 border border-white/15 bg-black/25 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 backdrop-blur-xl hover:border-white/25 hover:-translate-y-0.5 active:translate-y-0"
+                    className="min-h-12 px-3 sm:px-7 border border-white/15 bg-black/25 hover:bg-white/10 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.04em] sm:tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 backdrop-blur-xl hover:border-white/25 hover:-translate-y-0.5 active:translate-y-0 text-center"
                   >
                     <Info className="w-4 h-4 text-slate-300" /> Details
                   </button>
@@ -269,7 +269,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 animate={{ opacity: 1, x: 0, rotate: 0 }}
                 exit={{ opacity: 0, x: 25 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="flex justify-center w-full lg:block order-first lg:order-none mb-2 sm:mb-0"
+                className="hidden sm:flex justify-center w-full lg:block order-first lg:order-none mb-2 sm:mb-0"
               >
                 <div className="relative rounded-[2rem] border border-white/10 bg-luxury-950/45 p-2.5 shadow-2xl shadow-black/80 backdrop-blur-2xl max-w-[190px] sm:max-w-[300px] lg:max-w-[340px] mx-auto w-full group">
                   {/* Dynamic 3D lighting glow */}
@@ -333,7 +333,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
       </button>
 
       {/* Pagination Dots */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/45 border border-white/10 px-3 py-2 rounded-full backdrop-blur-xl">
+      <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/45 border border-white/10 px-3 py-2 rounded-full backdrop-blur-xl">
         {items.map((item, i) => (
           <button
             key={item._id || i}

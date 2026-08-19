@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Bell, User, LogOut, Menu, X, LayoutDashboard, Loader2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -18,6 +18,7 @@ export default function Navbar() {
   const { user, admin, logoutUser, logoutAdmin } = useAuth();
   const { content } = useSiteContent();
   const router = useRouter();
+  const pathname = usePathname();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -42,6 +43,27 @@ export default function Navbar() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
 
   const searchRef = useRef(null);
   const catalogLinks = (content?.navigation?.links || []).filter((item) => item.label && item.url);
@@ -163,21 +185,21 @@ export default function Navbar() {
       </AnimatePresence>
 
       <header className="sticky top-2 sm:top-3.5 z-50 w-full px-2.5 sm:px-6 lg:px-8">
-        <div className={`max-w-7xl mx-auto rounded-full h-14 sm:h-16 px-3.5 sm:px-7 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 relative border ${
+        <div className={`max-w-7xl mx-auto rounded-2xl sm:rounded-full h-14 sm:h-16 px-3 sm:px-7 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 relative border ${
           isScrolled 
             ? 'bg-luxury-950/90 border-white/[0.12] backdrop-blur-2xl shadow-[0_10px_35px_-5px_rgba(0,0,0,0.8),0_0_20px_rgba(139,92,246,0.15)]' 
             : 'bg-luxury-950/70 border-white/[0.08] backdrop-blur-xl shadow-xl shadow-black/40'
         }`}>
           
           {/* BRAND LOGO */}
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-shrink z-10">
-            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4 z-10 lg:flex-initial">
+            <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 group">
               <img
                 src={resolveLogoUrl(brand.logoUrl) || "/main-logo.webp"}
                 alt={brand.siteName || 'KSubZone'}
-                className="h-7 sm:h-9 w-auto max-w-[34px] sm:max-w-none object-contain transform group-hover:scale-105 transition-transform duration-300"
+                className="h-7 sm:h-9 w-auto max-w-[32px] sm:max-w-none object-contain transform group-hover:scale-105 transition-transform duration-300 flex-shrink-0"
               />
-              <span className="text-sm sm:text-xl font-black uppercase tracking-wider truncate bg-gradient-to-r from-brand-primary via-purple-400 to-brand-secondary bg-clip-text text-transparent font-milker group-hover:brightness-125 transition">
+              <span className="min-w-0 max-w-[48vw] sm:max-w-[16rem] text-sm sm:text-xl font-black uppercase tracking-wide sm:tracking-wider truncate bg-gradient-to-r from-brand-primary via-purple-400 to-brand-secondary bg-clip-text text-transparent font-milker group-hover:brightness-125 transition">
                 {brand.logoText || brand.siteName || 'KSUBZONE'}
               </span>
             </Link>
@@ -389,7 +411,9 @@ export default function Navbar() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle mobile menu"
-              className="p-2 rounded-xl lg:hidden text-slate-300 hover:text-white hover:bg-white/10 transition"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
+              className="h-11 w-11 flex-shrink-0 rounded-xl lg:hidden text-slate-300 hover:text-white hover:bg-white/10 transition flex items-center justify-center"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -403,7 +427,8 @@ export default function Navbar() {
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.98 }}
-              className="lg:hidden mt-3 glass-panel-heavy border border-white/10 rounded-3xl p-5 flex flex-col gap-4 shadow-2xl backdrop-blur-2xl relative z-50 text-left"
+              id="mobile-navigation"
+              className="lg:hidden mt-2.5 max-h-[calc(100dvh-5.25rem)] overflow-y-auto overscroll-contain glass-panel-heavy border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col gap-4 shadow-2xl backdrop-blur-2xl relative z-50 text-left"
             >
               <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <input
