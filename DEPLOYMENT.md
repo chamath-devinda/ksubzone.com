@@ -51,6 +51,16 @@ CORS_ALLOWED_ORIGINS=https://ksubzone-com.vercel.app,https://www.ksubzone.com
 
 The Vercel proxy means preview deployments do not need to be listed in CORS.
 
+Bulk TMDB imports use the PHP CLI when the host allows background processes.
+If cPanel installs the CLI at a nonstandard location, set its absolute path:
+
+```text
+PHP_CLI_BINARY=/opt/cpanel/ea-php83/root/usr/bin/php
+```
+
+When CLI/process execution is unavailable, the API safely falls back to a
+small synchronous batch and leaves unprocessed titles selected for retry.
+
 Before deploying the frontend, confirm that this URL returns JSON rather than a
 hosting placeholder or HTML maintenance page:
 

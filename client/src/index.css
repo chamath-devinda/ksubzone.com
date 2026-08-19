@@ -133,3 +133,45 @@
 .tsparticles-canvas-el {
   pointer-events: none !important;
 }
+
+/* Mobile guardrails: keep wide cards/tables scrollable without letting the
+   page itself grow wider than the phone viewport. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 639px) {
+  body {
+    min-width: 320px;
+  }
+
+  main,
+  section,
+  article,
+  header,
+  footer {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p {
+    overflow-wrap: anywhere;
+  }
+
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+}

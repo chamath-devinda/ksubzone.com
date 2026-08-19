@@ -99,7 +99,12 @@ export default function DramaManager() {
       setDramas(fetched);
       try { sessionStorage.setItem(CACHE_KEY + '_' + selectedStatus, JSON.stringify(fetched)); } catch(_) {}
     } catch (err) {
-      toast.error('Failed to fetch dramas catalog.');
+      const message = err.status === 401
+        ? 'Admin session expired. Please sign in again.'
+        : err.status === 403
+          ? 'You do not have permission to manage dramas.'
+          : err.response?.data?.message || err.message || 'Failed to fetch dramas catalog.';
+      toast.error(message);
     } finally {
       if (!silent) setLoading(false);
     }

@@ -53,7 +53,11 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-  const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
+  const backendUrl = process.env.BACKEND_URL || (
+    process.env.NODE_ENV === 'production'
+      ? 'https://api.ksubzone.com'
+      : 'http://127.0.0.1:5000'
+  );
   
   let initialHomeCatalog = {};
   let initialSubtitles = [];

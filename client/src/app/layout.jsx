@@ -38,7 +38,11 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
+  const backendUrl = process.env.BACKEND_URL || (
+    process.env.NODE_ENV === 'production'
+      ? 'https://api.ksubzone.com'
+      : 'http://127.0.0.1:5000'
+  );
   let initialSiteContent = null;
   try {
     const res = await fetch(`${backendUrl}/api/site-content`, { next: { revalidate: 60 } });

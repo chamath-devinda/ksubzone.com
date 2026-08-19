@@ -50,7 +50,7 @@ try {
             try {
                 \Controllers\TmdbController::runBackgroundImport($titleId, $type, $isHistorical);
                 echo "Successfully imported ID: {$titleId}\n";
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 echo "Failed to import ID {$titleId}: " . $e->getMessage() . "\n";
                 error_log("Bulk Import ID {$titleId} Error: " . $e->getMessage());
             }
@@ -59,7 +59,7 @@ try {
     } else {
         echo "Invalid parameters or no action specified.\n";
     }
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     error_log("Background Import CLI Exception: " . $e->getMessage() . "\n" . $e->getTraceAsString());
     echo "Error: " . $e->getMessage() . "\n";
     exit(1);

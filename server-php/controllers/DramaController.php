@@ -14,7 +14,7 @@ class DramaController {
         $db = Database::getInstance();
         $status = $_GET['status'] ?? 'All';
         $search = $_GET['search'] ?? null;
-        $limit = (int)($_GET['limit'] ?? 200);
+        $limit = max(1, min((int)($_GET['limit'] ?? 200), 500));
 
         $filter = [];
         if ($status && $status !== 'All') {
@@ -31,63 +31,13 @@ class DramaController {
             'limit' => $limit
         ]);
 
+        // The catalog is used to render the first admin table only. Do not
+        // embed every season and episode for every drama here: on a real
+        // catalog that turns one request into a huge JSON response and makes
+        // the page look like the database/import has failed. The explorer
+        // already loads the selected drama's seasons and episodes from the
+        // media detail endpoint when it is opened.
         $dramasArray = array_values($dramas);
-        $dramaIds = array_map(function($d) { return $d['_id']; }, $dramasArray);
-
-        $seasons = [];
-        $episodes = [];
-        if (!empty($dramaIds)) {
-            $seasons = $db->find('seasons', ['dramaId' => ['$in' => $dramaIds]], ['sort' => ['seasonNumber' => 1]]);
-            $episodes = $db->find('episodes', ['dramaId' => ['$in' => $dramaIds]], ['sort' => ['episodeNumber' => 1]]);
-        }
-
-        $seasonsByDrama = [];
-        foreach ($seasons as $s) {
-            $sDramaId = (string)($s['dramaId'] ?? '');
-            if (!isset($seasonsByDrama[$sDramaId])) {
-                $seasonsByDrama[$sDramaId] = [];
-            }
-            $seasonsByDrama[$sDramaId][] = $s;
-        }
-
-        $episodesByDrama = [];
-        foreach ($episodes as $e) {
-            $eDramaId = (string)($e['dramaId'] ?? '');
-            if (!isset($episodesByDrama[$eDramaId])) {
-                $episodesByDrama[$eDramaId] = [];
-            }
-            $episodesByDrama[$eDramaId][] = $e;
-        }
-
-        foreach ($dramasArray as &$d) {
-            $dId = (string)$d['_id'];
-            $dSeasons = $seasonsByDrama[$dId] ?? [];
-            $dEpisodes = $episodesByDrama[$dId] ?? [];
-
-            $seasonNumberMap = [];
-            foreach ($dSeasons as $s) {
-                $seasonNumberMap[(string)$s['_id']] = (int)($s['seasonNumber'] ?? 1);
-            }
-
-            usort($dEpisodes, function($a, $b) use ($seasonNumberMap) {
-                $aSeasonId = (string)($a['seasonId'] ?? '');
-                $bSeasonId = (string)($b['seasonId'] ?? '');
-                $aSeasonNum = $seasonNumberMap[$aSeasonId] ?? 0;
-                $bSeasonNum = $seasonNumberMap[$bSeasonId] ?? 0;
-
-                if ($aSeasonNum !== $bSeasonNum) {
-                    return $aSeasonNum <=> $bSeasonNum;
-                }
-
-                $aEpNum = (int)($a['episodeNumber'] ?? 0);
-                $bEpNum = (int)($b['episodeNumber'] ?? 0);
-                return $aEpNum <=> $bEpNum;
-            });
-
-            $d['seasons'] = $dSeasons;
-            $d['episodes'] = $dEpisodes;
-        }
-        unset($d);
 
         header('Content-Type: application/json');
         echo json_encode([

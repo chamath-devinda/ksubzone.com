@@ -11,6 +11,8 @@ import {
   Tv, Database, Search, Download, RefreshCw, CheckSquare, Clock
 } from 'lucide-react';
 
+const IMPORT_TIMEOUT_MS = 240000;
+
 export default function TmdbImport() {
   const { admin } = useAuth();
   const toast = useToast();
@@ -110,7 +112,8 @@ export default function TmdbImport() {
 
     try {
       const res = await apiClient.post(`/api/admin/tmdb/import`, 
-        { id: tmdbId, type, isHistorical }
+        { id: tmdbId, type, isHistorical },
+        { timeout: IMPORT_TIMEOUT_MS }
       );
       toast.success(res.data.message || 'Import operation completed successfully!');
       
@@ -143,11 +146,27 @@ export default function TmdbImport() {
 
     try {
       const res = await apiClient.post('/api/admin/tmdb/bulk-import',
-        { ids: selectedIds, type: 'tv', isHistorical }
+        { ids: selectedIds, type: 'tv', isHistorical },
+        { timeout: IMPORT_TIMEOUT_MS }
       );
-      toast.success(res.data.message || 'Bulk import completed.');
-      setResults(prev => prev.filter(item => !selectedIds.includes(item.id)));
-      setSelectedIds([]);
+
+      const importedIds = Array.isArray(res.data.importedIds) ? res.data.importedIds : [];
+      const queuedIds = Array.isArray(res.data.queuedIds) ? res.data.queuedIds : [];
+      const acceptedIds = new Set([...importedIds, ...queuedIds].map(Number));
+
+      // Preserve compatibility while frontend and backend deployments overlap.
+      if (acceptedIds.size === 0 && res.data.status === 'Importing') {
+        selectedIds.forEach(id => acceptedIds.add(Number(id)));
+      }
+
+      setResults(prev => prev.filter(item => !acceptedIds.has(Number(item.id))));
+      setSelectedIds(prev => prev.filter(id => !acceptedIds.has(Number(id))));
+
+      if (res.data.status === 'Partial') {
+        toast.warning(res.data.message || 'Only part of the selection was imported. The remaining titles are still selected.');
+      } else {
+        toast.success(res.data.message || 'Bulk import completed.');
+      }
       fetchHistory();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Bulk import failed.');

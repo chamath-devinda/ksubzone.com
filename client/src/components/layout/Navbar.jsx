@@ -162,22 +162,22 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      <header className="sticky top-3.5 z-50 w-full px-3.5 sm:px-6 lg:px-8">
-        <div className={`max-w-7xl mx-auto rounded-full h-16 px-5 sm:px-7 flex items-center justify-between gap-4 transition-all duration-300 relative border ${
+      <header className="sticky top-2 sm:top-3.5 z-50 w-full px-2.5 sm:px-6 lg:px-8">
+        <div className={`max-w-7xl mx-auto rounded-full h-14 sm:h-16 px-3.5 sm:px-7 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 relative border ${
           isScrolled 
             ? 'bg-luxury-950/90 border-white/[0.12] backdrop-blur-2xl shadow-[0_10px_35px_-5px_rgba(0,0,0,0.8),0_0_20px_rgba(139,92,246,0.15)]' 
             : 'bg-luxury-950/70 border-white/[0.08] backdrop-blur-xl shadow-xl shadow-black/40'
         }`}>
           
           {/* BRAND LOGO */}
-          <div className="flex items-center gap-4 flex-shrink-0 z-10">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-shrink z-10">
             <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
               <img
                 src={resolveLogoUrl(brand.logoUrl) || "/main-logo.webp"}
                 alt={brand.siteName || 'KSubZone'}
-                className="h-8 sm:h-9 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
+                className="h-7 sm:h-9 w-auto max-w-[34px] sm:max-w-none object-contain transform group-hover:scale-105 transition-transform duration-300"
               />
-              <span className="text-base sm:text-xl font-black uppercase tracking-wider bg-gradient-to-r from-brand-primary via-purple-400 to-brand-secondary bg-clip-text text-transparent font-milker group-hover:brightness-125 transition">
+              <span className="text-sm sm:text-xl font-black uppercase tracking-wider truncate bg-gradient-to-r from-brand-primary via-purple-400 to-brand-secondary bg-clip-text text-transparent font-milker group-hover:brightness-125 transition">
                 {brand.logoText || brand.siteName || 'KSUBZONE'}
               </span>
             </Link>

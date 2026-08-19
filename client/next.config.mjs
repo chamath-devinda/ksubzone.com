@@ -1,4 +1,15 @@
 /** @type {import('next').NextConfig} */
+const configuredBackendUrl = (
+  process.env.BACKEND_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://api.ksubzone.com'
+    : 'http://127.0.0.1:5000')
+);
+const backendUrl = (/^https?:\/\/(www\.)?ksubzone\.com(?:\/|$)/i.test(configuredBackendUrl)
+  ? 'https://api.ksubzone.com'
+  : configuredBackendUrl
+).replace(/\/+$/, '');
+
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
@@ -34,7 +45,6 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
     return [
       {
         source: '/robots.txt',

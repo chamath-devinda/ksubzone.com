@@ -107,7 +107,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
   const openDownloads = () => router.push(`/${type}/${currentSlug}?scrollTo=subtitles`);
 
   return (
-    <section className="relative w-full min-h-[760px] sm:min-h-screen overflow-hidden group bg-luxury-950 -mt-20">
+    <section className="relative w-full min-h-[680px] sm:min-h-screen overflow-hidden group bg-luxury-950 -mt-16 sm:-mt-20">
       {/* Background Cinematic Backdrop */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -140,7 +140,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 flex min-h-[760px] sm:min-h-screen items-center pt-28 lg:pt-36 pb-20 lg:pb-24">
+      <div className="relative z-10 flex min-h-[680px] sm:min-h-screen items-center pt-24 sm:pt-28 lg:pt-36 pb-16 sm:pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_370px] gap-10 lg:gap-16 items-center">
             
@@ -152,7 +152,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="max-w-4xl text-left"
+                className="max-w-4xl text-left min-w-0"
               >
                 {/* Eyebrow Pill */}
                 <div className="mb-5 flex flex-wrap items-center gap-2.5">
@@ -179,7 +179,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 </div>
 
                 {/* Main Heading */}
-                <h1 className="max-w-4xl text-4xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-[-0.035em] text-white leading-[0.98] font-display drop-shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+                <h1 className="max-w-4xl text-3xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-[-0.035em] text-white leading-[0.98] font-display drop-shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
                   {current.title}
                 </h1>
                 
@@ -269,9 +269,9 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 animate={{ opacity: 1, x: 0, rotate: 0 }}
                 exit={{ opacity: 0, x: 25 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="flex justify-center w-full lg:block order-first lg:order-none"
+                className="flex justify-center w-full lg:block order-first lg:order-none mb-2 sm:mb-0"
               >
-                <div className="relative rounded-[2rem] border border-white/10 bg-luxury-950/45 p-2.5 shadow-2xl shadow-black/80 backdrop-blur-2xl max-w-[220px] sm:max-w-[300px] lg:max-w-[340px] mx-auto w-full group">
+                <div className="relative rounded-[2rem] border border-white/10 bg-luxury-950/45 p-2.5 shadow-2xl shadow-black/80 backdrop-blur-2xl max-w-[190px] sm:max-w-[300px] lg:max-w-[340px] mx-auto w-full group">
                   {/* Dynamic 3D lighting glow */}
                   <div className="absolute -inset-5 rounded-[2.5rem] bg-gradient-to-br from-brand-primary/35 via-purple-600/15 to-brand-secondary/25 blur-3xl opacity-60 group-hover:opacity-90 transition-opacity duration-700 pointer-events-none" />
                   

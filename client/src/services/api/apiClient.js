@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { tokenService } from './tokenService';
 
-const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || '').replace(/\/+$/, '');
+// Keep browser requests same-origin. Next.js rewrites `/api/*` to the PHP API
+// using the server-only BACKEND_URL.
 
 const apiClient = axios.create({
-  baseURL: backendUrl || '/',
+  baseURL: '/',
   timeout: 60000,
   withCredentials: true,
   headers: {
@@ -48,7 +49,10 @@ apiClient.interceptors.response.use(
     if (status === 401 || status === 403) {
       const responseData = error.response?.data;
       
-      let isAuthError = true; // Fail-safe default
+      // Permission-only 403 responses must not sign the administrator out.
+      // A 401 is always an invalid session; a 403 only invalidates the session
+      // when the server explicitly identifies an authentication/scope failure.
+      let isAuthError = status === 401;
       
       if (responseData) {
         let errorMessage = '';
@@ -68,8 +72,8 @@ apiClient.interceptors.response.use(
           }
         }
         
-        if (errorMessage) {
-          isAuthError = /auth|token|expired|session|unauthorized|access denied|suspended/i.test(errorMessage);
+        if (status === 403 && errorMessage) {
+          isAuthError = /not authorized|unauthorized|invalid .*scope|token|expired|session|suspended/i.test(errorMessage);
         }
       }
       
@@ -80,10 +84,14 @@ apiClient.interceptors.response.use(
         
         if (isAdminRoute) {
           tokenService.removeAdminToken();
-          window.dispatchEvent(new Event('admin-session-expired'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('admin-session-expired'));
+          }
         } else {
           tokenService.removeUserToken();
-          window.dispatchEvent(new Event('user-session-expired'));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('user-session-expired'));
+          }
         }
       }
     }

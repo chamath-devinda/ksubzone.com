@@ -298,7 +298,7 @@ class TmdbController {
                 'message' => 'Import completed successfully.',
                 'status' => 'Completed'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             http_response_code(500);
             header('Content-Type: application/json');
             echo json_encode([
@@ -308,84 +308,65 @@ class TmdbController {
     }
 
     private static function findPhpBinary() {
-        // 1. Try PHP_BINARY if it exists and is php or php.exe (not httpd, php-cgi, or php-fpm)
+        $isWindows = substr(php_uname(), 0, 7) === 'Windows';
+        $extension = $isWindows ? '.exe' : '';
         $binary = PHP_BINARY;
-        if (!empty($binary) && (stripos($binary, 'php.exe') !== false || (stripos($binary, 'php') !== false && stripos($binary, 'php-cgi') === false && stripos($binary, 'php-fpm') === false && stripos($binary, 'httpd') === false))) {
-            return $binary;
+        $candidates = [];
+
+        // Hosts with a versioned/custom PHP CLI can provide this explicitly.
+        $configuredBinary = $_ENV['PHP_CLI_BINARY'] ?? getenv('PHP_CLI_BINARY');
+        if (!empty($configuredBinary)) {
+            $candidates[] = $configuredBinary;
         }
 
-        // 2. Try the directory of PHP_BINARY and look for php.exe / php
+        // PHP_BINARY may point at php-fpm/php-cgi under a web request. Accept
+        // it only when its basename is a real CLI executable name.
+        if (!empty($binary) && preg_match('/^php(?:\d+(?:\.\d+)*)?(?:\.exe)?$/i', basename($binary))) {
+            $candidates[] = $binary;
+        }
+
         if (!empty($binary)) {
-            $dir = dirname($binary);
-            $ext = (substr(php_uname(), 0, 7) === "Windows") ? '.exe' : '';
-            
-            // Check direct match
-            $candidate = $dir . DIRECTORY_SEPARATOR . 'php' . $ext;
-            if (file_exists($candidate)) {
-                return $candidate;
-            }
-            
-            // Check sibling bin folder if binary is in sbin (e.g., /usr/sbin/php-fpm -> /usr/bin/php)
-            $parent = dirname($dir);
-            if (!empty($parent)) {
-                $candidate3 = $parent . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'php' . $ext;
-                if (file_exists($candidate3)) {
-                    return $candidate3;
-                }
-                
-                // Check sibling path (e.g. C:\xampp\apache\bin -> C:\xampp\php\php.exe)
-                $grandparent = dirname($parent);
-                if (!empty($grandparent)) {
-                    $candidate2 = $grandparent . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'php' . $ext;
-                    if (file_exists($candidate2)) {
-                        return $candidate2;
-                    }
-                }
-            }
+            $binaryDir = dirname($binary);
+            $parentDir = dirname($binaryDir);
+            $candidates[] = $binaryDir . DIRECTORY_SEPARATOR . 'php' . $extension;
+            $candidates[] = $parentDir . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'php' . $extension;
+            $candidates[] = dirname($parentDir) . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'php' . $extension;
         }
 
-        // 3. Search common installation paths on Windows
-        if (substr(php_uname(), 0, 7) === "Windows") {
-            $commonPaths = [
+        if (defined('PHP_BINDIR')) {
+            $candidates[] = PHP_BINDIR . DIRECTORY_SEPARATOR . 'php' . $extension;
+        }
+
+        if ($isWindows) {
+            $candidates = array_merge($candidates, [
                 'C:\\xampp\\php\\php.exe',
                 'D:\\xampp\\php\\php.exe',
                 'C:\\Program Files\\PHP\\php.exe',
                 'C:\\Program Files (x86)\\PHP\\php.exe',
-            ];
-            foreach ($commonPaths as $p) {
-                if (file_exists($p)) {
-                    return $p;
-                }
-            }
-            
-            // Laragon detection
-            $laragonDir = 'C:\\laragon\\bin\\php';
-            if (is_dir($laragonDir)) {
-                $subdirs = scandir($laragonDir);
-                foreach ($subdirs as $subdir) {
-                    if ($subdir === '.' || $subdir === '..') continue;
-                    $phpPath = $laragonDir . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR . 'php.exe';
-                    if (file_exists($phpPath)) {
-                        return $phpPath;
-                    }
-                }
-            }
+            ]);
 
-            // WampServer detection
-            $wampDir = 'C:\\wamp64\\bin\\php';
-            if (is_dir($wampDir)) {
-                $subdirs = scandir($wampDir);
-                foreach ($subdirs as $subdir) {
+            foreach (['C:\\laragon\\bin\\php', 'C:\\wamp64\\bin\\php'] as $root) {
+                if (!is_dir($root)) continue;
+                foreach (scandir($root) as $subdir) {
                     if ($subdir === '.' || $subdir === '..') continue;
-                    $phpPath = $wampDir . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR . 'php.exe';
-                    if (file_exists($phpPath)) {
-                        return $phpPath;
-                    }
+                    $candidates[] = $root . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR . 'php.exe';
                 }
+            }
+        } else {
+            $candidates = array_merge($candidates, [
+                '/usr/bin/php',
+                '/usr/local/bin/php',
+                '/opt/cpanel/ea-php' . PHP_MAJOR_VERSION . PHP_MINOR_VERSION . '/root/usr/bin/php',
+            ]);
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            if (is_file($candidate) && ($isWindows || is_executable($candidate))) {
+                return $candidate;
             }
         }
 
-        return 'php';
+        return null;
     }
 
     private static function spawnBackgroundImport($params) {
@@ -393,18 +374,42 @@ class TmdbController {
         $args = base64_encode(json_encode($params));
         $phpBin = self::findPhpBinary();
         $logPath = dirname(__FILE__) . '/../import_error.log';
+
+        // PHP-FPM is commonly exposed as PHP_BINARY on shared hosting. If a
+        // CLI binary cannot be resolved, report that to the caller so the
+        // controller can use its synchronous fallback instead of claiming an
+        // import was started when nothing was actually launched.
+        if (empty($phpBin) || !is_file($phpBin) || !is_file($scriptPath)) {
+            error_log('Background import unavailable: PHP CLI or script not found.');
+            return false;
+        }
         
         if (substr(php_uname(), 0, 7) === "Windows") {
             // Windows background execution using popen
             // Note: start /B requires a dummy title if the first argument (command) is quoted.
             $cmd = "start /B \"\" " . escapeshellarg($phpBin) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($args) . " > " . escapeshellarg($logPath) . " 2>&1";
-            pclose(popen($cmd, "r"));
+            $handle = @popen($cmd, "r");
+            if (!$handle) {
+                return false;
+            }
+            $exitCode = pclose($handle);
+            if ($exitCode !== 0) {
+                error_log('Background import command failed with exit code ' . $exitCode);
+                return false;
+            }
         } else {
             // Linux/cPanel background execution with nohup and redirected stdin to prevent termination
             $cmd = "nohup " . escapeshellarg($phpBin) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($args) . " < /dev/null > " . escapeshellarg($logPath) . " 2>&1 &";
-            exec($cmd);
+            $output = [];
+            $exitCode = 0;
+            @exec($cmd, $output, $exitCode);
+            if ($exitCode !== 0) {
+                error_log('Background import command failed with exit code ' . $exitCode);
+                return false;
+            }
         }
         error_log("Spawned background import: " . $cmd);
+        return true;
     }
 
     public static function runBackgroundImport($id, $type, $isHistorical) {
@@ -511,7 +516,7 @@ class TmdbController {
             self::logImport($id, $title, $type, $isHistorical, 'Success');
 
             return $media;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             self::logImport($id, $title, $type, $isHistorical, 'Failed');
             throw $e;
         }
@@ -989,39 +994,60 @@ class TmdbController {
         }
 
         if ($canRunBackground) {
-            self::spawnBackgroundImport([
+            $started = self::spawnBackgroundImport([
                 'action' => 'bulk-import',
                 'ids' => $uniqueIds,
                 'type' => $type,
                 'isHistorical' => $isHistorical
             ]);
 
-            header('Content-Type: application/json');
-            echo json_encode([
-                'message' => 'Bulk import task has been started in the background for ' . count($uniqueIds) . ' titles. Refresh drafts in a few moments.',
-                'status' => 'Importing'
-            ]);
-        } else {
-            // Run synchronously as fallback (limit to 5 to avoid php timeout)
-            $limitedIds = array_slice($uniqueIds, 0, 5);
-            $successCount = 0;
-            $errors = [];
-            foreach ($limitedIds as $titleId) {
-                try {
-                    self::runBackgroundImport($titleId, $type, $isHistorical);
-                    $successCount++;
-                } catch (\Exception $e) {
-                    $errors[] = "ID {$titleId}: " . $e->getMessage();
-                }
+            if ($started) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'message' => 'Bulk import task has been started in the background for ' . count($uniqueIds) . ' titles. Refresh drafts in a few moments.',
+                    'status' => 'Importing',
+                    'queuedIds' => $uniqueIds
+                ]);
+                return;
             }
-
-            header('Content-Type: application/json');
-            echo json_encode([
-                'message' => "Bulk import completed. Successfully imported {$successCount} of " . count($limitedIds) . " titles (synchronous fallback).",
-                'errors' => $errors,
-                'status' => 'Completed'
-            ]);
+            // Fall through to the synchronous path when shared hosting has
+            // disabled process spawning or cannot locate the PHP CLI.
         }
+
+        // Run synchronously as fallback (limit to 5 to avoid PHP/proxy timeouts).
+        $limitedIds = array_slice($uniqueIds, 0, 5);
+        $skippedIds = array_slice($uniqueIds, count($limitedIds));
+        $importedIds = [];
+        $failedIds = [];
+        $errors = [];
+        foreach ($limitedIds as $titleId) {
+            try {
+                self::runBackgroundImport($titleId, $type, $isHistorical);
+                $importedIds[] = $titleId;
+            } catch (\Throwable $e) {
+                $failedIds[] = $titleId;
+                $errors[] = "ID {$titleId}: " . $e->getMessage();
+            }
+        }
+
+        $isPartial = !empty($failedIds) || !empty($skippedIds);
+        $message = 'Bulk import fallback imported ' . count($importedIds) . ' of ' . count($limitedIds) . ' processed titles.';
+        if (!empty($failedIds)) {
+            $message .= ' ' . count($failedIds) . ' failed title(s) remain selected for retry.';
+        }
+        if (!empty($skippedIds)) {
+            $message .= ' ' . count($skippedIds) . ' title(s) were not processed to avoid a request timeout; they remain selected for retry.';
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'message' => $message,
+            'errors' => $errors,
+            'status' => $isPartial ? 'Partial' : 'Completed',
+            'importedIds' => $importedIds,
+            'failedIds' => $failedIds,
+            'skippedIds' => $skippedIds
+        ]);
     }
 
     private static function logImport($id, $title, $type, $isHistorical, $status) {
@@ -1034,7 +1060,7 @@ class TmdbController {
                 'isHistorical' => (bool)$isHistorical,
                 'status' => $status
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Silence log errors
         }
     }
@@ -1043,9 +1069,16 @@ class TmdbController {
         header('Content-Type: application/json');
         try {
             $db = Database::getInstance();
-            $history = $db->find('tmdb_imports', [], ['limit' => 20]);
+            $history = $db->find('tmdb_imports', [], [
+                'sort' => ['createdAt' => -1],
+                'limit' => 20
+            ]);
+            foreach ($history as &$entry) {
+                $entry['timestamp'] = $entry['timestamp'] ?? ($entry['createdAt'] ?? null);
+            }
+            unset($entry);
             echo json_encode($history ?: []);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             http_response_code(500);
             echo json_encode(['message' => 'Failed to load import history: ' . $e->getMessage()]);
         }
