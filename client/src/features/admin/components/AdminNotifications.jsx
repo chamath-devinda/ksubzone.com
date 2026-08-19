@@ -65,46 +65,8 @@ export default function AdminNotifications() {
 
     setLoading(true);
     try {
-      const res = await apiClient.get('/api/media/dramas?status=Published&limit=50');
-      const dramas = res.data.dramas || res.data || [];
-      const missing = [];
-      const now = new Date();
-
-      // Check up to 15 dramas (performance)
-      await Promise.all(
-        dramas.slice(0, 15).map(async (drama) => {
-          try {
-            if ((drama.status || 'Published') !== 'Published') return;
-
-            const detail = await apiClient.get(`/api/media/dramas/${drama.slug}`);
-            const episodes = detail.data.episodes || [];
-            const isOngoing = drama.subtitleSummary?.seasonStatus === 'Ongoing';
-
-            episodes.forEach((ep) => {
-              // Skip future episodes that haven't aired yet or episodes without an air date
-              if (!ep.airDate || new Date(ep.airDate) > now) {
-                return;
-              }
-
-              const subCount = ep.subtitleCount ?? ep.subtitles?.length ?? 0;
-              if (subCount === 0) {
-                missing.push({
-                  id: ep._id || `${drama._id}-s${ep.seasonNumber}e${ep.episodeNumber}`,
-                  dramaTitle: drama.title,
-                  dramaSlug: drama.slug,
-                  season: ep.seasonNumber || 1,
-                  episode: ep.episodeNumber || '?',
-                  episodeTitle: ep.episodeTitle || ep.title || '',
-                  poster: drama.poster || null,
-                });
-              }
-            });
-          } catch (_) {}
-        })
-      );
-
-      // Sort: most recent episodes first (higher ep numbers)
-      missing.sort((a, b) => Number(b.episode) - Number(a.episode));
+      const res = await apiClient.get('/api/admin/dramas/missing-subtitles?limit=50');
+      const missing = Array.isArray(res.data?.alerts) ? res.data.alerts : [];
 
       setAlerts(missing);
       setCache(missing);

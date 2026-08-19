@@ -637,6 +637,11 @@ $routes = [
         'Controllers\MovieController::deleteMovie'
     ]],
     // Admin Drama CRUD
+    ['GET', '/api/admin/dramas/missing-subtitles', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
+        'Controllers\DramaController::getMissingSubtitleAlerts'
+    ]],
     ['GET', '/api/admin/dramas', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },

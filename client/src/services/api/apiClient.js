@@ -43,8 +43,28 @@ apiClient.interceptors.request.use(
 // Response Interceptor: Global error logging and token invalidation
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response ? error.response.status : null;
+    const requestConfig = error.config;
+
+    // Hosting/CDN layers can briefly answer read requests with 429. Retry GET
+    // requests with bounded backoff so management tables do not fall into an
+    // empty state during a short traffic burst.
+    if (status === 429 && requestConfig?.method?.toLowerCase() === 'get') {
+      const retryCount = requestConfig.__rateLimitRetryCount || 0;
+      if (retryCount < 3) {
+        requestConfig.__rateLimitRetryCount = retryCount + 1;
+        const retryAfterHeader = error.response?.headers?.['retry-after'];
+        const retryAfterSeconds = Number(retryAfterHeader);
+        const exponentialDelay = 1000 * (2 ** retryCount);
+        const retryDelay = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? Math.min(retryAfterSeconds * 1000, 10000)
+          : exponentialDelay;
+
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return apiClient(requestConfig);
+      }
+    }
     
     if (status === 401 || status === 403) {
       const responseData = error.response?.data;

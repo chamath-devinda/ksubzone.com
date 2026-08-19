@@ -7,6 +7,101 @@ use Utils\Slug;
 class DramaController {
 
     /**
+     * Return aired episodes that still have no approved subtitle. This keeps
+     * the admin notification bell to one request instead of a burst of detail
+     * requests for every drama.
+     */
+    public static function getMissingSubtitleAlerts() {
+        $limit = max(1, min((int)($_GET['limit'] ?? 50), 100));
+        $cacheKey = 'admin_missing_subtitle_alerts_v1_' . $limit;
+        $cached = \Utils\Cache::get($cacheKey);
+        if ($cached !== false) {
+            header('Content-Type: application/json');
+            echo json_encode($cached);
+            return;
+        }
+
+        $db = Database::getInstance();
+        $dramas = $db->find('dramas', ['status' => 'Published'], [
+            'sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1],
+            'limit' => $limit
+        ]);
+
+        if (empty($dramas)) {
+            header('Content-Type: application/json');
+            echo json_encode(['alerts' => []]);
+            return;
+        }
+
+        $dramaIds = array_map(function($drama) { return $drama['_id']; }, $dramas);
+        $dramaMap = [];
+        foreach ($dramas as $drama) {
+            $dramaMap[(string)$drama['_id']] = $drama;
+        }
+
+        $seasons = $db->find('seasons', ['dramaId' => ['$in' => $dramaIds]]);
+        $seasonNumberById = [];
+        foreach ($seasons as $season) {
+            $seasonNumberById[(string)$season['_id']] = (int)($season['seasonNumber'] ?? 1);
+        }
+
+        $episodes = $db->find('episodes', ['dramaId' => ['$in' => $dramaIds]]);
+        $airedEpisodes = [];
+        $airedEpisodeIds = [];
+        $now = time();
+        foreach ($episodes as $episode) {
+            $airDate = $episode['airDate'] ?? null;
+            $airTimestamp = $airDate ? strtotime($airDate) : false;
+            if ($airTimestamp === false || $airTimestamp > $now) continue;
+
+            $airedEpisodes[] = $episode;
+            $airedEpisodeIds[] = $episode['_id'];
+        }
+
+        $subtitledEpisodeIds = [];
+        if (!empty($airedEpisodeIds)) {
+            $subtitles = $db->find('subtitles', [
+                'mediaId' => ['$in' => $airedEpisodeIds],
+                'approvalStatus' => 'Approved'
+            ]);
+            foreach ($subtitles as $subtitle) {
+                $subtitledEpisodeIds[(string)$subtitle['mediaId']] = true;
+            }
+        }
+
+        $alerts = [];
+        foreach ($airedEpisodes as $episode) {
+            if (isset($subtitledEpisodeIds[(string)$episode['_id']])) continue;
+
+            $drama = $dramaMap[(string)($episode['dramaId'] ?? '')] ?? null;
+            if (!$drama) continue;
+
+            $alerts[] = [
+                'id' => $episode['_id'],
+                'dramaTitle' => $drama['title'] ?? 'Untitled Drama',
+                'dramaSlug' => $drama['slug'] ?? '',
+                'season' => $seasonNumberById[(string)($episode['seasonId'] ?? '')] ?? (int)($episode['seasonNumber'] ?? 1),
+                'episode' => (int)($episode['episodeNumber'] ?? 0),
+                'episodeTitle' => $episode['episodeTitle'] ?? '',
+                'poster' => $drama['poster'] ?? null,
+                'airDate' => $episode['airDate'] ?? null
+            ];
+        }
+
+        usort($alerts, function($a, $b) {
+            $airDateDiff = (strtotime($b['airDate'] ?? '') ?: 0) <=> (strtotime($a['airDate'] ?? '') ?: 0);
+            if ($airDateDiff !== 0) return $airDateDiff;
+            return ($b['episode'] ?? 0) <=> ($a['episode'] ?? 0);
+        });
+
+        $payload = ['alerts' => array_slice($alerts, 0, 100)];
+        \Utils\Cache::set($cacheKey, $payload, 120);
+
+        header('Content-Type: application/json');
+        echo json_encode($payload);
+    }
+
+    /**
      * Admin-only: fetch all dramas (all statuses) without caching.
      * Used by the admin DramaManager panel.
      */

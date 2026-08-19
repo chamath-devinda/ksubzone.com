@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -18,6 +18,15 @@ export default function AdminSidebar() {
   const { content } = useSiteContent();
   const brand = content?.brand || {};
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const syncViewport = () => setIsDesktop(mediaQuery.matches);
+    syncViewport();
+    mediaQuery.addEventListener('change', syncViewport);
+    return () => mediaQuery.removeEventListener('change', syncViewport);
+  }, []);
 
   const links = [
     { to: '/management/dashboard', label: 'Dashboard Metrics', icon: TrendingUp, color: 'text-brand-primary' },
@@ -55,7 +64,7 @@ export default function AdminSidebar() {
           </span>
         </Link>
         <div className="flex items-center gap-2">
-          <AdminNotifications />
+          {isDesktop === false && <AdminNotifications />}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-1 rounded-md text-slate-400 hover:text-white transition"
@@ -107,7 +116,7 @@ export default function AdminSidebar() {
             </Link>
             {/* Notification Bell — desktop */}
             <div className="hidden lg:block flex-shrink-0">
-              <AdminNotifications />
+              {isDesktop === true && <AdminNotifications />}
             </div>
           </div>
           <div className="pl-1">

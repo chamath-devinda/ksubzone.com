@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
@@ -87,18 +87,38 @@ export default function DramaManager() {
   const [epRuntime, setEpRuntime] = useState('60');
   const [videoUrl, setVideoUrl] = useState('https://www.w3schools.com/html/mov_bbb.mp4');
   const [savingEpisode, setSavingEpisode] = useState(false);
+  const retryTimerRef = useRef(null);
+  const activeStatusRef = useRef('All');
 
   const CACHE_KEY = 'admin_dramas_cache';
 
   const fetchDramas = async (selectedStatus = filterStatus, silent = false) => {
     if (!silent) setLoading(true);
+    let retryScheduled = false;
     try {
       const res = await apiClient.get(`/api/admin/dramas?status=${selectedStatus}&limit=200`);
       const list = res.data.dramas || res.data || [];
       const fetched = Array.isArray(list) ? list : [];
+      if (activeStatusRef.current !== selectedStatus) return;
       setDramas(fetched);
       try { sessionStorage.setItem(CACHE_KEY + '_' + selectedStatus, JSON.stringify(fetched)); } catch(_) {}
     } catch (err) {
+      const responseStatus = err.status || err.response?.status || null;
+      const retryable = responseStatus === 429 || responseStatus === null || responseStatus >= 500;
+      if (retryable && activeStatusRef.current === selectedStatus) {
+        const retryAfter = Number(err.response?.headers?.['retry-after']);
+        const retryDelay = Number.isFinite(retryAfter) && retryAfter > 0
+          ? Math.min(retryAfter * 1000, 30000)
+          : 5000;
+
+        retryScheduled = true;
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = setTimeout(() => {
+          fetchDramas(selectedStatus, silent);
+        }, retryDelay);
+        return;
+      }
+
       const message = err.status === 401
         ? 'Admin session expired. Please sign in again.'
         : err.status === 403
@@ -106,11 +126,13 @@ export default function DramaManager() {
           : err.response?.data?.message || err.message || 'Failed to fetch dramas catalog.';
       toast.error(message);
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && !retryScheduled && activeStatusRef.current === selectedStatus) setLoading(false);
     }
   };
 
   useEffect(() => {
+    activeStatusRef.current = filterStatus;
+    clearTimeout(retryTimerRef.current);
     try {
       const cached = sessionStorage.getItem(CACHE_KEY + '_' + filterStatus);
       if (cached) {
@@ -126,6 +148,8 @@ export default function DramaManager() {
     fetchDramas(filterStatus);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus]);
+
+  useEffect(() => () => clearTimeout(retryTimerRef.current), []);
 
   const handleOpenExplorer = async (drama) => {
     setExplorerDrama(drama);
