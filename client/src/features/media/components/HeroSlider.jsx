@@ -118,23 +118,32 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 w-full h-full pointer-events-none"
         >
-          <Image
-            src={backdropUrl}
-            alt={current.title || 'Backdrop'}
-            fill
-            priority={currentIndex === 0}
-            sizes="100vw"
-            className="w-full h-full object-cover object-[65%_center] sm:object-center filter brightness-[0.5] sm:brightness-[0.58] contrast-[1.08] saturate-[0.9]"
-            onError={() => {
-              const fallback = imageFallbackFor(current, 'backdrop');
-              if (backdropUrl !== fallback) {
-                setBackdropUrl(fallback);
-              }
-            }}
-          />
+          {/* Load portrait artwork on phones and the wide backdrop from tablet upward. */}
+          <picture className="absolute inset-0 block h-full w-full">
+            <source media="(max-width: 639px)" srcSet={posterUrl} />
+            <img
+              src={backdropUrl}
+              alt=""
+              fetchPriority={currentIndex === 0 ? 'high' : 'auto'}
+              loading={currentIndex === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              className="h-full w-full object-cover object-center filter brightness-[0.64] contrast-[1.06] saturate-[0.88] sm:brightness-[0.58] sm:contrast-[1.08] sm:saturate-[0.9]"
+              onError={() => {
+                const isMobile = window.matchMedia('(max-width: 639px)').matches;
+                const fallbackKind = isMobile ? 'poster' : 'backdrop';
+                const fallback = imageFallbackFor(current, fallbackKind);
+                if (isMobile && posterUrl !== fallback) {
+                  setPosterUrl(fallback);
+                } else if (!isMobile && backdropUrl !== fallback) {
+                  setBackdropUrl(fallback);
+                }
+              }}
+            />
+          </picture>
           {/* Layered cinematic vignettes & light gradients */}
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,#030008_0%,rgba(3,0,8,0.92)_34%,rgba(3,0,8,0.5)_66%,rgba(3,0,8,0.72)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_76%_38%,rgba(139,92,246,0.22),transparent_44%)]" />
+          <div className="absolute inset-0 sm:hidden bg-[linear-gradient(180deg,rgba(3,0,8,0.52)_0%,rgba(3,0,8,0.34)_25%,rgba(3,0,8,0.68)_62%,#030008_100%)]" />
+          <div className="absolute inset-0 hidden sm:block bg-[linear-gradient(90deg,#030008_0%,rgba(3,0,8,0.92)_34%,rgba(3,0,8,0.5)_66%,rgba(3,0,8,0.72)_100%)]" />
+          <div className="absolute inset-0 hidden sm:block bg-[radial-gradient(ellipse_at_76%_38%,rgba(139,92,246,0.22),transparent_44%)]" />
           <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-transparent to-black/45" />
           <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-luxury-950 via-luxury-950/70 to-transparent" />
         </motion.div>
