@@ -7,6 +7,7 @@
     color-scheme: dark;
     --font-inter: 'Inter';
     --font-outfit: 'Outfit';
+    --action-button: #4D2253;
   }
 
   html {
@@ -79,6 +80,31 @@
   border-color: rgba(139, 92, 246, 0.6);
   background: rgba(18, 9, 40, 0.85);
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+/* Primary actions use a dedicated surface color so text, icons, status
+   badges, and decorative brand accents can keep their brighter contrast. */
+:where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'],
+:where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'],
+.action-button-fill {
+  background-color: var(--action-button) !important;
+  background-image: none !important;
+  box-shadow: 0 10px 28px rgba(77, 34, 83, 0.3) !important;
+}
+
+@media (hover: hover) {
+  :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover,
+  :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover,
+  .action-button-fill:hover {
+    background-color: var(--action-button) !important;
+    filter: brightness(1.16);
+  }
+}
+
+:where(button, input[type='submit']):disabled[class~='bg-brand-primary'],
+:where(button, input[type='submit']):disabled[class~='from-brand-primary'] {
+  filter: none;
+  opacity: 0.5;
 }
 
 /* Premium Text Glows */

@@ -229,7 +229,7 @@ export default function GlassCard({ item, type, priority = false }) {
             </div>
 
             {/* Action button */}
-            <div className="mt-1 py-1.5 bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary-hover hover:to-purple-500 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-brand-primary/25 transition-all duration-200">
+            <div className="action-button-fill mt-1 py-1.5 bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary-hover hover:to-purple-500 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-brand-primary/25 transition-all duration-200">
               <Download className="w-3.5 h-3.5 fill-current" />
               <span className="text-[10px] font-black uppercase tracking-wider">Download Subs</span>
             </div>

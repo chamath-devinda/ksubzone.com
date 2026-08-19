@@ -346,7 +346,7 @@ export default function Home({
                     {active && (
                       <motion.div
                         layoutId="activeTabPill"
-                        className="absolute inset-0 bg-gradient-to-r from-brand-primary to-purple-600 rounded-xl shadow-lg shadow-brand-primary/30"
+                        className="action-button-fill absolute inset-0 bg-gradient-to-r from-brand-primary to-purple-600 rounded-xl shadow-lg shadow-brand-primary/30"
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
                     )}
