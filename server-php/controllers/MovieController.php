@@ -5,6 +5,89 @@ use Config\Database;
 use Utils\Slug;
 
 class MovieController {
+    public static function getSearchSuggestions() {
+        $query = trim($_GET['q'] ?? '');
+        $limit = max(1, min((int)($_GET['limit'] ?? 6), 10));
+
+        if (strlen($query) < 2) {
+            header('Content-Type: application/json');
+            echo json_encode(['suggestions' => []]);
+            return;
+        }
+
+        $cacheKey = 'media_search_suggestions_v1_' . md5(strtolower($query) . '_' . $limit);
+        $cached = \Utils\Cache::get($cacheKey);
+        if ($cached !== false) {
+            header('Content-Type: application/json');
+            echo json_encode($cached);
+            return;
+        }
+
+        $db = Database::getInstance();
+        $pattern = '.*' . preg_quote($query, '/') . '.*';
+        $filter = [
+            'status' => ['$in' => ['Published', 'Upcoming']],
+            '$or' => [
+                ['title' => ['$regex' => $pattern, '$options' => 'i']],
+                ['originalTitle' => ['$regex' => $pattern, '$options' => 'i']]
+            ]
+        ];
+        $fetchLimit = min(max($limit, 4), 10);
+        $options = [
+            'sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1],
+            'limit' => $fetchLimit
+        ];
+
+        // Autocomplete only needs the two catalog lookups. It intentionally
+        // skips subtitle summaries, counts, related records, and user data.
+        $movies = $db->find('movies', $filter, $options);
+        $dramas = $db->find('dramas', $filter, $options);
+
+        $toSuggestion = function($item, $type) {
+            return [
+                '_id' => $item['_id'],
+                'title' => $item['title'] ?? '',
+                'originalTitle' => $item['originalTitle'] ?? '',
+                'slug' => $item['slug'] ?? '',
+                'poster' => $item['poster'] ?? '',
+                'images' => $item['images'] ?? [],
+                'releaseDate' => $item['releaseDate'] ?? null,
+                'contentUpdatedAt' => $item['contentUpdatedAt'] ?? $item['createdAt'] ?? null,
+                'type' => $type
+            ];
+        };
+
+        $suggestions = [];
+        foreach ($movies as $movie) $suggestions[] = $toSuggestion($movie, 'movie');
+        foreach ($dramas as $drama) $suggestions[] = $toSuggestion($drama, 'drama');
+
+        $needle = strtolower($query);
+        usort($suggestions, function($a, $b) use ($needle) {
+            $score = function($item) use ($needle) {
+                $title = strtolower($item['title'] ?? '');
+                $originalTitle = strtolower($item['originalTitle'] ?? '');
+                if ($title === $needle) return 0;
+                if (strpos($title, $needle) === 0) return 1;
+                if (strpos($title, $needle) !== false) return 2;
+                if (strpos($originalTitle, $needle) === 0) return 3;
+                return 4;
+            };
+
+            $scoreDiff = $score($a) <=> $score($b);
+            if ($scoreDiff !== 0) return $scoreDiff;
+
+            $aTime = strtotime($a['contentUpdatedAt'] ?? '') ?: 0;
+            $bTime = strtotime($b['contentUpdatedAt'] ?? '') ?: 0;
+            return $bTime <=> $aTime;
+        });
+
+        $payload = ['suggestions' => array_slice($suggestions, 0, $limit)];
+        \Utils\Cache::set($cacheKey, $payload, 600);
+
+        header('Content-Type: application/json');
+        echo json_encode($payload);
+    }
+
     public static function getAllMovies() {
         $page = (int)($_GET['page'] ?? 1);
         $limit = (int)($_GET['limit'] ?? 12);
@@ -625,7 +708,6 @@ class MovieController {
         echo json_encode($recommendations);
     }
 }
-
 
 
 

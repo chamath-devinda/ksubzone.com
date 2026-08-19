@@ -102,16 +102,15 @@ export default function Navbar() {
       abortControllerRef.current = controller;
 
       try {
-        const [resMovies, resDramas] = await Promise.all([
-          apiClient.get(`/api/media/movies?limit=3&search=${encodeURIComponent(query)}`, { signal: controller.signal }),
-          apiClient.get(`/api/media/dramas?limit=3&search=${encodeURIComponent(query)}`, { signal: controller.signal })
-        ]);
+        const response = await apiClient.get('/api/media/search-suggestions', {
+          params: { q: query, limit: 6 },
+          signal: controller.signal
+        });
+        const combined = response.data?.suggestions || [];
         
-        const combined = [
-          ...(resMovies.data?.movies || []).map(m => ({ ...m, type: 'movie' })),
-          ...(resDramas.data?.dramas || []).map(d => ({ ...d, type: 'drama' }))
-        ];
-        
+        if (searchCache.size >= 50) {
+          searchCache.delete(searchCache.keys().next().value);
+        }
         searchCache.set(query, combined);
         setSuggestions(combined);
         setShowSuggestions(true);
@@ -122,7 +121,7 @@ export default function Navbar() {
       } finally {
         setIsSearching(false);
       }
-    }, 150);
+    }, 80);
 
     return () => {
       clearTimeout(delayDebounce);
