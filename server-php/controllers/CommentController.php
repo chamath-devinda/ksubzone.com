@@ -120,9 +120,11 @@ class CommentController {
 
     public static function addComment() {
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
-        $targetId = $body['targetId'] ?? '';
-        $targetType = $body['targetType'] ?? '';
-        $content = $body['content'] ?? '';
+        $targetId = trim((string)($body['targetId'] ?? ''));
+        $targetType = ucfirst(strtolower(trim((string)($body['targetType'] ?? ''))));
+        $content = trim(strip_tags((string)($body['content'] ?? '')));
+        $guestName = preg_replace('/\s+/u', ' ', trim(strip_tags((string)($body['guestName'] ?? ''))));
+        $user = AuthMiddleware::$currentUser;
 
         if (empty($targetId) || empty($targetType) || empty($content)) {
             http_response_code(400);
@@ -130,13 +132,47 @@ class CommentController {
             return;
         }
 
-        $user = AuthMiddleware::$currentUser;
+        if (!preg_match('/^[a-f0-9]{24}$/i', $targetId)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid comment target']);
+            return;
+        }
+
+        $allowedTargets = ['Movie' => 'movies', 'Drama' => 'dramas', 'Episode' => 'episodes'];
+        if (!isset($allowedTargets[$targetType])) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid comment target type']);
+            return;
+        }
+
+        $contentLength = function_exists('mb_strlen') ? mb_strlen($content, 'UTF-8') : strlen($content);
+        if ($contentLength > 2000) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Comment must be 2000 characters or less']);
+            return;
+        }
+
+        if (!$user) {
+            $guestNameLength = function_exists('mb_strlen') ? mb_strlen($guestName, 'UTF-8') : strlen($guestName);
+            if ($guestNameLength < 2 || $guestNameLength > 50) {
+                http_response_code(400);
+                echo json_encode(['message' => 'Please enter your name (2-50 characters)']);
+                return;
+            }
+        }
+
         $db = Database::getInstance();
+        if (!$db->findOne($allowedTargets[$targetType], ['_id' => $targetId])) {
+            http_response_code(404);
+            echo json_encode(['message' => 'Comment target not found']);
+            return;
+        }
 
         $comment = [
             'targetId' => $targetId,
             'targetType' => $targetType,
-            'user' => $user['_id'],
+            'user' => $user['_id'] ?? null,
+            'guestName' => $user ? null : $guestName,
             'content' => $content,
             'likes' => [],
             'replies' => []
@@ -343,7 +379,8 @@ class CommentController {
         $comments = $db->find('comments', [], ['sort' => ['createdAt' => -1]]);
 
         foreach ($comments as &$c) {
-            $u = $db->findOne('users', ['_id' => $c['user']]);
+            $userId = $c['user'] ?? null;
+            $u = $userId ? $db->findOne('users', ['_id' => $userId]) : null;
             $c['user'] = $u ? [
                 '_id' => $u['_id'],
                 'username' => $u['username'],

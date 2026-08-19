@@ -79,6 +79,41 @@ class AuthMiddleware {
         return $user;
     }
 
+    /**
+     * Populate the current user when a valid user session is available, while
+     * allowing genuinely anonymous requests to continue. A suspended account
+     * cannot bypass its restriction by falling back to guest mode.
+     */
+    public static function optionalUser() {
+        self::$currentUser = null;
+        $token = self::getBearerToken();
+        if (!$token) {
+            return null;
+        }
+
+        $secret = $_ENV['JWT_SECRET'] ?? 'ksubzone_secret_key_2026';
+        $decoded = JWT::verify($token, $secret);
+        if (!$decoded || ($decoded['role'] ?? '') === 'admin' || empty($decoded['id'])) {
+            return null;
+        }
+
+        $db = Database::getInstance();
+        $user = $db->findOne('users', ['_id' => $decoded['id']]);
+        if (!$user) {
+            return null;
+        }
+
+        if (isset($user['status']) && $user['status'] === 'suspended') {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Your account is suspended']);
+            exit;
+        }
+
+        self::$currentUser = $user;
+        return $user;
+    }
+
     public static function protectAdmin() {
         $token = self::getBearerToken();
         if (!$token) {

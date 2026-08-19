@@ -125,16 +125,22 @@ export default function Watch({ initialDramaData }) {
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!commentMessage.trim()) return;
+    const trimmedName = commentName.trim();
+    const trimmedMessage = commentMessage.trim();
+    if (!trimmedMessage) return;
+    if (!user && !admin && (trimmedName.length < 2 || trimmedName.length > 50)) {
+      setCommentStatus({ loading: false, success: false, error: 'Please enter your name (2-50 characters).' });
+      return;
+    }
 
     setCommentStatus({ loading: true, success: false, error: '' });
     try {
-      const authorName = (user?.username || admin?.username || commentName.trim()) || 'K-Drama Fan';
+      const authorName = user?.username || admin?.username || trimmedName;
       await apiClient.post('/api/media/comments', {
         targetId: targetCommentId,
-        content: commentMessage.trim(),
-        guestName: authorName,
-        rating: 5
+        targetType: 'Episode',
+        content: trimmedMessage,
+        guestName: authorName
       });
       setCommentMessage('');
       setCommentStatus({ loading: false, success: true, error: '' });
@@ -142,7 +148,7 @@ export default function Watch({ initialDramaData }) {
       setTimeout(() => setCommentStatus(prev => ({ ...prev, success: false })), 4000);
     } catch (err) {
       console.error('Comment error:', err);
-      setCommentStatus({ loading: false, success: false, error: 'Could not post comment. Please try again.' });
+      setCommentStatus({ loading: false, success: false, error: err.response?.data?.message || err.message || 'Could not post comment. Please try again.' });
     }
   };
 
@@ -366,6 +372,10 @@ export default function Watch({ initialDramaData }) {
             {!user && !admin && (
               <input
                 type="text"
+                required
+                minLength={2}
+                maxLength={50}
+                autoComplete="name"
                 placeholder="Your Name (e.g. Kasun Fernando)"
                 value={commentName}
                 onChange={(e) => setCommentName(e.target.value)}
@@ -374,6 +384,7 @@ export default function Watch({ initialDramaData }) {
             )}
             <textarea
               rows={3}
+              maxLength={2000}
               placeholder="Write your message or feedback about this Sinhala subtitle..."
               value={commentMessage}
               onChange={(e) => setCommentMessage(e.target.value)}
@@ -383,7 +394,7 @@ export default function Watch({ initialDramaData }) {
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <button
                 type="submit"
-                disabled={commentStatus.loading}
+                disabled={commentStatus.loading || (!user && !admin && commentName.trim().length < 2)}
                 className="h-11 px-6 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 hover:from-purple-600 hover:to-brand-primary disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-brand-primary/25"
               >
                 <Send className="w-3.5 h-3.5" />

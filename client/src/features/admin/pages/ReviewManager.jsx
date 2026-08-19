@@ -174,7 +174,7 @@ export default function ReviewManager() {
                       )}
 
                       <div className="text-xs text-slate-500">
-                        Author: <b className="text-slate-400">{comm.user?.username || 'Unknown'}</b> ({comm.user?.email || 'N/A'}) on {new Date(comm.createdAt).toLocaleString()}
+                        Author: <b className="text-slate-400">{comm.user?.username || comm.guestName || 'Guest'}</b> ({comm.user?.email || 'Guest comment'}) on {new Date(comm.createdAt).toLocaleString()}
                       </div>
                     </div>
                     <button

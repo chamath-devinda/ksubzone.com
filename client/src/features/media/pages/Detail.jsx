@@ -22,6 +22,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
   
   const [selectedSeason, setSelectedSeason] = useState(1);
 
+  const [commentName, setCommentName] = useState('');
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
   const [replyText, setReplyText] = useState({});
@@ -251,6 +252,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     },
     onSuccess: () => {
       setCommentText('');
+      setCommentError('');
       refetchComments();
     },
     onError: (err) => {
@@ -327,18 +329,23 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
   const handleSubmitComment = (e) => {
     e.preventDefault();
-    if (!user) {
-      router.push('/auth');
+    const trimmedName = commentName.trim();
+    const trimmedComment = commentText.trim();
+
+    if (!user && (trimmedName.length < 2 || trimmedName.length > 50)) {
+      setCommentError('Please enter your name (2-50 characters)');
       return;
     }
-    if (!commentText.trim()) {
+    if (!trimmedComment) {
       setCommentError('Comment content is required');
       return;
     }
+    setCommentError('');
     submitCommentMutation.mutate({
       targetId: media._id,
       targetType: type,
-      content: commentText
+      content: trimmedComment,
+      guestName: user ? undefined : trimmedName
     });
   };
 
@@ -981,10 +988,24 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   </div>
                 )}
 
+                {!user && (
+                  <input
+                    type="text"
+                    required
+                    minLength={2}
+                    maxLength={50}
+                    autoComplete="name"
+                    placeholder="Your name"
+                    value={commentName}
+                    onChange={(e) => setCommentName(e.target.value)}
+                    className="w-full h-10 px-3 rounded-2xl bg-luxury-800 border border-white/5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-primary"
+                  />
+                )}
+
                 <textarea
                   required
-                  placeholder={user ? "Join the discussion..." : "Please log in to post a comment."}
-                  disabled={!user}
+                  maxLength={2000}
+                  placeholder="Join the discussion..."
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   rows={3}
@@ -993,10 +1014,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
                 <button
                   type="submit"
-                  disabled={!user || submitCommentMutation.isPending}
+                  disabled={submitCommentMutation.isPending}
                   className="h-9 px-4 self-end bg-brand-primary hover:bg-brand-primary/80 disabled:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center justify-center transition"
                 >
-                  Post Comment
+                  {submitCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
                 </button>
               </form>
 
@@ -1010,10 +1031,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-xs font-black uppercase text-brand-primary">
-                            {comment.user?.username ? comment.user.username.slice(0, 2) : 'U'}
+                            {(comment.user?.username || comment.guestName || 'Guest').slice(0, 2)}
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white" itemProp="author" itemScope itemType="https://schema.org/Person"><span itemProp="name">{comment.user?.username || 'User'}</span></p>
+                            <p className="text-xs font-bold text-white" itemProp="author" itemScope itemType="https://schema.org/Person"><span itemProp="name">{comment.user?.username || comment.guestName || 'Guest'}</span></p>
                             <p className="text-[9px] text-slate-500 mt-0.5">{new Date(comment.createdAt).toLocaleDateString()}</p>
                             <meta itemProp="datePublished" content={comment.createdAt} />
                           </div>

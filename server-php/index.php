@@ -548,7 +548,7 @@ $routes = [
     ['POST', '/api/media/reviews', ['Middleware\AuthMiddleware::protectUser', function() { \Middleware\RateLimitMiddleware::limit('reviews', 5, 60); }, 'Controllers\CommentController::addReview']],
     ['GET', '/api/media/([a-f0-9]+)/reviews', 'Controllers\CommentController::getReviewsForMedia'],
     ['POST', '/api/media/reviews/([a-f0-9]+)/like', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::likeReview']],
-    ['POST', '/api/media/comments', ['Middleware\AuthMiddleware::protectUser', function() { \Middleware\RateLimitMiddleware::limit('comments', 10, 60); }, 'Controllers\CommentController::addComment']],
+    ['POST', '/api/media/comments', ['Middleware\AuthMiddleware::optionalUser', function() { \Middleware\RateLimitMiddleware::limit('comments', 10, 60); }, 'Controllers\CommentController::addComment']],
     ['GET', '/api/media/comments/target/([a-f0-9]+)', 'Controllers\CommentController::getCommentsForTarget'],
     ['POST', '/api/media/comments/([a-f0-9]+)/reply', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::addReply']],
     ['POST', '/api/media/comments/([a-f0-9]+)/like', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::likeComment']],
