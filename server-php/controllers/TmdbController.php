@@ -526,6 +526,7 @@ class TmdbController {
 
     private static function processMovieData($data, $isHistorical = false) {
         $db = Database::getInstance();
+        $contentUpdatedAt = gmdate(DATE_ATOM);
 
         // Save genres
         $genresList = [];
@@ -608,7 +609,8 @@ class TmdbController {
             'cast' => $cast,
             'tmdbId' => $data['id'],
             'status' => 'Draft',
-            'isHistorical' => $isHistorical
+            'isHistorical' => $isHistorical,
+            'contentUpdatedAt' => $contentUpdatedAt
         ];
 
         // AI SEO content
@@ -634,6 +636,7 @@ class TmdbController {
 
     private static function processDramaData($data, $isHistorical = false) {
         $db = Database::getInstance();
+        $contentUpdatedAt = gmdate(DATE_ATOM);
 
         // Save genres
         $genresList = [];
@@ -716,7 +719,8 @@ class TmdbController {
             'cast' => $cast,
             'tmdbId' => $data['id'],
             'status' => 'Draft',
-            'isHistorical' => $isHistorical
+            'isHistorical' => $isHistorical,
+            'contentUpdatedAt' => $contentUpdatedAt
         ];
 
         // AI SEO Content

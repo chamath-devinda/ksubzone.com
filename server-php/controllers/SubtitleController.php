@@ -124,7 +124,7 @@ class SubtitleController {
         if ($approvalStatus === 'Approved') {
             \Utils\Cache::flush();
             \Utils\Revalidate::path('/');
-            self::revalidateMediaForSubtitle($mediaId, $mediaType);
+            self::revalidateMediaForSubtitle($mediaId, $mediaType, true);
         }
 
         http_response_code(201);
@@ -460,7 +460,7 @@ class SubtitleController {
         if ($status === 'Approved') {
             \Utils\Cache::flush();
             \Utils\Revalidate::path('/');
-            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType']);
+            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
         }
 
         // Notify uploader
@@ -559,18 +559,19 @@ class SubtitleController {
     /**
      * Helper to lookup media details and revalidate corresponding detail page.
      */
-    private static function revalidateMediaForSubtitle($mediaId, $mediaType) {
+    private static function revalidateMediaForSubtitle($mediaId, $mediaType, $recordActivity = false) {
         try {
             $db = Database::getInstance();
             $mediaTypeClean = strtolower($mediaType);
-            $now = date('Y-m-d H:i:s');
+            $contentUpdatedAt = gmdate(DATE_ATOM);
             
             \Utils\Cache::flush();
             if ($mediaTypeClean === 'episode') {
                 $episode = $db->findOne('episodes', ['_id' => $mediaId]);
                 if ($episode) {
-                    // Bump parent drama updatedAt to push to newly updated list
-                    $db->updateOne('dramas', ['_id' => $episode['dramaId']], ['updatedAt' => $now]);
+                    if ($recordActivity) {
+                        $db->updateOne('dramas', ['_id' => $episode['dramaId']], ['contentUpdatedAt' => $contentUpdatedAt]);
+                    }
                     
                     $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
                     if ($drama && !empty($drama['slug'])) {
@@ -579,12 +580,18 @@ class SubtitleController {
                 }
             } elseif ($mediaTypeClean === 'movie') {
                 $movie = $db->findOne('movies', ['_id' => $mediaId]);
-                if ($movie && !empty($movie['slug'])) {
-                    \Utils\Revalidate::media('movie', $movie['slug']);
+                if ($movie) {
+                    if ($recordActivity) {
+                        $db->updateOne('movies', ['_id' => $mediaId], ['contentUpdatedAt' => $contentUpdatedAt]);
+                    }
+                    if (!empty($movie['slug'])) {
+                        \Utils\Revalidate::media('movie', $movie['slug']);
+                    }
                 }
             } else { // 'drama' or fallback
-                // Bump drama updatedAt to push to newly updated list
-                $db->updateOne('dramas', ['_id' => $mediaId], ['updatedAt' => $now]);
+                if ($recordActivity) {
+                    $db->updateOne('dramas', ['_id' => $mediaId], ['contentUpdatedAt' => $contentUpdatedAt]);
+                }
                 
                 $drama = $db->findOne('dramas', ['_id' => $mediaId]);
                 if ($drama && !empty($drama['slug'])) {

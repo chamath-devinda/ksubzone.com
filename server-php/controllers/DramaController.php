@@ -110,11 +110,11 @@ class DramaController {
             $filter['imdbRating'] = ['$gte' => (float)$rating];
         }
 
-        $sortOptions = ['updatedAt' => -1];
+        $sortOptions = ['contentUpdatedAt' => -1, 'createdAt' => -1];
         if ($sort === 'oldest') {
             $sortOptions = ['releaseDate' => 1];
         } elseif ($sort === 'newest') {
-            $sortOptions = ['updatedAt' => -1];
+            $sortOptions = ['contentUpdatedAt' => -1, 'createdAt' => -1];
         } elseif ($sort === 'rating') {
             $sortOptions = ['imdbRating' => -1, 'tmdbRating' => -1];
         } elseif ($sort === 'popular' || $sort === 'views') {
@@ -222,6 +222,14 @@ class DramaController {
             'mediaId' => ['$in' => $allIds],
             'approvalStatus' => 'Approved'
         ]);
+
+        $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['createdAt'] ?? null;
+        foreach ($allSubtitles as $sub) {
+            $subtitleCreatedAt = $sub['createdAt'] ?? null;
+            if ($subtitleCreatedAt && (!$drama['contentUpdatedAt'] || strtotime($subtitleCreatedAt) > strtotime($drama['contentUpdatedAt']))) {
+                $drama['contentUpdatedAt'] = $subtitleCreatedAt;
+            }
+        }
 
         // Batch populate uploader for all subtitles
         $uploaderIds = [];
@@ -345,6 +353,7 @@ class DramaController {
         $data['slug'] = Slug::createUniqueSlug(function($candidate) use ($db) {
             return $db->findOne('dramas', ['slug' => $candidate]);
         }, $data['title']);
+        $data['contentUpdatedAt'] = gmdate(DATE_ATOM);
 
         // Generate AI SEO package
         $seoContent = AiSeoController::generateSeoForTitle($data['title'], $data['description'] ?? '', 'Drama', [
@@ -940,6 +949,7 @@ class DramaController {
         // 3. For each drama, compute the summary using the pre-fetched data
         foreach ($dramas as &$drama) {
             $dId = $drama['_id'];
+            $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['createdAt'] ?? null;
             $drama['isNew'] = in_array((string)$dId, $latestIds);
             
             $dramaEps = $episodesByDrama[$dId] ?? [];
@@ -957,6 +967,13 @@ class DramaController {
             
             $dramaSubs = array_merge($titleSubbed, $epSubbed);
             $totalSubtitles = count($dramaSubs);
+
+            foreach ($dramaSubs as $sub) {
+                $subtitleCreatedAt = $sub['createdAt'] ?? null;
+                if ($subtitleCreatedAt && (!$drama['contentUpdatedAt'] || strtotime($subtitleCreatedAt) > strtotime($drama['contentUpdatedAt']))) {
+                    $drama['contentUpdatedAt'] = $subtitleCreatedAt;
+                }
+            }
             
             if ($totalSubtitles === 0) {
                 $drama['subtitleSummary'] = [

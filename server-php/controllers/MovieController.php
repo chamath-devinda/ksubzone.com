@@ -70,11 +70,11 @@ class MovieController {
             $filter['imdbRating'] = ['$gte' => (float)$rating];
         }
 
-        $sortOptions = ['createdAt' => -1];
+        $sortOptions = ['contentUpdatedAt' => -1, 'createdAt' => -1];
         if ($sort === 'oldest') {
             $sortOptions = ['releaseDate' => 1];
         } elseif ($sort === 'newest') {
-            $sortOptions = ['createdAt' => -1];
+            $sortOptions = ['contentUpdatedAt' => -1, 'createdAt' => -1];
         } elseif ($sort === 'rating') {
             $sortOptions = ['imdbRating' => -1, 'tmdbRating' => -1];
         } elseif ($sort === 'popular' || $sort === 'views') {
@@ -130,11 +130,11 @@ class MovieController {
         $db = Database::getInstance();
         $statusFilter = ['status' => 'Published'];
 
-        // 1. Latest movies (status: Published, sort: createdAt DESC, limit 12)
-        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['createdAt' => -1], 'limit' => 12]);
+        // 1. Latest movies by media/subtitle import activity
+        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 12]);
         
-        // 2. Latest dramas (status: Published, sort: updatedAt DESC, limit 40 to prioritize ongoing and new ones)
-        $latestDramas = $db->find('dramas', $statusFilter, ['sort' => ['updatedAt' => -1], 'limit' => 40]);
+        // 2. Latest dramas by media/subtitle import activity
+        $latestDramas = $db->find('dramas', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 40]);
         
         // 3. Historical movies (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
         $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12]);
@@ -175,17 +175,19 @@ class MovieController {
         foreach ($allDramasArray as $d) {
             $dramaMetadata[$d['_id']] = [
                 'isNew' => $d['isNew'] ?? false,
-                'subtitleSummary' => $d['subtitleSummary']
+                'subtitleSummary' => $d['subtitleSummary'],
+                'contentUpdatedAt' => $d['contentUpdatedAt'] ?? $d['createdAt'] ?? null
             ];
         }
         
         foreach ($latestDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
+            $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
         }
         unset($d);
 
-        // Sort $latestDramas by prioritizing Ongoing and New releases, then by updatedAt DESC
+        // Prioritize ongoing/new titles, then use the explicit import activity clock.
         usort($latestDramas, function($a, $b) {
             $aOngoing = ($a['subtitleSummary']['seasonStatus'] ?? '') === 'Ongoing';
             $bOngoing = ($b['subtitleSummary']['seasonStatus'] ?? '') === 'Ongoing';
@@ -200,8 +202,8 @@ class MovieController {
                 return $bScore <=> $aScore;
             }
             
-            $aTime = isset($a['updatedAt']) ? strtotime($a['updatedAt']) : 0;
-            $bTime = isset($b['updatedAt']) ? strtotime($b['updatedAt']) : 0;
+            $aTime = strtotime($a['contentUpdatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
+            $bTime = strtotime($b['contentUpdatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
             return $bTime <=> $aTime;
         });
 
@@ -210,21 +212,25 @@ class MovieController {
         foreach ($historicalDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
+            $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
         }
         unset($d);
         foreach ($trendingDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
+            $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
         }
         unset($d);
         foreach ($popularDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
+            $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
         }
         unset($d);
         foreach ($upcomingDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
+            $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
         }
         unset($d);
 
@@ -244,7 +250,8 @@ class MovieController {
             $movieMetadata[$m['_id']] = [
                 'isNew' => $m['isNew'],
                 'subtitleCount' => $m['subtitleCount'],
-                'subtitleSummary' => $m['subtitleSummary']
+                'subtitleSummary' => $m['subtitleSummary'],
+                'contentUpdatedAt' => $m['contentUpdatedAt'] ?? $m['createdAt'] ?? null
             ];
         }
         
@@ -252,30 +259,35 @@ class MovieController {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
             $m['subtitleSummary'] = $movieMetadata[$m['_id']]['subtitleSummary'];
+            $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
         foreach ($historicalMovies as &$m) {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
             $m['subtitleSummary'] = $movieMetadata[$m['_id']]['subtitleSummary'];
+            $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
         foreach ($trendingMovies as &$m) {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
             $m['subtitleSummary'] = $movieMetadata[$m['_id']]['subtitleSummary'];
+            $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
         foreach ($popularMovies as &$m) {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
             $m['subtitleSummary'] = $movieMetadata[$m['_id']]['subtitleSummary'];
+            $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
         foreach ($upcomingMovies as &$m) {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
             $m['subtitleSummary'] = $movieMetadata[$m['_id']]['subtitleSummary'];
+            $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
 
@@ -398,6 +410,7 @@ class MovieController {
         $data['slug'] = Slug::createUniqueSlug(function($candidate) use ($db) {
             return $db->findOne('movies', ['slug' => $candidate]);
         }, $data['title']);
+        $data['contentUpdatedAt'] = gmdate(DATE_ATOM);
 
         // Generate AI SEO package
         $seoContent = AiSeoController::generateSeoForTitle($data['title'], $data['description'] ?? '', 'Movie', [
@@ -519,10 +532,19 @@ class MovieController {
         ]);
         
         $subsCountByMediaId = [];
+        $latestSubtitleAtByMediaId = [];
         foreach($subtitles as $sub) {
              $mid = (string)$sub['mediaId'];
              if (!isset($subsCountByMediaId[$mid])) $subsCountByMediaId[$mid] = 0;
              $subsCountByMediaId[$mid]++;
+
+             $subtitleCreatedAt = $sub['createdAt'] ?? null;
+             if ($subtitleCreatedAt) {
+                 $currentLatest = $latestSubtitleAtByMediaId[$mid] ?? null;
+                 if (!$currentLatest || strtotime($subtitleCreatedAt) > strtotime($currentLatest)) {
+                     $latestSubtitleAtByMediaId[$mid] = $subtitleCreatedAt;
+                 }
+             }
         }
         
         // Find latest 5 published movies
@@ -531,6 +553,12 @@ class MovieController {
         
         foreach ($movies as &$m) {
             $mid = (string)$m['_id'];
+            $mediaImportedAt = $m['contentUpdatedAt'] ?? $m['createdAt'] ?? null;
+            $latestSubtitleAt = $latestSubtitleAtByMediaId[$mid] ?? null;
+            if ($latestSubtitleAt && (!$mediaImportedAt || strtotime($latestSubtitleAt) > strtotime($mediaImportedAt))) {
+                $mediaImportedAt = $latestSubtitleAt;
+            }
+            $m['contentUpdatedAt'] = $mediaImportedAt;
             $m['isNew'] = in_array($mid, $latestIds);
             $m['subtitleCount'] = $subsCountByMediaId[$mid] ?? 0;
             $m['subtitleSummary'] = [
@@ -597,11 +625,6 @@ class MovieController {
         echo json_encode($recommendations);
     }
 }
-
-
-
-
-
 
 
 

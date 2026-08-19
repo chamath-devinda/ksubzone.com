@@ -15,10 +15,9 @@ export default function GlassCard({ item, type, priority = false }) {
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
   const posterImage = getMediaImage(item, 'card');
-  // Show the last catalog change, not only the original upload date. The
-  // admin editor/subtitle uploader updates `updatedAt`, so an edited title
-  // should immediately stop showing a stale "1mo ago" badge.
-  const timeAgo = formatTimeAgo(item.updatedAt || item.createdAt);
+  // This activity clock only moves when the title or one of its subtitles is
+  // imported. Generic record updates (views, admin edits, etc.) must not affect it.
+  const timeAgo = formatTimeAgo(item.contentUpdatedAt || item.createdAt);
   const [imgSrc, setImgSrc] = useState(posterImage);
   const cardRef = useRef(null);
   const router = useRouter();
@@ -166,7 +165,7 @@ export default function GlassCard({ item, type, priority = false }) {
           {timeAgo && (
             <div className="absolute bottom-3 left-3 z-20 transition-opacity duration-200 group-hover:opacity-0">
               <span
-                title="Added to KSubZone"
+                title="Latest KSubZone import"
                 suppressHydrationWarning
                 className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[9px] font-black tracking-tight text-slate-950 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
               >
