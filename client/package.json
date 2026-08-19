@@ -16,6 +16,7 @@
     "@tsparticles/engine": "^4.1.2",
     "@tsparticles/react": "^4.1.2",
     "@tsparticles/slim": "^4.1.2",
+    "@vercel/analytics": "^2.0.1",
     "axios": "^1.6.8",
     "canvas-confetti": "^1.9.3",
     "framer-motion": "^11.0.24",

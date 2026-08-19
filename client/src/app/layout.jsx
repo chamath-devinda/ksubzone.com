@@ -13,6 +13,7 @@ import '@fontsource/outfit/latin-800.css';
 import Providers from './Providers';
 import dynamic from 'next/dynamic';
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/next';
 import '@/index.css';
 
 const ParticleBackground = dynamic(() => import('@/components/layout/ParticleBackground'), { ssr: false });
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }) {
             </div>
           </div>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
