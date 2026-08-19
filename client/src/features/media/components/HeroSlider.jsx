@@ -44,7 +44,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
   if (loading || items.length === 0) {
     return (
-      <section className="relative w-full min-h-[620px] sm:min-h-screen overflow-hidden bg-luxury-950 flex items-center pt-24 lg:pt-32 pb-12 sm:pb-20 -mt-16 sm:-mt-20">
+      <section className="relative w-full min-h-[100svh] sm:min-h-screen overflow-hidden bg-luxury-950 flex items-center pt-24 lg:pt-32 pb-12 sm:pb-20 -mt-16 sm:-mt-20">
         <div className="absolute inset-0 bg-luxury-900/60 animate-pulse" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(139,92,246,0.12),transparent_40%),linear-gradient(90deg,#030008_0%,rgba(3,0,8,0.75)_35%,rgba(3,0,8,0.3)_70%,rgba(3,0,8,0.5)_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/15 to-black/30" />
@@ -107,7 +107,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
   const openDownloads = () => router.push(`/${type}/${currentSlug}?scrollTo=subtitles`);
 
   return (
-    <section className="relative w-full min-h-[620px] sm:min-h-screen overflow-hidden group bg-luxury-950 -mt-16 sm:-mt-20">
+    <section className="relative w-full min-h-[100svh] sm:min-h-screen overflow-hidden group bg-luxury-950 -mt-16 sm:-mt-20">
       {/* Background Cinematic Backdrop */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -127,7 +127,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
               fetchPriority={currentIndex === 0 ? 'high' : 'auto'}
               loading={currentIndex === 0 ? 'eager' : 'lazy'}
               decoding="async"
-              className="h-full w-full object-cover object-center filter brightness-[0.64] contrast-[1.06] saturate-[0.88] sm:brightness-[0.58] sm:contrast-[1.08] sm:saturate-[0.9]"
+              className="h-full w-full object-cover object-center filter brightness-[0.74] contrast-[1.04] saturate-[0.94] sm:brightness-[0.58] sm:contrast-[1.08] sm:saturate-[0.9]"
               onError={() => {
                 const isMobile = window.matchMedia('(max-width: 639px)').matches;
                 const fallbackKind = isMobile ? 'poster' : 'backdrop';
@@ -141,7 +141,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
             />
           </picture>
           {/* Layered cinematic vignettes & light gradients */}
-          <div className="absolute inset-0 sm:hidden bg-[linear-gradient(180deg,rgba(3,0,8,0.52)_0%,rgba(3,0,8,0.34)_25%,rgba(3,0,8,0.68)_62%,#030008_100%)]" />
+          <div className="absolute inset-0 sm:hidden bg-[linear-gradient(180deg,rgba(3,0,8,0.42)_0%,rgba(3,0,8,0.22)_25%,rgba(3,0,8,0.56)_62%,rgba(3,0,8,0.96)_100%)]" />
           <div className="absolute inset-0 hidden sm:block bg-[linear-gradient(90deg,#030008_0%,rgba(3,0,8,0.92)_34%,rgba(3,0,8,0.5)_66%,rgba(3,0,8,0.72)_100%)]" />
           <div className="absolute inset-0 hidden sm:block bg-[radial-gradient(ellipse_at_76%_38%,rgba(139,92,246,0.22),transparent_44%)]" />
           <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-transparent to-black/45" />
@@ -149,7 +149,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 flex min-h-[620px] sm:min-h-screen items-center pt-24 sm:pt-28 lg:pt-36 pb-16 sm:pb-20 lg:pb-24">
+      <div className="relative z-10 flex min-h-[100svh] sm:min-h-screen items-center pt-24 sm:pt-28 lg:pt-36 pb-16 sm:pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_370px] gap-7 sm:gap-10 lg:gap-16 items-center">
             
