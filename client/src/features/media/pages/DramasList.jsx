@@ -20,7 +20,8 @@ export default function DramasList({ initialData }) {
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '' && page === 1) ? initialData : undefined,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0,
+    refetchOnMount: 'always'
   });
 
   const dramasMapped = (data?.dramas || []).map(d => ({ ...d, mediaType: 'drama' }));

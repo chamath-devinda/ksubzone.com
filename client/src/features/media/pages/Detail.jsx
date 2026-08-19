@@ -49,7 +49,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       return res.data;
     },
     initialData,
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 0,
+    refetchOnMount: 'always'
   });
 
   const media = type === 'Drama' ? data?.drama : data?.movie;

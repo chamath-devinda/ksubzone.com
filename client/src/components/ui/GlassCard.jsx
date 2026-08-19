@@ -15,7 +15,10 @@ export default function GlassCard({ item, type, priority = false }) {
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
   const posterImage = getMediaImage(item, 'card');
-  const timeAgo = formatTimeAgo(item.createdAt);
+  // Show the last catalog change, not only the original upload date. The
+  // admin editor/subtitle uploader updates `updatedAt`, so an edited title
+  // should immediately stop showing a stale "1mo ago" badge.
+  const timeAgo = formatTimeAgo(item.updatedAt || item.createdAt);
   const [imgSrc, setImgSrc] = useState(posterImage);
   const cardRef = useRef(null);
   const router = useRouter();

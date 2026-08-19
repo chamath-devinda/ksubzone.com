@@ -409,6 +409,10 @@ class DramaController {
 
 
 
+        // Persist the edit time in the document as well as the database row.
+        // This keeps MongoDB and SQL drivers consistent and lets the frontend
+        // show the current "updated ago" value immediately.
+        $updates['updatedAt'] = date('Y-m-d H:i:s');
         $db->updateOne('dramas', ['_id' => $id], $updates);
         $updatedDrama = $db->findOne('dramas', ['_id' => $id]);
 

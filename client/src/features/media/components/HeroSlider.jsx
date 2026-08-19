@@ -99,7 +99,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
   const genres = current.genres || current.genre || current.keywords || [];
   const primaryGenre = Array.isArray(genres) ? genres[0] : genres;
   const rating = current.imdbRating || current.tmdbRating || 0;
-  const timeAgo = formatTimeAgo(current.createdAt);
+  const timeAgo = formatTimeAgo(current.updatedAt || current.createdAt);
 
   const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % items.length);
   const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
