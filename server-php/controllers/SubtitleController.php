@@ -325,18 +325,72 @@ class SubtitleController {
                 exit;
             }
         } else {
-            // Local file
-            $filePath = dirname(__DIR__) . $fileUrl;
-            if (!file_exists($filePath)) {
-                http_response_code(404);
-                echo json_encode(['message' => 'Subtitle file not found on server']);
-                return;
+            // Local file - test multiple potential paths
+            $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+            $possiblePaths = [
+                dirname(__DIR__) . '/' . ltrim($fileUrl, '/'),
+                dirname(__DIR__) . $fileUrl,
+                dirname(dirname(__DIR__)) . '/' . ltrim($fileUrl, '/'),
+                dirname(dirname(__DIR__)) . $fileUrl,
+                $docRoot . '/' . ltrim($fileUrl, '/'),
+                $docRoot . '/api/' . ltrim($fileUrl, '/'),
+                dirname(__DIR__) . '/uploads/subtitles/' . basename($fileUrl),
+                dirname(dirname(__DIR__)) . '/uploads/subtitles/' . basename($fileUrl),
+                $docRoot . '/uploads/subtitles/' . basename($fileUrl),
+                $docRoot . '/api/uploads/subtitles/' . basename($fileUrl)
+            ];
+
+            $foundPath = null;
+            foreach ($possiblePaths as $testPath) {
+                if (!empty($testPath) && file_exists($testPath) && !is_dir($testPath)) {
+                    $foundPath = $testPath;
+                    break;
+                }
             }
-            $fileContent = @file_get_contents($filePath);
-            if ($fileContent === false) {
-                http_response_code(500);
-                echo json_encode(['message' => 'Failed to read subtitle file']);
-                return;
+
+            if ($foundPath) {
+                $fileContent = @file_get_contents($foundPath);
+                if ($fileContent === false) {
+                    http_response_code(500);
+                    echo json_encode(['message' => 'Failed to read subtitle file']);
+                    return;
+                }
+            } else {
+                // Fallback: Check Supabase storage if configured
+                $supabaseUrl = $_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '';
+                $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
+                $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'ksubzone';
+                $baseFileName = basename($fileUrl);
+
+                if (!empty($supabaseUrl) && !empty($baseFileName)) {
+                    $supabasePublicUrl = rtrim($supabaseUrl, '/') . "/storage/v1/object/public/{$supabaseBucket}/subtitles/{$baseFileName}";
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $supabasePublicUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                    if (!empty($supabaseKey)) {
+                        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                            "Authorization: Bearer {$supabaseKey}",
+                            "apikey: {$supabaseKey}"
+                        ]);
+                    }
+                    $remoteData = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+
+                    if ($httpCode === 200 && $remoteData !== false && strlen($remoteData) > 0) {
+                        $fileContent = $remoteData;
+                        // Auto-heal database record with the working remote URL
+                        $db->updateOne('subtitles', ['_id' => $id], ['fileUrl' => $supabasePublicUrl]);
+                    }
+                }
+
+                if (empty($fileContent)) {
+                    http_response_code(404);
+                    echo json_encode(['message' => 'Subtitle file not found on server']);
+                    return;
+                }
             }
         }
 
@@ -356,6 +410,66 @@ class SubtitleController {
         
         echo $fileContent;
         exit;
+    }
+
+    public static function replaceSubtitleFile($id) {
+        $db = Database::getInstance();
+        $subtitle = $db->findOne('subtitles', ['_id' => $id]);
+        if (!$subtitle) {
+            http_response_code(404);
+            echo json_encode(['message' => 'Subtitle not found']);
+            return;
+        }
+
+        if (!isset($_FILES['subtitle'])) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Subtitle file is required']);
+            return;
+        }
+
+        $file = $_FILES['subtitle'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Error uploading file']);
+            return;
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['srt', 'vtt', 'ass'])) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid subtitle format. Supported formats: SRT, VTT, ASS']);
+            return;
+        }
+
+        // Delete old file if exists
+        if (!empty($subtitle['fileUrl'])) {
+            \Utils\Storage::deleteFile($subtitle['fileUrl']);
+        }
+
+        // Save new file
+        $fileUrl = \Utils\Storage::uploadFile($file, 'subtitles');
+        if (!$fileUrl) {
+            http_response_code(500);
+            echo json_encode(['message' => 'Failed to save new subtitle file']);
+            return;
+        }
+
+        $db->updateOne('subtitles', ['_id' => $id], [
+            'fileUrl' => $fileUrl,
+            'format' => $ext,
+            'updatedAt' => date('Y-m-d H:i:s')
+        ]);
+
+        \Utils\Cache::flush();
+        \Utils\Revalidate::path('/');
+        self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
+
+        $updated = $db->findOne('subtitles', ['_id' => $id]);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'message' => 'Subtitle file replaced successfully',
+            'subtitle' => $updated
+        ]);
     }
 
     public static function rateSubtitle($id) {

@@ -9,7 +9,7 @@ import { useToast } from '@/features/admin/components/Toast';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import {
   Film, Languages, Check, X, Clipboard, Download,
-  Edit2, Trash2, Eye, Sparkles, Wand2, Loader2, AlertCircle
+  Edit2, Trash2, Eye, Sparkles, Wand2, Loader2, AlertCircle, UploadCloud, FileText
 } from 'lucide-react';
 
 export default function SubtitleManager() {
@@ -28,9 +28,11 @@ export default function SubtitleManager() {
   // Tabs
   const [filterTab, setFilterTab] = useState('Pending');
 
-  // View/Edit states
+  // View/Edit/Replace states
   const [selectedSubtitle, setSelectedSubtitle] = useState(null);
-  const [activeModal, setActiveModal] = useState(null); // 'edit', 'view', 'ai_translate'
+  const [activeModal, setActiveModal] = useState(null); // 'edit', 'view', 'ai_translate', 'replace_file'
+  const [replaceFileInput, setReplaceFileInput] = useState(null);
+  const [isReplacing, setIsReplacing] = useState(false);
   const [editForm, setEditForm] = useState({
     language: 'Sinhala',
     version: '1.0',
@@ -52,6 +54,42 @@ export default function SubtitleManager() {
   const [isAiTranslating, setIsAiTranslating] = useState(false);
   const [aiError, setAiError] = useState('');
   const [translationEngine, setTranslationEngine] = useState('gemini');
+
+  const handleOpenReplace = (sub) => {
+    setSelectedSubtitle(sub);
+    setReplaceFileInput(null);
+    setActiveModal('replace_file');
+  };
+
+  const handleReplaceFileSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedSubtitle || !replaceFileInput) {
+      toast.error('Please select a subtitle file (.srt, .vtt, .ass)');
+      return;
+    }
+
+    setIsReplacing(true);
+    const formData = new FormData();
+    formData.append('subtitle', replaceFileInput);
+
+    try {
+      const res = await apiClient.post(`/api/admin/subtitles/${selectedSubtitle._id}/replace-file`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const updatedSub = res.data.subtitle;
+      setSubtitles(prev => prev.map(s => s._id === selectedSubtitle._id ? { ...s, ...updatedSub } : s));
+      toast.success('Subtitle file replaced and updated successfully!');
+      setActiveModal(null);
+      setSelectedSubtitle(null);
+      setReplaceFileInput(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to replace subtitle file.');
+    } finally {
+      setIsReplacing(false);
+    }
+  };
 
   const fetchQueue = async () => {
     setLoading(true);
@@ -354,14 +392,22 @@ export default function SubtitleManager() {
                           className="flex-1 p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
-                          Edit Details
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleOpenReplace(sub)}
+                          className="flex-1 p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                          title="Re-upload or fix broken subtitle file"
+                        >
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          Replace File
                         </button>
                         <button
                           onClick={() => handleDeleteSubtitle(sub._id)}
-                          className="flex-1 p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 rounded-xl text-xs font-bold transition flex items-center justify-center"
+                          title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          Delete
                         </button>
                       </div>
                       
@@ -696,6 +742,90 @@ export default function SubtitleManager() {
             Translate SRT
           </button>
         </div>
+      </ModalDrawer>
+
+      {/* Replace File Modal */}
+      <ModalDrawer
+        isOpen={activeModal === 'replace_file'}
+        onClose={() => { setActiveModal(null); setSelectedSubtitle(null); setReplaceFileInput(null); }}
+        title="Replace / Re-upload Subtitle File"
+        size="md"
+      >
+        {selectedSubtitle && (
+          <form onSubmit={handleReplaceFileSubmit} className="space-y-4">
+            <div className="bg-luxury-950/60 p-4 rounded-2xl border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white uppercase">{selectedSubtitle.language} Subtitle</span>
+                <span className="text-[10px] text-brand-primary font-mono font-bold bg-brand-primary/10 px-2 py-0.5 rounded">
+                  {selectedSubtitle.mediaType} ID: {selectedSubtitle.mediaId}
+                </span>
+              </div>
+              {(selectedSubtitle.seasonNumber || selectedSubtitle.episodeNumber) && (
+                <p className="text-xs text-sky-400 font-bold">
+                  Season {selectedSubtitle.seasonNumber || 1} · Episode {selectedSubtitle.episodeNumber || 1}
+                </p>
+              )}
+              <p className="text-[11px] text-slate-400">
+                Current URL: <span className="font-mono text-slate-300 break-all">{selectedSubtitle.fileUrl || 'None'}</span>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">Select New Subtitle File (.srt, .vtt, .ass)</label>
+              <label className="relative flex items-center gap-3 p-3.5 rounded-2xl border border-dashed border-white/10 hover:border-emerald-500/50 bg-white/[0.02] cursor-pointer transition group">
+                <input
+                  type="file"
+                  accept=".srt,.vtt,.ass"
+                  onChange={(e) => setReplaceFileInput(e.target.files[0] || null)}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition">
+                  {replaceFileInput ? <FileText className="w-5 h-5 text-emerald-400" /> : <UploadCloud className="w-5 h-5 text-slate-400" />}
+                </div>
+                <div className="flex-grow min-w-0">
+                  {replaceFileInput ? (
+                    <>
+                      <p className="text-xs font-bold text-white truncate">{replaceFileInput.name}</p>
+                      <p className="text-[10px] text-emerald-400 mt-0.5 font-semibold">{(replaceFileInput.size / 1024).toFixed(1)} KB — Ready to upload</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs text-slate-300 font-semibold">Click to select new .srt file</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">SRT, VTT, or ASS format</p>
+                    </>
+                  )}
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => { setActiveModal(null); setSelectedSubtitle(null); setReplaceFileInput(null); }}
+                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isReplacing || !replaceFileInput}
+                className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20"
+              >
+                {isReplacing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    <span>Upload &amp; Replace</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </ModalDrawer>
     </div>
   );

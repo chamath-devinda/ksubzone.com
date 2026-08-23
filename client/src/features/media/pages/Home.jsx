@@ -91,7 +91,18 @@ export default function Home({
 
     const withType = (items, type) => (items || []).map(item => ({ ...item, mediaType: type }));
     const latestMovies = withType(homeCatalog.latestMovies, 'movie').slice(0, 10);
-    const latestDramas = withType(homeCatalog.latestDramas, 'drama').slice(0, 10);
+    const latestDramas = withType(homeCatalog.latestDramas, 'drama')
+      .sort((a, b) => {
+        const aOngoing = String(a.subtitleSummary?.seasonStatus || '').toLowerCase() === 'ongoing';
+        const bOngoing = String(b.subtitleSummary?.seasonStatus || '').toLowerCase() === 'ongoing';
+
+        if (aOngoing !== bOngoing) return aOngoing ? -1 : 1;
+
+        const aTime = new Date(a.contentUpdatedAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.contentUpdatedAt || b.createdAt || 0).getTime();
+        return bTime - aTime;
+      })
+      .slice(0, 10);
     
     const historicalTitles = [
       ...withType(homeCatalog.historicalDramas, 'drama'),

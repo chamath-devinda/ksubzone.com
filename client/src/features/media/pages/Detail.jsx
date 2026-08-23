@@ -307,23 +307,48 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     );
   }
 
-  const handleDownloadSubtitle = (subId, fileUrl, customFileName) => {
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadAlert, setDownloadAlert] = useState(null);
+
+  const handleDownloadSubtitle = async (subId, fileUrl, customFileName) => {
+    if (downloadingId) return;
+    setDownloadingId(subId);
+    setDownloadAlert(null);
+
     try {
       const baseUrl = apiClient.defaults.baseURL === '/' ? '' : apiClient.defaults.baseURL;
       const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download?name=${encodeURIComponent(customFileName)}`;
-      window.location.href = downloadUrl;
 
-      // Refresh local subtitle lists after a brief delay to update download counts
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        let errMessage = 'මෙම උපසිරැසි ගොනුව සර්වරයේ සොයාගත නොහැකි විය (Subtitle file not found). කරුණාකර Admin ට දන්වන්න.';
+        try {
+          const errJson = await response.json();
+          if (errJson?.message) errMessage = errJson.message;
+        } catch (_) {}
+        throw new Error(errMessage);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = customFileName || `subtitle-${subId}.srt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
       setTimeout(() => {
         refetchSubtitles?.();
         refetchEpisodeSubtitles?.();
       }, 1500);
     } catch (err) {
-      console.error(err);
-      const absoluteFileUrl = fileUrl.startsWith('/') && apiClient.defaults.baseURL !== '/'
-        ? `${apiClient.defaults.baseURL}${fileUrl}`
-        : fileUrl;
-      window.open(absoluteFileUrl, '_blank');
+      console.error('Download error:', err);
+      setDownloadAlert(err.message || 'උපසිරැසි ගොනුව බාගත කිරීමේදී දෝෂයක් සිදුවිය.');
+      setTimeout(() => setDownloadAlert(null), 6000);
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -900,14 +925,22 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                               : `ලබා දී ඇති උපසිරැසිය 1080p. WEBRip. 2CH. x265. HEVC / HDRip පිටපත් සඳහා ගැලපේ.`}
                           </p>
 
+                          {/* Download Alert if error occurs */}
+                          {downloadAlert && (
+                            <div className="w-full max-w-md p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center justify-center gap-2 text-center animate-shake">
+                              <span>⚠️ {downloadAlert}</span>
+                            </div>
+                          )}
+
                           {/* Big Brand Gradient Download Button */}
                           <button
                             type="button"
+                            disabled={downloadingId === sub._id}
                             onClick={() => handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName)}
-                            className="group relative w-full max-w-md min-h-14 rounded-2xl sm:rounded-full px-4 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
+                            className="group relative w-full max-w-md min-h-14 rounded-2xl sm:rounded-full px-4 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 disabled:opacity-60 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
                           >
-                            <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-                            <span>{sub.language || 'SINHALA'} උපසිරැසිය (DOWNLOAD)</span>
+                            <Download className={`w-5 h-5 ${downloadingId === sub._id ? 'animate-bounce' : 'group-hover:-translate-y-0.5'} transition-transform`} />
+                            <span>{downloadingId === sub._id ? 'බාගත වෙමින් පවතී...' : `${sub.language || 'SINHALA'} උපසිරැසිය (DOWNLOAD)`}</span>
                           </button>
 
                           {/* Download stats & trust badges */}

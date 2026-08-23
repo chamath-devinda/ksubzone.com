@@ -709,6 +709,11 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
         'Controllers\SubtitleController::getModerationQueue'
     ]],
+    ['POST', '/api/admin/subtitles/([a-f0-9]+)/replace-file', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
+        'Controllers\SubtitleController::replaceSubtitleFile'
+    ]],
     ['PUT', '/api/admin/subtitles/([a-f0-9]+)/approve', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },

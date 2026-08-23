@@ -1,14 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Download, Languages, Loader2, AlertCircle, RefreshCw, CheckCircle, Clock } from 'lucide-react';
+import { X, Trash2, Download, Languages, Loader2, AlertCircle, RefreshCw, CheckCircle, Clock, UploadCloud, Check } from 'lucide-react';
 import apiClient from '@/services/api/apiClient';
 
 export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, onDeleteSuccess }) {
   const [subtitles, setSubtitles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [replacingId, setReplacingId] = useState(null);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const fileInputRefs = useRef({});
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -35,6 +38,34 @@ export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, o
       fetchSubtitles();
     }
   }, [isOpen, mediaId, fetchSubtitles]);
+
+  const handleReplaceFile = async (subId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setReplacingId(subId);
+    setError('');
+    setSuccessMsg('');
+
+    const formData = new FormData();
+    formData.append('subtitle', file);
+
+    try {
+      const res = await apiClient.post(`/api/admin/subtitles/${subId}/replace-file`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const updatedSub = res.data.subtitle;
+      setSubtitles(prev => prev.map(s => s._id === subId ? { ...s, ...updatedSub } : s));
+      setSuccessMsg('Subtitle file replaced successfully!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to replace subtitle file.');
+      console.error(err);
+    } finally {
+      setReplacingId(null);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to permanently delete this subtitle? This action cannot be undone.')) {
@@ -98,6 +129,14 @@ export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, o
             </button>
           </div>
         </div>
+
+        {/* Success Alert */}
+        {successMsg && (
+          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/25 rounded-xl text-emerald-400 text-xs flex items-center gap-2 font-semibold">
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -173,7 +212,29 @@ export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, o
                     </div>
                   </div>
 
-                  <div className="flex gap-2 self-end sm:self-auto flex-shrink-0">
+                  <div className="flex gap-2 self-end sm:self-auto flex-shrink-0 items-center">
+                    <input
+                      type="file"
+                      ref={el => fileInputRefs.current[sub._id] = el}
+                      accept=".srt,.vtt,.ass"
+                      onChange={(e) => handleReplaceFile(sub._id, e)}
+                      className="hidden"
+                    />
+                    <button
+                      disabled={replacingId === sub._id}
+                      onClick={() => fileInputRefs.current[sub._id]?.click()}
+                      className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl transition border border-emerald-500/20 flex items-center justify-center gap-1 text-[11px] font-bold"
+                      title="Replace / Re-upload Subtitle File"
+                    >
+                      {replacingId === sub._id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <UploadCloud className="w-4 h-4" />
+                          <span className="hidden sm:inline">Replace File</span>
+                        </>
+                      )}
+                    </button>
                     <a
                       href={sub.fileUrl}
                       target="_blank"

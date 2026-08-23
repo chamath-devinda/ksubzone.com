@@ -203,7 +203,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v3');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v4');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -270,21 +270,17 @@ class MovieController {
         }
         unset($d);
 
-        // Prioritize ongoing/new titles, then use the explicit import activity clock.
+        // Keep ongoing titles first and completed titles second. Inside each
+        // status group, the latest media/subtitle import activity wins. The
+        // visual "New" badge must never override the actual update clock.
         usort($latestDramas, function($a, $b) {
-            $aOngoing = ($a['subtitleSummary']['seasonStatus'] ?? '') === 'Ongoing';
-            $bOngoing = ($b['subtitleSummary']['seasonStatus'] ?? '') === 'Ongoing';
-            
-            $aNew = !empty($a['isNew']);
-            $bNew = !empty($b['isNew']);
-            
-            $aScore = ($aOngoing ? 2 : 0) + ($aNew ? 1 : 0);
-            $bScore = ($bOngoing ? 2 : 0) + ($bNew ? 1 : 0);
-            
-            if ($aScore !== $bScore) {
-                return $bScore <=> $aScore;
+            $aOngoing = strtolower((string)($a['subtitleSummary']['seasonStatus'] ?? '')) === 'ongoing';
+            $bOngoing = strtolower((string)($b['subtitleSummary']['seasonStatus'] ?? '')) === 'ongoing';
+
+            if ($aOngoing !== $bOngoing) {
+                return $aOngoing ? -1 : 1;
             }
-            
+
             $aTime = strtotime($a['contentUpdatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
             $bTime = strtotime($b['contentUpdatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
             return $bTime <=> $aTime;
@@ -388,7 +384,7 @@ class MovieController {
         ];
 
         // Cache for 2 hours (7200 seconds)
-        \Utils\Cache::set('home_catalog_v3', $catalogData, 7200);
+        \Utils\Cache::set('home_catalog_v4', $catalogData, 7200);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);
@@ -708,7 +704,6 @@ class MovieController {
         echo json_encode($recommendations);
     }
 }
-
 
 
 
