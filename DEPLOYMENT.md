@@ -39,7 +39,14 @@ Keep the backend `.env` on the server only. Add:
 NODE_ENV=production
 NEXT_JS_URL=https://ksubzone-com.vercel.app
 REVALIDATION_TOKEN=<the-exact-same-random-secret-used-in-vercel>
+SUPABASE_URL=<your-supabase-project-url>
+SUPABASE_KEY=<your-supabase-service-role-key>
+SUPABASE_BUCKET=Ksubzone
 ```
+
+The bucket name is case-sensitive. Keep `SUPABASE_BUCKET=Ksubzone` exactly as
+shown; a lowercase value points at a different bucket and forces subtitle
+uploads to fall back to the shared-hosting `uploads/` directory.
 
 Replace `NEXT_JS_URL` with the real production URL shown after the first Vercel
 deployment. If more direct browser origins must access PHP, add them as a

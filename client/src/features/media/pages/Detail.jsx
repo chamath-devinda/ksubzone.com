@@ -28,6 +28,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
   const [replyText, setReplyText] = useState({});
   const [activeReplyBox, setActiveReplyBox] = useState(null);
   const [playTrailer, setPlayTrailer] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadAlert, setDownloadAlert] = useState(null);
 
   const [loadRecommendations, setLoadRecommendations] = useState(false);
 
@@ -115,9 +117,11 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       const res = await apiClient.get(`/api/subtitles/media/${media._id}`);
       return res.data;
     },
-    enabled: !topOnly && !!media?._id && !data?.subtitles,
+    enabled: !topOnly && !!media?._id,
     initialData: data?.subtitles || [],
-    staleTime: 1000 * 60 * 2 // 2 minutes
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   const { data: episodeSubtitlesById = {}, isFetching: episodeSubtitlesLoading, refetch: refetchEpisodeSubtitles } = useQuery({
@@ -141,7 +145,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       });
       return grouped;
     },
-    enabled: !topOnly && type === 'Drama' && activeEpisodes.length > 0 && !data?.episodeSubtitles,
+    enabled: !topOnly && type === 'Drama' && activeEpisodes.length > 0,
     initialData: () => {
       if (!data?.episodeSubtitles) return undefined;
       const grouped = {};
@@ -155,7 +159,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       });
       return grouped;
     },
-    staleTime: 1000 * 60 * 2 // 2 minutes
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   // Fetch Comments
@@ -306,9 +312,6 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       </div>
     );
   }
-
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [downloadAlert, setDownloadAlert] = useState(null);
 
   const handleDownloadSubtitle = async (subId, fileUrl, customFileName) => {
     if (downloadingId) return;

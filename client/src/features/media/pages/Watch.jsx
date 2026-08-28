@@ -55,14 +55,26 @@ export default function Watch({ initialDramaData }) {
     ep => getId(ep.seasonId) === getId(activeSeasonDoc?._id) && ep.episodeNumber === episodeNumber
   );
 
+  // The drama detail payload already contains approved episode subtitles.
+  // Use those records for the server render so a temporary client-side API or
+  // hydration delay cannot incorrectly show "Pending Release".
+  const embeddedEpisodeSubtitles = (dramaData?.episodeSubtitles || []).filter(
+    sub => getId(sub?.mediaId) === getId(activeEpisodeDoc?._id)
+  );
+
   // 2. Fetch Approved Subtitles for this episode
-  const { data: subtitles = [], refetch: refetchSubtitles } = useQuery({
+  const { data: subtitles = embeddedEpisodeSubtitles, refetch: refetchSubtitles } = useQuery({
     queryKey: ['episodeSubtitles', activeEpisodeDoc?._id],
     queryFn: async () => {
       const res = await apiClient.get(`/api/subtitles/media/${activeEpisodeDoc._id}`);
       return res.data;
     },
-    enabled: !!activeEpisodeDoc?._id
+    enabled: !!activeEpisodeDoc?._id,
+    initialData: embeddedEpisodeSubtitles,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    retry: 2
   });
 
   // 3. Fetch Comments

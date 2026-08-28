@@ -279,13 +279,6 @@ class SubtitleController {
             return;
         }
 
-        // Increment download count
-        $downloads = ($subtitle['downloads'] ?? 0) + 1;
-        $db->updateOne('subtitles', ['_id' => $id], [
-            'downloads' => $downloads,
-            'lastDownloadedAt' => date('Y-m-d H:i:s')
-        ]);
-
         $fileUrl = $subtitle['fileUrl'] ?? '';
         if (empty($fileUrl)) {
             http_response_code(404);
@@ -359,7 +352,7 @@ class SubtitleController {
                 // Fallback: Check Supabase storage if configured
                 $supabaseUrl = $_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '';
                 $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
-                $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'ksubzone';
+                $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
                 $baseFileName = basename($fileUrl);
 
                 if (!empty($supabaseUrl) && !empty($baseFileName)) {
@@ -394,6 +387,19 @@ class SubtitleController {
             }
         }
 
+        // Count only downloads for which the file was actually resolved. A
+        // missing local/remote file must not inflate the public counter.
+        $downloads = ($subtitle['downloads'] ?? 0) + 1;
+        try {
+            $db->updateOne('subtitles', ['_id' => $id], [
+                'downloads' => $downloads,
+                'lastDownloadedAt' => date('Y-m-d H:i:s')
+            ]);
+        } catch (\Exception $e) {
+            // A transient analytics write failure must never block the file.
+            error_log('Subtitle download count update failed: ' . $e->getMessage());
+        }
+
         // Clean headers to make sure no other output is sent
         if (ob_get_level()) {
             ob_end_clean();
@@ -401,7 +407,12 @@ class SubtitleController {
 
         // Send headers for file download
         header('Content-Description: File Transfer');
-        header('Content-Type: application/octet-stream');
+        $contentTypes = [
+            'srt' => 'application/x-subrip; charset=UTF-8',
+            'vtt' => 'text/vtt; charset=UTF-8',
+            'ass' => 'text/plain; charset=UTF-8'
+        ];
+        header('Content-Type: ' . ($contentTypes[strtolower($ext)] ?? 'application/octet-stream'));
         header('Content-Disposition: attachment; filename="' . $customName . '"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate, post-check=0, pre-check=0');

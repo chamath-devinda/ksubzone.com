@@ -13,7 +13,10 @@ class Storage {
     public static function uploadFile($file, $folder = 'subtitles') {
         $supabaseUrl = $_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '';
         $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
-        $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'ksubzone';
+        // Supabase bucket names are case-sensitive. The production bucket is
+        // `Ksubzone`; keeping the same fallback prevents a missing env value
+        // from silently sending uploads to local shared-hosting storage.
+        $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $fileName = $folder . '-' . time() . '-' . rand(1000, 9999) . '.' . $ext;
@@ -37,31 +40,42 @@ class Storage {
                 $mimeType = 'text/plain'; // standard srt text type
             }
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $uploadUrl);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Authorization: Bearer {$supabaseKey}",
-                "apikey: {$supabaseKey}",
-                "Content-Type: {$mimeType}",
-                "Expect:" // Disable 100-continue for faster uploads
-            ]);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Force IPv4 to prevent IPv6 DNS delays
+            // Retry once for transient shared-hosting/Supabase connection
+            // failures before falling back to local storage.
+            for ($attempt = 1; $attempt <= 2; $attempt++) {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $uploadUrl);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    "Authorization: Bearer {$supabaseKey}",
+                    "apikey: {$supabaseKey}",
+                    "Content-Type: {$mimeType}",
+                    "Expect:" // Disable 100-continue for faster uploads
+                ]);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+                curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Force IPv4 to prevent IPv6 DNS delays
 
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
 
-            if ($httpCode === 200 || $httpCode === 201) {
-                // Return public access URL (requires bucket to be public)
-                return "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$folder}/{$fileName}";
-            } else {
-                error_log("Supabase Storage Upload failed with HTTP code {$httpCode}: " . $response);
+                if ($httpCode === 200 || $httpCode === 201) {
+                    // Return public access URL (requires bucket to be public)
+                    return "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$folder}/{$fileName}";
+                }
+
+                error_log(
+                    "Supabase Storage Upload attempt {$attempt} failed for bucket {$supabaseBucket} " .
+                    "with HTTP code {$httpCode}: " . ($curlError ?: $response)
+                );
+                if ($attempt < 2) {
+                    usleep(200000);
+                }
             }
         }
 
@@ -94,7 +108,7 @@ class Storage {
 
         $supabaseUrl = $_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '';
         $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
-        $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'ksubzone';
+        $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
 
         if (!empty($supabaseUrl) && !empty($supabaseKey) && strpos($fileUrl, $supabaseUrl) === 0) {
             // It's a Supabase URL! Delete from Supabase bucket

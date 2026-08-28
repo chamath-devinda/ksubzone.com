@@ -45,9 +45,9 @@ export default function AdminLogin() {
       }
     } catch (err) {
       if (!err.response) {
-        setError('Cannot connect to server. Please check if the backend is running.');
+        setError(err.message || 'Cannot connect to server. Please check if the backend is running.');
       } else {
-        setError(err.response?.data?.message || 'Login failed. Please check credentials.');
+        setError(err.response?.data?.message || err.message || 'Login failed. Please check credentials.');
       }
       setLoading(false);
     }
