@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { tokenService } from '@/services/api/tokenService';
 
 import { ToastProvider } from '@/features/admin/components/Toast';
+import { AdminThemeProvider } from '@/features/admin/context/AdminThemeContext';
 
 export default function ManagementLayout({ children }) {
   const { user, admin, loading } = useAuth();
@@ -56,31 +57,33 @@ export default function ManagementLayout({ children }) {
   }
 
   return (
-    <ToastProvider>
-      {/* Slim progress bar while auth verifies in background */}
-      {!isLoginPage && loading && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 overflow-hidden bg-brand-primary/20">
-          <div className="h-full bg-brand-primary" style={{ animation: 'adminBar 1.2s ease-in-out infinite' }} />
+    <AdminThemeProvider>
+      <ToastProvider>
+        {/* Slim progress bar while auth verifies in background */}
+        {!isLoginPage && loading && (
+          <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 overflow-hidden bg-brand-primary/20">
+            <div className="h-full bg-brand-primary" style={{ animation: 'adminBar 1.2s ease-in-out infinite' }} />
+          </div>
+        )}
+        {/* Instant render — no opacity delay */}
+        <div className="animate-fadeInAdmin">
+          {children}
         </div>
-      )}
-      {/* Instant render — no opacity delay */}
-      <div className="animate-fadeInAdmin">
-        {children}
-      </div>
-      <style>{`
-        @keyframes adminBar {
-          0% { transform: translateX(-100%) scaleX(0.4); }
-          60% { transform: translateX(60%) scaleX(0.6); }
-          100% { transform: translateX(200%) scaleX(0.4); }
-        }
-        @keyframes fadeInAdmin {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        .animate-fadeInAdmin {
-          animation: fadeInAdmin 0.15s ease-out forwards;
-        }
-      `}</style>
-    </ToastProvider>
+        <style>{`
+          @keyframes adminBar {
+            0% { transform: translateX(-100%) scaleX(0.4); }
+            60% { transform: translateX(60%) scaleX(0.6); }
+            100% { transform: translateX(200%) scaleX(0.4); }
+          }
+          @keyframes fadeInAdmin {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+          }
+          .animate-fadeInAdmin {
+            animation: fadeInAdmin 0.15s ease-out forwards;
+          }
+        `}</style>
+      </ToastProvider>
+    </AdminThemeProvider>
   );
 }

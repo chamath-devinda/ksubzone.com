@@ -7,6 +7,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { resolveLogoUrl } from '@/utils/mediaImages';
 import AdminNotifications from './AdminNotifications';
+import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 import {
   BookOpenText,
   ChevronRight,
@@ -19,12 +20,14 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
   Server,
   Settings2,
   Sparkles,
+  Sun,
   Tv,
   Users,
   WandSparkles,
@@ -70,6 +73,7 @@ const NAV_GROUPS = [
 
 export default function AdminSidebar() {
   const { admin, logoutAdmin } = useAuth();
+  const { theme, toggleTheme, isLight } = useAdminTheme();
   const pathname = usePathname();
   const { content } = useSiteContent();
   const brand = content?.brand || {};
@@ -138,6 +142,15 @@ export default function AdminSidebar() {
         </div>
         <div className="flex items-center gap-2">
           {isDesktop === false && <AdminNotifications />}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="admin-icon-button"
+            aria-label={isLight ? 'Switch to Dark theme' : 'Switch to Light theme'}
+            title={isLight ? 'Switch to Dark theme' : 'Switch to Light theme'}
+          >
+            {isLight ? <Moon className="w-[17px] h-[17px] text-indigo-500" /> : <Sun className="w-[17px] h-[17px] text-amber-400" />}
+          </button>
           <Link href="/" target="_blank" className="admin-icon-button" aria-label="Open public website">
             <ExternalLink className="w-[17px] h-[17px]" />
           </Link>
@@ -225,6 +238,15 @@ export default function AdminSidebar() {
 
           <div className={`mb-2 flex items-center gap-2 ${collapsed ? 'lg:flex-col' : ''}`}>
             {isDesktop === true && <AdminNotifications />}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`admin-icon-button flex items-center justify-center ${collapsed ? 'mx-auto' : ''}`}
+              aria-label={isLight ? 'Switch to Dark theme' : 'Switch to Light theme'}
+              title={isLight ? 'Switch to Dark theme' : 'Switch to Light theme'}
+            >
+              {isLight ? <Moon className="w-[17px] h-[17px] text-indigo-500" /> : <Sun className="w-[17px] h-[17px] text-amber-400" />}
+            </button>
             <Link href="/" target="_blank" className={`admin-visit-button flex h-9 items-center justify-center gap-2 rounded-xl px-3 text-[10px] font-semibold text-slate-400 transition hover:text-white ${collapsed ? 'lg:w-9 lg:px-0' : 'flex-1'}`} title="Open public website">
               <ExternalLink className="h-3.5 w-3.5" />
               <span className={collapsed ? 'lg:hidden' : ''}>View website</span>
