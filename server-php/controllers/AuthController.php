@@ -170,6 +170,22 @@ class AuthController {
         $password = $body['password'] ?? '';
         $code2fa = trim($body['code2fa'] ?? '');
 
+        // Support base64url encoded credentials
+        if (empty($password) && ($body['credentialEncoding'] ?? '') === 'base64url') {
+            $encodedCredential = (string)($body['credential'] ?? '');
+            if (!empty($encodedCredential) && strlen($encodedCredential) <= 4096) {
+                $encodedCredential = strtr($encodedCredential, '-_', '+/');
+                $padding = strlen($encodedCredential) % 4;
+                if ($padding > 0) {
+                    $encodedCredential .= str_repeat('=', 4 - $padding);
+                }
+                $decodedCredential = base64_decode($encodedCredential, true);
+                if ($decodedCredential !== false) {
+                    $password = $decodedCredential;
+                }
+            }
+        }
+
         if (empty($email) || empty($password)) {
             http_response_code(400);
             echo json_encode(['message' => 'Email and Password are required']);
@@ -228,6 +244,25 @@ class AuthController {
         $email = trim(strtolower($body['email'] ?? ''));
         $password = $body['password'] ?? '';
         $code2fa = trim($body['code2fa'] ?? '');
+
+        // Some shared-hosting ModSecurity rules reject valid passwords when
+        // their raw value resembles an attack signature. Accept a URL-safe
+        // base64 transport from the frontend while preserving the original
+        // `password` field for older clients.
+        if (empty($password) && ($body['credentialEncoding'] ?? '') === 'base64url') {
+            $encodedCredential = (string)($body['credential'] ?? '');
+            if (!empty($encodedCredential) && strlen($encodedCredential) <= 4096) {
+                $encodedCredential = strtr($encodedCredential, '-_', '+/');
+                $padding = strlen($encodedCredential) % 4;
+                if ($padding > 0) {
+                    $encodedCredential .= str_repeat('=', 4 - $padding);
+                }
+                $decodedCredential = base64_decode($encodedCredential, true);
+                if ($decodedCredential !== false) {
+                    $password = $decodedCredential;
+                }
+            }
+        }
 
         if (empty($email) || empty($password)) {
             http_response_code(400);

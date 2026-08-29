@@ -6,6 +6,19 @@ import { tokenService } from '@/services/api/tokenService';
 
 export const AuthContext = createContext();
 
+// Shared-hosting ModSecurity can reject otherwise valid passwords when their
+// raw text resembles a security-rule signature. TLS still protects the request;
+// this transport encoding only keeps the WAF from misclassifying the value.
+const encodeAdminCredential = (password) => {
+  const bytes = new TextEncoder().encode(password);
+  let binary = '';
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return window.btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
@@ -144,7 +157,12 @@ export const AuthProvider = ({ children }) => {
     tokenService.removeUserToken();
     setUser(null);
 
-    const res = await apiClient.post('/api/admin/login', { email, password, code2fa });
+    const res = await apiClient.post('/api/admin/login', {
+      email,
+      credential: encodeAdminCredential(password),
+      credentialEncoding: 'base64url',
+      code2fa
+    });
     if (res.data.token) {
       tokenService.setAdminToken(res.data.token);
       setAdmin(res.data.admin);

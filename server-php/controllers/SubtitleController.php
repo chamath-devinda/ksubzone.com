@@ -340,6 +340,9 @@ class SubtitleController {
         } else {
             // Local file - test multiple potential paths
             $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+            $legacyServerRoot = !empty($docRoot)
+                ? dirname(rtrim($docRoot, '/\\')) . '/server-php'
+                : dirname(dirname(__DIR__)) . '/server-php';
             $possiblePaths = [
                 dirname(__DIR__) . '/' . ltrim($fileUrl, '/'),
                 dirname(__DIR__) . $fileUrl,
@@ -350,7 +353,11 @@ class SubtitleController {
                 dirname(__DIR__) . '/uploads/subtitles/' . basename($fileUrl),
                 dirname(dirname(__DIR__)) . '/uploads/subtitles/' . basename($fileUrl),
                 $docRoot . '/uploads/subtitles/' . basename($fileUrl),
-                $docRoot . '/api/uploads/subtitles/' . basename($fileUrl)
+                $docRoot . '/api/uploads/subtitles/' . basename($fileUrl),
+                // Older deployments stored uploads beside the new `api`
+                // document root at public_html/server-php/uploads.
+                $legacyServerRoot . '/uploads/subtitles/' . basename($fileUrl),
+                dirname(dirname(__DIR__)) . '/server-php/uploads/subtitles/' . basename($fileUrl)
             ];
 
             $foundPath = null;
