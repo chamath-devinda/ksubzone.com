@@ -18,24 +18,24 @@ export default function StatCard({
   href = null
 }) {
   const CardBody = () => (
-    <div className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-luxury-900/40 p-5 transition-all duration-300 hover:border-white/10 hover:bg-luxury-900/60 border-l-[3px] ${borderClass} flex flex-col justify-between h-full group`}>
+    <div className={`admin-stat-card relative overflow-hidden rounded-[20px] border border-white/[0.07] p-5 transition-all duration-300 border-l-[3px] ${borderClass} flex flex-col justify-between h-full group`}>
       {/* Glow highlight */}
-      <div className={`absolute -right-20 -top-20 h-40 w-40 rounded-full bg-gradient-to-br ${gradClass} to-transparent opacity-50 blur-3xl transition-all duration-500 group-hover:scale-150`} />
+      <div className={`absolute -right-16 -top-20 h-40 w-40 rounded-full bg-gradient-to-br ${gradClass} to-transparent opacity-70 blur-3xl transition-all duration-500 group-hover:scale-150`} />
 
       <div className="flex items-start justify-between gap-3 relative z-10">
         <div className="space-y-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 truncate">{label}</p>
-          <h3 className="text-2xl font-black text-white tracking-tight font-display mt-1">{value}</h3>
+          <p className="text-[11px] font-semibold text-slate-400 truncate">{label}</p>
+          <h3 className="text-[26px] leading-none font-bold text-white tracking-tight font-display mt-2">{value}</h3>
         </div>
         
         {Icon && (
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBgClass} ${iconColorClass} flex-shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-sm`}>
-            <Icon className="w-5 h-5" />
+          <div className={`w-10 h-10 rounded-[13px] border border-white/[0.06] flex items-center justify-center ${iconBgClass} ${iconColorClass} flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-0.5 shadow-sm`}>
+            <Icon className="w-[18px] h-[18px]" />
           </div>
         )}
       </div>
 
-      <div className="flex items-end justify-between gap-3 mt-4 pt-3 border-t border-white/[0.03] relative z-10">
+      <div className="flex items-end justify-between gap-3 mt-4 pt-3 border-t border-white/[0.05] relative z-10">
         {/* Trend Indicator */}
         {trend !== null ? (
           <div className="flex items-center gap-1">
@@ -55,10 +55,10 @@ export default function StatCard({
               )}
               {trend > 0 ? `+${trend}%` : `${trend}%`}
             </span>
-            <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider pl-0.5">vs last period</span>
+            <span className="text-[9px] text-slate-600 font-medium pl-0.5">vs last period</span>
           </div>
         ) : (
-          <span className="text-[9px] text-slate-500 uppercase font-black tracking-wider">Metrics log</span>
+          <span className="text-[9px] text-slate-600 font-medium">Live catalog metric</span>
         )}
 
         {/* Inline Sparkline */}

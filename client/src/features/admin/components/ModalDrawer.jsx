@@ -64,7 +64,7 @@ export default function ModalDrawer({
               opacity: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0 
             }}
             transition={{ type: 'spring', damping: 26, stiffness: 260 }}
-            className={`w-full bg-luxury-900 border border-white/10 shadow-2xl relative overflow-hidden z-10 flex flex-col
+            className={`admin-modal-drawer w-full border border-white/[0.09] shadow-2xl relative overflow-hidden z-10 flex flex-col
               /* Mobile Styles */
               fixed bottom-0 inset-x-0 rounded-t-3xl max-h-[92vh] border-b-0
               /* Desktop Styles */
@@ -77,13 +77,13 @@ export default function ModalDrawer({
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-luxury-950/40 flex-shrink-0">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider truncate mr-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] bg-black/20 flex-shrink-0">
+              <h3 className="text-sm font-semibold text-white tracking-tight truncate mr-4">
                 {title}
               </h3>
               <button
                 onClick={onClose}
-                className="text-slate-400 hover:text-white transition p-1.5 hover:bg-white/5 rounded-xl flex-shrink-0"
+                className="text-slate-500 hover:text-white transition p-2 hover:bg-white/[0.06] rounded-xl flex-shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>

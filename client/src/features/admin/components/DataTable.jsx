@@ -75,7 +75,7 @@ export default function DataTable({
     <div className="space-y-4">
       {/* Search & Filter Header */}
       {(searchKey || filterComponent) && (
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-luxury-900 border border-white/5 p-4 rounded-2xl">
+        <div className="admin-table-toolbar flex flex-col sm:flex-row gap-3 items-center justify-between border border-white/[0.07] p-3 rounded-[18px]">
           {searchKey && (
             <div className="relative w-full sm:max-w-md">
               <input
@@ -86,7 +86,7 @@ export default function DataTable({
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-11 pl-11 pr-4 bg-luxury-950 border border-white/10 rounded-xl focus:border-brand-primary outline-none text-slate-200 text-xs transition"
+                className="w-full h-11 pl-11 pr-4 bg-black/20 border border-white/[0.08] rounded-[13px] focus:border-violet-400/60 outline-none text-slate-200 text-xs transition placeholder:text-slate-600"
               />
               <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
             </div>
@@ -101,7 +101,7 @@ export default function DataTable({
       )}
 
       {/* Main Grid View / Table */}
-      <div className="bg-luxury-900 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="admin-data-table border border-white/[0.07] rounded-[20px] overflow-hidden">
         {loading ? (
           <Skeleton.Table rows={pageSize} />
         ) : paginatedData.length === 0 ? (
@@ -114,11 +114,11 @@ export default function DataTable({
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-white/5 bg-luxury-950/40 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <tr className="border-b border-white/[0.07] bg-black/20 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
                     {columns.map((col) => (
                       <th
                         key={col.key}
-                        className={`px-5 py-4 ${col.sortable ? 'cursor-pointer hover:text-white select-none' : ''} ${col.headerAlign || ''}`}
+                        className={`px-5 py-3.5 ${col.sortable ? 'cursor-pointer hover:text-white select-none' : ''} ${col.headerAlign || ''}`}
                         onClick={() => col.sortable && handleSort(col.key)}
                       >
                         <div className={`flex items-center gap-1.5 ${col.headerAlign === 'text-right' ? 'justify-end' : ''}`}>
@@ -131,11 +131,11 @@ export default function DataTable({
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-xs text-slate-300">
+                <tbody className="divide-y divide-white/[0.055] text-xs text-slate-300">
                   {paginatedData.map((row, idx) => (
-                    <tr key={row._id || row.id || idx} className="hover:bg-white/[0.01] transition-colors">
+                    <tr key={row._id || row.id || idx} className="group hover:bg-violet-500/[0.035] transition-colors">
                       {columns.map((col) => (
-                        <td key={col.key} className={`px-5 py-4 max-w-[320px] truncate ${col.cellAlign || ''}`}>
+                        <td key={col.key} className={`px-5 py-[15px] max-w-[320px] truncate ${col.cellAlign || ''}`}>
                           {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
                         </td>
                       ))}
@@ -146,9 +146,9 @@ export default function DataTable({
             </div>
 
             {/* Mobile Stacked Card View */}
-            <div className="md:hidden divide-y divide-white/5">
+            <div className="md:hidden divide-y divide-white/[0.06]">
               {paginatedData.map((row, idx) => (
-                <div key={row._id || row.id || idx} className="p-5 space-y-4 hover:bg-white/[0.01] transition-colors">
+                <div key={row._id || row.id || idx} className="p-5 space-y-4 hover:bg-violet-500/[0.035] transition-colors">
                   {columns.map((col) => {
                     if (col.key === 'actions') {
                       return (
@@ -174,7 +174,7 @@ export default function DataTable({
 
         {/* Pagination Footer */}
         {sortedData.length > pageSize && (
-          <div className="px-5 py-4 border-t border-white/5 bg-luxury-950/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="px-5 py-4 border-t border-white/[0.07] bg-black/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
             <span>
               Showing <b className="text-slate-200">{startIdx}</b> to <b className="text-slate-200">{endIdx}</b> of <b className="text-slate-200">{sortedData.length}</b> records
             </span>
@@ -182,14 +182,14 @@ export default function DataTable({
               <button
                 disabled={currentPage === 1 || loading}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-white/10 bg-white/[0.02] text-xs font-bold text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/[0.05] transition flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-white/[0.08] bg-white/[0.025] text-[11px] font-semibold text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/[0.06] hover:text-white transition flex items-center justify-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Previous
               </button>
               <button
                 disabled={currentPage >= totalPages || loading}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-white/10 bg-white/[0.02] text-xs font-bold text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/[0.05] transition flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-white/[0.08] bg-white/[0.025] text-[11px] font-semibold text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/[0.06] hover:text-white transition flex items-center justify-center gap-1.5"
               >
                 Next <ArrowRight className="w-3.5 h-3.5" />
               </button>

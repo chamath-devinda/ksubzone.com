@@ -64,7 +64,7 @@ function ToastItem({ toast, onClose }) {
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`pointer-events-auto w-full bg-luxury-900 border border-white/5 border-l-4 rounded-xl p-4 shadow-glass-neon flex gap-3.5 items-start justify-between select-none relative overflow-hidden ${borderColors}`}
+      className={`admin-toast pointer-events-auto w-full border border-white/[0.08] border-l-4 rounded-2xl p-4 flex gap-3.5 items-start justify-between select-none relative overflow-hidden ${borderColors}`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColors}`}>
         <Icon className="w-4.5 h-4.5" />

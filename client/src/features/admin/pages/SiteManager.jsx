@@ -206,10 +206,10 @@ export default function SiteManager() {
   const brand = draft.brand || {};
 
   return (
-    <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
       <AdminSidebar />
 
-      <main className="flex-grow p-6 sm:p-8 overflow-y-auto min-w-0">
+      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0">
         <div className="max-w-6xl mx-auto space-y-6">
           
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 border-b border-white/5 pb-6">

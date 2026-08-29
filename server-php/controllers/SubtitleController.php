@@ -303,16 +303,36 @@ class SubtitleController {
         $fileContent = '';
         if (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0) {
             // Fetch remote file (e.g. from Supabase)
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $fileUrl);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-            $fileContent = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            $httpCode = 0;
+            for ($attempt = 1; $attempt <= 3; $attempt++) {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $fileUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+                curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+                $fileContent = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
 
-            if ($httpCode !== 200 || $fileContent === false) {
+                if ($httpCode === 200 && $fileContent !== false && strlen($fileContent) > 0) {
+                    break;
+                }
+
+                error_log(
+                    "Subtitle remote download attempt {$attempt} failed with HTTP {$httpCode}: " .
+                    ($curlError ?: $fileUrl)
+                );
+                $fileContent = false;
+                if ($attempt < 3) {
+                    usleep(250000 * $attempt);
+                }
+            }
+
+            if ($httpCode !== 200 || $fileContent === false || strlen($fileContent) === 0) {
                 // If remote fetch failed, redirect to the URL as fallback
                 header("Location: " . $fileUrl);
                 exit;

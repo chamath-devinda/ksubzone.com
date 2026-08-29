@@ -13,6 +13,7 @@ import SeoTags from '@/components/seo/SeoTags';
 import GlassCard from '@/components/ui/GlassCard';
 import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, handleImageFallback } from '@/utils/mediaImages';
+import { downloadSubtitle } from '@/utils/subtitleDownload';
 
 export default function Detail({ type = 'Movie', initialData, topOnly = false }) {
   const { slug } = useParams();
@@ -322,25 +323,11 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       const baseUrl = apiClient.defaults.baseURL === '/' ? '' : apiClient.defaults.baseURL;
       const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download?name=${encodeURIComponent(customFileName)}`;
 
-      const response = await fetch(downloadUrl);
-      if (!response.ok) {
-        let errMessage = 'මෙම උපසිරැසි ගොනුව සර්වරයේ සොයාගත නොහැකි විය (Subtitle file not found). කරුණාකර Admin ට දන්වන්න.';
-        try {
-          const errJson = await response.json();
-          if (errJson?.message) errMessage = errJson.message;
-        } catch (_) {}
-        throw new Error(errMessage);
-      }
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = customFileName || `subtitle-${subId}.srt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
+      await downloadSubtitle({
+        downloadUrl,
+        fileUrl,
+        fileName: customFileName || `subtitle-${subId}.srt`
+      });
 
       setTimeout(() => {
         refetchSubtitles?.();

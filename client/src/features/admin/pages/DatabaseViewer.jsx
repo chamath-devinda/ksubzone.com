@@ -316,10 +316,10 @@ export default function DatabaseViewer() {
   };
 
   return (
-    <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
       <AdminSidebar />
 
-      <main className="flex-grow p-6 sm:p-8 overflow-y-auto min-w-0 max-w-[1600px] w-full mx-auto">
+      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0 max-w-[1600px] w-full mx-auto">
         <div className="space-y-6">
           
           {/* Header */}

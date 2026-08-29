@@ -116,7 +116,7 @@ export default function AdminNotifications() {
       <button
         ref={btnRef}
         onClick={() => setOpen(o => !o)}
-        className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 hover:bg-white/10 transition text-slate-400 hover:text-white flex-shrink-0"
+        className="admin-notification-button relative flex items-center justify-center w-9 h-9 rounded-xl transition text-slate-400 hover:text-white flex-shrink-0"
         title="Subtitle Notifications"
       >
         <Bell className="w-4 h-4" />
@@ -131,7 +131,7 @@ export default function AdminNotifications() {
       {open && mounted && createPortal(
         <div
           ref={panelRef}
-          className="fixed z-[9999] w-[340px] max-h-[520px] bg-luxury-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-glass-neon flex flex-col overflow-hidden"
+          className="admin-notification-panel fixed z-[9999] w-[340px] max-h-[520px] backdrop-blur-xl border border-white/[0.09] rounded-[20px] flex flex-col overflow-hidden"
           style={{
             top: coords.top,
             left: coords.left,
@@ -253,7 +253,7 @@ export default function AdminNotifications() {
           {toasts.map((toast, i) => (
             <div
               key={toast.id}
-              className="pointer-events-auto flex items-center gap-3 px-4 py-3.5 bg-luxury-900/95 backdrop-blur-xl border border-brand-primary/20 rounded-2xl shadow-glass-neon w-[300px]"
+              className="admin-notification-toast pointer-events-auto flex items-center gap-3 px-4 py-3.5 backdrop-blur-xl border border-brand-primary/20 rounded-2xl w-[300px]"
               style={{ animation: 'toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
             >
               {toast.poster && (

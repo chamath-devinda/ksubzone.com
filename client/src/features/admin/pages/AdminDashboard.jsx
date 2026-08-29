@@ -1073,9 +1073,9 @@ export default function AdminDashboard() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+      <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
         <AdminSidebar />
-        <main className="flex-grow p-5 sm:p-8 overflow-y-auto">
+        <main className="admin-main flex-grow p-5 sm:p-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto space-y-7">
             {/* Header skeleton */}
             <div className="rounded-2xl border border-white/[0.06] bg-luxury-900/50 p-6 sm:p-8">
@@ -1107,24 +1107,27 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
       <AdminSidebar />
 
-      <main className="flex-grow p-5 sm:p-8 overflow-y-auto min-w-0">
+      <main className="admin-main flex-grow p-5 sm:p-8 overflow-y-auto min-w-0">
         <div className="max-w-6xl mx-auto space-y-6">
 
           {/* ── Header Banner ── */}
           <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
-            className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-r from-luxury-900 via-luxury-800/30 to-luxury-900 p-6 sm:p-8">
+            className="admin-dashboard-header relative overflow-hidden rounded-[24px] border border-white/[0.07] p-6 sm:p-7">
             <div className="absolute top-0 right-0 w-80 h-80 bg-brand-primary/[0.07] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-56 h-56 bg-brand-secondary/[0.05] rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <p className="text-xs text-slate-500 font-medium mb-1">{getGreeting()}, {admin?.username || 'Admin'}</p>
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Dashboard Overview</h1>
-                <p className="text-slate-400 text-xs mt-1.5 flex items-center gap-1.5">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">Workspace online</p>
+                </div>
+                <h1 className="text-2xl sm:text-[32px] font-bold text-white tracking-tight">{getGreeting()}, {admin?.username || 'Admin'}</h1>
+                <p className="text-slate-400 text-xs mt-2 flex items-center gap-1.5">
                   <Activity className="w-3 h-3 text-brand-primary" />
-                  Real-time analytics & system health
+                  Here is what is happening across KSubZone today.
                 </p>
               </div>
               {/* SEO Health */}

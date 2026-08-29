@@ -869,10 +869,10 @@ export default function SrtCleaner() {
   };
 
   return (
-    <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
       <AdminSidebar />
 
-      <main className="flex-grow p-6 sm:p-8 overflow-y-auto">
+      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-8">
           
           {/* Header */}

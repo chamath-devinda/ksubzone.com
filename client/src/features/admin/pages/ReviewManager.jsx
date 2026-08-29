@@ -67,11 +67,11 @@ export default function ReviewManager() {
   };
 
   return (
-    <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
       <AdminSidebar />
 
       {/* Primary Details Panel */}
-      <main className="flex-grow p-6 sm:p-8 overflow-y-auto">
+      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">

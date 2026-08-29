@@ -297,10 +297,10 @@ export default function MovieManager() {
   ];
 
   return (
-    <div className="min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
       <AdminSidebar />
 
-      <main className="flex-grow p-6 sm:p-8 overflow-y-auto min-w-0">
+      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0">
         <div className="max-w-5xl mx-auto">
           
           <div className="flex justify-between items-center mb-8 gap-4">
