@@ -317,7 +317,7 @@ class DramaController {
             'approvalStatus' => 'Approved'
         ]);
 
-        $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['createdAt'] ?? null;
+        $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['updatedAt'] ?? $drama['createdAt'] ?? null;
         foreach ($allSubtitles as $sub) {
             $subtitleCreatedAt = $sub['createdAt'] ?? null;
             if ($subtitleCreatedAt && (!$drama['contentUpdatedAt'] || strtotime($subtitleCreatedAt) > strtotime($drama['contentUpdatedAt']))) {
@@ -516,7 +516,9 @@ class DramaController {
         // Persist the edit time in the document as well as the database row.
         // This keeps MongoDB and SQL drivers consistent and lets the frontend
         // show the current "updated ago" value immediately.
+        $contentUpdatedAt = gmdate(DATE_ATOM);
         $updates['updatedAt'] = date('Y-m-d H:i:s');
+        $updates['contentUpdatedAt'] = $contentUpdatedAt;
         $db->updateOne('dramas', ['_id' => $id], $updates);
         $updatedDrama = $db->findOne('dramas', ['_id' => $id]);
 
@@ -1044,7 +1046,7 @@ class DramaController {
         // 3. For each drama, compute the summary using the pre-fetched data
         foreach ($dramas as &$drama) {
             $dId = $drama['_id'];
-            $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['createdAt'] ?? null;
+            $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['updatedAt'] ?? $drama['createdAt'] ?? null;
             $drama['isNew'] = in_array((string)$dId, $latestIds);
             
             $dramaEps = $episodesByDrama[$dId] ?? [];
@@ -1208,7 +1210,10 @@ class DramaController {
         try {
             $db = Database::getInstance();
             $now = date('Y-m-d H:i:s');
-            $db->updateOne('dramas', ['_id' => $dramaId], ['updatedAt' => $now]);
+            $db->updateOne('dramas', ['_id' => $dramaId], [
+                'updatedAt' => $now,
+                'contentUpdatedAt' => gmdate(DATE_ATOM)
+            ]);
         } catch (\Exception $e) {
             error_log("Failed to bump drama updatedAt: " . $e->getMessage());
         }

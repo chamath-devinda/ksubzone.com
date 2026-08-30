@@ -201,7 +201,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v5');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v6');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -216,8 +216,15 @@ class MovieController {
         // 1. Latest movies by media/subtitle import activity
         $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 12, 'excludeFields' => $heroExcludes]);
         
-        // 2. Latest dramas by media/subtitle import activity
-        $latestDramas = $db->find('dramas', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 40, 'excludeFields' => $heroExcludes]);
+        // 2. Load the complete compact drama catalog before calculating real
+        // activity timestamps. An old title can become the newest item after
+        // an episode or subtitle update, so pre-limiting by creation time can
+        // silently exclude the item that should appear first.
+        $latestDramas = $db->find('dramas', $statusFilter, [
+            'sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1],
+            'limit' => 200,
+            'excludeFields' => $heroExcludes
+        ]);
         
         // 3. Historical movies (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
         $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
@@ -269,19 +276,11 @@ class MovieController {
         }
         unset($d);
 
-        // Keep ongoing titles first and completed titles second. Inside each
-        // status group, the latest media/subtitle import activity wins. The
-        // visual "New" badge must never override the actual update clock.
+        // "Latest" is a strict activity clock. Ongoing/completed status is a
+        // visual badge and must not push a more recently updated title down.
         usort($latestDramas, function($a, $b) {
-            $aOngoing = strtolower((string)($a['subtitleSummary']['seasonStatus'] ?? '')) === 'ongoing';
-            $bOngoing = strtolower((string)($b['subtitleSummary']['seasonStatus'] ?? '')) === 'ongoing';
-
-            if ($aOngoing !== $bOngoing) {
-                return $aOngoing ? -1 : 1;
-            }
-
-            $aTime = strtotime($a['contentUpdatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
-            $bTime = strtotime($b['contentUpdatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
+            $aTime = strtotime($a['contentUpdatedAt'] ?? $a['updatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
+            $bTime = strtotime($b['contentUpdatedAt'] ?? $b['updatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
             return $bTime <=> $aTime;
         });
 
@@ -384,8 +383,9 @@ class MovieController {
             'upcomingDramas' => MediaPayload::compactMany($upcomingDramas)
         ];
 
-        // Cache for 2 hours (7200 seconds)
-        \Utils\Cache::set('home_catalog_v5', $catalogData, 7200);
+        // Keep this short so an import/update remains visible even if a write
+        // path fails to invalidate the shared cache for any reason.
+        \Utils\Cache::set('home_catalog_v6', $catalogData, 300);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);

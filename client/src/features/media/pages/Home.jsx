@@ -93,13 +93,8 @@ export default function Home({
     const latestMovies = withType(homeCatalog.latestMovies, 'movie').slice(0, 10);
     const latestDramas = withType(homeCatalog.latestDramas, 'drama')
       .sort((a, b) => {
-        const aOngoing = String(a.subtitleSummary?.seasonStatus || '').toLowerCase() === 'ongoing';
-        const bOngoing = String(b.subtitleSummary?.seasonStatus || '').toLowerCase() === 'ongoing';
-
-        if (aOngoing !== bOngoing) return aOngoing ? -1 : 1;
-
-        const aTime = new Date(a.contentUpdatedAt || a.createdAt || 0).getTime();
-        const bTime = new Date(b.contentUpdatedAt || b.createdAt || 0).getTime();
+        const aTime = new Date(a.contentUpdatedAt || a.updatedAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.contentUpdatedAt || b.updatedAt || b.createdAt || 0).getTime();
         return bTime - aTime;
       })
       .slice(0, 10);
