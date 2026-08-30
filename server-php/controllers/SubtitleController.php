@@ -182,14 +182,29 @@ class SubtitleController {
     }
 
     public static function getSubtitlesForMedia($mediaId) {
+        $cacheKey = 'media_subtitles_v2_' . md5($mediaId);
+        $cached = \Utils\Cache::get($cacheKey);
+        if ($cached !== false) {
+            header('Content-Type: application/json');
+            echo json_encode($cached);
+            return;
+        }
+
         $subtitles = self::fetchSubtitlesForMediaWithBatchPopulate($mediaId);
+        \Utils\Cache::set($cacheKey, $subtitles, 120);
         header('Content-Type: application/json');
         echo json_encode($subtitles);
     }
 
     public static function getRecentApprovedSubtitles() {
-        $limit = (int)($_GET['limit'] ?? 4);
-        if ($limit > 20) $limit = 20;
+        $limit = max(1, min((int)($_GET['limit'] ?? 4), 20));
+        $cacheKey = 'recent_subtitles_v2_' . $limit;
+        $cached = \Utils\Cache::get($cacheKey);
+        if ($cached !== false) {
+            header('Content-Type: application/json');
+            echo json_encode($cached);
+            return;
+        }
 
         $db = Database::getInstance();
         $subtitles = $db->find('subtitles', [
@@ -199,54 +214,88 @@ class SubtitleController {
             'limit' => $limit
         ]);
 
-        // Populate uploader and media info
-        foreach ($subtitles as &$sub) {
-            $uploaderId = $sub['uploader'] ?? null;
-            $uploader = $uploaderId ? $db->findOne('users', ['_id' => $uploaderId]) : null;
-            $sub['uploader'] = $uploader ? [
-                '_id' => $uploader['_id'],
-                'username' => $uploader['username'],
-                'avatar' => $uploader['avatar'] ?? ''
-            ] : null;
-
-            // Fetch associated media details
-            $mediaTitle = '';
-            $mediaSlug = '';
+        // Batch all related documents. The previous per-subtitle lookups made
+        // a four-item homepage widget issue up to twelve remote DB queries.
+        $uploaderIds = [];
+        $movieIds = [];
+        $dramaIds = [];
+        $episodeIds = [];
+        foreach ($subtitles as $sub) {
+            if (!empty($sub['uploader'])) $uploaderIds[] = $sub['uploader'];
+            $mediaId = $sub['mediaId'] ?? null;
+            if (!$mediaId) continue;
             $mediaType = strtolower($sub['mediaType'] ?? '');
+            if ($mediaType === 'episode') $episodeIds[] = $mediaId;
+            elseif ($mediaType === 'movie') $movieIds[] = $mediaId;
+            else $dramaIds[] = $mediaId;
+        }
 
+        $uploaderIds = array_values(array_unique($uploaderIds));
+        $movieIds = array_values(array_unique($movieIds));
+        $dramaIds = array_values(array_unique($dramaIds));
+        $episodeIds = array_values(array_unique($episodeIds));
+
+        $userMap = [];
+        if (!empty($uploaderIds)) {
+            foreach ($db->find('users', ['_id' => ['$in' => $uploaderIds]]) as $user) {
+                $userMap[(string)$user['_id']] = [
+                    '_id' => $user['_id'],
+                    'username' => $user['username'] ?? 'Translator',
+                    'avatar' => $user['avatar'] ?? ''
+                ];
+            }
+        }
+
+        $episodeMap = [];
+        if (!empty($episodeIds)) {
+            foreach ($db->find('episodes', ['_id' => ['$in' => $episodeIds]]) as $episode) {
+                $episodeMap[(string)$episode['_id']] = $episode;
+                if (!empty($episode['dramaId'])) $dramaIds[] = $episode['dramaId'];
+            }
+        }
+
+        $movieMap = [];
+        if (!empty($movieIds)) {
+            foreach ($db->find('movies', ['_id' => ['$in' => $movieIds]]) as $movie) {
+                $movieMap[(string)$movie['_id']] = $movie;
+            }
+        }
+
+        $dramaMap = [];
+        $dramaIds = array_values(array_unique($dramaIds));
+        if (!empty($dramaIds)) {
+            foreach ($db->find('dramas', ['_id' => ['$in' => $dramaIds]]) as $drama) {
+                $dramaMap[(string)$drama['_id']] = $drama;
+            }
+        }
+
+        foreach ($subtitles as &$sub) {
+            $uploaderId = (string)($sub['uploader'] ?? '');
+            $sub['uploader'] = $uploaderId !== '' ? ($userMap[$uploaderId] ?? null) : null;
+
+            $mediaId = (string)($sub['mediaId'] ?? '');
+            $mediaType = strtolower($sub['mediaType'] ?? '');
+            $media = null;
             if ($mediaType === 'episode') {
-                $episode = $db->findOne('episodes', ['_id' => $sub['mediaId']]);
-                if ($episode) {
-                    $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
-                    if ($drama) {
-                        $mediaTitle = $drama['title'];
-                        $mediaSlug = $drama['slug'];
-                        $mediaType = 'drama';
-                    }
-                }
+                $episode = $episodeMap[$mediaId] ?? null;
+                $media = $episode ? ($dramaMap[(string)($episode['dramaId'] ?? '')] ?? null) : null;
+                $mediaType = 'drama';
             } elseif ($mediaType === 'movie') {
-                $movie = $db->findOne('movies', ['_id' => $sub['mediaId']]);
-                if ($movie) {
-                    $mediaTitle = $movie['title'];
-                    $mediaSlug = $movie['slug'];
-                    $mediaType = 'movie';
-                }
+                $media = $movieMap[$mediaId] ?? null;
             } else {
-                $drama = $db->findOne('dramas', ['_id' => $sub['mediaId']]);
-                if ($drama) {
-                    $mediaTitle = $drama['title'];
-                    $mediaSlug = $drama['slug'];
-                    $mediaType = 'drama';
-                }
+                $media = $dramaMap[$mediaId] ?? null;
+                $mediaType = 'drama';
             }
 
             $sub['media'] = [
-                'title' => $mediaTitle,
-                'slug' => $mediaSlug,
+                'title' => $media['title'] ?? '',
+                'slug' => $media['slug'] ?? '',
                 'type' => $mediaType
             ];
         }
+        unset($sub);
 
+        \Utils\Cache::set($cacheKey, $subtitles, 300);
         header('Content-Type: application/json');
         echo json_encode($subtitles);
     }
@@ -297,6 +346,37 @@ class SubtitleController {
             if (pathinfo($customName, PATHINFO_EXTENSION) !== $ext) {
                 $customName .= '.' . $ext;
             }
+        }
+
+        // Public Supabase objects are already served from a storage CDN. Do
+        // not download the file into PHP and upload the same bytes again.
+        // Older frontend clients receive a fast redirect; the current client
+        // downloads from this URL directly and tracks via the POST endpoint.
+        $remoteScheme = strtolower((string)parse_url($fileUrl, PHP_URL_SCHEME));
+        $remoteHost = strtolower((string)parse_url($fileUrl, PHP_URL_HOST));
+        $isSupabaseObject = $remoteScheme === 'https'
+            && $remoteHost !== ''
+            && substr($remoteHost, -12) === '.supabase.co';
+
+        if ($isSupabaseObject) {
+            header('Cache-Control: no-store');
+            header('Location: ' . $fileUrl, true, 302);
+
+            // Flush the redirect before the non-critical analytics update on
+            // FastCGI hosts, so the download is never held behind a DB write.
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+
+            try {
+                $db->updateOne('subtitles', ['_id' => $id], [
+                    'downloads' => ($subtitle['downloads'] ?? 0) + 1,
+                    'lastDownloadedAt' => date('Y-m-d H:i:s')
+                ]);
+            } catch (\Exception $e) {
+                error_log('Subtitle redirect count update failed: ' . $e->getMessage());
+            }
+            exit;
         }
 
         // Retrieve file content

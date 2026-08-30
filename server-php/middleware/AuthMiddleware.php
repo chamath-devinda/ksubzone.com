@@ -140,18 +140,35 @@ class AuthMiddleware {
 
         // Populate role and permissions
         if (isset($admin['role'])) {
-            $roleDoc = $db->findOne('roles', ['_id' => $admin['role']]);
+            $roleId = is_array($admin['role']) ? ($admin['role']['_id'] ?? '') : $admin['role'];
+            $roleCacheKey = 'admin_role_v1_' . (string)$roleId;
+            $roleDoc = $roleId !== '' ? \Utils\Cache::get($roleCacheKey) : false;
+            if ($roleDoc === false && $roleId !== '') {
+                $roleDoc = $db->findOne('roles', ['_id' => $roleId]);
+            }
             if ($roleDoc) {
-                $permissionsList = [];
-                if (isset($roleDoc['permissions']) && is_array($roleDoc['permissions'])) {
-                    foreach ($roleDoc['permissions'] as $pId) {
-                        $pDoc = $db->findOne('permissions', ['_id' => $pId]);
-                        if ($pDoc) {
-                            $permissionsList[] = $pDoc;
+                $permissionsArePopulated = isset($roleDoc['permissions'][0])
+                    && is_array($roleDoc['permissions'][0]);
+                if (!$permissionsArePopulated) {
+                    $permissionsList = [];
+                    if (isset($roleDoc['permissions']) && is_array($roleDoc['permissions'])) {
+                        $permissionIds = array_values(array_filter($roleDoc['permissions']));
+                        if (!empty($permissionIds)) {
+                            $permissionDocs = $db->find('permissions', ['_id' => ['$in' => $permissionIds]]);
+                            $permissionMap = [];
+                            foreach ($permissionDocs as $permissionDoc) {
+                                $permissionMap[(string)$permissionDoc['_id']] = $permissionDoc;
+                            }
+                            foreach ($permissionIds as $permissionId) {
+                                if (isset($permissionMap[(string)$permissionId])) {
+                                    $permissionsList[] = $permissionMap[(string)$permissionId];
+                                }
+                            }
                         }
                     }
+                    $roleDoc['permissions'] = $permissionsList;
+                    \Utils\Cache::set($roleCacheKey, $roleDoc, 300);
                 }
-                $roleDoc['permissions'] = $permissionsList;
                 $admin['role'] = $roleDoc;
             }
         }

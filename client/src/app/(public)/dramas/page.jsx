@@ -1,5 +1,6 @@
 import React from 'react';
 import DramasList from '@/features/media/pages/DramasList';
+import { compactCatalogItems } from '@/utils/mediaCatalog';
 
 export const metadata = {
   title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
@@ -28,6 +29,7 @@ export default async function DramasPage() {
     const res = await fetch(`${backendUrl}/api/media/dramas?sort=popular&page=1&limit=24`, { next: { revalidate: 60 } });
     if (res.ok) {
       initialData = await res.json();
+      initialData.dramas = compactCatalogItems(initialData.dramas);
     }
   } catch (error) {
     console.error("Error fetching dramas catalog on server:", error);

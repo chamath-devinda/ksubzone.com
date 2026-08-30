@@ -56,6 +56,7 @@ if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: " . $origin);
     header("Access-Control-Allow-Credentials: true");
 }
+header('Vary: Origin', false);
 
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -75,18 +76,50 @@ header("Referrer-Policy: no-referrer-when-downgrade");
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Prevent caching for API requests
+// Public read endpoints are identical for every visitor and are safe to cache
+// at the CDN. Private/write endpoints remain strictly uncached.
 if (strpos($uri, '/api/') === 0) {
-    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-    header("Cache-Control: post-check=0, pre-check=0", false);
-    header("Pragma: no-cache");
+    $publicCacheSeconds = 0;
+    if ($method === 'GET') {
+        if ($uri === '/api/site-content') {
+            $publicCacheSeconds = 300;
+        } elseif ($uri === '/api/media/home') {
+            $publicCacheSeconds = 300;
+        } elseif ($uri === '/api/subtitles/recent') {
+            $publicCacheSeconds = 120;
+        } elseif (preg_match('#^/api/subtitles/media/[a-f0-9,]+$#i', $uri)) {
+            $publicCacheSeconds = 120;
+        } elseif (in_array($uri, [
+            '/api/media/genres',
+            '/api/media/recommendations',
+            '/api/media/search-suggestions',
+            '/api/media/movies',
+            '/api/media/dramas',
+            '/api/articles'
+        ], true)) {
+            $publicCacheSeconds = 300;
+        }
+    }
+
+    if ($publicCacheSeconds > 0) {
+        header("Cache-Control: public, max-age=30, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
+    } else {
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: post-check=0, pre-check=0", false);
+        header("Pragma: no-cache");
+    }
     header("Content-Type: application/json; charset=utf-8");
 }
 
 // Static upload file serving fallback
 if (strpos($uri, '/uploads/') === 0) {
-    $filePath = __DIR__ . $uri;
-    if (file_exists($filePath)) {
+    $uploadsRoot = realpath(__DIR__ . '/uploads');
+    $filePath = realpath(__DIR__ . $uri);
+    $isInsideUploads = $uploadsRoot !== false
+        && $filePath !== false
+        && strpos($filePath, $uploadsRoot . DIRECTORY_SEPARATOR) === 0;
+
+    if ($isInsideUploads && file_exists($filePath) && !is_dir($filePath)) {
         $ext = pathinfo($filePath, PATHINFO_EXTENSION);
         $mimeTypes = [
             'srt' => 'text/plain',
@@ -99,6 +132,10 @@ if (strpos($uri, '/uploads/') === 0) {
         ];
         $contentType = $mimeTypes[strtolower($ext)] ?? 'application/octet-stream';
         header("Content-Type: {$contentType}");
+        header('Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800');
+        header('Content-Length: ' . filesize($filePath));
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', filemtime($filePath)) . ' GMT');
+        header('ETag: "' . md5($filePath . '|' . filemtime($filePath) . '|' . filesize($filePath)) . '"');
         readfile($filePath);
         exit;
     } else {
@@ -122,7 +159,15 @@ if ($method === 'GET' && strpos($uri, '/api/') !== 0) {
 }
 
 // Helper to sanitize and auto-update site content configuration references to KSubZone
-function getSanitizedSiteContent($db) {
+function getSanitizedSiteContent($db = null) {
+    $cached = \Utils\Cache::get('site_content_v1');
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    if ($db === null) {
+        $db = \Config\Database::getInstance();
+    }
     $setting = $db->findOne('settings', ['key' => 'siteContent']);
     $value = $setting['value'] ?? \Utils\SiteContentDefaults::get();
     
@@ -161,6 +206,7 @@ function getSanitizedSiteContent($db) {
             // Ignore database write failures during sanitation
         }
     }
+    \Utils\Cache::set('site_content_v1', $value, 3600);
     return $value;
 }
 
@@ -429,9 +475,8 @@ $routes = [
         }
     }]],
     ['GET', '/api/site-content', function() {
-        $db = \Config\Database::getInstance();
         header('Content-Type: application/json');
-        echo json_encode(getSanitizedSiteContent($db));
+        echo json_encode(getSanitizedSiteContent());
     }],
 
     // Public Auth
@@ -789,6 +834,7 @@ $routes = [
             } else {
                 $setting = $db->insertOne('settings', ['key' => 'siteContent', 'value' => $body]);
             }
+            \Utils\Cache::delete('site_content_v1');
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Site content saved successfully', 'content' => $setting['value'] ?? $body]);
         }
@@ -1037,6 +1083,7 @@ foreach ($routes as $route) {
         } catch (\Throwable $e) {
             error_log("API Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             http_response_code(500);
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             header('Content-Type: application/json');
             echo json_encode([
                 'message' => 'Server Error',

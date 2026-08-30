@@ -38,6 +38,10 @@ export default function Auth() {
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    router.prefetch('/');
+  }, [router]);
+
   const switchMode = (newMode) => {
     setMode(newMode);
     setError('');

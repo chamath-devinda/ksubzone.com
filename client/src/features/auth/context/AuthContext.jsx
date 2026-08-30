@@ -27,49 +27,35 @@ export const AuthProvider = ({ children }) => {
   // Sync session on mount
   useEffect(() => {
     const initAuth = async () => {
-      console.log('[AuthContext] initAuth started');
-      
       // 1. Populate state from cached storage to avoid screen flickering on refresh
       const cachedUser = tokenService.getUserProfile();
       const cachedAdmin = tokenService.getAdminProfile();
       if (cachedUser) {
-        console.log('[AuthContext] Restored user profile from cache:', cachedUser);
         setUser(cachedUser);
       }
       if (cachedAdmin) {
-        console.log('[AuthContext] Restored admin profile from cache:', cachedAdmin);
         setAdmin(cachedAdmin);
       }
 
       const token = tokenService.getUserToken();
       const adminToken = tokenService.getAdminToken();
-      console.log('[AuthContext] Read tokens from storage - user token present:', !!token, 'admin token present:', !!adminToken);
 
       // Run both requests in PARALLEL — no sequential await
-      console.log('[AuthContext] Triggering parallel /me fetches...');
       const [userResult, adminResult] = await Promise.allSettled([
         token ? apiClient.get('/api/auth/me') : Promise.resolve(null),
         adminToken ? apiClient.get('/api/admin/me') : Promise.resolve(null)
       ]);
 
-      console.log('[AuthContext] Parallel fetches completed');
-      console.log('[AuthContext] userResult status:', userResult.status, 'value:', userResult.status === 'fulfilled' ? !!userResult.value : userResult.reason);
-      console.log('[AuthContext] adminResult status:', adminResult.status, 'value:', adminResult.status === 'fulfilled' ? !!adminResult.value : adminResult.reason);
-
       if (token) {
         if (userResult.status === 'fulfilled' && userResult.value) {
-          console.log('[AuthContext] Restoring user session:', userResult.value.data);
           setUser(userResult.value.data);
         } else {
           const reason = userResult.reason;
           const status = reason?.status || reason?.response?.status;
           // Only invalidate token/session on explicit 401 or 403 authorization failures
           if (status === 401 || status === 403) {
-            console.log('[AuthContext] User token invalid (401/403), clearing session');
             tokenService.removeUserToken();
             setUser(null);
-          } else {
-            console.log('[AuthContext] User verification query failed (offline/network/server error). Retaining cached session.');
           }
         }
       } else {
@@ -78,25 +64,20 @@ export const AuthProvider = ({ children }) => {
 
       if (adminToken) {
         if (adminResult.status === 'fulfilled' && adminResult.value) {
-          console.log('[AuthContext] Restoring admin session:', adminResult.value.data);
           setAdmin(adminResult.value.data);
         } else {
           const reason = adminResult.reason;
           const status = reason?.status || reason?.response?.status;
           // Only invalidate token/session on explicit 401 or 403 authorization failures
           if (status === 401 || status === 403) {
-            console.log('[AuthContext] Admin token invalid (401/403), clearing session');
             tokenService.removeAdminToken();
             setAdmin(null);
-          } else {
-            console.log('[AuthContext] Admin verification query failed (offline/network/server error). Retaining cached session.');
           }
         }
       } else {
         setAdmin(null);
       }
 
-      console.log('[AuthContext] Setting loading to false');
       setLoading(false);
     };
 

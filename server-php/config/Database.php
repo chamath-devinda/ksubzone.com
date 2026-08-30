@@ -723,7 +723,19 @@ class Database {
     public function find($collection, $filter = [], $options = []) {
         if ($this->driver === 'mongodb') {
             $filter = $this->convertIdToObjectId($filter);
-            $query = new \MongoDB\Driver\Query($filter, $options);
+            $mongoOptions = $options;
+            $excludeFields = $mongoOptions['excludeFields'] ?? [];
+            unset($mongoOptions['excludeFields']);
+            if (!empty($excludeFields)) {
+                $projection = $mongoOptions['projection'] ?? [];
+                foreach ($excludeFields as $field) {
+                    if (preg_match('/^[A-Za-z0-9_]+$/', $field)) {
+                        $projection[$field] = 0;
+                    }
+                }
+                $mongoOptions['projection'] = $projection;
+            }
+            $query = new \MongoDB\Driver\Query($filter, $mongoOptions);
             $cursor = $this->manager->executeQuery("{$this->dbName}.{$collection}", $query);
             $results = [];
             foreach ($cursor as $doc) {
@@ -734,7 +746,28 @@ class Database {
             $params = [];
             $where = $this->buildWhere($filter, $params, $collection);
             $table = ($this->driver === 'pgsql') ? "\"{$collection}\"" : $collection;
-            $sql = "SELECT * FROM {$table}" . $where;
+            $select = '*';
+            $excludeFields = array_values(array_filter($options['excludeFields'] ?? [], function($field) {
+                return is_string($field) && preg_match('/^[A-Za-z0-9_]+$/', $field);
+            }));
+
+            if (!empty($excludeFields)) {
+                if ($this->driver === 'pgsql') {
+                    $dataExpression = '"data"';
+                    foreach ($excludeFields as $field) {
+                        $dataExpression .= " - '{$field}'";
+                    }
+                    $select = '"_id", ' . $dataExpression . ' AS "data", "createdAt", "updatedAt"';
+                } elseif ($this->driver === 'mysql') {
+                    $jsonPaths = array_map(function($field) { return "'$.{$field}'"; }, $excludeFields);
+                    $select = '_id, JSON_REMOVE(data, ' . implode(', ', $jsonPaths) . ') AS data, createdAt, updatedAt';
+                } else {
+                    $jsonPaths = array_map(function($field) { return "'$.{$field}'"; }, $excludeFields);
+                    $select = '_id, json_remove(data, ' . implode(', ', $jsonPaths) . ') AS data, createdAt, updatedAt';
+                }
+            }
+
+            $sql = "SELECT {$select} FROM {$table}" . $where;
 
             if (isset($options['sort'])) {
                 $sortParts = [];

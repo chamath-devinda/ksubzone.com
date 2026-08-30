@@ -14,7 +14,13 @@ class Cache {
 
         self::$cacheDir = dirname(__DIR__) . '/temp/cache';
 
-        if (!class_exists('Redis')) {
+        $configuredRedisHost = trim((string)($_ENV['REDIS_HOST'] ?? getenv('REDIS_HOST') ?: ''));
+
+        // The Redis PHP extension may be enabled on shared hosting even when
+        // no Redis service exists. Trying the implicit 127.0.0.1 default adds
+        // a connection timeout to every cached request (including login rate
+        // limiting). Only connect when a host was explicitly configured.
+        if (!class_exists('Redis') || $configuredRedisHost === '') {
             self::$useFileCache = true;
             self::$enabled = true;
             if (!file_exists(self::$cacheDir)) {
@@ -23,7 +29,7 @@ class Cache {
             return true;
         }
 
-        $host = $_ENV['REDIS_HOST'] ?? getenv('REDIS_HOST') ?: '127.0.0.1';
+        $host = $configuredRedisHost;
         $port = (int)($_ENV['REDIS_PORT'] ?? getenv('REDIS_PORT') ?: 6379);
         $password = $_ENV['REDIS_PASSWORD'] ?? getenv('REDIS_PASSWORD') ?: null;
 

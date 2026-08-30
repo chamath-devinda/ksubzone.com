@@ -3,6 +3,7 @@ namespace Controllers;
 
 use Config\Database;
 use Utils\Slug;
+use Utils\MediaPayload;
 
 class DramaController {
 
@@ -155,16 +156,12 @@ class DramaController {
         $trending = $_GET['trending'] ?? null;
         $isHistorical = $_GET['isHistorical'] ?? null;
 
+        // Public catalog data is session-independent. Admin management uses a
+        // dedicated endpoint, so no auth lookup or draft data is needed here.
         $filter = [];
-        if (!\Middleware\AuthMiddleware::isAdmin()) {
-            $filter['status'] = ['$in' => ['Published', 'Upcoming']];
-        } else {
-            if ($status && $status !== 'All') {
-                $filter['status'] = $status;
-            } elseif (!$status) {
-                $filter['status'] = ['$in' => ['Published', 'Upcoming']];
-            }
-        }
+        $filter['status'] = in_array($status, ['Published', 'Upcoming'], true)
+            ? $status
+            : ['$in' => ['Published', 'Upcoming']];
 
         if ($isHistorical === 'true') {
             $filter['isHistorical'] = true;
@@ -221,7 +218,7 @@ class DramaController {
         $skip = ($page - 1) * $limit;
 
         // Caching layer for search queries
-        $cacheKey = "search_dramas_" . md5(json_encode($_GET));
+        $cacheKey = "search_dramas_v2_" . md5(json_encode($_GET));
         $cached = \Utils\Cache::get($cacheKey);
         if ($cached !== false) {
             header('Content-Type: application/json');
@@ -234,10 +231,12 @@ class DramaController {
         $dramas = $db->find('dramas', $filter, [
             'sort' => $sortOptions,
             'limit' => $limit,
-            'skip' => $skip
+            'skip' => $skip,
+            'excludeFields' => MediaPayload::detailOnlyFields()
         ]);
 
         self::appendSubtitleSummariesToDramas($dramas);
+        $dramas = MediaPayload::compactMany($dramas);
 
         $payload = [
             'total' => $total,
@@ -409,9 +408,10 @@ class DramaController {
             $related = $db->find('dramas', [
                 '_id' => ['$ne' => $drama['_id']],
                 'keywords' => ['$in' => $drama['keywords']]
-            ], ['limit' => 4]);
+            ], ['limit' => 4, 'excludeFields' => MediaPayload::detailOnlyFields()]);
 
             self::appendSubtitleSummariesToDramas($related);
+            $related = MediaPayload::compactMany($related);
         }
 
         // Fetch comments using batch user populating

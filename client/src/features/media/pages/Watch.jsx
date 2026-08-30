@@ -37,8 +37,8 @@ export default function Watch({ initialDramaData }) {
       return res.data;
     },
     initialData: initialDramaData,
-    staleTime: 0,
-    refetchOnMount: 'always'
+    staleTime: 60_000,
+    refetchOnMount: false
   });
 
   const drama = dramaData?.drama;
@@ -72,8 +72,8 @@ export default function Watch({ initialDramaData }) {
     },
     enabled: !!activeEpisodeDoc?._id,
     initialData: embeddedEpisodeSubtitles,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: true,
     retry: 2
   });

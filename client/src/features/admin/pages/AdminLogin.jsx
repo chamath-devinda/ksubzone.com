@@ -45,6 +45,10 @@ export default function AdminLogin() {
     if (admin) router.push('/management/dashboard');
   }, [admin, router]);
 
+  useEffect(() => {
+    router.prefetch('/management/dashboard');
+  }, [router]);
+
   if (admin) return null;
 
   const handleSubmit = async (event) => {

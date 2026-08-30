@@ -3,6 +3,7 @@ namespace Controllers;
 
 use Config\Database;
 use Utils\JWT;
+use Utils\MediaPayload;
 use Middleware\AuthMiddleware;
 
 class AuthController {
@@ -296,18 +297,13 @@ class AuthController {
             }
         }
 
-        // Update lastLogin - wrapped in try-catch so a read-only DB doesn't block login
-        try {
-            $db->updateOne('admins', ['_id' => $admin['_id']], [
-                'lastLogin' => date('Y-m-d H:i:s')
-            ]);
-        } catch (\Exception $e) {
-            error_log('adminLogin: could not update lastLogin: ' . $e->getMessage());
-        }
-
         $roleName = 'Admin';
         if (isset($admin['role'])) {
-            $roleDoc = $db->findOne('roles', ['_id' => $admin['role']]);
+            $roleId = is_array($admin['role']) ? ($admin['role']['_id'] ?? '') : $admin['role'];
+            $roleDoc = $roleId !== '' ? \Utils\Cache::get('admin_role_v1_' . $roleId) : false;
+            if ($roleDoc === false && $roleId !== '') {
+                $roleDoc = $db->findOne('roles', ['_id' => $roleId]);
+            }
             if ($roleDoc) {
                 $roleName = $roleDoc['name'] ?? 'Admin';
             }
@@ -328,6 +324,20 @@ class AuthController {
                 'role' => $roleName
             ]
         ]);
+
+        // lastLogin is telemetry and must not hold the authentication response
+        // behind another remote DB read/write. Update it only after FastCGI has
+        // sent the successful response to the browser.
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+            try {
+                $db->updateOne('admins', ['_id' => $admin['_id']], [
+                    'lastLogin' => date('Y-m-d H:i:s')
+                ]);
+            } catch (\Exception $e) {
+                error_log('adminLogin: could not update lastLogin: ' . $e->getMessage());
+            }
+        }
     }
 
     public static function getMe() {
@@ -340,31 +350,45 @@ class AuthController {
 
         $db = Database::getInstance();
 
-        // Populate favorites
-        if (isset($user['favorites']) && is_array($user['favorites'])) {
-            foreach ($user['favorites'] as &$fav) {
-                $mId = $fav['mediaId'];
-                $table = $fav['mediaType'] === 'Movie' ? 'movies' : 'dramas';
-                $fav['details'] = $db->findOne($table, ['_id' => $mId]);
+        // Populate all saved media in two batch queries instead of one query
+        // per favorite/watchlist item. Return the same compact records used by
+        // cards so session restoration does not download detail-only SEO data.
+        $movieIds = [];
+        $dramaIds = [];
+        foreach (['favorites', 'watchlist', 'continueWatching'] as $listName) {
+            foreach (($user[$listName] ?? []) as $savedItem) {
+                $mediaId = $savedItem['mediaId'] ?? null;
+                if (!$mediaId) continue;
+                if (strtolower($savedItem['mediaType'] ?? '') === 'movie') $movieIds[] = $mediaId;
+                else $dramaIds[] = $mediaId;
             }
         }
 
-        // Populate watchlist
-        if (isset($user['watchlist']) && is_array($user['watchlist'])) {
-            foreach ($user['watchlist'] as &$wl) {
-                $mId = $wl['mediaId'];
-                $table = $wl['mediaType'] === 'Movie' ? 'movies' : 'dramas';
-                $wl['details'] = $db->findOne($table, ['_id' => $mId]);
+        $movieMap = [];
+        $movieIds = array_values(array_unique($movieIds));
+        if (!empty($movieIds)) {
+            foreach ($db->find('movies', ['_id' => ['$in' => $movieIds]], ['excludeFields' => MediaPayload::detailOnlyFields()]) as $movie) {
+                $movieMap[(string)$movie['_id']] = MediaPayload::compact($movie);
             }
         }
 
-        // Populate continueWatching
-        if (isset($user['continueWatching']) && is_array($user['continueWatching'])) {
-            foreach ($user['continueWatching'] as &$cw) {
-                $mId = $cw['mediaId'];
-                $table = $cw['mediaType'] === 'Movie' ? 'movies' : 'dramas';
-                $cw['details'] = $db->findOne($table, ['_id' => $mId]);
+        $dramaMap = [];
+        $dramaIds = array_values(array_unique($dramaIds));
+        if (!empty($dramaIds)) {
+            foreach ($db->find('dramas', ['_id' => ['$in' => $dramaIds]], ['excludeFields' => MediaPayload::detailOnlyFields()]) as $drama) {
+                $dramaMap[(string)$drama['_id']] = MediaPayload::compact($drama);
             }
+        }
+
+        foreach (['favorites', 'watchlist', 'continueWatching'] as $listName) {
+            if (!isset($user[$listName]) || !is_array($user[$listName])) continue;
+            foreach ($user[$listName] as &$savedItem) {
+                $mediaId = (string)($savedItem['mediaId'] ?? '');
+                $savedItem['details'] = strtolower($savedItem['mediaType'] ?? '') === 'movie'
+                    ? ($movieMap[$mediaId] ?? null)
+                    : ($dramaMap[$mediaId] ?? null);
+            }
+            unset($savedItem);
         }
 
         // Remove sensitive fields

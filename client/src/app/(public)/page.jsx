@@ -1,10 +1,11 @@
 import React from 'react';
 import Home from '@/features/media/pages/Home';
+import { compactHomeCatalog } from '@/utils/mediaCatalog';
 
 export async function generateMetadata() {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   try {
-    const res = await fetch(`${backendUrl}/api/site-content`, { next: { revalidate: 30 } });
+    const res = await fetch(`${backendUrl}/api/site-content`, { next: { revalidate: 300 } });
     if (res.ok) {
       const data = await res.json();
       const seo = data.seo || {};
@@ -65,17 +66,23 @@ export default async function HomePage() {
   let initialLibraryDramas = { dramas: [], totalPages: 1 };
   
   try {
-    const [catalogRes, subsRes, moviesRes, dramasRes] = await Promise.all([
+    const [catalogRes, subsRes] = await Promise.all([
       fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : {}),
-      fetch(`${backendUrl}/api/subtitles/recent?limit=4`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : []),
-      fetch(`${backendUrl}/api/media/movies?sort=popular&country=&limit=10`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : { movies: [], totalPages: 1 }),
-      fetch(`${backendUrl}/api/media/dramas?sort=popular&country=&limit=10`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : { dramas: [], totalPages: 1 })
+      fetch(`${backendUrl}/api/subtitles/recent?limit=4`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : [])
     ]);
     
-    initialHomeCatalog = catalogRes;
+    initialHomeCatalog = compactHomeCatalog(catalogRes);
     initialSubtitles = subsRes;
-    initialLibraryMovies = moviesRes;
-    initialLibraryDramas = dramasRes;
+    // Home already contains the same view-ranked records. Reuse them instead
+    // of making two more server requests and embedding duplicate JSON.
+    initialLibraryMovies = {
+      movies: (initialHomeCatalog.popularMovies?.length ? initialHomeCatalog.popularMovies : initialHomeCatalog.trendingMovies || []).slice(0, 10),
+      totalPages: 1
+    };
+    initialLibraryDramas = {
+      dramas: (initialHomeCatalog.popularDramas?.length ? initialHomeCatalog.popularDramas : initialHomeCatalog.trendingDramas || []).slice(0, 10),
+      totalPages: 1
+    };
   } catch (error) {
     console.error("Error fetching homepage initial data on server:", error);
   }

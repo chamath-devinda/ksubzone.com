@@ -26,49 +26,85 @@ class AnalyticsController {
 
     private static function populateSubtitleDetails($subtitles) {
         $db = Database::getInstance();
+        $uploaderIds = [];
+        $movieIds = [];
+        $dramaIds = [];
+        $episodeIds = [];
+        foreach ($subtitles as $sub) {
+            if (!empty($sub['uploader'])) $uploaderIds[] = $sub['uploader'];
+            $mediaId = $sub['mediaId'] ?? null;
+            if (!$mediaId) continue;
+            $mediaType = strtolower($sub['mediaType'] ?? '');
+            if ($mediaType === 'episode') $episodeIds[] = $mediaId;
+            elseif ($mediaType === 'movie') $movieIds[] = $mediaId;
+            else $dramaIds[] = $mediaId;
+        }
+
+        $userMap = [];
+        $uploaderIds = array_values(array_unique($uploaderIds));
+        if (!empty($uploaderIds)) {
+            foreach ($db->find('users', ['_id' => ['$in' => $uploaderIds]]) as $user) {
+                $userMap[(string)$user['_id']] = [
+                    '_id' => $user['_id'],
+                    'username' => $user['username'] ?? 'Translator',
+                    'avatar' => $user['avatar'] ?? ''
+                ];
+            }
+        }
+
+        $episodeMap = [];
+        $episodeIds = array_values(array_unique($episodeIds));
+        if (!empty($episodeIds)) {
+            foreach ($db->find('episodes', ['_id' => ['$in' => $episodeIds]]) as $episode) {
+                $episodeMap[(string)$episode['_id']] = $episode;
+                if (!empty($episode['dramaId'])) $dramaIds[] = $episode['dramaId'];
+            }
+        }
+
+        $movieMap = [];
+        $movieIds = array_values(array_unique($movieIds));
+        if (!empty($movieIds)) {
+            foreach ($db->find('movies', ['_id' => ['$in' => $movieIds]]) as $movie) {
+                $movieMap[(string)$movie['_id']] = $movie;
+            }
+        }
+
+        $dramaMap = [];
+        $dramaIds = array_values(array_unique($dramaIds));
+        if (!empty($dramaIds)) {
+            foreach ($db->find('dramas', ['_id' => ['$in' => $dramaIds]]) as $drama) {
+                $dramaMap[(string)$drama['_id']] = $drama;
+            }
+        }
+
         $populated = [];
         foreach ($subtitles as $sub) {
-            $uploaderId = $sub['uploader'] ?? null;
-            $uploader = $uploaderId ? $db->findOne('users', ['_id' => $uploaderId]) : null;
-            $sub['uploader'] = $uploader ? [
-                '_id' => $uploader['_id'],
-                'username' => $uploader['username'],
-                'avatar' => $uploader['avatar'] ?? ''
-            ] : null;
+            $uploaderId = (string)($sub['uploader'] ?? '');
+            $sub['uploader'] = $uploaderId !== '' ? ($userMap[$uploaderId] ?? null) : null;
 
-            $mediaTitle = '';
-            $mediaSlug = '';
+            $mediaId = (string)($sub['mediaId'] ?? '');
             $mediaType = strtolower($sub['mediaType'] ?? '');
-
+            $media = null;
+            $mediaTitle = '';
             if ($mediaType === 'episode') {
-                $episode = $db->findOne('episodes', ['_id' => $sub['mediaId']]);
-                if ($episode) {
-                    $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
-                    if ($drama) {
-                        $mediaTitle = $drama['title'] . ' (S' . ($episode['seasonNumber'] ?? 1) . ' E' . ($episode['episodeNumber'] ?? 1) . ')';
-                        $mediaSlug = $drama['slug'];
-                        $mediaType = 'drama';
-                    }
+                $episode = $episodeMap[$mediaId] ?? null;
+                $media = $episode ? ($dramaMap[(string)($episode['dramaId'] ?? '')] ?? null) : null;
+                if ($media) {
+                    $mediaTitle = ($media['title'] ?? '') . ' (S' . ($episode['seasonNumber'] ?? 1) . ' E' . ($episode['episodeNumber'] ?? 1) . ')';
                 }
+                $mediaType = 'drama';
             } elseif ($mediaType === 'movie') {
-                $movie = $db->findOne('movies', ['_id' => $sub['mediaId']]);
-                if ($movie) {
-                    $mediaTitle = $movie['title'];
-                    $mediaSlug = $movie['slug'];
-                    $mediaType = 'movie';
-                }
+                $media = $movieMap[$mediaId] ?? null;
+                $mediaTitle = $media['title'] ?? '';
             } else {
-                $drama = $db->findOne('dramas', ['_id' => $sub['mediaId']]);
-                if ($drama) {
-                    $mediaTitle = $drama['title'];
-                    $mediaSlug = $drama['slug'];
-                    $mediaType = 'drama';
-                }
+                $media = $dramaMap[$mediaId] ?? null;
+                $mediaTitle = $media['title'] ?? '';
+                $mediaType = 'drama';
             }
 
             $sub['media'] = [
                 'title' => $mediaTitle,
-                'slug' => $mediaSlug,
+                'slug' => $media['slug'] ?? '',
                 'type' => $mediaType
             ];
             $populated[] = $sub;
@@ -77,6 +113,13 @@ class AnalyticsController {
     }
 
     public static function getDashboardStats() {
+        $cached = \Utils\Cache::get('admin_dashboard_v2');
+        if ($cached !== false) {
+            header('Content-Type: application/json');
+            echo json_encode($cached);
+            return;
+        }
+
         $db = Database::getInstance();
         
         $totalMovies = $db->count('movies');
@@ -103,9 +146,9 @@ class AnalyticsController {
         $totalViews = $movieViews + $dramaViews + $trafficViews;
 
         // Subtitle moderation stats
-        $pendingSubtitles   = count($db->find('subtitles', ['approvalStatus' => 'Pending']));
-        $approvedSubtitles  = count($db->find('subtitles', ['approvalStatus' => 'Approved']));
-        $rejectedSubtitles  = count($db->find('subtitles', ['approvalStatus' => 'Rejected']));
+        $pendingSubtitles   = $db->count('subtitles', ['approvalStatus' => 'Pending']);
+        $approvedSubtitles  = $db->count('subtitles', ['approvalStatus' => 'Approved']);
+        $rejectedSubtitles  = $db->count('subtitles', ['approvalStatus' => 'Rejected']);
 
         // System health snapshot
         $systemHealth = [
@@ -248,8 +291,6 @@ class AnalyticsController {
             'sort' => ['downloads' => -1],
             'limit' => 10
         ]);
-        $mostDownloaded = self::populateSubtitleDetails($mostDownloadedRaw);
-
         $latestDownloadsRaw = $db->find('subtitles', [
             'approvalStatus' => 'Approved',
             'lastDownloadedAt' => ['$gt' => '']
@@ -257,10 +298,12 @@ class AnalyticsController {
             'sort' => ['lastDownloadedAt' => -1],
             'limit' => 10
         ]);
-        $latestDownloads = self::populateSubtitleDetails($latestDownloadsRaw);
+        $mostDownloadedCount = count($mostDownloadedRaw);
+        $populatedDownloads = self::populateSubtitleDetails(array_merge($mostDownloadedRaw, $latestDownloadsRaw));
+        $mostDownloaded = array_slice($populatedDownloads, 0, $mostDownloadedCount);
+        $latestDownloads = array_slice($populatedDownloads, $mostDownloadedCount);
 
-        header('Content-Type: application/json');
-        echo json_encode([
+        $payload = [
             'counts' => [
                 'totalMovies'       => $totalMovies,
                 'totalDramas'       => $totalDramas,
@@ -285,10 +328,21 @@ class AnalyticsController {
                 'rejected' => $rejectedSubtitles
             ],
             'systemHealth' => $systemHealth
-        ]);
+        ];
+
+        \Utils\Cache::set('admin_dashboard_v2', $payload, 60);
+        header('Content-Type: application/json');
+        echo json_encode($payload);
     }
 
     public static function logPageVisit() {
+        $isExplicitApiRequest = strpos($_SERVER['REQUEST_URI'] ?? '', '/api/analytics/visit') !== false;
+        if ($isExplicitApiRequest && !\Utils\VisitorGuard::shouldCount('api_visit')) {
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Already counted today']);
+            return;
+        }
+
         $todayStr = date('Y-m-d');
         $db = Database::getInstance();
         $record = self::getOrCreateRecord();
@@ -314,15 +368,9 @@ class AnalyticsController {
         $db->updateOne('analytics', ['_id' => $record['_id']], ['trafficLogs' => $logs]);
 
         // When called via the explicit API endpoint (not just middleware hook)
-        if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/analytics/visit') !== false) {
-            // Respect VisitorGuard for the explicit API endpoint too
-            if (\Utils\VisitorGuard::shouldCount('api_visit')) {
-                header('Content-Type: application/json');
-                echo json_encode(['message' => 'Visit logged successfully']);
-            } else {
-                header('Content-Type: application/json');
-                echo json_encode(['message' => 'Already counted today']);
-            }
+        if ($isExplicitApiRequest) {
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Visit logged successfully']);
         }
     }
 

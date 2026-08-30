@@ -35,8 +35,8 @@ export default function Home({
       return res.data;
     },
     initialData: initialHomeCatalog,
-    staleTime: 0,
-    refetchOnMount: 'always'
+    staleTime: 60_000,
+    refetchOnMount: false
   });
 
   const featuredItems = React.useMemo(() => {
@@ -57,8 +57,8 @@ export default function Home({
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '') ? initialLibraryMovies : undefined,
-    staleTime: 0,
-    refetchOnMount: 'always'
+    staleTime: 60_000,
+    refetchOnMount: false
   });
 
   // Fetch Library Dramas (reactive to sort and country)
@@ -69,8 +69,8 @@ export default function Home({
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '') ? initialLibraryDramas : undefined,
-    staleTime: 0,
-    refetchOnMount: 'always'
+    staleTime: 60_000,
+    refetchOnMount: false
   });
 
   // Fetch Subtitles (Recent Updates)
@@ -81,8 +81,8 @@ export default function Home({
       return res.data;
     },
     initialData: initialSubtitles,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60_000,
+    refetchOnMount: false,
     retry: false
   });
 

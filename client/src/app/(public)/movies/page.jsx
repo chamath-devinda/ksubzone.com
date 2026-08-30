@@ -1,5 +1,6 @@
 import React from 'react';
 import MoviesList from '@/features/media/pages/MoviesList';
+import { compactCatalogItems } from '@/utils/mediaCatalog';
 
 export const metadata = {
   title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
@@ -28,6 +29,7 @@ export default async function MoviesPage() {
     const res = await fetch(`${backendUrl}/api/media/movies?sort=popular&page=1&limit=24`, { next: { revalidate: 60 } });
     if (res.ok) {
       initialData = await res.json();
+      initialData.movies = compactCatalogItems(initialData.movies);
     }
   } catch (error) {
     console.error("Error fetching movies catalog on server:", error);

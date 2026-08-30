@@ -20,8 +20,8 @@ export default function MoviesList({ initialData }) {
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '' && page === 1) ? initialData : undefined,
-    staleTime: 0,
-    refetchOnMount: 'always'
+    staleTime: 60_000,
+    refetchOnMount: false
   });
 
   const movies = (data?.movies || []).map(m => ({ ...m, mediaType: 'movie' }));

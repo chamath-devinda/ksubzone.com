@@ -3,6 +3,7 @@ namespace Controllers;
 
 use Config\Database;
 use Utils\Slug;
+use Utils\MediaPayload;
 
 class MovieController {
     public static function getSearchSuggestions() {
@@ -102,17 +103,12 @@ class MovieController {
         $trending = $_GET['trending'] ?? null;
         $isHistorical = $_GET['isHistorical'] ?? null;
 
+        // Public catalog data is session-independent. Admin management has a
+        // dedicated endpoint, so no auth lookup or draft data is needed here.
         $filter = [];
-        
-        if (!\Middleware\AuthMiddleware::isAdmin()) {
-            $filter['status'] = ['$in' => ['Published', 'Upcoming']];
-        } else {
-            if ($status && $status !== 'All') {
-                $filter['status'] = $status;
-            } elseif (!$status) {
-                $filter['status'] = ['$in' => ['Published', 'Upcoming']];
-            }
-        }
+        $filter['status'] = in_array($status, ['Published', 'Upcoming'], true)
+            ? $status
+            : ['$in' => ['Published', 'Upcoming']];
 
         if ($isHistorical === 'true') {
             $filter['isHistorical'] = true;
@@ -169,7 +165,7 @@ class MovieController {
         $skip = ($page - 1) * $limit;
 
         // Caching layer for search queries
-        $cacheKey = "search_movies_" . md5(json_encode($_GET));
+        $cacheKey = "search_movies_v2_" . md5(json_encode($_GET));
         $cached = \Utils\Cache::get($cacheKey);
         if ($cached !== false) {
             header('Content-Type: application/json');
@@ -182,10 +178,12 @@ class MovieController {
         $movies = $db->find('movies', $filter, [
             'sort' => $sortOptions,
             'limit' => $limit,
-            'skip' => $skip
+            'skip' => $skip,
+            'excludeFields' => MediaPayload::detailOnlyFields()
         ]);
 
         self::appendMetadataToMovies($movies);
+        $movies = MediaPayload::compactMany($movies);
 
         $payload = [
             'total' => $total,
@@ -203,7 +201,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v4');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v5');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -212,36 +210,37 @@ class MovieController {
 
         $db = Database::getInstance();
         $statusFilter = ['status' => 'Published'];
+        $heroExcludes = MediaPayload::detailOnlyFields(true);
+        $cardExcludes = MediaPayload::detailOnlyFields();
 
         // 1. Latest movies by media/subtitle import activity
-        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 12]);
+        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 12, 'excludeFields' => $heroExcludes]);
         
         // 2. Latest dramas by media/subtitle import activity
-        $latestDramas = $db->find('dramas', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 40]);
+        $latestDramas = $db->find('dramas', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 40, 'excludeFields' => $heroExcludes]);
         
         // 3. Historical movies (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
-        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12]);
+        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
         
         // 4. Historical dramas (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
-        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12]);
+        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
         
         // 5. Trending movies (status: Published, sort: viewCount DESC, limit 12)
-        $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12]);
+        $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
         
         // 6. Trending dramas (status: Published, sort: viewCount DESC, limit 12)
-        $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12]);
+        $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
         
-        // 7. Popular movies (status: Published, sort: viewCount DESC, limit 12)
-        $popularMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12]);
-        
-        // 8. Popular dramas (status: Published, sort: viewCount DESC, limit 12)
-        $popularDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12]);
+        // Popular and trending use the same view-count ranking. Reuse these
+        // records instead of issuing two duplicate remote database queries.
+        $popularMovies = $trendingMovies;
+        $popularDramas = $trendingDramas;
 
         // 9. Upcoming movies (status: Upcoming, sort: releaseDate ASC, limit 12)
-        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 12]);
+        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
 
         // 10. Upcoming dramas (status: Upcoming, sort: releaseDate ASC, limit 12)
-        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 12]);
+        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
 
         // Batch append subtitle summaries to all fetched drama lists
         $allDramas = [];
@@ -371,20 +370,22 @@ class MovieController {
         unset($m);
 
         $catalogData = [
-            'latestMovies' => $latestMovies,
-            'latestDramas' => $latestDramas,
-            'historicalMovies' => $historicalMovies,
-            'historicalDramas' => $historicalDramas,
-            'trendingMovies' => $trendingMovies,
-            'trendingDramas' => $trendingDramas,
-            'popularMovies' => $popularMovies,
-            'popularDramas' => $popularDramas,
-            'upcomingMovies' => $upcomingMovies,
-            'upcomingDramas' => $upcomingDramas
+            'latestMovies' => MediaPayload::compactMany($latestMovies, true),
+            'latestDramas' => MediaPayload::compactMany($latestDramas, true),
+            'historicalMovies' => MediaPayload::compactMany($historicalMovies),
+            'historicalDramas' => MediaPayload::compactMany($historicalDramas),
+            'trendingMovies' => MediaPayload::compactMany($trendingMovies),
+            'trendingDramas' => MediaPayload::compactMany($trendingDramas),
+            // Retain the response keys for older clients. Both rankings have
+            // identical semantics, so the frontend reuses trending records.
+            'popularMovies' => [],
+            'popularDramas' => [],
+            'upcomingMovies' => MediaPayload::compactMany($upcomingMovies),
+            'upcomingDramas' => MediaPayload::compactMany($upcomingDramas)
         ];
 
         // Cache for 2 hours (7200 seconds)
-        \Utils\Cache::set('home_catalog_v4', $catalogData, 7200);
+        \Utils\Cache::set('home_catalog_v5', $catalogData, 7200);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);
@@ -445,7 +446,7 @@ class MovieController {
             $related = $db->find('movies', [
                 '_id' => ['$ne' => $movie['_id']],
                 'keywords' => ['$in' => $movie['keywords']]
-            ], ['limit' => 4]);
+            ], ['limit' => 4, 'excludeFields' => MediaPayload::detailOnlyFields()]);
         }
 
         // Append metadata (isNew & subtitleCount) to main movie and related movies
@@ -453,6 +454,7 @@ class MovieController {
         self::appendMetadataToMovies($moviesArr);
         if (!empty($related)) {
             self::appendMetadataToMovies($related);
+            $related = MediaPayload::compactMany($related);
         }
 
         // Fetch standalone subtitles with batch populating
@@ -652,7 +654,7 @@ class MovieController {
 
     public static function getRecommendations() {
         // Cache layer
-        $cachedRecommendations = \Utils\Cache::get('detail_recommendations');
+        $cachedRecommendations = \Utils\Cache::get('detail_recommendations_v2');
         if ($cachedRecommendations !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedRecommendations);
@@ -665,45 +667,46 @@ class MovieController {
         // 1. Recommended movies (sort by imdbRating DESC, tmdbRating DESC, limit 12)
         $recommendedMovies = $db->find('movies', $statusFilter, [
             'sort' => ['imdbRating' => -1, 'tmdbRating' => -1],
-            'limit' => 12
+            'limit' => 12,
+            'excludeFields' => MediaPayload::detailOnlyFields()
         ]);
         self::appendMetadataToMovies($recommendedMovies);
 
         // 2. Recommended dramas (sort by imdbRating DESC, tmdbRating DESC, limit 12)
         $recommendedDramas = $db->find('dramas', $statusFilter, [
             'sort' => ['imdbRating' => -1, 'tmdbRating' => -1],
-            'limit' => 12
+            'limit' => 12,
+            'excludeFields' => MediaPayload::detailOnlyFields()
         ]);
         \Controllers\DramaController::appendSubtitleSummariesToDramas($recommendedDramas);
 
         // 3. Trending movies
         $trendingMovies = $db->find('movies', $statusFilter, [
             'sort' => ['viewCount' => -1],
-            'limit' => 12
+            'limit' => 12,
+            'excludeFields' => MediaPayload::detailOnlyFields()
         ]);
         self::appendMetadataToMovies($trendingMovies);
 
         // 4. Trending dramas
         $trendingDramas = $db->find('dramas', $statusFilter, [
             'sort' => ['viewCount' => -1],
-            'limit' => 12
+            'limit' => 12,
+            'excludeFields' => MediaPayload::detailOnlyFields()
         ]);
         \Controllers\DramaController::appendSubtitleSummariesToDramas($trendingDramas);
 
         $recommendations = [
-            'recommendedMovies' => $recommendedMovies,
-            'recommendedDramas' => $recommendedDramas,
-            'trendingMovies' => $trendingMovies,
-            'trendingDramas' => $trendingDramas
+            'recommendedMovies' => MediaPayload::compactMany($recommendedMovies),
+            'recommendedDramas' => MediaPayload::compactMany($recommendedDramas),
+            'trendingMovies' => MediaPayload::compactMany($trendingMovies),
+            'trendingDramas' => MediaPayload::compactMany($trendingDramas)
         ];
 
         // Cache for 2 hours (7200 seconds)
-        \Utils\Cache::set('detail_recommendations', $recommendations, 7200);
+        \Utils\Cache::set('detail_recommendations_v2', $recommendations, 7200);
 
         header('Content-Type: application/json');
         echo json_encode($recommendations);
     }
 }
-
-
-

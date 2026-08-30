@@ -22,16 +22,11 @@ export default function ManagementLayout({ children }) {
 
   // Redirect only when we're sure there's no valid session
   useEffect(() => {
-    console.log('[ManagementLayout] Redirect useEffect triggered. hasMounted:', hasMounted, 'loading:', loading, 'isLoginPage:', isLoginPage, 'admin:', !!admin, 'user:', !!user);
     if (!hasMounted || loading || isLoginPage) return;
     const hasAdminToken = !!tokenService.getAdminToken();
     const isAuthorized = admin || (user && user.hasDashboardAccess);
-    console.log('[ManagementLayout] Evaluating redirect: hasAdminToken:', hasAdminToken, 'isAuthorized:', isAuthorized);
     if (!isAuthorized && !hasAdminToken) {
-      console.log('[ManagementLayout] Redirecting to login!');
       router.push('/management/login');
-    } else {
-      console.log('[ManagementLayout] Authorization check passed, no redirect');
     }
   }, [hasMounted, loading, admin, user, isLoginPage, router]);
 
