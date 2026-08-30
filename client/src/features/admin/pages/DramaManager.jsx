@@ -873,13 +873,13 @@ export default function DramaManager() {
                                 {ep.episodeTitle || `Episode ${ep.episodeNumber}`}
                               </span>
                               
-                              {ep.subtitleCount > 0 ? (
+                              {(ep.subtitleCount > 0 || (ep.subtitles && ep.subtitles.length > 0)) ? (
                                 <button
                                   type="button"
                                   onClick={() => openSubtitleManage(ep._id, `S${season.seasonNumber} E${ep.episodeNumber}`)}
                                   className="px-1.5 py-0.2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase transition cursor-pointer flex-shrink-0"
                                 >
-                                  {ep.subtitleCount} Sub{ep.subtitleCount !== 1 ? 's' : ''}
+                                  {(ep.subtitleCount || ep.subtitles.length)} Sub{(ep.subtitleCount || ep.subtitles.length) !== 1 ? 's' : ''}
                                 </button>
                               ) : (
                                 <span className="px-1.5 py-0.2 rounded bg-white/[0.04] text-slate-500 text-[9px] font-mono flex-shrink-0">

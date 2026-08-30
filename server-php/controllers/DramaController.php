@@ -161,17 +161,37 @@ class DramaController {
             $episodes = $db->find('episodes', ['dramaId' => $id], ['sort' => ['episodeNumber' => 1]]);
         }
 
-        // Fetch subtitles attached to these episodes
+        // Fetch subtitles attached to drama and these episodes
         $episodeIds = array_map(function($e) { return $e['_id']; }, $episodes);
-        $subtitles = !empty($episodeIds) ? $db->find('subtitles', ['mediaId' => ['$in' => $episodeIds]]) : [];
-        $subsByEp = [];
+        $allIds = array_merge([$id], $episodeIds);
+        $subtitles = !empty($allIds) ? $db->find('subtitles', ['mediaId' => ['$in' => $allIds]]) : [];
+        
+        $subsByMediaId = [];
+        $subsByEpNum = [];
         foreach ($subtitles as $sub) {
-            $subsByEp[(string)$sub['mediaId']][] = $sub;
+            $mId = (string)($sub['mediaId'] ?? '');
+            $subsByMediaId[$mId][] = $sub;
+            if (isset($sub['episodeNumber']) && $sub['episodeNumber'] !== null) {
+                $sNum = (int)($sub['seasonNumber'] ?? 1);
+                $eNum = (int)$sub['episodeNumber'];
+                $subsByEpNum["{$sNum}_{$eNum}"][] = $sub;
+            }
         }
 
         foreach ($episodes as &$ep) {
-            $ep['subtitles'] = $subsByEp[(string)$ep['_id']] ?? [];
+            $epId = (string)$ep['_id'];
+            $epNum = (int)($ep['episodeNumber'] ?? 1);
+            $sNum = (int)($ep['seasonNumber'] ?? 1);
+
+            $epSubs = $subsByMediaId[$epId] ?? [];
+            if (empty($epSubs) && isset($subsByEpNum["{$sNum}_{$epNum}"])) {
+                $epSubs = $subsByEpNum["{$sNum}_{$epNum}"];
+            }
+
+            $ep['subtitles'] = $epSubs;
+            $ep['subtitleCount'] = count($epSubs);
         }
+        unset($ep);
 
         header('Content-Type: application/json');
         echo json_encode([
