@@ -596,41 +596,92 @@ textarea {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   KSubZone Admin Workspace - Light Mode Theme
-   High-contrast, sleek, Apple/Linear-grade crisp light palette.
+   KSubZone Admin Workspace - State-of-the-Art Dual Theme Design System
+   Sleek Dark Mode (Obsidian & Electric Violet) & Crisp Light Mode (Linear/Vercel Grade)
    ────────────────────────────────────────────────────────────────────────── */
+
+/* Base transition for smooth theme switching */
+.admin-shell,
+.admin-sidebar,
+.admin-main,
+.admin-stat-card,
+.admin-card,
+.admin-data-table,
+.admin-table-toolbar {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ─── DARK THEME DEFAULTS & POLISH ───────────────────────────────────────── */
+.admin-theme-dark .admin-shell,
+[data-admin-theme='dark'] .admin-shell {
+  --admin-canvas: #030008;
+  --admin-sidebar: #080414;
+  --admin-surface: #0b071b;
+  --admin-card-bg: rgba(14, 7, 32, 0.7);
+  --admin-border: rgba(255, 255, 255, 0.07);
+  --admin-text-primary: #f8fafc;
+  --admin-text-secondary: #94a3b8;
+  --admin-text-muted: #64748b;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 80% -10%, rgba(139, 92, 246, 0.12), transparent 38rem),
+    radial-gradient(circle at 10% 110%, rgba(236, 72, 153, 0.08), transparent 32rem),
+    #030008;
+}
+
+.admin-theme-dark .admin-sidebar,
+[data-admin-theme='dark'] .admin-sidebar {
+  background: #080414;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
+}
+
+.admin-theme-dark .admin-stat-card,
+[data-admin-theme='dark'] .admin-stat-card {
+  background: linear-gradient(135deg, rgba(14, 7, 32, 0.8), rgba(8, 4, 20, 0.95));
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.admin-theme-dark .admin-stat-card:hover,
+[data-admin-theme='dark'] .admin-stat-card:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 12px 30px -4px rgba(139, 92, 246, 0.15);
+}
+
+/* ─── LIGHT THEME - CRISP & MODERN LINEAR GRADE ─────────────────────────── */
 .admin-theme-light .admin-shell,
 [data-admin-theme='light'] .admin-shell,
 .admin-shell.admin-theme-light {
   --admin-canvas: #f8fafc;
   --admin-sidebar: #ffffff;
-  --admin-surface: rgba(255, 255, 255, 0.96);
-  --admin-surface-strong: #ffffff;
-  --admin-line: rgba(0, 0, 0, 0.08);
-  --admin-muted: #64748b;
+  --admin-surface: #ffffff;
+  --admin-card-bg: #ffffff;
+  --admin-border: rgba(0, 0, 0, 0.08);
+  --admin-text-primary: #0f172a;
+  --admin-text-secondary: #334155;
+  --admin-text-muted: #64748b;
   color: #0f172a !important;
   background:
-    radial-gradient(circle at 74% -12%, rgba(139, 92, 246, 0.08), transparent 34rem),
-    radial-gradient(circle at 22% 110%, rgba(236, 72, 153, 0.04), transparent 30rem),
+    radial-gradient(circle at 80% -10%, rgba(139, 92, 246, 0.06), transparent 36rem),
+    radial-gradient(circle at 15% 105%, rgba(236, 72, 153, 0.04), transparent 30rem),
     #f8fafc !important;
 }
 
 .admin-theme-light .admin-shell::before,
 [data-admin-theme='light'] .admin-shell::before {
-  opacity: 0.18;
+  opacity: 0.15;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px);
 }
 
+/* Sidebar & Navigation in Light Mode */
 .admin-theme-light .admin-sidebar,
 [data-admin-theme='light'] .admin-sidebar {
-  color: #0f172a;
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  background:
-    radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05), transparent 18rem),
-    #ffffff !important;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+  color: #0f172a !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.03) !important;
 }
 
 .admin-theme-light .admin-sidebar div,
@@ -640,79 +691,79 @@ textarea {
 
 .admin-theme-light .admin-mobile-bar,
 [data-admin-theme='light'] .admin-mobile-bar {
-  color: #0f172a;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  color: #0f172a !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }
 
 .admin-theme-light .admin-icon-button,
 [data-admin-theme='light'] .admin-icon-button {
-  color: #475569;
-  border: 1px solid rgba(0, 0, 0, 0.09);
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  color: #475569 !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
 }
 
 .admin-theme-light .admin-icon-button:hover,
 [data-admin-theme='light'] .admin-icon-button:hover {
-  color: #7c3aed;
-  border-color: rgba(124, 58, 237, 0.3);
-  background: rgba(139, 92, 246, 0.08);
+  color: #7c3aed !important;
+  border-color: rgba(124, 58, 237, 0.3) !important;
+  background: rgba(139, 92, 246, 0.08) !important;
 }
 
 .admin-theme-light .admin-nav-search,
 [data-admin-theme='light'] .admin-nav-search {
-  color: #0f172a;
-  border: 1px solid rgba(0, 0, 0, 0.09);
-  background: #f1f5f9;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  background: #f1f5f9 !important;
 }
 
 .admin-theme-light .admin-nav-search::placeholder,
 [data-admin-theme='light'] .admin-nav-search::placeholder {
-  color: #94a3b8;
+  color: #94a3b8 !important;
 }
 
 .admin-theme-light .admin-nav-search:focus,
 [data-admin-theme='light'] .admin-nav-search:focus {
-  border-color: rgba(139, 92, 246, 0.6);
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.6) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
 }
 
 .admin-theme-light .admin-nav-link,
 [data-admin-theme='light'] .admin-nav-link {
-  color: #475569;
+  color: #475569 !important;
 }
 
 .admin-theme-light .admin-nav-link:hover,
 [data-admin-theme='light'] .admin-nav-link:hover {
-  color: #0f172a;
-  background: rgba(0, 0, 0, 0.04);
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.04) !important;
 }
 
 .admin-theme-light .admin-nav-link.is-active,
 [data-admin-theme='light'] .admin-nav-link.is-active {
   color: #6d28d9 !important;
   font-weight: 700;
-  background: linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(139, 92, 246, 0.04));
-  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.08);
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(139, 92, 246, 0.04)) !important;
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.08) !important;
 }
 
 .admin-theme-light .admin-nav-link.is-active::before,
 [data-admin-theme='light'] .admin-nav-link.is-active::before {
-  background: #7c3aed;
-  box-shadow: 0 0 8px rgba(124, 58, 237, 0.6);
+  background: #7c3aed !important;
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.6) !important;
 }
 
 .admin-theme-light .admin-visit-button,
 .admin-theme-light .admin-profile-card,
 [data-admin-theme='light'] .admin-visit-button,
 [data-admin-theme='light'] .admin-profile-card {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #ffffff;
-  color: #334155;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 
 .admin-theme-light .admin-profile-card span.text-slate-100,
@@ -720,24 +771,25 @@ textarea {
   color: #0f172a !important;
 }
 
+/* Header & Stat Cards in Light Mode */
 .admin-theme-light .admin-dashboard-header,
 [data-admin-theme='light'] .admin-dashboard-header {
-  background: linear-gradient(105deg, #ffffff, #faf5ff);
-  border: 1px solid rgba(139, 92, 246, 0.14);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), inset 0 1px 0 #ffffff;
+  background: linear-gradient(105deg, #ffffff, #faf5ff) !important;
+  border: 1px solid rgba(139, 92, 246, 0.16) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), inset 0 1px 0 #ffffff !important;
 }
 
 .admin-theme-light .admin-stat-card,
 [data-admin-theme='light'] .admin-stat-card {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.04);
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04) !important;
 }
 
 .admin-theme-light .admin-stat-card:hover,
 [data-admin-theme='light'] .admin-stat-card:hover {
-  border-color: rgba(124, 58, 237, 0.25);
-  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.08);
+  border-color: rgba(124, 58, 237, 0.28) !important;
+  box-shadow: 0 10px 24px -4px rgba(124, 58, 237, 0.1) !important;
 }
 
 .admin-theme-light .admin-stat-card h3,
@@ -747,67 +799,48 @@ textarea {
 
 .admin-theme-light .admin-stat-card p,
 [data-admin-theme='light'] .admin-stat-card p {
-  color: #64748b;
+  color: #475569 !important;
 }
 
-.admin-theme-light .admin-table-toolbar,
-.admin-theme-light .admin-data-table,
-.admin-theme-light .admin-modal-drawer,
-[data-admin-theme='light'] .admin-table-toolbar,
-[data-admin-theme='light'] .admin-data-table,
-[data-admin-theme='light'] .admin-modal-drawer {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.05);
+/* ─── CRITICAL FIX: TAILWIND GRADIENT & BACKGROUND REMAPPING IN LIGHT MODE ─ */
+.admin-theme-light [class*='from-luxury-'],
+.admin-theme-light [class*='to-luxury-'],
+.admin-theme-light [class*='via-luxury-'],
+[data-admin-theme='light'] [class*='from-luxury-'],
+[data-admin-theme='light'] [class*='to-luxury-'],
+[data-admin-theme='light'] [class*='via-luxury-'] {
+  --tw-gradient-from: #ffffff !important;
+  --tw-gradient-to: #f8fafc !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
-.admin-theme-light .admin-notification-panel,
-.admin-theme-light .admin-notification-toast,
-[data-admin-theme='light'] .admin-notification-panel,
-[data-admin-theme='light'] .admin-notification-toast {
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+.admin-theme-light .from-luxury-950,
+.admin-theme-light .from-luxury-900,
+.admin-theme-light .from-luxury-850,
+.admin-theme-light .from-luxury-800,
+.admin-theme-light .from-luxury-700,
+[data-admin-theme='light'] .from-luxury-950,
+[data-admin-theme='light'] .from-luxury-900,
+[data-admin-theme='light'] .from-luxury-850,
+[data-admin-theme='light'] .from-luxury-800,
+[data-admin-theme='light'] .from-luxury-700 {
+  --tw-gradient-from: #ffffff !important;
 }
 
-.admin-theme-light .admin-toast,
-[data-admin-theme='light'] .admin-toast {
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid rgba(0, 0, 0, 0.09);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+.admin-theme-light .to-luxury-950,
+.admin-theme-light .to-luxury-900,
+.admin-theme-light .to-luxury-850,
+.admin-theme-light .to-luxury-800,
+.admin-theme-light .to-luxury-700,
+[data-admin-theme='light'] .to-luxury-950,
+[data-admin-theme='light'] .to-luxury-900,
+[data-admin-theme='light'] .to-luxury-850,
+[data-admin-theme='light'] .to-luxury-800,
+[data-admin-theme='light'] .to-luxury-700 {
+  --tw-gradient-to: #f8fafc !important;
 }
 
-.admin-theme-light .admin-main h1,
-.admin-theme-light .admin-main h2,
-.admin-theme-light .admin-main h3,
-[data-admin-theme='light'] .admin-main h1,
-[data-admin-theme='light'] .admin-main h2,
-[data-admin-theme='light'] .admin-main h3 {
-  color: #0f172a !important;
-}
-
-.admin-theme-light .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']),
-[data-admin-theme='light'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']) {
-  border-color: #cbd5e1;
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-.admin-theme-light .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio'])::placeholder,
-[data-admin-theme='light'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio'])::placeholder {
-  color: #94a3b8;
-}
-
-.admin-theme-light .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']):focus,
-[data-admin-theme='light'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']):focus {
-  border-color: #7c3aed;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
-}
-
-/* Remap utility surfaces cleanly inside Light Mode */
+/* Surface Utility Remapping */
 .admin-theme-light .bg-luxury-950,
 [data-admin-theme='light'] .bg-luxury-950 {
   background-color: #f8fafc !important;
@@ -815,35 +848,50 @@ textarea {
 }
 
 .admin-theme-light .bg-luxury-900,
-[data-admin-theme='light'] .bg-luxury-900 {
+.admin-theme-light .bg-luxury-850,
+.admin-theme-light .bg-luxury-800,
+.admin-theme-light .bg-luxury-700,
+[data-admin-theme='light'] .bg-luxury-900,
+[data-admin-theme='light'] .bg-luxury-850,
+[data-admin-theme='light'] .bg-luxury-800,
+[data-admin-theme='light'] .bg-luxury-700 {
   background-color: #ffffff !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
 }
 
-.admin-theme-light .bg-luxury-850,
-.admin-theme-light .bg-luxury-800,
-[data-admin-theme='light'] .bg-luxury-850,
-[data-admin-theme='light'] .bg-luxury-800 {
-  background-color: #f1f5f9 !important;
+/* Dark utility background replacements */
+.admin-theme-light .admin-main [class*='bg-black/'],
+[data-admin-theme='light'] .admin-main [class*='bg-black/'] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.admin-theme-light .admin-main [class*='bg-white/'],
+[data-admin-theme='light'] .admin-main [class*='bg-white/'] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Borders & Dividers in Light Mode */
+.admin-theme-light .admin-main [class*='border-white/'],
+[data-admin-theme='light'] .admin-main [class*='border-white/'] {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-.admin-theme-light .admin-main .border-white\/\[0\.07\],
-.admin-theme-light .admin-main .border-white\/\[0\.08\],
-.admin-theme-light .admin-main .border-white\/\[0\.05\],
-.admin-theme-light .admin-main .border-white\/\[0\.06\],
-.admin-theme-light .admin-main .border-white\/10,
-.admin-theme-light .admin-main .border-white\/\[0\.1\],
-.admin-theme-light .admin-main .border-white\/20,
-[data-admin-theme='light'] .admin-main .border-white\/\[0\.07\],
-[data-admin-theme='light'] .admin-main .border-white\/\[0\.08\],
-[data-admin-theme='light'] .admin-main .border-white\/\[0\.05\],
-[data-admin-theme='light'] .admin-main .border-white\/\[0\.06\],
-[data-admin-theme='light'] .admin-main .border-white\/10,
-[data-admin-theme='light'] .admin-main .border-white\/\[0\.1\],
-[data-admin-theme='light'] .admin-main .border-white\/20 {
-  border-color: rgba(0, 0, 0, 0.08) !important;
+.admin-theme-light .admin-main [class*='divide-white/'],
+[data-admin-theme='light'] .admin-main [class*='divide-white/'] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ─── TYPOGRAPHY & HIGH CONTRAST REMAPPING IN LIGHT MODE ─────────────────── */
+.admin-theme-light .admin-main h1,
+.admin-theme-light .admin-main h2,
+.admin-theme-light .admin-main h3,
+.admin-theme-light .admin-main h4,
+[data-admin-theme='light'] .admin-main h1,
+[data-admin-theme='light'] .admin-main h2,
+[data-admin-theme='light'] .admin-main h3,
+[data-admin-theme='light'] .admin-main h4 {
+  color: #0f172a !important;
 }
 
 .admin-theme-light .admin-main .text-white,
@@ -862,7 +910,7 @@ textarea {
 .admin-theme-light .admin-main .text-slate-400,
 [data-admin-theme='light'] .admin-main .text-slate-300,
 [data-admin-theme='light'] .admin-main .text-slate-400 {
-  color: #475569 !important;
+  color: #334155 !important;
 }
 
 .admin-theme-light .admin-main .text-slate-500,
@@ -872,26 +920,172 @@ textarea {
   color: #64748b !important;
 }
 
-.admin-theme-light .admin-main .bg-black\/20,
-.admin-theme-light .admin-main .bg-black\/40,
-.admin-theme-light .admin-main .bg-black\/50,
-[data-admin-theme='light'] .admin-main .bg-black\/20,
-[data-admin-theme='light'] .admin-main .bg-black\/40,
-[data-admin-theme='light'] .admin-main .bg-black\/50 {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+.admin-theme-light .admin-main .text-slate-700,
+[data-admin-theme='light'] .admin-main .text-slate-700 {
+  color: #94a3b8 !important;
 }
 
-.admin-theme-light .admin-main .bg-white\/\[0\.02\],
-.admin-theme-light .admin-main .bg-white\/\[0\.03\],
-.admin-theme-light .admin-main .bg-white\/\[0\.04\],
-.admin-theme-light .admin-main .bg-white\/\[0\.05\],
-.admin-theme-light .admin-main .bg-white\/\[0\.06\],
-.admin-theme-light .admin-main .bg-white\/10,
-[data-admin-theme='light'] .admin-main .bg-white\/\[0\.02\],
-[data-admin-theme='light'] .admin-main .bg-white\/\[0\.03\],
-[data-admin-theme='light'] .admin-main .bg-white\/\[0\.04\],
-[data-admin-theme='light'] .admin-main .bg-white\/\[0\.05\],
-[data-admin-theme='light'] .admin-main .bg-white\/\[0\.06\],
-[data-admin-theme='light'] .admin-main .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.04) !important;
+/* Rich colored accents contrast shift */
+.admin-theme-light .admin-main .text-amber-200,
+.admin-theme-light .admin-main .text-amber-300,
+.admin-theme-light .admin-main .text-amber-400,
+[data-admin-theme='light'] .admin-main .text-amber-200,
+[data-admin-theme='light'] .admin-main .text-amber-300,
+[data-admin-theme='light'] .admin-main .text-amber-400 {
+  color: #b45309 !important;
 }
+
+.admin-theme-light .admin-main .text-violet-200,
+.admin-theme-light .admin-main .text-violet-300,
+[data-admin-theme='light'] .admin-main .text-violet-200,
+[data-admin-theme='light'] .admin-main .text-violet-300 {
+  color: #6d28d9 !important;
+}
+
+.admin-theme-light .admin-main .text-emerald-200,
+.admin-theme-light .admin-main .text-emerald-300,
+.admin-theme-light .admin-main .text-emerald-400,
+[data-admin-theme='light'] .admin-main .text-emerald-200,
+[data-admin-theme='light'] .admin-main .text-emerald-300,
+[data-admin-theme='light'] .admin-main .text-emerald-400 {
+  color: #047857 !important;
+}
+
+.admin-theme-light .admin-main .text-red-200,
+.admin-theme-light .admin-main .text-red-300,
+.admin-theme-light .admin-main .text-red-400,
+.admin-theme-light .admin-main .text-rose-200,
+.admin-theme-light .admin-main .text-rose-300,
+.admin-theme-light .admin-main .text-rose-400,
+[data-admin-theme='light'] .admin-main .text-red-200,
+[data-admin-theme='light'] .admin-main .text-red-300,
+[data-admin-theme='light'] .admin-main .text-red-400,
+[data-admin-theme='light'] .admin-main .text-rose-200,
+[data-admin-theme='light'] .admin-main .text-rose-300,
+[data-admin-theme='light'] .admin-main .text-rose-400 {
+  color: #b91c1c !important;
+}
+
+.admin-theme-light .admin-main .text-blue-200,
+.admin-theme-light .admin-main .text-blue-300,
+.admin-theme-light .admin-main .text-blue-400,
+.admin-theme-light .admin-main .text-indigo-200,
+.admin-theme-light .admin-main .text-indigo-300,
+[data-admin-theme='light'] .admin-main .text-blue-200,
+[data-admin-theme='light'] .admin-main .text-blue-300,
+[data-admin-theme='light'] .admin-main .text-blue-400,
+[data-admin-theme='light'] .admin-main .text-indigo-200,
+[data-admin-theme='light'] .admin-main .text-indigo-300 {
+  color: #1d4ed8 !important;
+}
+
+/* ─── EPISODE ALERTS / AMBER BANNER IN LIGHT MODE ────────────────────────── */
+.admin-theme-light .border-amber-500\/20,
+[data-admin-theme='light'] .border-amber-500\/20 {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.admin-theme-light .from-amber-500\/\[0\.06\],
+[data-admin-theme='light'] .from-amber-500\/\[0\.06\] {
+  --tw-gradient-from: #fffbeb !important;
+  --tw-gradient-to: #ffffff !important;
+  --tw-gradient-stops: #fffbeb, #ffffff !important;
+}
+
+.admin-theme-light .bg-amber-500\/\[0\.03\],
+[data-admin-theme='light'] .bg-amber-500\/\[0\.03\] {
+  background-color: rgba(245, 158, 11, 0.08) !important;
+}
+
+.admin-theme-light .border-amber-500\/\[0\.08\],
+[data-admin-theme='light'] .border-amber-500\/\[0\.08\] {
+  border-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+/* ─── DATA TABLES, TOOLBARS & MODALS IN LIGHT MODE ───────────────────────── */
+.admin-theme-light .admin-table-toolbar,
+.admin-theme-light .admin-data-table,
+.admin-theme-light .admin-modal-drawer,
+[data-admin-theme='light'] .admin-table-toolbar,
+[data-admin-theme='light'] .admin-data-table,
+[data-admin-theme='light'] .admin-modal-drawer {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.admin-theme-light .admin-data-table thead,
+[data-admin-theme='light'] .admin-data-table thead {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.admin-theme-light .admin-data-table thead th,
+[data-admin-theme='light'] .admin-data-table thead th {
+  color: #475569 !important;
+}
+
+.admin-theme-light .admin-data-table tbody tr,
+[data-admin-theme='light'] .admin-data-table tbody tr {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.admin-theme-light .admin-data-table tbody tr:hover,
+[data-admin-theme='light'] .admin-data-table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* ─── FORM CONTROLS IN LIGHT MODE ────────────────────────────────────────── */
+.admin-theme-light .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']),
+[data-admin-theme='light'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']) {
+  border-color: #cbd5e1 !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.admin-theme-light .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio'])::placeholder,
+[data-admin-theme='light'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio'])::placeholder {
+  color: #94a3b8 !important;
+}
+
+.admin-theme-light .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']):focus,
+[data-admin-theme='light'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']):focus {
+  border-color: #7c3aed !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+}
+
+/* ─── SVG CHARTS & TOOLTIPS IN LIGHT MODE ────────────────────────────────── */
+.admin-theme-light .admin-main svg text,
+[data-admin-theme='light'] .admin-main svg text {
+  fill: #64748b !important;
+}
+
+.admin-theme-light .admin-main svg line[stroke^='rgba(255'],
+.admin-theme-light .admin-main svg line[stroke*='255'],
+[data-admin-theme='light'] .admin-main svg line[stroke^='rgba(255'],
+[data-admin-theme='light'] .admin-main svg line[stroke*='255'] {
+  stroke: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ─── NOTIFICATIONS & TOASTS ─────────────────────────────────────────────── */
+.admin-theme-light .admin-notification-panel,
+.admin-theme-light .admin-notification-toast,
+[data-admin-theme='light'] .admin-notification-panel,
+[data-admin-theme='light'] .admin-notification-toast {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12) !important;
+}
+
+.admin-theme-light .admin-toast,
+[data-admin-theme='light'] .admin-toast {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1) !important;
+}
+

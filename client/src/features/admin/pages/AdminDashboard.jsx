@@ -281,7 +281,7 @@ function TrafficChart({ allLogs }) {
                   {currentPoints.map((p, i) => (
                     <g key={i} style={{ cursor: 'pointer' }}>
                       <circle cx={p.x} cy={p.y} r={tooltip?.date === p.date ? 7 : 5} fill="#8b5cf6" opacity="0.12" />
-                      <circle cx={p.x} cy={p.y} r={tooltip?.date === p.date ? 4 : 3} fill="#0a0518" stroke="url(#tGradLine)" strokeWidth="2" />
+                      <circle cx={p.x} cy={p.y} r={tooltip?.date === p.date ? 4 : 3} className="fill-luxury-900" stroke="url(#tGradLine)" strokeWidth="2" />
                     </g>
                   ))}
                 </>
@@ -406,9 +406,9 @@ function ContentDonut({ movies, dramas, episodes }) {
                 <path key={i} d={seg.path} fill={seg.color} opacity="0.85" className="transition-opacity hover:opacity-100" />
               ))
             )}
-            <circle cx={cx} cy={cy} r={innerR} fill="#030008" />
-            <text x={cx} y={cy - 4} textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="monospace">{formatNum(total)}</text>
-            <text x={cx} y={cy + 9} textAnchor="middle" fill="rgba(148,163,184,0.5)" fontSize="7" fontFamily="monospace">TOTAL</text>
+            <circle cx={cx} cy={cy} r={innerR} className="fill-luxury-950" />
+            <text x={cx} y={cy - 4} textAnchor="middle" className="fill-slate-100 font-bold" fontSize="13" fontWeight="900" fontFamily="monospace">{formatNum(total)}</text>
+            <text x={cx} y={cy + 9} textAnchor="middle" className="fill-slate-500" fontSize="7" fontFamily="monospace">TOTAL</text>
           </svg>
         </div>
 

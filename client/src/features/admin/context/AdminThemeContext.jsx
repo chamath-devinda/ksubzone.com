@@ -24,6 +24,12 @@ export function AdminThemeProvider({ children }) {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-admin-theme', theme);
+    }
+  }, [theme]);
+
   const setTheme = (newTheme) => {
     const validTheme = newTheme === 'light' ? 'light' : 'dark';
     setThemeState(validTheme);
