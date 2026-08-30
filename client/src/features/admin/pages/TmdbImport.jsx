@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
-import { motion } from 'framer-motion';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import DataTable from '@/features/admin/components/DataTable';
 import { useToast } from '@/features/admin/components/Toast';
 import {
-  Tv, Database, Search, Download, RefreshCw, CheckSquare, Clock
+  Tv, Database, Search, Download, RefreshCw, CheckSquare, Clock, Sparkles
 } from 'lucide-react';
 
 const IMPORT_TIMEOUT_MS = 240000;
@@ -17,6 +17,7 @@ export default function TmdbImport() {
   const { admin } = useAuth();
   const toast = useToast();
   
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('tv'); // 'movie' or 'tv'
   const [loading, setLoading] = useState(false);
@@ -61,47 +62,31 @@ export default function TmdbImport() {
   }, []);
 
   const handleSearch = async (e) => {
-    if (e) e.preventDefault();
-    if (!query.trim()) return;
-
+    e.preventDefault();
+    if (!query) return;
     setLoading(true);
-    setResults([]);
-
+    setMode('search');
     try {
-      const res = await apiClient.get(`/api/admin/tmdb/search`, {
-        params: { query, type }
-      });
+      const res = await apiClient.get(`/api/admin/tmdb/search?query=${encodeURIComponent(query)}&type=${type}`);
       setResults(res.data);
       setSelectedIds([]);
-      if (res.data.length === 0) {
-        toast.info('No items found matching search terms.');
-      }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Search execution failed.');
+      toast.error('Search query failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDiscover = async (nextSource = source) => {
+  const handleDiscover = async (src) => {
+    setSource(src);
     setMode('discover');
-    setType('tv');
-    setSource(nextSource);
     setLoading(true);
-    setResults([]);
-    setSelectedIds([]);
-
     try {
-      const res = await apiClient.get('/api/admin/tmdb/discover/korean-dramas', {
-        params: { source: nextSource }
-      });
-      const dataResults = res.data.results || [];
-      setResults(dataResults);
-      if (dataResults.length === 0) {
-        toast.info('No Korean drama titles found for this source.');
-      }
+      const res = await apiClient.get(`/api/admin/tmdb/discover?source=${src}`);
+      setResults(res.data);
+      setSelectedIds([]);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Korean drama discovery failed.');
+      toast.error('Failed to discover dramas from TMDB');
     } finally {
       setLoading(false);
     }
@@ -109,70 +94,52 @@ export default function TmdbImport() {
 
   const handleImport = async (tmdbId) => {
     setImportingId(tmdbId);
-
     try {
-      const res = await apiClient.post(`/api/admin/tmdb/import`, 
-        { id: tmdbId, type, isHistorical },
+      const res = await apiClient.post(
+        '/api/admin/tmdb/import',
+        { tmdbId, type, isHistorical },
         { timeout: IMPORT_TIMEOUT_MS }
       );
-      toast.success(res.data.message || 'Import operation completed successfully!');
-      
-      // Remove imported item from search list
-      setResults(prev => prev.filter(item => item.id !== tmdbId));
-      setSelectedIds(prev => prev.filter(id => id !== tmdbId));
+      toast.success(res.data.message || 'Media imported successfully with full seasons and episodes!');
       fetchHistory();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Cascading import failed.');
+      toast.error(err.response?.data?.message || 'Import failed');
     } finally {
       setImportingId(null);
-    }
-  };
-
-  const toggleSelected = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === results.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(results.map(item => item.id));
     }
   };
 
   const handleBulkImport = async () => {
     if (selectedIds.length === 0) return;
     setBulkImporting(true);
-
     try {
-      const res = await apiClient.post('/api/admin/tmdb/bulk-import',
-        { ids: selectedIds, type: 'tv', isHistorical },
+      const res = await apiClient.post(
+        '/api/admin/tmdb/bulk-import',
+        { tmdbIds: selectedIds, type: 'tv', isHistorical },
         { timeout: IMPORT_TIMEOUT_MS }
       );
-
-      const importedIds = Array.isArray(res.data.importedIds) ? res.data.importedIds : [];
-      const queuedIds = Array.isArray(res.data.queuedIds) ? res.data.queuedIds : [];
-      const acceptedIds = new Set([...importedIds, ...queuedIds].map(Number));
-
-      // Preserve compatibility while frontend and backend deployments overlap.
-      if (acceptedIds.size === 0 && res.data.status === 'Importing') {
-        selectedIds.forEach(id => acceptedIds.add(Number(id)));
-      }
-
-      setResults(prev => prev.filter(item => !acceptedIds.has(Number(item.id))));
-      setSelectedIds(prev => prev.filter(id => !acceptedIds.has(Number(id))));
-
-      if (res.data.status === 'Partial') {
-        toast.warning(res.data.message || 'Only part of the selection was imported. The remaining titles are still selected.');
-      } else {
-        toast.success(res.data.message || 'Bulk import completed.');
-      }
+      toast.success(`Bulk import completed: ${res.data.successCount} added, ${res.data.failedCount} skipped.`);
+      setSelectedIds([]);
       fetchHistory();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Bulk import failed.');
+      toast.error('Bulk import process failed');
     } finally {
       setBulkImporting(false);
     }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === results.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(results.map(r => r.id));
+    }
+  };
+
+  const toggleSelected = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   };
 
   const historyColumns = [
@@ -181,20 +148,16 @@ export default function TmdbImport() {
       label: 'Title',
       sortable: true,
       render: (val, row) => (
-        <div className="font-semibold text-slate-100 flex items-center gap-2">
-          <span>{val}</span>
-        </div>
+        <span className="font-bold text-slate-200 block text-xs truncate max-w-[280px]">
+          {val || row.name || 'Untitled'}
+        </span>
       )
     },
     {
       key: 'type',
-      label: 'Type',
+      label: 'Media Type',
       sortable: true,
-      render: (val) => (
-        <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400 uppercase">
-          {val === 'tv' ? 'TV Series' : 'Movie'}
-        </span>
-      )
+      render: (val) => <span className="uppercase text-[10px] font-mono font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded">{val}</span>
     },
     {
       key: 'tmdbId',
@@ -210,7 +173,7 @@ export default function TmdbImport() {
         const colors = {
           Success: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
           Duplicate: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-          Failed: 'bg-red-500/10 text-red-400 border-red-500/20'
+          Failed: 'bg-rose-500/10 text-rose-400 border-rose-500/20'
         };
         return (
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${colors[val] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
@@ -228,61 +191,48 @@ export default function TmdbImport() {
   ];
 
   return (
-    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar />
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
-      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0">
-        <div className="max-w-5xl mx-auto">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
           
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Korean Drama Import Center</h1>
-            <p className="text-slate-400 text-xs mt-1">Discover, search, and bulk-import Korean dramas from TMDB metadata with seasons, episodes, cast, and SEO fields.</p>
+          <div className="pb-2 border-b border-white/[0.05]">
+            <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">TMDB Media Importer</h1>
+            <p className="text-xs text-slate-400 mt-0.5">Discover, search, and bulk-import Korean dramas and movies from TMDB with seasons, episodes, cast, and SEO fields</p>
           </div>
 
-          {/* Visual Step Indicator */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-luxury-900/40 border border-white/5 p-3 rounded-2xl">
-            <div className={`flex-1 flex items-center gap-2.5 p-2 rounded-xl transition ${results.length === 0 ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'text-slate-500 bg-white/[0.01]'}`}>
-              <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${results.length === 0 ? 'bg-brand-primary text-white font-mono' : 'bg-white/5 font-mono'}`}>1</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Search & Discover</span>
-            </div>
-            <div className={`flex-1 flex items-center gap-2.5 p-2 rounded-xl transition ${results.length > 0 && !importingId && !bulkImporting ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'text-slate-500 bg-white/[0.01]'}`}>
-              <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${results.length > 0 && !importingId && !bulkImporting ? 'bg-brand-primary text-white font-mono' : 'bg-white/5 font-mono'}`}>2</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Preview Metadata</span>
-            </div>
-            <div className={`flex-1 flex items-center gap-2.5 p-2 rounded-xl transition ${importingId || bulkImporting ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'text-slate-500 bg-white/[0.01]'}`}>
-              <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${importingId || bulkImporting ? 'bg-brand-primary text-white font-mono' : 'bg-white/5 font-mono'}`}>3</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Confirm & Import</span>
-            </div>
-          </div>
-
-          <div className="bg-luxury-900 border border-white/5 p-5 rounded-2xl mb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Discovery Presets Card */}
+          <div className="bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <Tv className="w-4 h-4 text-brand-primary" /> Korean Drama Discovery
+                <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-violet-400" /> Korean Drama Discovery
                 </h2>
-                <p className="text-[11px] text-slate-500 mt-1">Use presets to find popular and trending dramas without typing a title.</p>
+                <p className="text-xs text-slate-500 mt-0.5">Use presets to find popular and trending dramas without typing a title.</p>
               </div>
               <button
                 type="button"
                 onClick={() => handleDiscover(source)}
                 disabled={loading}
-                className="h-10 px-4 rounded-xl bg-white/5 border border-white/10 hover:border-brand-primary/40 text-slate-200 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition"
+                className="h-8 px-3 rounded-lg bg-[#151821] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition self-start sm:self-auto"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh Source
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
               {discoverSources.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => handleDiscover(item.id)}
-                  className={`h-10 px-3 rounded-xl border text-[11px] font-black uppercase tracking-wider transition ${
+                  className={`h-9 px-3 rounded-lg border text-xs font-semibold transition ${
                     source === item.id && mode === 'discover'
-                      ? 'bg-brand-primary border-brand-primary text-white'
-                      : 'bg-luxury-950 border-white/10 text-slate-400 hover:text-white hover:border-brand-primary/30'
+                      ? 'bg-violet-600 border-violet-500 text-white shadow-sm'
+                      : 'bg-[#08090D] border-white/[0.08] text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   {item.label}
@@ -291,28 +241,28 @@ export default function TmdbImport() {
             </div>
           </div>
 
-          {/* Form */}
-          <div className="bg-luxury-900 border border-white/5 p-6 rounded-2xl mb-8">
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+          {/* Search Form Card */}
+          <div className="bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl space-y-3.5">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
               <div className="flex-grow relative">
                 <input
                   type="text"
                   required
-                  placeholder={type === 'movie' ? "Search K-Movies (e.g. Train to Busan, Parasite)..." : "Search K-Dramas (e.g. Moving, Goblin)..."}
+                  placeholder={type === 'movie' ? "Search K-Movies (e.g. Wonderland, Parasite)..." : "Search K-Dramas (e.g. Queen of Tears, Moving)..."}
                   value={query}
                   onChange={(e) => { setQuery(e.target.value); setMode('search'); }}
-                  className="w-full pl-11 pr-4 h-12 bg-luxury-950 border border-white/10 rounded-xl focus:border-brand-primary outline-none text-slate-200 text-sm transition"
+                  className="w-full pl-9 pr-3.5 h-10 bg-[#08090D] border border-white/[0.08] rounded-lg focus:border-violet-500 outline-none text-slate-100 text-xs transition"
                 />
-                <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3 top-3 w-3.5 h-3.5 text-slate-500" />
               </div>
 
               {/* Selector */}
-              <div className="flex bg-luxury-950 border border-white/10 p-1.5 rounded-xl self-start sm:self-auto flex-shrink-0">
+              <div className="flex bg-[#08090D] border border-white/[0.08] p-1 rounded-lg self-start sm:self-auto flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => { setType('movie'); setMode('search'); }}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
-                    type === 'movie' ? 'bg-brand-primary text-white' : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+                    type === 'movie' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   Movies
@@ -320,38 +270,38 @@ export default function TmdbImport() {
                 <button
                   type="button"
                   onClick={() => { setType('tv'); setMode('search'); }}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${
-                    type === 'tv' ? 'bg-brand-primary text-white' : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+                    type === 'tv' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  TV Series
+                  Dramas
                 </button>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 h-12 bg-brand-primary hover:bg-opacity-90 disabled:bg-opacity-50 text-white font-bold rounded-xl text-sm transition self-stretch flex items-center justify-center gap-2"
+                className="px-4 h-10 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition shadow-sm flex items-center justify-center gap-1.5 flex-shrink-0"
               >
                 {loading ? 'Searching...' : 'Find Matches'}
               </button>
             </form>
 
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-6">
+            <div className="pt-2 border-t border-white/[0.04] flex items-center gap-6">
               <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={isHistorical}
                   onChange={(e) => setIsHistorical(e.target.checked)}
-                  className="w-4 h-4 rounded bg-luxury-950 border-white/10 text-brand-primary focus:ring-0 focus:ring-offset-0"
+                  className="w-4 h-4 rounded bg-[#08090D] border-white/20 text-violet-600 focus:ring-0"
                 />
-                Mark imports as <span className="text-brand-primary font-bold">Historical Drama</span>
+                <span>Mark imports as <b className="text-violet-400">Historical Drama</b></span>
               </label>
             </div>
           </div>
 
           {/* Results grid */}
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 {mode === 'discover' ? 'Discovered Korean Dramas' : 'Search Results'}
@@ -362,92 +312,93 @@ export default function TmdbImport() {
                   <button
                     type="button"
                     onClick={toggleSelectAll}
-                    className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 text-[11px] font-bold uppercase tracking-wider flex items-center gap-2"
+                    className="h-8 px-3 rounded-lg bg-[#11131A] border border-white/[0.08] hover:bg-white/[0.04] text-slate-300 text-xs font-semibold flex items-center gap-1.5"
                   >
                     <CheckSquare className="w-3.5 h-3.5" />
-                    {selectedIds.length === results.length ? 'Clear All' : 'Select All'}
+                    <span>{selectedIds.length === results.length ? 'Clear All' : 'Select All'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleBulkImport}
                     disabled={selectedIds.length === 0 || bulkImporting}
-                    className="h-9 px-4 rounded-xl bg-brand-primary disabled:bg-brand-primary/40 text-white text-[11px] font-black uppercase tracking-wider flex items-center gap-2"
+                    className="h-8 px-3.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-xs font-semibold disabled:opacity-40 flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    {bulkImporting ? 'Importing...' : `Bulk Import ${selectedIds.length}`}
+                    <span>{bulkImporting ? 'Importing...' : `Bulk Import (${selectedIds.length})`}</span>
                   </button>
                 </div>
               )}
             </div>
             
             {loading ? (
-              <div className="text-center py-16 text-slate-500">Querying metadata provider...</div>
+              <div className="text-center py-16 text-slate-500 text-xs">Querying TMDB metadata provider...</div>
             ) : results.length === 0 ? (
-              <div className="text-center py-16 bg-luxury-900/20 rounded-2xl border border-white/5 text-slate-500 text-sm">
-                Matches from TMDB will appear here. Simulated local results will trigger if the server API keys are not verified.
+              <div className="text-center py-16 bg-[#11131A] rounded-xl border border-white/[0.06] text-slate-500 text-xs">
+                Matches from TMDB will appear here.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.map((item) => (
                   <div 
                     key={item.id}
-                    className={`bg-luxury-900 border p-4 rounded-xl flex gap-4 transition-all hover:border-brand-primary/20 ${
-                      selectedIds.includes(item.id) ? 'border-brand-primary/50 shadow-lg shadow-brand-primary/10' : 'border-white/5'
+                    className={`bg-[#11131A] border p-3.5 rounded-xl flex gap-3.5 transition-all hover:border-white/[0.12] ${
+                      selectedIds.includes(item.id) ? 'border-violet-500/50 bg-[#13151D]' : 'border-white/[0.06]'
                     }`}
                   >
                     {mode === 'discover' && (
-                      <label className="self-start pt-1">
+                      <label className="self-start pt-1 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(item.id)}
                           onChange={() => toggleSelected(item.id)}
-                          className="w-4 h-4 accent-brand-primary"
+                          className="w-4 h-4 accent-violet-600"
                         />
                       </label>
                     )}
                     <img
                       src={item.poster_path ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w185${item.poster_path}`) : 'https://placehold.co/120x180/111/fff?text=No+Photo'}
                       alt={item.title}
-                      className="w-20 h-28 object-cover rounded-lg bg-luxury-950 flex-shrink-0 border border-white/5"
+                      className="w-16 h-24 object-cover rounded-lg bg-[#151821] flex-shrink-0 border border-white/[0.06]"
                     />
                     
-                    <div className="flex-grow flex flex-col justify-between overflow-hidden">
+                    <div className="flex-grow flex flex-col justify-between overflow-hidden min-w-0">
                       <div>
                         <div className="flex justify-between items-start gap-2">
-                          <h4 className="font-extrabold text-sm text-slate-100 truncate">{item.title}</h4>
-                          <span className="text-[10px] text-brand-primary font-mono bg-brand-primary/10 px-1.5 py-0.5 rounded border border-brand-primary/20 flex-shrink-0 uppercase">
-                            Rating: {item.vote_average || 'N/A'}
+                          <h4 className="font-bold text-xs text-slate-100 truncate">{item.title}</h4>
+                          <span className="text-[9px] text-violet-400 font-mono bg-violet-500/10 px-1.5 py-0.2 rounded border border-violet-500/20 flex-shrink-0">
+                            ★ {item.vote_average || '—'}
                           </span>
                         </div>
                         
                         {item.original_title && (
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{item.original_title}</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{item.original_title}</p>
                         )}
                         
-                        <p className="text-slate-400 text-xs mt-2 line-clamp-2 leading-relaxed">
-                          {item.overview || 'No description available from TMDB.'}
+                        <p className="text-slate-400 text-[11px] mt-1.5 line-clamp-2 leading-relaxed">
+                          {item.overview || 'No overview provided.'}
                         </p>
                       </div>
 
-                      <div className="flex justify-between items-center mt-3 pt-2 border-t border-white/5">
+                      <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-white/[0.04]">
                         <span className="text-[10px] text-slate-500 font-mono">
-                          RELEASE: {item.release_date || 'Unknown'}
+                          {item.release_date || 'TBD'}
                         </span>
                         
                         <button
+                          type="button"
                           onClick={() => handleImport(item.id)}
                           disabled={importingId === item.id}
-                          className="px-3.5 py-1.5 bg-brand-primary hover:bg-opacity-95 disabled:bg-opacity-50 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5"
+                          className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-[10px] font-semibold rounded-lg transition flex items-center gap-1"
                         >
                           {importingId === item.id ? (
                             <>
                               <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Importing...
+                              <span>Importing...</span>
                             </>
                           ) : (
                             <>
-                              <Download className="w-3.5 h-3.5" />
-                              One-Click Import
+                              <Download className="w-3 h-3" />
+                              <span>Import</span>
                             </>
                           )}
                         </button>
@@ -460,21 +411,22 @@ export default function TmdbImport() {
           </div>
 
           {/* Import History Table */}
-          <div className="mt-12 bg-luxury-900 border border-white/5 p-6 rounded-2xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-4 h-4 text-brand-primary" />
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">TMDB Import Execution Logs</h3>
+          <div className="mt-8 bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl space-y-3.5">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-violet-400" />
+              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">TMDB Import Execution Logs</h3>
             </div>
             <DataTable
               columns={historyColumns}
               data={history}
               loading={loadingHistory}
               searchPlaceholder="Search imports history..."
+              searchKey="title"
             />
           </div>
 
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

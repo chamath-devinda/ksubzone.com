@@ -87,8 +87,6 @@ if (strpos($uri, '/api/') === 0) {
             $publicCacheSeconds = 300;
         } elseif ($uri === '/api/subtitles/recent') {
             $publicCacheSeconds = 120;
-        } elseif (preg_match('#^/api/subtitles/media/[a-f0-9,]+$#i', $uri)) {
-            $publicCacheSeconds = 120;
         } elseif (in_array($uri, [
             '/api/media/genres',
             '/api/media/recommendations',

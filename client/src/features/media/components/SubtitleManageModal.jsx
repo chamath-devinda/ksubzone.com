@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Download, Languages, Loader2, AlertCircle, RefreshCw, CheckCircle, Clock, UploadCloud, Check } from 'lucide-react';
 import apiClient from '@/services/api/apiClient';
 
-export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, onDeleteSuccess }) {
+export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, onDeleteSuccess, onChanged }) {
   const [subtitles, setSubtitles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -76,7 +76,7 @@ export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, o
     try {
       await apiClient.delete(`/api/admin/subtitles/${id}`);
       setSubtitles(prev => prev.filter(sub => sub._id !== id));
-      onDeleteSuccess?.(); // Trigger parent refresh to update subtitle count badges
+      (onDeleteSuccess || onChanged)?.(); // Refresh subtitle count badges in either manager API.
     } catch (err) {
       setError('Failed to delete subtitle. Please try again.');
       console.error(err);

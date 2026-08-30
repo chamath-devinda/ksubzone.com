@@ -8,8 +8,23 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const EMPTY_META = {};
 
-export default function SubtitleUploadModal({ isOpen, onClose, mediaId, mediaType, targetMeta = EMPTY_META, onUploadSuccess }) {
+export default function SubtitleUploadModal({
+  isOpen,
+  onClose,
+  mediaId: mediaIdProp,
+  mediaType: mediaTypeProp,
+  targetMeta = EMPTY_META,
+  onUploadSuccess,
+  target,
+  onSuccess
+}) {
   const { user, admin } = useAuth();
+  // Support the compact `{ target, onSuccess }` API used by the refreshed
+  // admin managers while retaining compatibility with existing callers.
+  const resolvedTargetMeta = target || targetMeta;
+  const mediaId = mediaIdProp || resolvedTargetMeta.mediaId;
+  const mediaType = mediaTypeProp || resolvedTargetMeta.mediaType || 'Episode';
+  const uploadSuccessCallback = onUploadSuccess || onSuccess;
   const [file, setFile] = useState(null);
   const [language, setLanguage] = useState('Sinhala');
   const [version, setVersion] = useState('1.0');
@@ -59,8 +74,8 @@ export default function SubtitleUploadModal({ isOpen, onClose, mediaId, mediaTyp
     formData.append('version', version);
     formData.append('releaseNotes', releaseNotes);
     formData.append('seasonStatus', seasonStatus);
-    if (targetMeta.seasonNumber) formData.append('seasonNumber', targetMeta.seasonNumber);
-    if (targetMeta.episodeNumber) formData.append('episodeNumber', targetMeta.episodeNumber);
+    if (resolvedTargetMeta.seasonNumber) formData.append('seasonNumber', resolvedTargetMeta.seasonNumber);
+    if (resolvedTargetMeta.episodeNumber) formData.append('episodeNumber', resolvedTargetMeta.episodeNumber);
 
     try {
       const endpoint = admin ? '/api/admin/subtitles/upload' : '/api/subtitles/upload';
@@ -73,7 +88,7 @@ export default function SubtitleUploadModal({ isOpen, onClose, mediaId, mediaTyp
         setSuccess(false);
         setFile(null);
         setReleaseNotes('');
-        onUploadSuccess?.();
+        uploadSuccessCallback?.();
         onClose();
       }, 1000);
     } catch (err) {
@@ -110,7 +125,7 @@ export default function SubtitleUploadModal({ isOpen, onClose, mediaId, mediaTyp
           <div>
             <h2 className="text-sm font-black text-white uppercase tracking-wider">Upload Subtitle</h2>
             <p className="text-[9px] text-slate-500 mt-0.5 font-medium">
-              {targetMeta.label ? targetMeta.label : (mediaType === 'Episode' ? `S${targetMeta.seasonNumber || 1} · E${targetMeta.episodeNumber || 1}` : 'Drama subtitle')}
+              {resolvedTargetMeta.label ? resolvedTargetMeta.label : (mediaType === 'Episode' ? `S${resolvedTargetMeta.seasonNumber || 1} · E${resolvedTargetMeta.episodeNumber || 1}` : 'Drama subtitle')}
             </p>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition">
@@ -193,10 +208,10 @@ export default function SubtitleUploadModal({ isOpen, onClose, mediaId, mediaTyp
               <div className="flex items-center gap-2">
                 <span className="text-[9px] uppercase font-black tracking-widest text-slate-500">Target:</span>
                 <span className="px-2 py-0.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-[10px] font-black font-mono">
-                  S{targetMeta.seasonNumber || 1}
+                  S{resolvedTargetMeta.seasonNumber || 1}
                 </span>
                 <span className="px-2 py-0.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-[10px] font-black font-mono">
-                  E{targetMeta.episodeNumber || 1}
+                  E{resolvedTargetMeta.episodeNumber || 1}
                 </span>
               </div>
             )}

@@ -266,30 +266,35 @@ textarea {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   KSubZone Admin Workspace
-   A focused, high-contrast control surface kept separate from the public UI.
+   KSubZone Admin Workspace — Graphite Foundation Design System 2026
+   Neutral dark surfaces. Violet/cyan/amber only as semantic accents.
    ────────────────────────────────────────────────────────────────────────── */
 .admin-shell {
-  --admin-canvas: #080810;
-  --admin-sidebar: #0d0c17;
-  --admin-surface: rgba(20, 19, 34, 0.82);
-  --admin-surface-strong: rgba(25, 23, 42, 0.96);
-  --admin-line: rgba(255, 255, 255, 0.075);
-  --admin-muted: #8b8a9b;
+  --ksz-bg:         #08090D;
+  --ksz-sidebar:    #090A0F;
+  --ksz-surface:    #0D0F15;
+  --ksz-card:       #11131A;
+  --ksz-elevated:   #151821;
+  --ksz-border:     rgba(255,255,255,0.06);
+  --ksz-text:       #F8FAFC;
+  --ksz-text-2:     #A1A1AA;
+  --ksz-text-muted: #71717A;
+  --ksz-violet:     #8B5CF6;
+  --ksz-emerald:    #10B981;
+  --ksz-cyan:       #38BDF8;
+  --ksz-amber:      #F59E0B;
+  --ksz-rose:       #F43F5E;
   position: relative;
   isolation: isolate;
-  background:
-    radial-gradient(circle at 74% -12%, rgba(124, 58, 237, 0.12), transparent 34rem),
-    radial-gradient(circle at 22% 110%, rgba(236, 72, 153, 0.06), transparent 30rem),
-    var(--admin-canvas);
+  background: var(--ksz-bg);
 }
 
 .admin-login-grid {
-  opacity: 0.34;
+  opacity: 0.22;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 52px 52px;
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
   mask-image: radial-gradient(circle at 50% 45%, black, transparent 76%);
 }
 
@@ -326,17 +331,7 @@ textarea {
 }
 
 .admin-shell::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.32;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  display: none;
 }
 
 .admin-main {
@@ -344,20 +339,72 @@ textarea {
   position: relative;
 }
 
-.admin-sidebar {
-  color: #f8fafc;
-  border-right: 1px solid rgba(255, 255, 255, 0.075);
-  background:
-    radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.11), transparent 18rem),
-    linear-gradient(180deg, rgba(15, 14, 27, 0.98), rgba(10, 9, 18, 0.99));
-  box-shadow: 18px 0 60px rgba(0, 0, 0, 0.24);
+/* ── New KSubZone component classes ─── */
+.ksz-sidebar {
+  color: #F8FAFC;
+  background: #090A0F;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 1px 0 20px rgba(0, 0, 0, 0.4);
 }
 
-.admin-nav-scroll {
+.ksz-topbar {
+  background: rgba(8, 9, 13, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ksz-card {
+  background: #11131A;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 16px -4px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.ksz-kpi-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #13151D;
+  box-shadow: 0 6px 24px -6px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+.ksz-dropdown {
+  background: #151821;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.7);
+  animation: kszFadeIn 0.12s ease-out;
+}
+
+.ksz-search-input {
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ksz-search-input:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes kszFadeIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+
+/* Legacy admin-sidebar alias for pages that still reference it */
+.admin-sidebar {
+  color: #F8FAFC;
+  background: #090A0F;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 1px 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.admin-nav-scroll,
+.ksz-nav-scroll {
   scrollbar-width: none;
 }
 
-.admin-nav-scroll::-webkit-scrollbar {
+.admin-nav-scroll::-webkit-scrollbar,
+.ksz-nav-scroll::-webkit-scrollbar {
   display: none;
 }
 
@@ -465,21 +512,20 @@ textarea {
 }
 
 .admin-dashboard-header {
-  background:
-    linear-gradient(105deg, rgba(24, 22, 42, 0.98), rgba(17, 16, 29, 0.88)),
-    rgba(18, 17, 31, 0.94);
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  background: transparent;
 }
 
 .admin-stat-card {
-  background: linear-gradient(145deg, rgba(22, 21, 37, 0.94), rgba(15, 14, 25, 0.92));
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  background: #11131A;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 16px -4px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .admin-stat-card:hover {
-  border-color: rgba(255, 255, 255, 0.13);
-  transform: translateY(-2px);
-  box-shadow: 0 24px 55px rgba(0, 0, 0, 0.23), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px -6px rgba(0, 0, 0, 0.5);
 }
 
 .admin-table-toolbar,
@@ -611,41 +657,65 @@ textarea {
   transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* ─── DARK THEME DEFAULTS & POLISH ───────────────────────────────────────── */
+/* ─── 2026 DARK THEME ───────────────────────────────────────────────────── */
 .admin-theme-dark .admin-shell,
 [data-admin-theme='dark'] .admin-shell {
-  --admin-canvas: #030008;
-  --admin-sidebar: #080414;
-  --admin-surface: #0b071b;
-  --admin-card-bg: rgba(14, 7, 32, 0.7);
-  --admin-border: rgba(255, 255, 255, 0.07);
-  --admin-text-primary: #f8fafc;
-  --admin-text-secondary: #94a3b8;
-  --admin-text-muted: #64748b;
-  color: #f8fafc;
-  background:
-    radial-gradient(circle at 80% -10%, rgba(139, 92, 246, 0.12), transparent 38rem),
-    radial-gradient(circle at 10% 110%, rgba(236, 72, 153, 0.08), transparent 32rem),
-    #030008;
+  --admin-canvas: #08090D;
+  --admin-sidebar: #090A0F;
+  --admin-surface: #0D0F15;
+  --admin-card-bg: #11131A;
+  --admin-elevated: #151821;
+  --admin-border: rgba(255, 255, 255, 0.06);
+  --admin-text-primary: #F8FAFC;
+  --admin-text-secondary: #A1A1AA;
+  --admin-text-muted: #71717A;
+  color: #F8FAFC;
+  background: #08090D;
 }
 
 .admin-theme-dark .admin-sidebar,
-[data-admin-theme='dark'] .admin-sidebar {
-  background: #080414;
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
+.admin-theme-dark .ksz-sidebar,
+[data-admin-theme='dark'] .admin-sidebar,
+[data-admin-theme='dark'] .ksz-sidebar {
+  background: #090A0F;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 1px 0 20px rgba(0, 0, 0, 0.4);
 }
 
+.admin-theme-dark .admin-topbar,
+.admin-theme-dark .ksz-topbar,
+[data-admin-theme='dark'] .admin-topbar,
+[data-admin-theme='dark'] .ksz-topbar {
+  background: rgba(8, 9, 13, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.admin-theme-dark .admin-surface-card,
 .admin-theme-dark .admin-stat-card,
-[data-admin-theme='dark'] .admin-stat-card {
-  background: linear-gradient(135deg, rgba(14, 7, 32, 0.8), rgba(8, 4, 20, 0.95));
-  border-color: rgba(255, 255, 255, 0.07);
+.admin-theme-dark .ksz-card,
+[data-admin-theme='dark'] .admin-surface-card,
+[data-admin-theme='dark'] .admin-stat-card,
+[data-admin-theme='dark'] .ksz-card {
+  background: #11131A;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 16px -4px rgba(0, 0, 0, 0.35);
 }
 
+.admin-theme-dark .admin-surface-card:hover,
 .admin-theme-dark .admin-stat-card:hover,
+[data-admin-theme='dark'] .admin-surface-card:hover,
 [data-admin-theme='dark'] .admin-stat-card:hover {
-  border-color: rgba(139, 92, 246, 0.35);
-  box-shadow: 0 12px 30px -4px rgba(139, 92, 246, 0.15);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #13151D;
+  box-shadow: 0 6px 24px -6px rgba(0, 0, 0, 0.5);
+}
+
+.admin-theme-dark .admin-elevated-surface,
+[data-admin-theme='dark'] .admin-elevated-surface {
+  background: #151821;
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 /* ─── LIGHT THEME - CRISP & MODERN LINEAR GRADE ─────────────────────────── */
@@ -677,7 +747,9 @@ textarea {
 
 /* Sidebar & Navigation in Light Mode */
 .admin-theme-light .admin-sidebar,
-[data-admin-theme='light'] .admin-sidebar {
+.admin-theme-light .ksz-sidebar,
+[data-admin-theme='light'] .admin-sidebar,
+[data-admin-theme='light'] .ksz-sidebar {
   color: #0f172a !important;
   border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
   background: #ffffff !important;
@@ -688,6 +760,30 @@ textarea {
 [data-admin-theme='light'] .admin-sidebar div {
   border-color: rgba(0, 0, 0, 0.06);
 }
+
+/* Light mode ksz-topbar */
+.admin-theme-light .ksz-topbar,
+[data-admin-theme='light'] .ksz-topbar {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Light mode ksz-card */
+.admin-theme-light .ksz-card,
+[data-admin-theme='light'] .ksz-card {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Light mode ksz-dropdown */
+.admin-theme-light .ksz-dropdown,
+[data-admin-theme='light'] .ksz-dropdown {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.1) !important;
+}
+
 
 .admin-theme-light .admin-mobile-bar,
 [data-admin-theme='light'] .admin-mobile-bar {
@@ -1088,4 +1184,73 @@ textarea {
   border: 1px solid rgba(0, 0, 0, 0.09) !important;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1) !important;
 }
+
+/* ─── MODERN ADMIN UI UTILITIES (GLASS, GLOW & CARDS) ───────────────────── */
+.admin-card-glass {
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.admin-theme-dark .admin-card-glass {
+  background: linear-gradient(135deg, rgba(14, 7, 32, 0.75), rgba(8, 4, 20, 0.9));
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.admin-theme-light .admin-card-glass,
+[data-admin-theme='light'] .admin-card-glass {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.admin-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+}
+
+/* Custom Admin Scrollbar */
+.admin-custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-theme-dark .admin-custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-theme-dark .admin-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+.admin-theme-dark .admin-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+.admin-theme-light .admin-custom-scrollbar::-webkit-scrollbar-track,
+[data-admin-theme='light'] .admin-custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-theme-light .admin-custom-scrollbar::-webkit-scrollbar-thumb,
+[data-admin-theme='light'] .admin-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+.admin-theme-light .admin-custom-scrollbar::-webkit-scrollbar-thumb:hover,
+[data-admin-theme='light'] .admin-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
+}
+
 

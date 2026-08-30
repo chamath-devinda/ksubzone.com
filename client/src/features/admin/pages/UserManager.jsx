@@ -4,16 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import DataTable from '@/features/admin/components/DataTable';
 import { useToast } from '@/features/admin/components/Toast';
 import {
-  Users, ShieldAlert, UserCheck, UserX, Search, Filter
+  Users, ShieldAlert, UserCheck, UserX, Search, Filter, ShieldCheck
 } from 'lucide-react';
 
 export default function UserManager() {
   const { admin } = useAuth();
   const toast = useToast();
   
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -74,16 +76,13 @@ export default function UserManager() {
 
   // Filter local users before feeding to DataTable
   const filteredUsers = users.filter(u => {
-    // 1. Role Filter
     if (filterRole === 'Admins' && !u.hasDashboardAccess) return false;
     if (filterRole === 'Users' && u.hasDashboardAccess) return false;
 
-    // 2. Status Filter
     const status = u.status || 'active';
     if (filterStatus === 'Active' && status !== 'active') return false;
     if (filterStatus === 'Suspended' && status !== 'suspended') return false;
 
-    // 3. Search Query (username / email)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchesUsername = u.username?.toLowerCase().includes(q);
@@ -97,56 +96,51 @@ export default function UserManager() {
   const columns = [
     {
       key: 'username',
-      label: 'Member / ID',
+      label: 'Member',
       sortable: true,
-      render: (val, u) => {
-        const initial = u.username ? u.username.charAt(0).toUpperCase() : '?';
-        return (
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary font-black text-sm flex-shrink-0">
-              {initial}
-            </div>
-            <div className="min-w-0">
-              <span className="font-extrabold text-slate-200 block text-sm truncate">{u.username}</span>
-              <span className="text-[10px] text-slate-500 font-mono mt-0.5 block truncate">ID: {u._id}</span>
-            </div>
+      render: (val, u) => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white uppercase flex-shrink-0 shadow-sm">
+            {val ? val[0] : 'U'}
           </div>
-        );
-      }
+          <div className="min-w-0">
+            <span className="font-bold text-slate-100 block text-xs truncate">{val}</span>
+            <span className="text-[10px] text-slate-500 font-mono block truncate">{u.email}</span>
+          </div>
+        </div>
+      )
     },
     {
-      key: 'email',
-      label: 'Email Address',
+      key: 'role',
+      label: 'Permission Role',
       sortable: true,
-      render: (val) => <span className="font-mono text-slate-400 break-all">{val}</span>
-    },
-    {
-      key: 'hasDashboardAccess',
-      label: 'Role',
-      sortable: true,
-      render: (val) => (
-        <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border ${
-          val 
-            ? 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary' 
-            : 'bg-white/5 border-white/5 text-slate-400'
-        }`}>
-          {val ? 'Admin' : 'User'}
-        </span>
+      render: (_, u) => (
+        <div className="flex items-center gap-1.5">
+          {u.hasDashboardAccess ? (
+            <span className="px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-bold uppercase flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-violet-400" /> Admin
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-md bg-[#151821] border border-white/[0.06] text-slate-400 text-[10px] font-medium">
+              Member
+            </span>
+          )}
+        </div>
       )
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'Account Status',
       sortable: true,
       render: (val) => {
-        const status = val || 'active';
+        const isSuspended = val === 'suspended';
         return (
-          <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border ${
-            status === 'active' 
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-              : 'bg-red-500/10 border-red-500/20 text-red-400'
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            isSuspended 
+              ? 'bg-rose-500/10 border border-rose-500/20 text-rose-400' 
+              : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
           }`}>
-            {status}
+            {isSuspended ? 'Suspended' : 'Active'}
           </span>
         );
       }
@@ -155,34 +149,36 @@ export default function UserManager() {
       key: 'createdAt',
       label: 'Joined Date',
       sortable: true,
-      render: (val) => <span className="font-mono text-slate-400">{val ? new Date(val).toLocaleDateString() : 'N/A'}</span>
+      render: (val) => <span className="font-mono text-xs text-slate-400">{val ? new Date(val).toLocaleDateString() : '—'}</span>
     },
     {
       key: 'actions',
-      label: 'Moderator Controls',
+      label: 'Actions',
       headerAlign: 'text-right',
       render: (_, u) => (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-1.5">
           <button
+            type="button"
             onClick={() => handleToggleDashboardAccess(u._id, u.hasDashboardAccess)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
               u.hasDashboardAccess 
-                ? 'bg-brand-primary/20 border border-brand-primary/30 text-brand-primary hover:bg-brand-primary/30' 
-                : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'
+                ? 'bg-violet-500/10 border border-violet-500/25 text-violet-300 hover:bg-violet-500/20' 
+                : 'bg-[#151821] border border-white/[0.06] text-slate-400 hover:text-white hover:bg-white/[0.06]'
             }`}
           >
             {u.hasDashboardAccess ? 'Revoke Admin' : 'Make Admin'}
           </button>
           <button
+            type="button"
             onClick={() => handleToggleStatus(u._id, u.status || 'active')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1 ${
               u.status === 'suspended' 
-                ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30' 
-                : 'bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30'
+                ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20' 
+                : 'bg-rose-500/10 border border-rose-500/25 text-rose-400 hover:bg-rose-500/20'
             }`}
           >
             {u.status === 'suspended' ? <UserCheck className="w-3.5 h-3.5" /> : <UserX className="w-3.5 h-3.5" />}
-            {u.status === 'suspended' ? 'Reactivate' : 'Suspend'}
+            <span>{u.status === 'suspended' ? 'Reactivate' : 'Suspend'}</span>
           </button>
         </div>
       )
@@ -190,32 +186,27 @@ export default function UserManager() {
   ];
 
   return (
-    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar />
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
-      {/* Primary Details Panel */}
-      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="w-5 h-5 text-brand-primary" />
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-brand-primary">Member Control</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">User Account Registry</h1>
-              <p className="text-slate-400 text-xs mt-1">Review active member accounts, verify authentication statuses, and toggle suspends</p>
-            </div>
+          <div className="pb-2 border-b border-white/[0.05]">
+            <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Members & Permissions</h1>
+            <p className="text-xs text-slate-400 mt-0.5">Review active member accounts, verify authentication statuses, and manage access roles</p>
           </div>
 
           {error && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
               {error}
             </div>
           )}
 
           {/* Search & Custom Filter Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-luxury-900 border border-white/5 p-4 rounded-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#11131A] border border-white/[0.06] p-3 rounded-xl">
             {/* Search Input */}
             <div className="relative md:col-span-2">
               <input
@@ -223,9 +214,9 @@ export default function UserManager() {
                 placeholder="Search users by name or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 bg-luxury-950 border border-white/10 rounded-xl focus:border-brand-primary outline-none text-slate-200 text-xs transition"
+                className="w-full h-9 pl-9 pr-3 bg-[#08090D] border border-white/[0.08] rounded-lg focus:border-violet-500 outline-none text-slate-100 text-xs transition"
               />
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
             </div>
 
             {/* Role Filter */}
@@ -233,15 +224,12 @@ export default function UserManager() {
               <select
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
-                className="w-full h-10 px-3.5 bg-luxury-950 border border-white/10 rounded-xl outline-none focus:border-brand-primary text-slate-300 text-xs appearance-none cursor-pointer"
+                className="w-full h-9 px-3 bg-[#08090D] border border-white/[0.08] rounded-lg outline-none focus:border-violet-500 text-slate-200 text-xs cursor-pointer"
               >
                 <option value="All">All Roles</option>
                 <option value="Admins">Admins Only</option>
                 <option value="Users">Regular Users</option>
               </select>
-              <div className="absolute right-3.5 top-3 pointer-events-none text-slate-500">
-                <Filter className="w-4 h-4" />
-              </div>
             </div>
 
             {/* Status Filter */}
@@ -249,15 +237,12 @@ export default function UserManager() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full h-10 px-3.5 bg-luxury-950 border border-white/10 rounded-xl outline-none focus:border-brand-primary text-slate-300 text-xs appearance-none cursor-pointer"
+                className="w-full h-9 px-3 bg-[#08090D] border border-white/[0.08] rounded-lg outline-none focus:border-violet-500 text-slate-200 text-xs cursor-pointer"
               >
                 <option value="All">All Statuses</option>
                 <option value="Active">Active Only</option>
                 <option value="Suspended">Suspended Only</option>
               </select>
-              <div className="absolute right-3.5 top-3 pointer-events-none text-slate-500">
-                <Filter className="w-4 h-4" />
-              </div>
             </div>
           </div>
 
@@ -271,8 +256,8 @@ export default function UserManager() {
             pageSize={10}
           />
 
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

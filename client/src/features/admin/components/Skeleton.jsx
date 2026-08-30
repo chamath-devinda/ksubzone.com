@@ -12,18 +12,21 @@ export function Pulse({ className = '', style = {} }) {
   );
 }
 
-// 1. Metric StatCard Loading Skeleton
+// 1. Metric StatCard Loading Skeleton (matches new KPI card design)
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-luxury-900/40 p-4 min-h-[96px] border-l-[3px] border-l-white/[0.08] flex flex-col justify-between">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 space-y-2">
-          <Pulse className="h-2 w-14" />
-          <Pulse className="h-7 w-12" />
+    <div className="ksz-card rounded-2xl border border-white/[0.06] bg-[#11131A] p-5 min-h-[140px] flex flex-col justify-between">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2">
+          <Pulse className="h-2.5 w-20" />
+          <Pulse className="h-8 w-16 mt-2" />
         </div>
-        <Pulse className="w-9 h-9 rounded-xl flex-shrink-0" />
+        <Pulse className="w-10 h-10 rounded-xl flex-shrink-0" />
       </div>
-      <Pulse className="h-2 w-20 mt-3" />
+      <div className="flex items-center justify-between pt-3 border-t border-white/[0.04] mt-4">
+        <Pulse className="h-2.5 w-24" />
+        <Pulse className="h-4 w-16 rounded" />
+      </div>
     </div>
   );
 }

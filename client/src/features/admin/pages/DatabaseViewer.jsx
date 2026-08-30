@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import ModalDrawer from '@/features/admin/components/ModalDrawer';
 import { useToast } from '@/features/admin/components/Toast';
 import {
@@ -14,6 +15,7 @@ import {
 export default function DatabaseViewer() {
   const toast = useToast();
 
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [collections, setCollections] = useState([]);
   const [dbDriver, setDbDriver] = useState('');
   const [selectedCol, setSelectedCol] = useState('');
@@ -62,131 +64,124 @@ export default function DatabaseViewer() {
   }, []);
 
   // Fetch documents for selected collection
-  const fetchDocuments = async () => {
-    if (!selectedCol) return;
+  const fetchDocuments = async (colName, currentSkip = 0) => {
+    if (!colName) return;
     setLoadingDocs(true);
     setError('');
     try {
-      const res = await apiClient.get(`/api/admin/database/collections/${selectedCol}?limit=${limit}&skip=${skip}`);
+      const res = await apiClient.get(`/api/admin/database/collections/${colName}`, {
+        params: { limit, skip: currentSkip }
+      });
       setDocuments(res.data.documents || []);
       setTotalDocs(res.data.total || 0);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to retrieve collection items.');
-      toast.error('Failed to retrieve collection items.');
+      setError(err.response?.data?.message || `Failed to fetch '${colName}' documents.`);
+      toast.error(`Failed to fetch '${colName}' documents.`);
     } finally {
       setLoadingDocs(false);
     }
   };
 
   useEffect(() => {
-    setSkip(0);
-    fetchDocuments();
+    if (selectedCol) {
+      setSkip(0);
+      fetchDocuments(selectedCol, 0);
+    }
   }, [selectedCol]);
 
   useEffect(() => {
-    fetchDocuments();
+    if (selectedCol) {
+      fetchDocuments(selectedCol, skip);
+    }
   }, [skip]);
 
-  // Clean identifier helper to identify records easily
-  const getIdentifier = (doc, collection) => {
-    if (!doc) return '-';
-    switch (collection) {
-      case 'users':
-        return doc.email || doc.username || doc._id;
-      case 'admins':
-        return doc.username || doc.email || doc._id;
-      case 'movies':
-        return doc.title || doc.originalTitle || doc._id;
-      case 'dramas':
-        return doc.title || doc.originalTitle || doc._id;
-      case 'seasons':
-        return `Season ${doc.seasonNumber || 'N/A'}`;
-      case 'episodes':
-        return `Episode ${doc.episodeNumber || 'N/A'}: ${doc.episodeTitle || 'No Title'}`;
-      case 'genres':
-        return doc.name || doc.slug || doc._id;
-      case 'subtitles':
-        return `${doc.language || 'Sinhala'} Subtitle (${doc.format?.toUpperCase() || 'SRT'}) v${doc.version || '1.0'}`;
-      case 'reviews':
-        return `${doc.reviewerName || 'Review'} - Rating: ${doc.rating || doc.imdbRating || 'N/A'}`;
-      case 'comments':
-        return doc.text ? (doc.text.length > 50 ? doc.text.substring(0, 50) + '...' : doc.text) : doc._id;
-      case 'analytics':
-        return `${doc.page || 'Page View'} (${doc.ip || 'Unknown IP'})`;
-      case 'settings':
-        return doc.key || doc._id;
-      case 'articles':
-        return doc.title || doc._id;
-      case 'roles':
-        return doc.name || doc._id;
-      case 'permissions':
-        return `${doc.name} (${doc.description || ''})`;
-      default:
-        return doc.title || doc.name || doc.username || doc.email || doc._id;
-    }
-  };
-
-  // Determine dynamic columns to show in preview table based on document fields
-  const displayColumns = useMemo(() => {
-    if (documents.length === 0) return ['_id', 'createdAt'];
-    const keys = new Set(['_id']);
-    keys.add('Record Identifier');
-
-    // Scan all documents to gather typical fields (excluding objects and long descriptions)
-    documents.forEach(doc => {
-      Object.keys(doc).forEach(key => {
-        const val = doc[key];
-        if (
-          key !== '_id' && 
-          key !== 'data' && 
-          key !== 'createdAt' && 
-          key !== 'updatedAt' && 
-          key !== 'title' &&
-          key !== 'name' &&
-          key !== 'username' &&
-          key !== 'email' &&
-          key !== 'description' &&
-          key !== 'synopsis' &&
-          key !== 'content' &&
-          typeof val !== 'object' && 
-          String(val).length < 50
-        ) {
-          keys.add(key);
-        }
-      });
-    });
-    
-    const fields = Array.from(keys).slice(0, 5);
-    fields.push('createdAt');
-    return fields;
-  }, [documents]);
-
-  // Client-side local filtering
+  // Client-side search within current document page
   const filteredDocuments = useMemo(() => {
     if (!searchTerm.trim()) return documents;
     const term = searchTerm.toLowerCase();
     return documents.filter(doc => {
-      return Object.entries(doc).some(([key, val]) => {
-        if (typeof val === 'object') {
-          return JSON.stringify(val).toLowerCase().includes(term);
-        }
-        return String(val).toLowerCase().includes(term);
-      });
+      return JSON.stringify(doc).toLowerCase().includes(term);
     });
   }, [documents, searchTerm]);
 
-  // Export collection as JSON download
+  // Detect and format display columns
+  const displayColumns = useMemo(() => {
+    if (!documents || documents.length === 0) return ['_id'];
+    const keys = new Set();
+    documents.forEach(doc => {
+      Object.keys(doc).forEach(k => keys.add(k));
+    });
+    
+    // Sort columns prioritizing _id and title/name/email/username
+    const priority = ['_id', 'title', 'name', 'username', 'email', 'dramaTitle', 'episodeNumber', 'type', 'status'];
+    const rest = Array.from(keys).filter(k => !priority.includes(k) && k !== 'passwordHash');
+    const sorted = [...priority.filter(p => keys.has(p)), ...rest];
+    
+    return sorted.slice(0, 7); // Show max 7 columns in table
+  }, [documents]);
+
+  const getIdentifier = (doc, col) => {
+    if (doc.title) return doc.title;
+    if (doc.name) return doc.name;
+    if (doc.username) return doc.username;
+    if (doc.email) return doc.email;
+    if (doc.episodeTitle) return doc.episodeTitle;
+    if (doc.key) return doc.key;
+    if (doc.slug) return doc.slug;
+    return doc._id;
+  };
+
+  // Delete Document
+  const handleDeleteRecord = async (id) => {
+    if (!window.confirm(`Are you sure you want to permanently delete record ${id} from '${selectedCol}'?`)) return;
+    try {
+      await apiClient.delete(`/api/admin/database/collections/${selectedCol}/${id}`);
+      toast.success('Document deleted successfully.');
+      setDocuments(prev => prev.filter(d => d._id !== id));
+      setTotalDocs(prev => Math.max(0, prev - 1));
+      fetchCollections(); // Refresh counts
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete record.');
+    }
+  };
+
+  // Wipe All Media Data
+  const handleWipeDatabase = async () => {
+    const confirmation = window.prompt(
+      'WARNING: This will permanently ERASE all Movies, Dramas, Seasons, Episodes, and Subtitles.\n\nType "WIPE" to confirm:'
+    );
+    if (confirmation !== 'WIPE') {
+      toast.info('Wipe operation cancelled.');
+      return;
+    }
+
+    setWiping(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await apiClient.post('/api/admin/database/wipe-media');
+      setSuccess(res.data.message || 'Media collections wiped successfully.');
+      toast.success('Media catalog erased.');
+      fetchCollections();
+      if (selectedCol) fetchDocuments(selectedCol, 0);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to wipe database.');
+      toast.error('Failed to wipe database.');
+    } finally {
+      setWiping(false);
+    }
+  };
+
+  // Export JSON Dump
   const handleExportJSON = () => {
-    if (documents.length === 0) return;
     const jsonStr = JSON.stringify(documents, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `ksubzone_${selectedCol}_export.json`;
-    document.body.appendChild(link);
+    link.download = `ksubzone_${selectedCol}_dump_${new Date().toISOString().slice(0,10)}.json`;
     link.click();
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast.success(`Exported ${selectedCol} collection as JSON.`);
   };
 
@@ -205,7 +200,6 @@ export default function DatabaseViewer() {
     setSuccess('');
   };
 
-  // Handle Input Changes for Dynamic Form Builder
   const handleFormFieldChange = (key, val, type) => {
     const nextForm = { ...editForm };
     if (type === 'number') {
@@ -219,18 +213,14 @@ export default function DatabaseViewer() {
     setRawJsonText(JSON.stringify(nextForm, null, 2));
   };
 
-  // Handle RAW JSON editing sync
   const handleRawJsonChange = (val) => {
     setRawJsonText(val);
     try {
       const parsed = JSON.parse(val);
       setEditForm(parsed);
-    } catch (e) {
-      // Keep state as is, parsing error handled on submit
-    }
+    } catch (e) {}
   };
 
-  // Save/Update database record
   const handleUpdateRecord = async (e) => {
     e.preventDefault();
     if (!editDoc) return;
@@ -254,146 +244,98 @@ export default function DatabaseViewer() {
       const res = await apiClient.put(`/api/admin/database/collections/${selectedCol}/${editDoc._id}`, payload);
       setSuccess('Record updated successfully.');
       toast.success('Record updated successfully.');
-      
-      // Update local state list
       setDocuments(prev => prev.map(doc => doc._id === editDoc._id ? res.data.document : doc));
-      
-      setTimeout(() => {
-        setEditDoc(null);
-      }, 800);
+      setEditDoc(null);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save updates to record.');
-      toast.error('Failed to save record updates.');
+      setError(err.response?.data?.message || 'Failed to update document.');
+      toast.error('Failed to update document.');
     } finally {
       setSaving(false);
     }
   };
 
-  // Delete database record
-  const handleDeleteRecord = async (id) => {
-    if (!window.confirm(`Are you sure you want to delete this record (${id}) from table '${selectedCol}'? This action cannot be undone.`)) {
-      return;
-    }
-    setError('');
-    setSuccess('');
-    try {
-      await apiClient.delete(`/api/admin/database/collections/${selectedCol}/${id}`);
-      setSuccess(`Record deleted successfully.`);
-      toast.success('Record deleted successfully.');
-      setDocuments(prev => prev.filter(doc => doc._id !== id));
-      setTotalDocs(prev => Math.max(0, prev - 1));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete record.');
-      toast.error('Failed to delete record.');
-    }
-  };
-
-  const handleWipeDatabase = async () => {
-    const confirmInput = window.prompt(
-      "WARNING: This will permanently delete all Movies, Dramas, Seasons, Episodes, Subtitles, and Articles from the live database. Active accounts and roles will NOT be deleted. Type 'WIPE' to confirm:"
-    );
-    if (confirmInput !== 'WIPE') {
-      if (confirmInput !== null) {
-        toast.error("Wipe cancelled. Confirmation word did not match.");
-      }
-      return;
-    }
-
-    setWiping(true);
-    setError('');
-    setSuccess('');
-    try {
-      const res = await apiClient.post('/api/admin/database/wipe-all');
-      setSuccess(res.data.message || 'Database cleared successfully.');
-      toast.success('Database cleared successfully.');
-      fetchCollections();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to wipe database.');
-      toast.error('Failed to wipe database.');
-    } finally {
-      setWiping(false);
-    }
-  };
-
   return (
-    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar />
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
-      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0 max-w-[1600px] w-full mx-auto">
-        <div className="space-y-6">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
           
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.05]">
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Server className="w-5 h-5 text-amber-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400">Database Browser</span>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400 font-mono text-[10px] font-bold uppercase">
+                  {dbDriver || 'SQLite'} Database
+                </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Database Manager & Records Explorer</h1>
-              <p className="text-slate-400 text-xs mt-1">
-                Active Engine: <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono text-[10px] uppercase font-bold">{dbDriver}</span> • Clean viewer with dynamic editing, deletion, and relations identifiers tracking.
-              </p>
+              <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight mt-1">Database Inspector</h1>
+              <p className="text-xs text-slate-400 mt-0.5">Explore raw database tables, edit documents, purge records, and extract data backups</p>
             </div>
-            
-            <div className="flex gap-2 self-start sm:self-auto flex-wrap">
+
+            <div className="flex items-center gap-2 flex-wrap">
               <button
+                type="button"
                 onClick={handleWipeDatabase}
                 disabled={wiping}
-                className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-xs font-bold text-red-400 flex items-center gap-2 transition cursor-pointer"
+                className="h-9 px-3.5 rounded-lg border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-400 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" /> {wiping ? 'Wiping...' : 'Wipe Media Data'}
+                <Trash2 className="w-3.5 h-3.5" /> {wiping ? 'Wiping...' : 'Wipe Media Data'}
               </button>
               <button
+                type="button"
                 onClick={fetchCollections}
-                className="h-10 px-4 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold text-slate-200 hover:bg-white/[0.07] flex items-center gap-2 transition cursor-pointer"
+                className="h-9 px-3.5 rounded-lg border border-white/[0.08] bg-[#11131A] text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer"
               >
-                <RefreshCw className="w-4 h-4" /> Refresh Engine
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-xs text-red-300 flex items-center gap-2">
+            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
             </div>
           )}
           {success && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs text-emerald-300 flex items-center gap-2">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-400 flex items-center gap-2">
               <Check className="w-4 h-4 flex-shrink-0" /> {success}
             </div>
           )}
 
           {/* Core Layout Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
             
             {/* Sidebar Collection Lists */}
             <aside className="space-y-4">
-              <div className="rounded-2xl border border-white/5 bg-luxury-900 p-4">
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                  <Database className="w-4 h-4 text-slate-500" /> Tables / Collections
+              <div className="rounded-xl border border-white/[0.06] bg-[#11131A] p-3.5 space-y-2">
+                <h2 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 flex items-center gap-1.5">
+                  <Database className="w-3.5 h-3.5 text-violet-400" /> Tables / Collections
                 </h2>
                 
                 {loadingCollections ? (
                   <div className="py-8 text-center text-xs text-slate-500 animate-pulse">Loading collections...</div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-col gap-2 lg:gap-0 lg:space-y-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-col gap-1">
                     {collections.map(col => {
                       const isActive = selectedCol === col.name;
                       return (
                         <button
                           key={col.name}
+                          type="button"
                           onClick={() => { setSelectedCol(col.name); setActiveDoc(null); }}
-                          className={`w-full h-10 px-3 rounded-xl text-xs font-semibold flex items-center justify-between transition text-left cursor-pointer ${
+                          className={`w-full h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-between transition text-left cursor-pointer ${
                             isActive 
-                              ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold' 
-                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                              ? 'bg-violet-600/15 border border-violet-500/30 text-violet-300 font-bold' 
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                           }`}
                         >
                           <span className="flex items-center gap-2 truncate">
-                            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-amber-400' : 'bg-slate-600'}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-violet-400' : 'bg-slate-600'}`} />
                             {col.name}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono ${isActive ? 'bg-amber-500/20 text-amber-400' : 'bg-luxury-950 text-slate-500'}`}>
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${isActive ? 'bg-violet-500/20 text-violet-300' : 'bg-[#08090D] text-slate-500'}`}>
                             {col.count}
                           </span>
                         </button>
@@ -405,61 +347,62 @@ export default function DatabaseViewer() {
             </aside>
 
             {/* Document Browser Grid Container */}
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               
               {/* Toolbar */}
-              <div className="rounded-2xl border border-white/5 bg-luxury-900 p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:max-w-md">
+              <div className="rounded-xl border border-white/[0.06] bg-[#11131A] p-3 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="relative w-full sm:max-w-md">
                   <input
                     type="text"
                     placeholder={`Search within '${selectedCol}' records...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full h-10 pl-10 pr-4 rounded-xl text-xs bg-luxury-950 border border-white/10 focus:border-amber-400/50 outline-none text-slate-200 transition"
+                    className="w-full h-9 pl-9 pr-3.5 rounded-lg text-xs bg-[#08090D] border border-white/[0.08] focus:border-violet-500 outline-none text-slate-100 transition"
                   />
-                  <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                  <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex gap-2 w-full sm:w-auto">
                   <button
+                    type="button"
                     onClick={handleExportJSON}
                     disabled={documents.length === 0}
-                    className="h-10 px-4 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold text-slate-200 hover:bg-white/[0.07] flex items-center justify-center gap-2 transition disabled:opacity-50 flex-1 md:flex-initial cursor-pointer"
+                    className="h-9 px-3.5 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition disabled:opacity-50 flex-1 sm:flex-initial cursor-pointer"
                   >
-                    <Download className="w-4 h-4" /> Export JSON
+                    <Download className="w-3.5 h-3.5" /> Export JSON
                   </button>
                 </div>
               </div>
 
               {/* Data Table */}
-              <div className="rounded-2xl border border-white/5 bg-luxury-900 overflow-hidden shadow-2xl">
+              <div className="rounded-xl border border-white/[0.06] bg-[#11131A] overflow-hidden shadow-sm">
                 {loadingDocs ? (
-                  <div className="py-24 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-3">
-                    <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
+                  <div className="py-20 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                    <RefreshCw className="w-5 h-5 animate-spin text-violet-400" />
                     Fetching documents from database...
                   </div>
                 ) : filteredDocuments.length === 0 ? (
-                  <div className="py-24 text-center text-xs text-slate-500">
+                  <div className="py-20 text-center text-xs text-slate-500">
                     No documents found in '{selectedCol}'.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto font-sans">
+                  <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-white/5 bg-luxury-950/40 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        <tr className="border-b border-white/[0.06] bg-[#151821] text-[10px] font-bold uppercase tracking-wider text-slate-400">
                           {displayColumns.map(col => (
-                            <th key={col} className="px-5 py-4">{col}</th>
+                            <th key={col} className="px-4 py-3">{col}</th>
                           ))}
-                          <th className="px-5 py-4 text-right">Actions</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5 text-xs text-slate-300">
+                      <tbody className="divide-y divide-white/[0.04] text-xs text-slate-300">
                         {filteredDocuments.map(doc => (
-                          <tr key={doc._id} className="hover:bg-white/[0.01] transition-colors group">
+                          <tr key={doc._id} className="hover:bg-[#151821]/50 transition-colors">
                             {displayColumns.map(col => {
-                              if (col === 'Record Identifier') {
+                              if (col === 'Record Identifier' || col === '_id') {
                                 return (
-                                  <td key={col} className="px-5 py-4 max-w-[220px] truncate font-bold text-white">
+                                  <td key={col} className="px-4 py-3 max-w-[220px] truncate font-bold text-slate-200">
                                     {getIdentifier(doc, selectedCol)}
                                   </td>
                                 );
@@ -468,35 +411,38 @@ export default function DatabaseViewer() {
                               if (typeof val === 'boolean') val = val ? 'true' : 'false';
                               if (typeof val === 'object' && val !== null) val = '{...}';
                               return (
-                                <td key={col} className="px-5 py-4 max-w-[150px] truncate font-mono text-[11px] text-slate-400">
-                                  {val !== undefined && val !== null ? String(val) : '-'}
+                                <td key={col} className="px-4 py-3 max-w-[150px] truncate font-mono text-[11px] text-slate-400">
+                                  {val !== undefined && val !== null ? String(val) : '—'}
                                 </td>
                               );
                             })}
                             
                             {/* Action columns */}
-                            <td className="px-5 py-3 text-right">
-                              <div className="inline-flex gap-1.5">
+                            <td className="px-4 py-2.5 text-right">
+                              <div className="inline-flex gap-1">
                                 <button
+                                  type="button"
                                   onClick={() => setActiveDoc(doc)}
-                                  className="h-8 px-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-[10px] font-bold hover:bg-white/10 transition flex items-center gap-1 cursor-pointer"
+                                  className="p-1.5 rounded-lg bg-[#151821] border border-white/[0.06] text-slate-400 hover:text-slate-200 text-xs transition flex items-center gap-1 cursor-pointer"
                                   title="View raw JSON"
                                 >
-                                  <Eye className="w-3.5 h-3.5" /> View
+                                  <Eye className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleEditClick(doc)}
-                                  className="h-8 px-2.5 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-400 text-[10px] font-bold hover:bg-amber-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                                  className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 text-xs transition flex items-center gap-1 cursor-pointer"
                                   title="Edit properties"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" /> Edit
+                                  <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleDeleteRecord(doc._id)}
-                                  className="h-8 px-2.5 rounded-lg bg-red-500/15 border border-red-500/20 text-red-400 text-[10px] font-bold hover:bg-red-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                                  className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-xs transition flex items-center gap-1 cursor-pointer"
                                   title="Delete record"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -509,22 +455,24 @@ export default function DatabaseViewer() {
 
                 {/* Table Footer / Pagination */}
                 {totalDocs > limit && (
-                  <div className="px-5 py-4 border-t border-white/5 bg-luxury-950/20 flex items-center justify-between gap-4 text-xs text-slate-400">
-                    <span>
+                  <div className="px-4 py-3 border-t border-white/[0.06] bg-[#0D0F15] flex items-center justify-between gap-4 text-xs text-slate-400">
+                    <span className="text-[11px] text-slate-500 font-mono">
                       Showing <b className="text-slate-200">{skip + 1}</b> to <b className="text-slate-200">{Math.min(skip + limit, totalDocs)}</b> of <b className="text-slate-200">{totalDocs}</b> records
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <button
+                        type="button"
                         disabled={skip === 0 || loadingDocs}
                         onClick={() => setSkip(prev => Math.max(0, prev - limit))}
-                        className="h-8 px-3.5 rounded-lg border border-white/10 text-[10px] font-bold text-slate-200 disabled:opacity-50 hover:bg-white/5 transition cursor-pointer"
+                        className="px-3 py-1 rounded-lg border border-white/[0.06] bg-[#151821] text-xs font-semibold text-slate-300 disabled:opacity-30 hover:text-white transition cursor-pointer"
                       >
                         Previous
                       </button>
                       <button
+                        type="button"
                         disabled={skip + limit >= totalDocs || loadingDocs}
                         onClick={() => setSkip(prev => prev + limit)}
-                        className="h-8 px-3.5 rounded-lg border border-white/10 text-[10px] font-bold text-slate-200 disabled:opacity-50 hover:bg-white/5 transition cursor-pointer"
+                        className="px-3 py-1 rounded-lg border border-white/[0.06] bg-[#151821] text-xs font-semibold text-slate-300 disabled:opacity-30 hover:text-white transition cursor-pointer"
                       >
                         Next
                       </button>
@@ -534,8 +482,8 @@ export default function DatabaseViewer() {
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
 
       {/* JSON Viewer Modal Drawer */}
       <ModalDrawer
@@ -545,20 +493,18 @@ export default function DatabaseViewer() {
         size="lg"
       >
         {activeDoc && (
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-500 font-mono">_id: {activeDoc._id}</span>
+              <span className="text-[11px] text-slate-400 font-mono">_id: {activeDoc._id}</span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-luxury-950 p-4.5 overflow-auto max-h-[70vh] font-mono text-xs leading-5 text-emerald-400 select-text">
-              <div className="mb-2.5 text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5 border-b border-white/5 pb-2">
-                <Terminal className="w-3.5 h-3.5" /> Parsed Fields Tree
-              </div>
+            <div className="rounded-xl border border-white/[0.08] bg-[#08090D] p-4 overflow-auto max-h-[65vh] font-mono text-xs leading-5 text-emerald-400 select-text">
               <pre>{JSON.stringify(activeDoc, null, 2)}</pre>
             </div>
-            <div className="flex justify-end pt-3">
+            <div className="flex justify-end pt-2">
               <button
+                type="button"
                 onClick={() => setActiveDoc(null)}
-                className="h-10 px-5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-200 hover:bg-white/10 transition cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-[#151821] border border-white/[0.08] text-xs font-semibold text-slate-300 hover:text-white transition"
               >
                 Close Inspector
               </button>
@@ -575,29 +521,29 @@ export default function DatabaseViewer() {
         size="lg"
       >
         {editDoc && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Form Mode Selector tabs */}
-            <div className="flex border-b border-white/5 bg-luxury-950/20 py-2 gap-4">
+            <div className="flex border-b border-white/[0.06] pb-2 gap-3">
               <button
                 type="button"
                 onClick={() => setEditTab('fields')}
-                className={`py-1 text-xs font-bold uppercase tracking-wider transition cursor-pointer ${editTab === 'fields' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`text-xs font-semibold transition ${editTab === 'fields' ? 'text-violet-400 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 Form Fields
               </button>
               <button
                 type="button"
                 onClick={() => setEditTab('json')}
-                className={`py-1 text-xs font-bold uppercase tracking-wider transition cursor-pointer ${editTab === 'json' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`text-xs font-semibold transition ${editTab === 'json' ? 'text-violet-400 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 Raw JSON
               </button>
             </div>
 
             {/* Form Editor Body */}
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="space-y-3.5 max-h-[60vh] overflow-y-auto pr-1 admin-custom-scrollbar">
               {error && (
-                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
                   {error}
                 </div>
               )}
@@ -608,7 +554,7 @@ export default function DatabaseViewer() {
               )}
 
               {editTab === 'fields' ? (
-                <form onSubmit={handleUpdateRecord} className="grid grid-cols-1 gap-4">
+                <form onSubmit={handleUpdateRecord} className="grid grid-cols-1 gap-3.5">
                   {Object.entries(editForm).map(([key, value]) => {
                     const isBool = typeof value === 'boolean';
                     const isNum = typeof value === 'number';
@@ -617,36 +563,35 @@ export default function DatabaseViewer() {
 
                     if (isObj) {
                       return (
-                        <div key={key} className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{key}</label>
+                        <div key={key} className="flex flex-col gap-1">
+                          <label className="text-[11px] font-semibold text-slate-400">{key}</label>
                           <textarea
                             disabled
                             rows={3}
                             value={JSON.stringify(value, null, 2)}
-                            className="w-full rounded-xl border border-white/5 bg-luxury-950/40 px-3 py-2 text-xs font-mono text-slate-500 select-text cursor-not-allowed"
+                            className="w-full rounded-lg border border-white/[0.06] bg-[#08090D] px-3 py-2 text-xs font-mono text-slate-500 select-text cursor-not-allowed"
                           />
-                          <span className="text-[9px] text-slate-600">Objects/Arrays can only be updated in the "Raw JSON" tab.</span>
                         </div>
                       );
                     }
 
                     return (
-                      <div key={key} className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+                      <div key={key} className="flex flex-col gap-1">
+                        <label className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
                           {key}
-                          <span className="text-[9px] text-slate-600 font-mono">({typeof value})</span>
+                          <span className="text-[10px] text-slate-500 font-mono">({typeof value})</span>
                         </label>
 
                         {isBool ? (
-                          <div className="flex items-center h-11 bg-luxury-950 px-4 rounded-xl border border-white/5">
+                          <div className="flex items-center h-9 bg-[#08090D] px-3 rounded-lg border border-white/[0.08]">
                             <input
                               type="checkbox"
                               checked={!!value}
                               id={`edit-bool-${key}`}
                               onChange={(e) => handleFormFieldChange(key, e.target.checked, 'checkbox')}
-                              className="w-5 h-5 rounded border-white/10 bg-luxury-950 text-amber-500 focus:ring-amber-500 focus:ring-offset-luxury-950 cursor-pointer"
+                              className="w-4 h-4 rounded border-white/20 bg-[#11131A] text-violet-600 focus:ring-0 cursor-pointer"
                             />
-                            <label htmlFor={`edit-bool-${key}`} className="ml-3 text-xs text-slate-300 font-bold select-none cursor-pointer">
+                            <label htmlFor={`edit-bool-${key}`} className="ml-2 text-xs text-slate-300 font-medium select-none cursor-pointer">
                               Enabled / Active
                             </label>
                           </div>
@@ -655,14 +600,14 @@ export default function DatabaseViewer() {
                             rows={4}
                             value={String(value)}
                             onChange={(e) => handleFormFieldChange(key, e.target.value, 'string')}
-                            className="w-full rounded-xl border border-white/10 bg-luxury-950 px-4 py-3 text-xs text-slate-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+                            className="w-full rounded-lg border border-white/[0.08] bg-[#08090D] px-3 py-2 text-xs text-slate-100 outline-none focus:border-violet-500 leading-relaxed"
                           />
                         ) : (
                           <input
                             type={isNum ? 'number' : 'text'}
                             value={value !== null ? String(value) : ''}
                             onChange={(e) => handleFormFieldChange(key, e.target.value, isNum ? 'number' : 'string')}
-                            className="w-full h-11 rounded-xl border border-white/10 bg-luxury-950 px-4 text-xs text-slate-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+                            className="w-full h-9 rounded-lg border border-white/[0.08] bg-[#08090D] px-3 text-xs text-slate-100 outline-none focus:border-violet-500"
                           />
                         )}
                       </div>
@@ -670,24 +615,24 @@ export default function DatabaseViewer() {
                   })}
                 </form>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Document Object JSON</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-slate-400">Document Object JSON</label>
                   <textarea
                     rows={12}
                     value={rawJsonText}
                     onChange={(e) => handleRawJsonChange(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-luxury-950 p-4 font-mono text-xs text-emerald-400 outline-none focus:border-amber-400"
+                    className="w-full rounded-lg border border-white/[0.08] bg-[#08090D] p-3 font-mono text-xs text-emerald-400 outline-none focus:border-violet-500"
                   />
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
+            <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => setEditDoc(null)}
-                className="h-10 px-5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-200 hover:bg-white/10 transition cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-[#151821] border border-white/[0.08] text-xs font-semibold text-slate-300 hover:text-white transition"
               >
                 Cancel
               </button>
@@ -695,15 +640,14 @@ export default function DatabaseViewer() {
                 type="button"
                 onClick={handleUpdateRecord}
                 disabled={saving}
-                className="h-10 px-5 rounded-xl bg-amber-500 text-white text-xs font-black uppercase tracking-wider hover:bg-amber-600 disabled:opacity-50 transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer"
+                className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-xs font-semibold shadow-sm hover:brightness-110 disabled:opacity-50 transition"
               >
-                <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
         )}
       </ModalDrawer>
-
     </div>
   );
 }

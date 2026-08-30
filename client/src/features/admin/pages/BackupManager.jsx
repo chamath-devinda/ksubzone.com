@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import StatCard from '@/features/admin/components/StatCard';
 import { useToast } from '@/features/admin/components/Toast';
 import {
@@ -13,6 +14,7 @@ import {
 
 export default function BackupManager() {
   const toast = useToast();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('cloud'); // 'cloud' | 'manual' | 'settings'
   
   // Settings States
@@ -58,15 +60,14 @@ export default function BackupManager() {
 
   // Fetch Backups from Google Drive
   const fetchBackups = async () => {
-    if (!isConfigured) return;
     setLoadingBackups(true);
     setError('');
     try {
       const res = await apiClient.get('/api/admin/backup/list');
-      setBackups(res.data || []);
+      setBackups(res.data.backups || []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to sync backups from Google Drive.');
-      toast.error('Failed to sync backups from Google Drive.');
+      setError(err.response?.data?.message || 'Failed to list backups from Google Drive.');
+      toast.error('Failed to list backups from Google Drive.');
     } finally {
       setLoadingBackups(false);
     }
@@ -74,15 +75,10 @@ export default function BackupManager() {
 
   useEffect(() => {
     fetchSettings();
+    fetchBackups();
   }, []);
 
-  useEffect(() => {
-    if (isConfigured && activeTab === 'cloud') {
-      fetchBackups();
-    }
-  }, [isConfigured, activeTab]);
-
-  // Save Config Settings
+  // Save Service Account & Folder ID Settings
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -90,134 +86,143 @@ export default function BackupManager() {
     setSuccess('');
 
     try {
+      let parsedCreds = null;
+      if (serviceAccount.trim()) {
+        try {
+          parsedCreds = JSON.parse(serviceAccount);
+        } catch (jsonErr) {
+          setError('Invalid Google Service Account JSON formatting. Please check syntax.');
+          toast.error('Invalid Google Service Account JSON.');
+          setSavingSettings(false);
+          return;
+        }
+      }
+
       const res = await apiClient.post('/api/admin/backup/settings', {
-        serviceAccount,
-        folderId
+        folderId,
+        serviceAccountJson: parsedCreds
       });
-      setSuccess('Backup connection settings updated successfully.');
-      toast.success('Settings updated successfully.');
+
+      setSuccess('Google Drive settings updated successfully.');
+      toast.success('Google Drive settings updated.');
       setIsConfigured(res.data.serviceAccountConfigured);
       setServiceAccountEmail(res.data.serviceAccountEmail);
-      setServiceAccount(''); // Clear text area for security
+      setServiceAccount(''); // Clear sensitive text
+      fetchBackups();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save configuration settings.');
+      setError(err.response?.data?.message || 'Failed to save settings.');
       toast.error('Failed to save settings.');
     } finally {
       setSavingSettings(false);
     }
   };
 
-  // Create on-demand backup upload to Drive
+  // Trigger Instant Cloud Backup to Drive
   const handleCreateCloudBackup = async () => {
     setCreatingBackup(true);
     setError('');
     setSuccess('');
+
     try {
-      const res = await apiClient.post('/api/admin/backup/create?drive=true');
-      setSuccess(res.data.message || 'Backup successfully uploaded to Google Drive.');
-      toast.success('Backup uploaded to Google Drive successfully.');
-      fetchSettings(); // update last backup time
-      fetchBackups(); // reload backups list
+      const res = await apiClient.post('/api/admin/backup/create');
+      setSuccess(`Backup archive (${res.data.filename}) successfully uploaded to Google Drive.`);
+      toast.success('Backup uploaded to Google Drive.');
+      setLastBackupTime(new Date().toISOString());
+      fetchBackups();
     } catch (err) {
-      setError(err.response?.data?.message || 'Google Drive backup creation failed.');
-      toast.error('Backup creation failed.');
+      setError(err.response?.data?.message || 'Backup generation failed.');
+      toast.error('Backup generation failed.');
     } finally {
       setCreatingBackup(false);
     }
   };
 
-  // Download local backup directly to PC
+  // Direct Local ZIP Download
   const handleDownloadLocalBackup = async () => {
     setDownloadingLocal(true);
     setError('');
-    setSuccess('');
     try {
-      const res = await apiClient.post('/api/admin/backup/create', {}, {
+      const res = await apiClient.get('/api/admin/backup/download-local', {
         responseType: 'blob'
       });
-      
-      const blob = new Blob([res.data], { type: 'application/zip' });
-      const blobUrl = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `ksubzone_backup_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.zip`;
+      link.href = url;
+      link.setAttribute('download', `ksubzone_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      
-      setSuccess('Local backup archive downloaded successfully.');
-      toast.success('Local ZIP downloaded successfully.');
+      link.parentNode.removeChild(link);
+      toast.success('Downloaded complete local database & media ZIP archive.');
     } catch (err) {
       setError('Failed to download local backup archive.');
-      toast.error('Failed to download backup ZIP.');
+      toast.error('Failed to download local backup.');
     } finally {
       setDownloadingLocal(false);
     }
   };
 
-  // Delete Backup from Drive
-  const handleDeleteBackup = async (fileId, fileName) => {
-    if (!window.confirm(`Are you sure you want to permanently delete this backup file from Google Drive?\n(${fileName})`)) {
+  // Restore Cloud Backup
+  const handleRestoreCloud = async (fileId, fileName) => {
+    const confirmation = window.prompt(
+      `WARNING: Restoring "${fileName}" will OVERWRITE all current database records and site settings.\n\nType "RESTORE" to proceed:`
+    );
+    if (confirmation !== 'RESTORE') {
+      toast.info('Restore cancelled.');
       return;
     }
-    setDeletingId(fileId);
-    setError('');
-    setSuccess('');
-    try {
-      setSuccess('Backup file deleted from Google Drive.');
-      toast.success('Backup deleted from Google Drive.');
-      setBackups(prev => prev.filter(b => b.id !== fileId));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete backup file.');
-      toast.error('Failed to delete backup file.');
-    } finally {
-      setDeletingId('');
-    }
-  };
 
-  // Restore Backup from Drive File ID
-  const handleRestoreFromDrive = async (fileId, fileName) => {
-    if (!window.confirm(`CRITICAL WARNING: Restoring the backup (${fileName}) will OVERWRITE your current database tables with the restored content. Are you absolutely sure you want to restore?`)) {
-      return;
-    }
-    
     setRestoringId(fileId);
     setError('');
     setSuccess('');
+
     try {
       const res = await apiClient.post('/api/admin/backup/restore', { fileId });
-      setSuccess(res.data.message || 'Database restored successfully.');
-      toast.success('Database restored successfully! Reloading page to apply changes...');
+      setSuccess(res.data.message || 'System restored successfully. Reloading platform...');
+      toast.success('System restored successfully.');
       setTimeout(() => {
         window.location.reload();
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to restore backup.');
-      toast.error('Failed to restore database.');
+      toast.error('Failed to restore backup.');
     } finally {
       setRestoringId('');
     }
   };
 
-  // Manual Restore Handler
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.name.endsWith('.zip')) {
-      setSelectedFile(file);
-      setError('');
-    } else {
-      setSelectedFile(null);
-      setError('Please select a valid backup ZIP archive (.zip)');
-      toast.error('Invalid file type selected. Select a ZIP file.');
+  // Delete Backup from Google Drive
+  const handleDeleteCloud = async (fileId, fileName) => {
+    if (!window.confirm(`Permanently delete backup "${fileName}" from Google Drive?`)) return;
+
+    setDeletingId(fileId);
+    setError('');
+    setSuccess('');
+
+    try {
+      await apiClient.delete(`/api/admin/backup/${fileId}`);
+      toast.success('Backup deleted from Google Drive.');
+      setBackups(prev => prev.filter(b => b.id !== fileId));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete backup.');
+      toast.error('Failed to delete backup.');
+    } finally {
+      setDeletingId('');
     }
   };
 
+  // Handle Manual ZIP File Restore Upload
   const handleManualRestoreSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      toast.error('Please choose a .zip backup archive to upload.');
+      return;
+    }
 
-    if (!window.confirm(`CRITICAL WARNING: Uploading and restoring this ZIP backup will COMPLETELY WIPEOUT your existing database tables. Are you absolutely sure you want to proceed?`)) {
+    const confirmation = window.prompt(
+      `WARNING: Restoring "${selectedFile.name}" will overwrite existing database records and media files.\n\nType "RESTORE" to proceed:`
+    );
+    if (confirmation !== 'RESTORE') {
+      toast.info('Restore cancelled.');
       return;
     }
 
@@ -226,16 +231,14 @@ export default function BackupManager() {
     setSuccess('');
 
     const formData = new FormData();
-    formData.append('backup', selectedFile);
+    formData.append('backupZip', selectedFile);
 
     try {
-      const res = await apiClient.post('/api/admin/backup/restore', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const res = await apiClient.post('/api/admin/backup/restore-upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setSuccess(res.data.message || 'Database restored from uploaded zip file.');
-      toast.success('Database restored successfully! Reloading page to apply changes...');
+      setSuccess(res.data.message || 'Manual backup restored successfully. Reloading...');
+      toast.success('System restored from uploaded archive.');
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setTimeout(() => {
@@ -249,7 +252,6 @@ export default function BackupManager() {
     }
   };
 
-  // Formatter helpers
   const formatBytes = (bytes) => {
     const b = Number(bytes);
     if (!b || isNaN(b)) return '0 Bytes';
@@ -260,377 +262,259 @@ export default function BackupManager() {
     return parseFloat((b / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString();
-  };
-
-  // Derived indicators
   const totalBackupSize = backups.reduce((acc, b) => acc + Number(b.size || 0), 0);
 
   return (
-    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar />
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
-      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto min-w-0 max-w-[1600px] w-full mx-auto">
-        <div className="space-y-6">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
           
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.05] pb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Cloud className="w-5 h-5 text-emerald-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Security & Backups</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Google Drive Backup & Restore</h1>
-              <p className="text-slate-400 text-xs mt-1">
+              <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Google Drive Backup & Restore</h1>
+              <p className="text-xs text-slate-400 mt-0.5">
                 Establish direct syncing with Google Drive to safeguard subtitles, media catalogs, users, settings, and database configurations.
               </p>
             </div>
             
-            <div className="flex gap-2.5 self-start sm:self-auto flex-wrap">
+            <div className="flex gap-2 self-start sm:self-auto flex-wrap">
               <button
+                type="button"
                 onClick={handleDownloadLocalBackup}
                 disabled={downloadingLocal}
-                className="h-10 px-4 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-xs font-bold text-slate-200 flex items-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                className="h-9 px-3.5 rounded-lg border border-white/[0.08] bg-[#11131A] hover:bg-white/[0.04] text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition disabled:opacity-50 cursor-pointer"
               >
-                {downloadingLocal ? <Loader2 className="w-4 h-4 animate-spin text-brand-primary" /> : <Download className="w-4 h-4" />}
-                Download ZIP Local
+                {downloadingLocal ? <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-400" /> : <Download className="w-3.5 h-3.5" />}
+                <span>Download ZIP Local</span>
               </button>
               <button
+                type="button"
                 onClick={handleCreateCloudBackup}
                 disabled={creatingBackup || !isConfigured}
-                className="h-10 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-black uppercase tracking-wider text-white flex items-center gap-2 transition disabled:opacity-30 shadow-lg shadow-emerald-500/25 cursor-pointer"
+                className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white flex items-center gap-1.5 transition disabled:opacity-30 shadow-sm cursor-pointer"
               >
-                {creatingBackup ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                Backup to Drive
+                {creatingBackup ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                <span>Backup to Drive</span>
               </button>
             </div>
           </div>
 
-          {/* Alert messages */}
           {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-xs text-red-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" /> {error}
+            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" /> {error}
             </div>
           )}
           {success && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs text-emerald-300 flex items-center gap-2">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
               <Check className="w-4 h-4 flex-shrink-0 text-emerald-400" /> {success}
             </div>
           )}
 
-          {/* Metrics Row */}
           {isConfigured && activeTab === 'cloud' && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard
-                icon={Database}
-                label="Drive Backup count"
-                value={`${backups.length} archives`}
-                trend={{ value: 'Linked', isPositive: true }}
-              />
-              <StatCard
-                icon={HardDrive}
-                label="Total drive storage used"
-                value={formatBytes(totalBackupSize)}
-                trend={{ value: 'ZIP Archives', isPositive: true }}
-              />
-              <StatCard
-                icon={Calendar}
-                label="Last remote backup"
-                value={lastBackupTime ? new Date(lastBackupTime).toLocaleDateString() : 'Never'}
-                trend={{ value: lastBackupTime ? new Date(lastBackupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending', isPositive: true }}
-              />
-              <StatCard
-                icon={ShieldCheck}
-                label="Status signature"
-                value="Configured"
-                trend={{ value: 'Google OAuth', isPositive: true }}
-              />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+              <StatCard icon={Database} label="Drive Backup count" value={`${backups.length} archives`} variant="secondary" />
+              <StatCard icon={HardDrive} label="Total drive storage used" value={formatBytes(totalBackupSize)} variant="secondary" />
+              <StatCard icon={Calendar} label="Last remote backup" value={lastBackupTime ? new Date(lastBackupTime).toLocaleDateString() : 'Never'} variant="secondary" />
+              <StatCard icon={ShieldCheck} label="Status signature" value="Configured" variant="secondary" />
             </div>
           )}
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-white/5 gap-6">
+          <div className="flex gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
             <button
+              type="button"
               onClick={() => setActiveTab('cloud')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'cloud' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${activeTab === 'cloud' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              Google Drive Backups
+              <Cloud className="w-3.5 h-3.5" /> Google Drive Archives
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('manual')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'manual' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${activeTab === 'manual' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              Manual File Restore
+              <Upload className="w-3.5 h-3.5" /> Manual ZIP Restore
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('settings')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'settings' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${activeTab === 'settings' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              Drive Configuration
+              <Settings className="w-3.5 h-3.5" /> Google Cloud Credentials
             </button>
           </div>
 
-          {/* TAB 1: Google Drive Backups List */}
+          {/* TAB 1: Google Drive Backups */}
           {activeTab === 'cloud' && (
-            <div className="space-y-6">
-              {!isConfigured && (
-                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <h3 className="text-sm font-extrabold text-amber-300 uppercase tracking-wide">Google Drive is not linked yet</h3>
-                    <p className="text-xs text-slate-300">
-                      Configure your Google Cloud Service Account credentials and folder ID parameters to unlock automated remote backup archives.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('settings')}
-                    className="h-9 px-4.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-[10px] font-black uppercase tracking-wider text-black transition flex-shrink-0 cursor-pointer"
-                  >
-                    Setup Credentials
-                  </button>
+            <div className="rounded-xl border border-white/[0.06] bg-[#11131A] p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.05]">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-100">Google Drive Backups</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Automated backups stored in your private Google Drive directory</p>
                 </div>
-              )}
+                <button
+                  type="button"
+                  onClick={fetchBackups}
+                  disabled={loadingBackups}
+                  className="h-8 px-3 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingBackups ? 'animate-spin' : ''}`} /> Refresh
+                </button>
+              </div>
 
-              {isConfigured && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                  
-                  {/* Google Status Panel */}
-                  <div className="rounded-2xl border border-white/5 bg-luxury-900 p-5 space-y-4 lg:col-span-1">
-                    <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2 border-b border-white/5 pb-2.5">
-                      <KeyRound className="w-4 h-4 text-emerald-400" /> Connection Parameters
-                    </h2>
-                    
-                    <div className="space-y-3.5 text-xs">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase font-black">Authorized Account</span>
-                        <span className="text-xs text-slate-200 break-all font-mono bg-luxury-950 p-2 rounded-lg border border-white/5">{serviceAccountEmail}</span>
+              {loadingBackups ? (
+                <div className="py-20 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                  Loading Google Drive archives...
+                </div>
+              ) : !isConfigured ? (
+                <div className="py-14 text-center text-xs text-slate-400 space-y-2">
+                  <KeyRound className="w-7 h-7 text-amber-400 mx-auto mb-2" />
+                  <p className="font-semibold text-slate-200">Google Cloud Credentials Not Configured</p>
+                  <p className="text-slate-500 max-w-md mx-auto">Please configure your Google Service Account in the "Google Cloud Credentials" tab.</p>
+                </div>
+              ) : backups.length === 0 ? (
+                <div className="py-14 text-center text-xs text-slate-500">
+                  No backup archives found in your Google Drive folder. Click "Backup to Drive" to create one.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.04]">
+                  {backups.map((b) => (
+                    <div key={b.id} className="py-3 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#151821] border border-white/[0.06] flex items-center justify-center text-slate-400 flex-shrink-0">
+                          <FileArchive className="w-4 h-4 text-violet-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-200 truncate">{b.name}</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">{formatBytes(b.size)} • {new Date(b.createdTime).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase font-black">Target Folder ID</span>
-                        <span className="text-xs text-slate-200 font-mono break-all bg-luxury-950 p-2 rounded-lg border border-white/5">{folderId}</span>
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase font-black">Last Sync Executed</span>
-                        <span className="text-xs text-emerald-400 font-bold bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10 flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5" />
-                          {formatDate(lastBackupTime)}
-                        </span>
+
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          type="button"
+                          disabled={restoringId === b.id}
+                          onClick={() => handleRestoreCloud(b.id, b.name)}
+                          className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 rounded-lg text-xs font-semibold transition flex items-center gap-1"
+                        >
+                          {restoringId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          <span>Restore</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deletingId === b.id}
+                          onClick={() => handleDeleteCloud(b.id, b.name)}
+                          className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 rounded-lg text-xs font-semibold transition"
+                          title="Delete Backup"
+                        >
+                          {deletingId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
                     </div>
-
-                    <button
-                      onClick={fetchBackups}
-                      className="w-full h-10 px-4 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-                    >
-                      <RefreshCw className="w-4 h-4 text-emerald-400" /> Resync Drive Files
-                    </button>
-                  </div>
-
-                  {/* Remote Backups List */}
-                  <div className="rounded-2xl border border-white/5 bg-luxury-900 overflow-hidden lg:col-span-2 shadow-2xl">
-                    <div className="px-5 py-4 border-b border-white/5 bg-luxury-950/20 flex items-center justify-between">
-                      <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                        <Database className="w-4 h-4 text-slate-500" /> Files Stored on Drive
-                      </h2>
-                    </div>
-
-                    {loadingBackups ? (
-                      <div className="py-24 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-3">
-                        <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
-                        Fetching files from Google Drive...
-                      </div>
-                    ) : backups.length === 0 ? (
-                      <div className="py-24 text-center text-xs text-slate-500">
-                        No backup archives (.zip) found in the Google Drive folder.
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-white/5">
-                        {backups.map(file => {
-                          const isRestoring = restoringId === file.id;
-                          const isDeleting = deletingId === file.id;
-
-                          return (
-                            <div key={file.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.01] transition">
-                              <div className="flex items-center gap-3 truncate">
-                                <span className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex-shrink-0">
-                                  <FileArchive className="w-5 h-5" />
-                                </span>
-                                <div className="truncate space-y-0.5">
-                                  <h4 className="text-xs font-bold text-white truncate font-mono">{file.name}</h4>
-                                  <p className="text-[10px] text-slate-400">
-                                    Size: <span className="font-mono text-slate-200">{formatBytes(file.size)}</span> • Uploaded: <span className="font-mono text-slate-200">{formatDate(file.createdTime)}</span>
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex gap-2 self-end sm:self-auto flex-shrink-0">
-                                <button
-                                  onClick={() => handleRestoreFromDrive(file.id, file.name)}
-                                  disabled={isRestoring || isDeleting}
-                                  className="h-8 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                                >
-                                  {isRestoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                                  Restore
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteBackup(file.id, file.name)}
-                                  disabled={isRestoring || isDeleting}
-                                  className="h-8 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-wider hover:bg-red-500 hover:text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                                >
-                                  {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 2: Manual ZIP File Restore */}
+          {/* TAB 2: Manual ZIP Restore */}
           {activeTab === 'manual' && (
-            <div className="max-w-2xl mx-auto rounded-2xl border border-white/5 bg-luxury-900 p-6 space-y-6 shadow-2xl">
+            <div className="rounded-xl border border-white/[0.06] bg-[#11131A] p-5 space-y-4 max-w-2xl">
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-slate-200 mb-1 flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-emerald-400" /> Drop-in Manual Recovery
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Upload a previously downloaded backup ZIP file to recover the database records and subtitle attachments manually.
-                </p>
+                <h3 className="text-sm font-bold text-slate-100">Manual Archive Upload & Restore</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Upload a previously generated .zip backup file to restore database data</p>
               </div>
 
               <form onSubmit={handleManualRestoreSubmit} className="space-y-4">
-                <div 
+                <div
+                  className="border border-dashed border-white/[0.12] hover:border-violet-500/50 rounded-xl p-8 flex flex-col items-center justify-center bg-[#08090D] cursor-pointer transition"
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-white/10 hover:border-emerald-500/30 rounded-2xl p-10 text-center cursor-pointer bg-luxury-950/20 hover:bg-luxury-950/40 transition flex flex-col items-center justify-center gap-3.5"
                 >
                   <input
-                    type="file"
                     ref={fileInputRef}
-                    onChange={handleFileChange}
+                    type="file"
                     accept=".zip"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                     className="hidden"
                   />
-                  <div className="p-3.5 rounded-full bg-emerald-500/5 border border-emerald-500/10 text-emerald-400">
-                    <FileArchive className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">
-                      {selectedFile ? selectedFile.name : 'Click to browse or drop backup zip here'}
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      {selectedFile ? `${formatBytes(selectedFile.size)}` : 'Only backup ZIP packages generated by this site are supported.'}
-                    </p>
-                  </div>
+                  <Upload className="w-8 h-8 text-slate-500 mb-2" />
+                  {selectedFile ? (
+                    <p className="text-xs text-emerald-400 font-semibold">{selectedFile.name} ({formatBytes(selectedFile.size)})</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-slate-300 font-semibold">Select or drag .zip backup archive here</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Maximum size: 200MB</p>
+                    </>
+                  )}
                 </div>
 
-                <div className="flex justify-end gap-3 pt-2">
-                  {selectedFile && (
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                      className="h-10 px-5 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold text-slate-400 transition cursor-pointer"
-                    >
-                      Clear Selection
-                    </button>
-                  )}
+                <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={!selectedFile || restoringManual}
-                    className="h-10 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/20 disabled:text-slate-500 text-xs font-black uppercase tracking-wider text-white flex items-center gap-2 transition shadow-lg shadow-emerald-500/25 cursor-pointer"
+                    className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50 transition"
                   >
-                    {restoringManual ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Restoring Site...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4" /> Start Manual Restore
-                      </>
-                    )}
+                    {restoringManual ? 'Restoring System...' : 'Upload & Restore System'}
                   </button>
                 </div>
               </form>
             </div>
           )}
 
-          {/* TAB 3: Configuration Settings */}
+          {/* TAB 3: Google Cloud Settings */}
           {activeTab === 'settings' && (
-            <div className="max-w-3xl mx-auto rounded-2xl border border-white/5 bg-luxury-900 p-6 space-y-6 shadow-2xl">
+            <div className="rounded-xl border border-white/[0.06] bg-[#11131A] p-5 space-y-4 max-w-3xl">
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-slate-200 mb-1 flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-emerald-400" /> Google Drive Connection Configuration
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Input your Google Service Account private key JSON details and target folder ID configurations below to setup automated backup synchronization.
-                </p>
+                <h3 className="text-sm font-bold text-slate-100">Google Drive API Configuration</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Configure your Google Cloud service account to enable automated Google Drive sync</p>
               </div>
 
-              <form onSubmit={handleSaveSettings} className="space-y-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Google Drive Folder ID</label>
+              <form onSubmit={handleSaveSettings} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Google Drive Folder ID</label>
                   <input
                     type="text"
                     required
                     value={folderId}
                     onChange={(e) => setFolderId(e.target.value)}
-                    placeholder="Enter Google Drive Folder ID"
-                    className="w-full h-11 px-4 rounded-xl text-xs bg-luxury-950 border border-white/10 focus:border-emerald-500/50 outline-none text-slate-200 transition"
+                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
                   />
-                  <span className="text-[10px] text-slate-500 leading-relaxed block">
-                    Typically the long alphanumeric string at the end of the Google Drive folder URL (e.g. 1-mG-eq1GNxQrI9Byj23RC-JFOO_3Z57n)
-                  </span>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Service Account Private Key JSON credentials file content
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    Google Service Account Key (JSON)
+                    {isConfigured && <span className="text-emerald-400 ml-2 font-mono text-[10px]">✓ Configured ({serviceAccountEmail})</span>}
                   </label>
                   <textarea
                     rows={8}
-                    required={!isConfigured}
                     value={serviceAccount}
                     onChange={(e) => setServiceAccount(e.target.value)}
-                    placeholder={
-                      isConfigured 
-                        ? 'Google Service Account credentials already configured. Paste new JSON here to update.' 
-                        : 'Paste the contents of your Google Service Account private key JSON file here'
-                    }
-                    className="w-full p-4 rounded-xl text-xs font-mono text-emerald-400 bg-luxury-950 border border-white/10 focus:border-emerald-500/50 outline-none transition"
+                    placeholder={isConfigured ? 'Service account is configured. Paste new JSON here only if updating credentials.' : 'Paste full service-account.json content here...'}
+                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500 font-mono"
                   />
-                  <span className="text-[10px] text-slate-500 leading-relaxed block">
-                    Key requires standard Google Drive file write access permissions. Make sure to share the target Google Drive Folder with the Service Account email (client_email in JSON file) as an <strong>Editor</strong>.
-                  </span>
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={savingSettings}
-                    className="h-11 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-xs font-black uppercase tracking-wider text-white flex items-center gap-2 transition shadow-lg shadow-emerald-500/25 cursor-pointer"
+                    className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50 transition"
                   >
-                    {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    Save Configurations
+                    {savingSettings ? 'Saving Settings...' : 'Save Configuration'}
                   </button>
                 </div>
               </form>
             </div>
           )}
 
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

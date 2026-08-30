@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
 import {
   TrendingUp, Film, Tv, Languages, Star, Users, Settings,
@@ -14,6 +15,7 @@ export default function ReviewManager() {
   const { admin } = useAuth();
   const toast = useToast();
   
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('reviews'); // 'reviews' or 'comments'
   const [reviews, setReviews] = useState([]);
   const [comments, setComments] = useState([]);
@@ -67,132 +69,129 @@ export default function ReviewManager() {
   };
 
   return (
-    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar />
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
-      {/* Primary Details Panel */}
-      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
           
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2 border-b border-white/[0.05]">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Discussions & Reviews</h1>
-              <p className="text-slate-400 text-xs mt-1">Review community star feedback logs and purge inappropriate discussion elements</p>
+              <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Community & Feedback</h1>
+              <p className="text-xs text-slate-400 mt-0.5">Review community star feedback logs and purge inappropriate discussion elements</p>
             </div>
 
             {/* Selector tabs */}
-            <div className="flex bg-luxury-900 border border-white/5 p-1 rounded-xl">
+            <div className="flex gap-1 bg-[#11131A] border border-white/[0.06] p-1 rounded-xl">
               <button
+                type="button"
                 onClick={() => setActiveTab('reviews')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 ${
-                  activeTab === 'reviews' ? 'bg-brand-primary text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  activeTab === 'reviews' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <Star className="w-3.5 h-3.5" />
-                User Reviews
+                <span>User Reviews</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('comments')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 ${
-                  activeTab === 'comments' ? 'bg-brand-primary text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  activeTab === 'comments' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                Comments
+                <span>Comments & Threads</span>
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="p-4 mb-6 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
               {error}
             </div>
           )}
 
           {/* List display */}
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {loading ? (
-              <div className="text-center py-16 text-slate-500">Checking records...</div>
+              <div className="text-center py-16 text-slate-500 text-xs">Querying moderation queue logs...</div>
             ) : activeTab === 'reviews' ? (
-              // Reviews loop
               reviews.length === 0 ? (
-                <p className="text-center py-16 text-slate-500 text-sm bg-luxury-900 border border-white/5 rounded-2xl">
-                  No ratings or reviews submitted yet.
-                </p>
+                <div className="text-center py-16 text-slate-500 bg-[#11131A] border border-white/[0.06] rounded-xl text-xs">
+                  No user reviews have been recorded yet.
+                </div>
               ) : (
-                reviews.map((rev) => (
-                  <div key={rev._id} className="bg-luxury-900 border border-white/5 p-5 rounded-2xl flex justify-between items-start gap-4">
-                    <div className="space-y-2">
+                reviews.map((r) => (
+                  <div key={r._id} className="bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl flex items-start justify-between gap-4 hover:border-white/[0.12] transition">
+                    <div className="space-y-2 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-bold text-[9px]">
-                          SCORE: {rev.rating}/10
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">TARGET ID: {rev.mediaId}</span>
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          <Star className="w-3.5 h-3.5 fill-amber-400" />
+                          <span className="font-bold text-xs">{r.rating}/10</span>
+                        </div>
+                        <span className="text-slate-600 text-xs">•</span>
+                        <span className="text-xs font-semibold text-slate-200">{r.user?.username || 'Anonymous Member'}</span>
+                        <span className="text-[10px] text-slate-500">{new Date(r.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <p className="text-sm text-slate-200 leading-relaxed font-serif italic">"{rev.content}"</p>
-                      <div className="text-xs text-slate-500">
-                        Submitted by: <b className="text-slate-400">{rev.user?.username || 'Unknown'}</b> ({rev.user?.email || 'N/A'}) on {new Date(rev.createdAt).toLocaleString()}
-                      </div>
+                      
+                      <p className="text-xs text-slate-300 leading-relaxed font-sans">{r.reviewText || 'No comment message written with rating.'}</p>
+                      
+                      <p className="text-[10px] font-mono text-slate-500">
+                        Target Media: <b className="text-slate-400">{r.media?.title || r.mediaId}</b> ({r.mediaType || 'Media'})
+                      </p>
                     </div>
+
                     <button
-                      onClick={() => handleDeleteReview(rev._id)}
-                      className="p-2 bg-brand-secondary/10 hover:bg-brand-secondary/20 text-brand-secondary rounded-xl transition flex-shrink-0"
+                      type="button"
+                      onClick={() => handleDeleteReview(r._id)}
+                      className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 rounded-lg text-xs font-semibold transition flex-shrink-0"
                       title="Purge Review"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))
               )
             ) : (
-              // Comments loop
               comments.length === 0 ? (
-                <p className="text-center py-16 text-slate-500 text-sm bg-luxury-900 border border-white/5 rounded-2xl">
-                  No comments logged in target feeds.
-                </p>
+                <div className="text-center py-16 text-slate-500 bg-[#11131A] border border-white/[0.06] rounded-xl text-xs">
+                  No user comments or replies found.
+                </div>
               ) : (
-                comments.map((comm) => (
-                  <div key={comm._id} className="bg-luxury-900 border border-white/5 p-5 rounded-2xl flex justify-between items-start gap-4">
-                    <div className="space-y-2">
+                comments.map((c) => (
+                  <div key={c._id} className="bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl flex items-start justify-between gap-4 hover:border-white/[0.12] transition">
+                    <div className="space-y-2 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] uppercase font-bold tracking-wider">
-                          Type: {comm.targetType}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">TARGET ID: {comm.targetId}</span>
+                        <span className="text-xs font-semibold text-slate-200">{c.user?.username || 'Member'}</span>
+                        <span className="text-slate-600 text-xs">•</span>
+                        <span className="text-[10px] text-slate-500">{new Date(c.createdAt).toLocaleString()}</span>
                       </div>
-                      <p className="text-sm text-slate-200 leading-relaxed">"{comm.content}"</p>
-                      
-                      {comm.replies && comm.replies.length > 0 && (
-                        <div className="pl-4 border-l border-white/5 space-y-1.5 mt-2">
-                          <span className="text-[10px] font-bold text-slate-500 block uppercase">Replies:</span>
-                          {comm.replies.map((rep, rIdx) => (
-                            <p key={rIdx} className="text-xs text-slate-400">
-                              <span className="font-bold text-slate-300">User:</span> "{rep.content}"
-                            </p>
-                          ))}
-                        </div>
-                      )}
 
-                      <div className="text-xs text-slate-500">
-                        Author: <b className="text-slate-400">{comm.user?.username || comm.guestName || 'Guest'}</b> ({comm.user?.email || 'Guest comment'}) on {new Date(comm.createdAt).toLocaleString()}
-                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed font-sans">{c.content}</p>
+
+                      <p className="text-[10px] font-mono text-slate-500">
+                        Target Resource: <b className="text-slate-400">{c.targetId}</b> ({c.targetType || 'General'})
+                      </p>
                     </div>
+
                     <button
-                      onClick={() => handleDeleteComment(comm._id)}
-                      className="p-2 bg-brand-secondary/10 hover:bg-brand-secondary/20 text-brand-secondary rounded-xl transition flex-shrink-0"
+                      type="button"
+                      onClick={() => handleDeleteComment(c._id)}
+                      className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 rounded-lg text-xs font-semibold transition flex-shrink-0"
                       title="Purge Comment"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))
               )
             )}
           </div>
-
-        </div>
-      </main>
-
+        </main>
+      </div>
     </div>
   );
 }

@@ -54,7 +54,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     },
     initialData,
     staleTime: 60_000,
-    refetchOnMount: false
+    // Detail pages can be statically rendered before an admin publishes a
+    // subtitle. Always reconcile that snapshot with the live API on mount so
+    // an old `0 Ready` payload cannot remain in the browser query cache.
+    refetchOnMount: topOnly ? false : 'always'
   });
 
   const media = type === 'Drama' ? data?.drama : data?.movie;
@@ -121,7 +124,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     enabled: !topOnly && !!media?._id,
     initialData: data?.subtitles || [],
     staleTime: 60_000,
-    refetchOnMount: false,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true
   });
 
@@ -134,14 +137,15 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       const subs = res.data || [];
       const grouped = {};
       activeEpisodes.forEach(ep => {
-        grouped[ep._id] = [];
+        grouped[getId(ep._id)] = [];
       });
       subs.forEach(sub => {
-        if (sub.mediaId) {
-          if (!grouped[sub.mediaId]) {
-            grouped[sub.mediaId] = [];
+        const subtitleMediaId = getId(sub.mediaId);
+        if (subtitleMediaId) {
+          if (!grouped[subtitleMediaId]) {
+            grouped[subtitleMediaId] = [];
           }
-          grouped[sub.mediaId].push(sub);
+          grouped[subtitleMediaId].push(sub);
         }
       });
       return grouped;
@@ -151,17 +155,18 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       if (!data?.episodeSubtitles) return undefined;
       const grouped = {};
       activeEpisodes.forEach(ep => {
-        grouped[ep._id] = [];
+        grouped[getId(ep._id)] = [];
       });
       data.episodeSubtitles.forEach(sub => {
-        if (sub.mediaId && grouped[sub.mediaId] !== undefined) {
-          grouped[sub.mediaId].push(sub);
+        const subtitleMediaId = getId(sub.mediaId);
+        if (subtitleMediaId && grouped[subtitleMediaId] !== undefined) {
+          grouped[subtitleMediaId].push(sub);
         }
       });
       return grouped;
     },
     staleTime: 60_000,
-    refetchOnMount: false,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true
   });
 
@@ -778,7 +783,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   ) : (
                     activeEpisodes.map((ep) => {
                       const summary = ep.subtitleSummary || {};
-                      const directEpisodeFiles = episodeSubtitlesById[ep._id] || [];
+                      const directEpisodeFiles = episodeSubtitlesById[getId(ep._id)] || [];
                       const taggedTitleFiles = sortedSubtitles.filter((sub) => (
                         Number(sub?.seasonNumber || selectedSeason) === Number(selectedSeason) &&
                         Number(sub?.episodeNumber) === Number(ep.episodeNumber)

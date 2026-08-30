@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
 import {
   Languages, Sparkles, UploadCloud, Download, AlertTriangle, Play,
@@ -275,6 +276,7 @@ export default function SubtitleTools() {
   const [editingBlockId, setEditingBlockId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [translationEngine, setTranslationEngine] = useState('gemini');
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Global Configs
   const [activeTab, setActiveTab] = useState('upload'); // 'upload', 'brand', 'translate', 'export'
@@ -770,12 +772,15 @@ export default function SubtitleTools() {
   };
 
   return (
-    <div className="admin-shell min-h-screen bg-luxury-950 text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar />
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
-      <main className="admin-main flex-grow p-6 sm:p-8 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
           <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
@@ -1603,9 +1608,9 @@ export default function SubtitleTools() {
             )}
 
           </div>
-
         </div>
       </main>
     </div>
-  );
+  </div>
+);
 }
