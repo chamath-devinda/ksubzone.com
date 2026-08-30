@@ -649,7 +649,14 @@ class SubtitleController {
         }
         $subtitles = $db->find('subtitles', $query, ['sort' => ['createdAt' => -1]]);
 
-        // Populate uploader
+        // Populate uploader, admin uploader and target media details
+        $movies = $db->find('movies');
+        $dramas = $db->find('dramas');
+        $episodes = $db->find('episodes');
+        $movieMap = []; foreach ($movies as $m) $movieMap[(string)$m['_id']] = $m;
+        $dramaMap = []; foreach ($dramas as $d) $dramaMap[(string)$d['_id']] = $d;
+        $episodeMap = []; foreach ($episodes as $e) $episodeMap[(string)$e['_id']] = $e;
+
         foreach ($subtitles as &$sub) {
             $uploaderId = $sub['uploader'] ?? null;
             $uploader = $uploaderId ? $db->findOne('users', ['_id' => $uploaderId]) : null;
@@ -658,10 +665,37 @@ class SubtitleController {
                 'username' => $uploader['username'],
                 'email' => $uploader['email'] ?? ''
             ] : null;
+
+            $adminUploaderId = $sub['adminUploader'] ?? null;
+            $adminUploader = $adminUploaderId ? $db->findOne('admins', ['_id' => $adminUploaderId]) : null;
+            $sub['adminUploader'] = $adminUploader ? [
+                '_id' => $adminUploader['_id'],
+                'username' => $adminUploader['username'] ?? $adminUploader['name'] ?? 'Admin',
+            ] : null;
+
+            $mId = (string)($sub['mediaId'] ?? '');
+            $mType = strtolower($sub['mediaType'] ?? '');
+            if ($mType === 'movie' && isset($movieMap[$mId])) {
+                $sub['mediaTitle'] = $movieMap[$mId]['title'] ?? '';
+                $sub['mediaSlug'] = $movieMap[$mId]['slug'] ?? '';
+                $sub['mediaPoster'] = $movieMap[$mId]['poster'] ?? '';
+            } elseif ($mType === 'episode' && isset($episodeMap[$mId])) {
+                $ep = $episodeMap[$mId];
+                $dr = $dramaMap[(string)($ep['dramaId'] ?? '')] ?? null;
+                $sub['mediaTitle'] = ($dr['title'] ?? 'Drama') . ' - Season ' . ($ep['seasonNumber'] ?? 1) . ' Ep ' . ($ep['episodeNumber'] ?? 1);
+                $sub['mediaSlug'] = $dr['slug'] ?? '';
+                $sub['mediaPoster'] = $dr['poster'] ?? '';
+            } elseif (isset($dramaMap[$mId])) {
+                $sub['mediaTitle'] = $dramaMap[$mId]['title'] ?? '';
+                $sub['mediaSlug'] = $dramaMap[$mId]['slug'] ?? '';
+                $sub['mediaPoster'] = $dramaMap[$mId]['poster'] ?? '';
+            } else {
+                $sub['mediaTitle'] = ucfirst($sub['mediaType'] ?? 'Media') . ' (' . $mId . ')';
+            }
         }
 
         header('Content-Type: application/json');
-        echo json_encode($subtitles);
+        echo json_encode(array_values($subtitles));
     }
 
     public static function updateApprovalStatus($id) {

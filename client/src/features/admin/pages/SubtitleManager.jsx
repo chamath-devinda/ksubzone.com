@@ -340,10 +340,10 @@ export default function SubtitleManager() {
                     </div>
 
                     <div>
-                      <p className="text-[10px] text-slate-500 font-mono uppercase">Media target identifier:</p>
+                      <p className="text-[10px] text-slate-500 font-mono uppercase">Media target:</p>
                       <p className="text-xs font-bold text-slate-200 mt-0.5 flex items-center gap-1.5 truncate">
                         <Film className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-                        <span>{sub.mediaType} ID: {sub.mediaId}</span>
+                        <span>{sub.mediaTitle || `${sub.mediaType} ID: ${sub.mediaId}`}</span>
                       </p>
                     </div>
 

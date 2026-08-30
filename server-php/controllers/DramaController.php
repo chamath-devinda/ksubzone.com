@@ -127,12 +127,7 @@ class DramaController {
             'limit' => $limit
         ]);
 
-        // The catalog is used to render the first admin table only. Do not
-        // embed every season and episode for every drama here: on a real
-        // catalog that turns one request into a huge JSON response and makes
-        // the page look like the database/import has failed. The explorer
-        // already loads the selected drama's seasons and episodes from the
-        // media detail endpoint when it is opened.
+        self::appendSubtitleSummariesToDramas($dramas);
         $dramasArray = array_values($dramas);
 
         header('Content-Type: application/json');
@@ -1095,6 +1090,8 @@ class DramaController {
             
             $dramaEps = $episodesByDrama[$dId] ?? [];
             $totalEpisodesCount = count($dramaEps);
+            $drama['episodeCount'] = $totalEpisodesCount;
+            $drama['seasonCount'] = count($seasonsByDrama[$dId] ?? []);
             
             $titleSubbed = $subtitlesByMedia[$dId] ?? [];
             
