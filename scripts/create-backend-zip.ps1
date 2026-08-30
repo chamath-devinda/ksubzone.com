@@ -29,10 +29,12 @@ Copy-Item -Path "$sourceDir\*" -Destination $tempDir -Recurse -Force
 # Define excluded files/directories
 $dbFile = Join-Path $tempDir "ksubzone.sqlite"
 $uploadsDir = Join-Path $tempDir "uploads"
+$tempCacheDir = Join-Path $tempDir "temp\cache"
+$tempVisitorsDir = Join-Path $tempDir "temp\visitors"
 $configJson = Join-Path $tempDir "config\backup_config.json"
 $envFile = Join-Path $tempDir ".env"
 
-Write-Host "Stripping environment-specific database and configurations..."
+Write-Host "Stripping environment-specific database, cache, and configurations..."
 if (Test-Path $dbFile) {
     Remove-Item -Path $dbFile -Force
     Write-Host " - Excluded: ksubzone.sqlite"
@@ -40,6 +42,14 @@ if (Test-Path $dbFile) {
 if (Test-Path $uploadsDir) {
     Remove-Item -Path "$uploadsDir\*" -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host " - Cleaned uploads folder"
+}
+if (Test-Path $tempCacheDir) {
+    Remove-Item -Path "$tempCacheDir\*" -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host " - Cleaned temp cache"
+}
+if (Test-Path $tempVisitorsDir) {
+    Remove-Item -Path "$tempVisitorsDir\*" -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host " - Cleaned temp visitors"
 }
 if (Test-Path $configJson) {
     Remove-Item -Path $configJson -Force
