@@ -22,15 +22,19 @@ class SeoController {
         return $time ? date('Y-m-d\TH:i:s\Z', $time) : date('Y-m-d\TH:i:s\Z');
     }
 
+    private static function xml($value) {
+        return htmlspecialchars((string)$value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    }
+
     private static function serveCachedXml($cacheKey, $generatorCallback, $ttl = 3600) {
         header('Content-Type: application/xml; charset=UTF-8');
-        header('Cache-Control: public, max-age=3600, s-maxage=3600');
+        header('Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
 
         $cacheDir = __DIR__ . '/../temp/cache';
         if (!is_dir($cacheDir)) {
             @mkdir($cacheDir, 0777, true);
         }
-        $cacheFile = $cacheDir . '/sitemap_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $cacheKey) . '.xml';
+        $cacheFile = $cacheDir . '/sitemap_v2_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $cacheKey) . '.xml';
 
         if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $ttl)) {
             readfile($cacheFile);
@@ -42,13 +46,14 @@ class SeoController {
         $content = ob_get_clean();
 
         if (!empty($content)) {
-            @file_put_contents($cacheFile, $content);
+            @file_put_contents($cacheFile, $content, LOCK_EX);
         }
         echo $content;
     }
 
     public static function getRobotsTxt() {
-        header('Content-Type: text/plain');
+        header('Content-Type: text/plain; charset=UTF-8');
+        header('Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
         echo "User-agent: *\n";
         echo "Allow: /\n";
         echo "Disallow: /management/\n";
@@ -67,7 +72,6 @@ class SeoController {
             echo '  <sitemap><loc>' . self::$siteUrl . '/sitemap-articles.xml</loc></sitemap>' . "\n";
             echo '  <sitemap><loc>' . self::$siteUrl . '/sitemap-genres.xml</loc></sitemap>' . "\n";
             echo '  <sitemap><loc>' . self::$siteUrl . '/sitemap-categories.xml</loc></sitemap>' . "\n";
-            echo '  <sitemap><loc>' . self::$siteUrl . '/news-sitemap.xml</loc></sitemap>' . "\n";
             echo '</sitemapindex>';
         });
     }
@@ -83,7 +87,7 @@ class SeoController {
                 $slug = self::permalinkSlug($movie);
                 $lastmod = self::formatDate($movie['updatedAt'] ?? '');
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . "/movie/{$slug}</loc>\n";
+                echo "    <loc>" . self::xml(self::$siteUrl . "/movie/{$slug}") . "</loc>\n";
                 echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.8</priority>\n";
@@ -98,15 +102,6 @@ class SeoController {
             $db = Database::getInstance();
             $dramas = $db->find('dramas', ['status' => ['$in' => ['Published', 'Upcoming']]]);
 
-            $allSeasons = $db->find('seasons');
-            $seasonsByDramaId = [];
-            foreach ($allSeasons as $season) {
-                $did = (string)($season['dramaId'] ?? '');
-                if ($did !== '') {
-                    $seasonsByDramaId[$did][] = $season;
-                }
-            }
-
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             foreach ($dramas as $drama) {
@@ -115,34 +110,11 @@ class SeoController {
 
                 // Drama root page
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . "/drama/{$slug}</loc>\n";
+                echo "    <loc>" . self::xml(self::$siteUrl . "/drama/{$slug}") . "</loc>\n";
                 echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.8</priority>\n";
                 echo "  </url>\n";
-
-                // Emit each real season page (e.g. /season-1, /season-2, /season-3 ...)
-                $dramaId = (string)($drama['_id'] ?? '');
-                $seasons = $seasonsByDramaId[$dramaId] ?? [];
-                if (empty($seasons)) {
-                    echo "  <url>\n";
-                    echo "    <loc>" . self::$siteUrl . "/drama/{$slug}/season-1</loc>\n";
-                    echo "    <lastmod>{$lastmod}</lastmod>\n";
-                    echo "    <changefreq>weekly</changefreq>\n";
-                    echo "    <priority>0.7</priority>\n";
-                    echo "  </url>\n";
-                } else {
-                    foreach ($seasons as $season) {
-                        $sNum     = (int)($season['seasonNumber'] ?? 1);
-                        $sLastmod = self::formatDate($season['updatedAt'] ?? $drama['updatedAt'] ?? '');
-                        echo "  <url>\n";
-                        echo "    <loc>" . self::$siteUrl . "/drama/{$slug}/season-{$sNum}</loc>\n";
-                        echo "    <lastmod>{$sLastmod}</lastmod>\n";
-                        echo "    <changefreq>weekly</changefreq>\n";
-                        echo "    <priority>0.7</priority>\n";
-                        echo "  </url>\n";
-                    }
-                }
             }
             echo '</urlset>';
         });
@@ -168,6 +140,7 @@ class SeoController {
 
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            $seenUrls = [];
             foreach ($allEpisodes as $ep) {
                 $dramaId  = (string)($ep['dramaId']  ?? '');
                 $seasonId = (string)($ep['seasonId'] ?? '');
@@ -182,8 +155,12 @@ class SeoController {
                 $seasonNum = (int)($season['seasonNumber'] ?? 1);
                 $epNum     = (int)($ep['episodeNumber']    ?? 1);
 
+                $url = self::$siteUrl . "/drama/{$slug}/season-{$seasonNum}/episode-{$epNum}";
+                if (isset($seenUrls[$url])) continue;
+                $seenUrls[$url] = true;
+
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . "/drama/{$slug}/season-{$seasonNum}/episode-{$epNum}</loc>\n";
+                echo "    <loc>" . self::xml($url) . "</loc>\n";
                 echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>monthly</changefreq>\n";
                 echo "    <priority>0.6</priority>\n";
@@ -215,14 +192,14 @@ class SeoController {
                 $slug = self::permalinkSlug($movie);
                 $pubDate = self::formatIso($movie['createdAt'] ?? '');
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . "/movie/{$slug}</loc>\n";
+                echo "    <loc>" . self::xml(self::$siteUrl . "/movie/{$slug}") . "</loc>\n";
                 echo "    <news:news>\n";
                 echo "      <news:publication>\n";
                 echo "        <news:name>KSubZone News</news:name>\n";
                 echo "        <news:language>en</news:language>\n";
                 echo "      </news:publication>\n";
                 echo "      <news:publication_date>{$pubDate}</news:publication_date>\n";
-                echo "      <news:title>" . htmlspecialchars($movie['title'] ?? '') . " - Imported and Available with Subtitles</news:title>\n";
+                echo "      <news:title>" . self::xml(($movie['title'] ?? '') . " - Imported and Available with Subtitles") . "</news:title>\n";
                 echo "    </news:news>\n";
                 echo "  </url>\n";
             }
@@ -231,14 +208,14 @@ class SeoController {
                 $slug = self::permalinkSlug($drama);
                 $pubDate = self::formatIso($drama['createdAt'] ?? '');
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . "/drama/{$slug}</loc>\n";
+                echo "    <loc>" . self::xml(self::$siteUrl . "/drama/{$slug}") . "</loc>\n";
                 echo "    <news:news>\n";
                 echo "      <news:publication>\n";
                 echo "        <news:name>KSubZone News</news:name>\n";
                 echo "        <news:language>en</news:language>\n";
                 echo "      </news:publication>\n";
                 echo "      <news:publication_date>{$pubDate}</news:publication_date>\n";
-                echo "      <news:title>" . htmlspecialchars($drama['title'] ?? '') . " - Now Streaming on KSubZone</news:title>\n";
+                echo "      <news:title>" . self::xml(($drama['title'] ?? '') . " - Now Streaming on KSubZone") . "</news:title>\n";
                 echo "      </news:news>\n";
                 echo "  </url>\n";
             }
@@ -253,14 +230,16 @@ class SeoController {
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             $pages = [
                 ['path' => '', 'priority' => '1.0', 'changefreq' => 'daily'],
-                ['path' => '/search', 'priority' => '0.5', 'changefreq' => 'weekly'],
+                ['path' => '/movies', 'priority' => '0.9', 'changefreq' => 'daily'],
+                ['path' => '/dramas', 'priority' => '0.9', 'changefreq' => 'daily'],
+                ['path' => '/genres', 'priority' => '0.7', 'changefreq' => 'weekly'],
                 ['path' => '/articles', 'priority' => '0.7', 'changefreq' => 'daily'],
+                ['path' => '/about', 'priority' => '0.4', 'changefreq' => 'monthly'],
+                ['path' => '/contact', 'priority' => '0.4', 'changefreq' => 'monthly'],
             ];
-            $today = date('Y-m-d');
             foreach ($pages as $page) {
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . $page['path'] . "</loc>\n";
-                echo "    <lastmod>{$today}</lastmod>\n";
+                echo "    <loc>" . self::xml(self::$siteUrl . $page['path']) . "</loc>\n";
                 echo "    <changefreq>{$page['changefreq']}</changefreq>\n";
                 echo "    <priority>{$page['priority']}</priority>\n";
                 echo "  </url>\n";
@@ -277,10 +256,10 @@ class SeoController {
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             foreach ($articles as $article) {
-                $slug = htmlspecialchars($article['slug'] ?? '');
+                $slug = $article['slug'] ?? '';
                 $lastmod = self::formatDate($article['publishedAt'] ?? $article['updatedAt'] ?? '');
                 echo "  <url>\n";
-                echo "    <loc>" . self::$siteUrl . "/articles/{$slug}</loc>\n";
+                echo "    <loc>" . self::xml(self::$siteUrl . "/articles/{$slug}") . "</loc>\n";
                 echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.7</priority>\n";
@@ -315,24 +294,21 @@ class SeoController {
 
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-            $today = date('Y-m-d');
             foreach ($genres as $genre) {
                 $slug = $genre['slug'] ?? '';
                 $name = $genre['name'] ?? '';
                 if (empty($slug) || empty($name)) continue;
 
                 if (isset($usedGenres[strtolower(trim($name))])) {
-                    $escapedSlug = htmlspecialchars($slug);
+                    $escapedSlug = self::xml($slug);
                     echo "  <url>\n";
                     echo "    <loc>" . self::$siteUrl . "/drama/genre/{$escapedSlug}</loc>\n";
-                    echo "    <lastmod>{$today}</lastmod>\n";
                     echo "    <changefreq>weekly</changefreq>\n";
                     echo "    <priority>0.6</priority>\n";
                     echo "  </url>\n";
 
                     echo "  <url>\n";
                     echo "    <loc>" . self::$siteUrl . "/movie/genre/{$escapedSlug}</loc>\n";
-                    echo "    <lastmod>{$today}</lastmod>\n";
                     echo "    <changefreq>weekly</changefreq>\n";
                     echo "    <priority>0.6</priority>\n";
                     echo "  </url>\n";
@@ -357,12 +333,10 @@ class SeoController {
 
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-            $today = date('Y-m-d');
             foreach ($usedCategories as $cat) {
-                $slug = htmlspecialchars(Slug::slugify($cat));
+                $slug = self::xml(Slug::slugify($cat));
                 echo "  <url>\n";
                 echo "    <loc>" . self::$siteUrl . "/articles/category/{$slug}</loc>\n";
-                echo "    <lastmod>{$today}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.6</priority>\n";
                 echo "  </url>\n";
