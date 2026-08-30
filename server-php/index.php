@@ -564,6 +564,11 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
         'Controllers\TmdbController::searchTmdb'
     ]],
+    ['GET', '/api/admin/tmdb/discover', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
+        'Controllers\TmdbController::discoverKoreanDramas'
+    ]],
     ['GET', '/api/admin/tmdb/discover/korean-dramas', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
@@ -611,6 +616,11 @@ $routes = [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::getMissingSubtitleAlerts'
+    ]],
+    ['GET', '/api/admin/dramas/([a-f0-9]+)/structure', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
+        'Controllers\DramaController::getDramaStructure'
     ]],
     ['GET', '/api/admin/dramas', [
         'Middleware\AuthMiddleware::protectAdmin',

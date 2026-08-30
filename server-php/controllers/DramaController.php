@@ -142,6 +142,50 @@ class DramaController {
         ]);
     }
 
+    public static function getDramaStructure($id) {
+        $db = Database::getInstance();
+        $drama = $db->findOne('dramas', ['_id' => $id]);
+        if (!$drama) {
+            http_response_code(404);
+            echo json_encode(['message' => 'Drama not found']);
+            return;
+        }
+
+        $seasons = $db->find('seasons', ['dramaId' => $id], ['sort' => ['seasonNumber' => 1]]);
+        $seasonIds = array_map(function($s) { return $s['_id']; }, $seasons);
+
+        $episodes = [];
+        if (!empty($seasonIds)) {
+            $episodes = $db->find('episodes', [
+                '$or' => [
+                    ['dramaId' => $id],
+                    ['seasonId' => ['$in' => $seasonIds]]
+                ]
+            ], ['sort' => ['seasonNumber' => 1, 'episodeNumber' => 1]]);
+        } else {
+            $episodes = $db->find('episodes', ['dramaId' => $id], ['sort' => ['episodeNumber' => 1]]);
+        }
+
+        // Fetch subtitles attached to these episodes
+        $episodeIds = array_map(function($e) { return $e['_id']; }, $episodes);
+        $subtitles = !empty($episodeIds) ? $db->find('subtitles', ['mediaId' => ['$in' => $episodeIds]]) : [];
+        $subsByEp = [];
+        foreach ($subtitles as $sub) {
+            $subsByEp[(string)$sub['mediaId']][] = $sub;
+        }
+
+        foreach ($episodes as &$ep) {
+            $ep['subtitles'] = $subsByEp[(string)$ep['_id']] ?? [];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'drama' => $drama,
+            'seasons' => array_values($seasons),
+            'episodes' => array_values($episodes)
+        ]);
+    }
+
     public static function getAllDramas() {
         $page = (int)($_GET['page'] ?? 1);
         $limit = (int)($_GET['limit'] ?? 12);
