@@ -1,6 +1,14 @@
 import React from 'react';
 import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import Detail from '@/features/media/pages/Detail';
+import {
+  buildMediaMetaTitle,
+  cleanMediaText,
+  cleanMediaTitle,
+  serializeJsonLd,
+  SITE_URL,
+} from '@/utils/seo';
 
 const getDrama = cache(async (slug) => {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
@@ -24,24 +32,33 @@ export async function generateMetadata({ params }) {
     const data = await getDrama(slug);
     const media = data?.drama;
     if (media) {
+      const cleanTitle = cleanMediaTitle(media.title);
+      const canonicalUrl = `${SITE_URL}/drama/${slug}`;
+      const rawKeywords = Array.isArray(media.seoKeywords) ? media.seoKeywords : (media.seoKeywords ? [media.seoKeywords] : []);
+      const description = cleanMediaText(
+        media.metaDescription || `${media.description || cleanTitle} Sinhala and English subtitle downloads.`,
+        media.title,
+        cleanTitle
+      );
       return {
-        title: media.metaTitle || `${media.title} Sinhala & English Subtitles | KSubZone`,
-        description: media.metaDescription || `${media.description || media.title} Sinhala and English subtitle downloads.`,
-        keywords: media.seoKeywords || (media.title ? [media.title.toLowerCase()] : []),
+        title: buildMediaMetaTitle(media),
+        description,
+        keywords: (rawKeywords.length ? rawKeywords : (cleanTitle ? [cleanTitle.toLowerCase()] : []))
+          .map((keyword) => cleanMediaText(keyword, media.title, cleanTitle)),
         alternates: {
-          canonical: `https://www.ksubzone.com/drama/${slug}`,
+          canonical: canonicalUrl,
         },
         openGraph: {
-          title: media.metaTitle || media.title,
-          description: media.metaDescription || media.description,
-          url: `https://www.ksubzone.com/drama/${slug}`,
+          title: buildMediaMetaTitle(media),
+          description,
+          url: canonicalUrl,
           images: media.poster ? [{ url: media.poster }] : [],
           type: 'video.tv_show',
         },
         twitter: {
           card: 'summary_large_image',
-          title: media.metaTitle || media.title,
-          description: media.metaDescription || media.description,
+          title: buildMediaMetaTitle(media),
+          description,
           images: media.poster ? [media.poster] : [],
         },
       };
@@ -59,6 +76,15 @@ export default async function DramaDetailPage({ params }) {
   const { slug } = params;
   const initialData = await getDrama(slug);
   const media = initialData?.drama;
+  if (!media) notFound();
+
+  const canonicalUrl = `${SITE_URL}/drama/${slug}`;
+  const cleanTitle = cleanMediaTitle(media.title);
+  const cleanDescription = cleanMediaText(
+    media.metaDescription || media.description || `${cleanTitle} Sinhala and English subtitle downloads.`,
+    media.title,
+    cleanTitle
+  );
 
   const breadcrumbs = media ? {
     "@context": "https://schema.org",
@@ -68,7 +94,7 @@ export default async function DramaDetailPage({ params }) {
         "@type": "ListItem",
         "position": 1,
         "name": "KSubZone",
-        "item": "https://www.ksubzone.com"
+        "item": `${SITE_URL}/`
       },
       {
         "@type": "ListItem",
@@ -79,13 +105,22 @@ export default async function DramaDetailPage({ params }) {
       {
         "@type": "ListItem",
         "position": 3,
-        "name": media.title,
-        "item": `https://www.ksubzone.com/drama/${slug}`
+        "name": cleanTitle,
+        "item": canonicalUrl
       }
     ]
   } : null;
 
-  const tvSchema = media?.schemaMarkup ? { ...media.schemaMarkup } : null;
+  const tvSchema = {
+    ...(media.schemaMarkup || {}),
+    "@context": "https://schema.org",
+    "@type": "TVSeries",
+    "@id": `${canonicalUrl}#tvseries`,
+    "url": canonicalUrl,
+    "name": cleanTitle,
+    "description": cleanDescription,
+    "mainEntityOfPage": canonicalUrl,
+  };
   if (tvSchema) {
     if (media.poster) {
       tvSchema.image = media.poster;
@@ -96,14 +131,8 @@ export default async function DramaDetailPage({ params }) {
         "name": c.name
       }));
     }
-    const ratingValue = media.imdbRating || media.tmdbRating || 0;
-    if (ratingValue > 0) {
-      tvSchema.aggregateRating = {
-        "@type": "AggregateRating",
-        "ratingValue": ratingValue.toFixed(1),
-        "bestRating": "10",
-        "ratingCount": media.viewCount ? Math.max(10, Math.floor(media.viewCount / 5)) : 10
-      };
+    if (tvSchema.aggregateRating && !Number(tvSchema.aggregateRating.ratingCount || tvSchema.aggregateRating.reviewCount)) {
+      delete tvSchema.aggregateRating;
     }
   }
 
@@ -112,10 +141,10 @@ export default async function DramaDetailPage({ params }) {
     "@type": "FAQPage",
     "mainEntity": media.faq.map(item => ({
       "@type": "Question",
-      "name": item.question,
+      "name": cleanMediaText(item.question, media.title, cleanTitle),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": item.answer
+        "text": cleanMediaText(item.answer, media.title, cleanTitle)
       }
     }))
   } : null;
@@ -123,7 +152,7 @@ export default async function DramaDetailPage({ params }) {
   const speakableSchema = media ? {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": `${media.title} Sinhala & English Subtitles`,
+    "name": `${cleanTitle} Sinhala & English Subtitles`,
     "speakable": {
       "@type": "SpeakableSpecification",
       "cssSelector": [".speakable-synopsis", ".speakable-faq-section"]
@@ -136,31 +165,43 @@ export default async function DramaDetailPage({ params }) {
         <script
           type="application/ld+json"
           id="breadcrumbs-jsonld"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }}
         />
       )}
       {tvSchema && (
         <script
           type="application/ld+json"
           id="tvseries-jsonld"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(tvSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(tvSchema) }}
         />
       )}
       {faqSchema && (
         <script
           type="application/ld+json"
           id="faq-jsonld"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }}
         />
       )}
       {speakableSchema && (
         <script
           type="application/ld+json"
           id="speakable-jsonld"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(speakableSchema) }}
         />
       )}
-      <Detail type="Drama" initialData={initialData} />
+      <Detail
+        type="Drama"
+        initialData={{
+          ...initialData,
+          drama: {
+            ...media,
+            title: cleanTitle,
+            metaTitle: buildMediaMetaTitle(media),
+            metaDescription: cleanDescription,
+            schemaMarkup: tvSchema,
+          },
+        }}
+      />
     </>
   );
 }

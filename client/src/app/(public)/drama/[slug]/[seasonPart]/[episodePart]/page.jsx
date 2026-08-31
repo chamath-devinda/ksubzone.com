@@ -1,6 +1,8 @@
 import React from 'react';
 import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import Watch from '@/features/media/pages/Watch';
+import { cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 const getId = (value) => {
   if (!value) return '';
@@ -30,6 +32,7 @@ export async function generateMetadata({ params }) {
     const data = await getDrama(slug);
     if (data) {
       const drama = data?.drama;
+      const cleanTitle = cleanMediaTitle(drama?.title);
       const episodes = data?.episodes || [];
       const activeSeasonDoc = data?.seasons?.find(s => s.seasonNumber === seasonNumber);
       const activeEpisodeDoc = episodes.find(
@@ -37,17 +40,18 @@ export async function generateMetadata({ params }) {
       );
 
       if (drama && activeEpisodeDoc) {
-        const titleStr = `${drama.title} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')}${activeEpisodeDoc.episodeTitle ? ` "${activeEpisodeDoc.episodeTitle}"` : ''} Sinhala Subtitles | KSubZone`;
+        const titleStr = `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')}${activeEpisodeDoc.episodeTitle ? ` "${activeEpisodeDoc.episodeTitle}"` : ''} Sinhala Subtitles | KSubZone`;
+        const canonicalUrl = `${SITE_URL}/drama/${slug}/season-${seasonNumber}/episode-${episodeNumber}`;
         return {
           title: titleStr,
-          description: activeEpisodeDoc.episodeDescription || `Download Sinhala and English subtitles for ${drama.title} S${seasonNumber}E${episodeNumber}.`,
+          description: activeEpisodeDoc.episodeDescription || `Download Sinhala and English subtitles for ${cleanTitle} S${seasonNumber}E${episodeNumber}.`,
           alternates: {
-            canonical: `https://www.ksubzone.com/drama/${slug}/season-${seasonNumber}/episode-${episodeNumber}`,
+            canonical: canonicalUrl,
           },
           openGraph: {
-            title: `${drama.title} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')} Subtitles`,
+            title: `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')} Subtitles`,
             description: activeEpisodeDoc.episodeDescription,
-            url: `https://www.ksubzone.com/drama/${slug}/season-${seasonNumber}/episode-${episodeNumber}`,
+            url: canonicalUrl,
             images: drama.poster ? [{ url: drama.poster }] : [],
             type: 'video.episode',
           },
@@ -70,20 +74,24 @@ export default async function EpisodeWatchPage({ params }) {
   const episodeNumber = Number(String(episodePart || '').replace('episode-', ''));
 
   const initialDramaData = await getDrama(slug);
+  const drama = initialDramaData?.drama;
+  const episodes = initialDramaData?.episodes || [];
+  const activeSeasonDoc = initialDramaData?.seasons?.find(s => s.seasonNumber === seasonNumber);
+  const activeEpisodeDoc = episodes.find(
+    ep => getId(ep.seasonId) === getId(activeSeasonDoc?._id) && ep.episodeNumber === episodeNumber
+  );
+
+  if (!drama || !activeEpisodeDoc) notFound();
+
+  const cleanTitle = cleanMediaTitle(drama.title);
+  const canonicalDramaUrl = `${SITE_URL}/drama/${slug}`;
+  const canonicalEpisodeUrl = `${canonicalDramaUrl}/season-${seasonNumber}/episode-${episodeNumber}`;
   
   // Build breadcrumbs and episode schema
   let breadcrumbs = null;
   let episodeSchema = null;
   
-  if (initialDramaData) {
-    const drama = initialDramaData?.drama;
-    const episodes = initialDramaData?.episodes || [];
-    const activeSeasonDoc = initialDramaData?.seasons?.find(s => s.seasonNumber === seasonNumber);
-    const activeEpisodeDoc = episodes.find(
-      ep => getId(ep.seasonId) === getId(activeSeasonDoc?._id) && ep.episodeNumber === episodeNumber
-    );
-
-    if (drama) {
+  if (drama) {
       breadcrumbs = {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
@@ -92,38 +100,32 @@ export default async function EpisodeWatchPage({ params }) {
             "@type": "ListItem",
             "position": 1,
             "name": "KSubZone",
-            "item": "https://www.ksubzone.com"
+            "item": `${SITE_URL}/`
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Dramas",
-            "item": "https://www.ksubzone.com/dramas"
+            "item": `${SITE_URL}/dramas`
           },
           {
             "@type": "ListItem",
             "position": 3,
-            "name": drama.title,
-            "item": `https://www.ksubzone.com/drama/${slug}`
+            "name": cleanTitle,
+            "item": canonicalDramaUrl
           },
           {
             "@type": "ListItem",
             "position": 4,
-            "name": `Season ${seasonNumber}`,
-            "item": `https://www.ksubzone.com/drama/${slug}/season-${seasonNumber}`
-          },
-          {
-            "@type": "ListItem",
-            "position": 5,
-            "name": `Episode ${episodeNumber}`,
-            "item": `https://www.ksubzone.com/drama/${slug}/season-${seasonNumber}/episode-${episodeNumber}`
+            "name": `Season ${seasonNumber}, Episode ${episodeNumber}`,
+            "item": canonicalEpisodeUrl
           }
         ]
       };
 
       if (activeEpisodeDoc) {
         episodeSchema = activeEpisodeDoc.episodeSchemaMarkup && Object.keys(activeEpisodeDoc.episodeSchemaMarkup).length > 0
-          ? activeEpisodeDoc.episodeSchemaMarkup
+          ? { ...activeEpisodeDoc.episodeSchemaMarkup }
           : {
               "@context": "https://schema.org",
               "@type": "TVEpisode",
@@ -137,12 +139,21 @@ export default async function EpisodeWatchPage({ params }) {
               },
               "partOfSeries": {
                 "@type": "TVSeries",
-                "name": drama.title,
-                "sameAs": `https://www.ksubzone.com/drama/${slug}`
+                "name": cleanTitle,
+                "sameAs": canonicalDramaUrl
               }
             };
+        episodeSchema["@context"] = "https://schema.org";
+        episodeSchema["@type"] = "TVEpisode";
+        episodeSchema.url = canonicalEpisodeUrl;
+        episodeSchema.name = activeEpisodeDoc.episodeTitle || `Episode ${episodeNumber}`;
+        episodeSchema.partOfSeries = {
+          ...(episodeSchema.partOfSeries || {}),
+          "@type": "TVSeries",
+          "name": cleanTitle,
+          "sameAs": canonicalDramaUrl,
+        };
       }
-    }
   }
 
   return (
@@ -150,16 +161,21 @@ export default async function EpisodeWatchPage({ params }) {
       {breadcrumbs && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }}
         />
       )}
       {episodeSchema && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(episodeSchema) }}
         />
       )}
-      <Watch initialDramaData={initialDramaData} />
+      <Watch
+        initialDramaData={{
+          ...initialDramaData,
+          drama: { ...drama, title: cleanTitle },
+        }}
+      />
     </>
   );
 }

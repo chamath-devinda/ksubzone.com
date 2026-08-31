@@ -15,6 +15,7 @@ import dynamic from 'next/dynamic';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import '@/index.css';
+import { SITE_URL } from '@/utils/seo';
 
 const ParticleBackground = dynamic(() => import('@/components/layout/ParticleBackground'), { ssr: false });
 
@@ -25,16 +26,35 @@ const milker = localFont({
 });
 
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'KSubZone',
   title: 'KSubZone - Premium Korean Entertainment Platform',
   description: 'Watch the latest Korean dramas and movies with synchronized Sinhala and English subtitles. Discover, review, and enjoy premium K-entertainment.',
   icons: {
     icon: [
+      { url: '/favicon.ico', type: 'image/x-icon', sizes: '48x48' },
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
     apple: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
     shortcut: '/favicon.svg',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  openGraph: {
+    siteName: 'KSubZone',
+    type: 'website',
+    locale: 'en_US',
   },
 };
 

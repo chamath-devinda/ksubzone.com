@@ -4,6 +4,10 @@ import Search from '@/features/media/pages/Search';
 export const metadata = {
   title: 'Advanced Search - KSubZone Catalog',
   description: 'Search through hundreds of Korean dramas, movies, and subtitles. Filter by genre, rating, release year, or origin.',
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function SearchPage() {

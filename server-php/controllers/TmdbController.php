@@ -671,7 +671,8 @@ class TmdbController {
             'genres' => $genresList,
             'releaseDate' => $movieDoc['releaseDate'],
             'director' => $movieDoc['director'],
-            'cast' => array_map(function($c) { return $c['name']; }, $movieDoc['cast'])
+            'cast' => array_map(function($c) { return $c['name']; }, $movieDoc['cast']),
+            'slug' => $movieDoc['slug']
         ]);
 
         $finalDoc = array_merge($movieDoc, $seo);
@@ -781,7 +782,8 @@ class TmdbController {
             'genres' => $genresList,
             'releaseDate' => $dramaDoc['releaseDate'],
             'director' => $dramaDoc['director'],
-            'cast' => array_map(function($c) { return $c['name']; }, $dramaDoc['cast'])
+            'cast' => array_map(function($c) { return $c['name']; }, $dramaDoc['cast']),
+            'slug' => $dramaDoc['slug']
         ]);
 
         $finalDoc = array_merge($dramaDoc, $seo);

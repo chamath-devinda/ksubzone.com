@@ -188,9 +188,9 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 </div>
 
                 {/* Main Heading */}
-                <h1 className="max-w-4xl text-3xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-[-0.035em] text-white leading-[0.98] font-display drop-shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+                <h2 className="max-w-4xl text-3xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-[-0.035em] text-white leading-[0.98] font-display drop-shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
                   {current.title}
-                </h1>
+                </h2>
                 
                 {current.originalTitle && current.originalTitle !== current.title && (
                   <p className="mt-3 text-base sm:text-xl font-extrabold text-violet-200/80 leading-snug tracking-tight font-display">

@@ -1,7 +1,17 @@
 <?php
 namespace Controllers;
 
+use Utils\Slug;
+
 class AiSeoController {
+    private static function cleanTitle($title) {
+        $title = trim(preg_replace('/\s+/u', ' ', (string)$title));
+        if ($title === '') return '';
+
+        $cleaned = preg_replace('/\s*(?:\(\d{4}\)\s*)?(?:Sinhala\s+Subtit(?:iles|les)|සිංහල\s+උපසිරැසි)[\s\S]*$/iu', '', $title);
+        return trim($cleaned ?: $title);
+    }
+
     public static function generateFaqList($title, $type, $genres, $director, $cast, $releaseYear) {
         $genresStr = !empty($genres) ? implode(', ', $genres) : 'Drama';
         $directorStr = $director ?: 'the director';
@@ -52,6 +62,7 @@ class AiSeoController {
     }
 
     public static function generateSeoForTitle($title, $originalDescription = '', $type = 'Movie', $metadata = []) {
+        $title = self::cleanTitle($title);
         $genres = $metadata['genres'] ?? [];
         $releaseDate = $metadata['releaseDate'] ?? null;
         $director = $metadata['director'] ?? '';
@@ -99,7 +110,9 @@ class AiSeoController {
 
         $faq = self::generateFaqList($title, $type, $genres, $director, $cast, $releaseYear);
 
-        $canonicalUrl = "https://www.ksubzone.com/" . strtolower($type) . "/" . preg_replace('/[^a-z0-9]+/i', '-', strtolower($title));
+        $routeType = strtolower($type) === 'drama' ? 'drama' : 'movie';
+        $slug = Slug::normalizePermalinkSlug($metadata['slug'] ?? '') ?: Slug::slugify($title);
+        $canonicalUrl = "https://www.ksubzone.com/{$routeType}/{$slug}";
 
         if ($type === 'Movie') {
             $schemaMarkup = [

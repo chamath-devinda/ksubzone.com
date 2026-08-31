@@ -1,3 +1,5 @@
+import { cleanMediaTitle } from './seo';
+
 const CATALOG_FIELDS = [
   '_id',
   'title',
@@ -38,6 +40,8 @@ export function compactCatalogItem(item, includeSynopsis = false) {
       compact[field] = item[field];
     }
   });
+
+  if (compact.title) compact.title = cleanMediaTitle(compact.title);
 
   if (Array.isArray(compact.keywords)) compact.keywords = compact.keywords.slice(0, 8);
   if (Array.isArray(compact.genres)) compact.genres = compact.genres.slice(0, 8);

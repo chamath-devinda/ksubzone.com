@@ -1,6 +1,8 @@
 import React from 'react';
 import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import ArticleDetail from '@/features/articles/pages/ArticleDetail';
+import { serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 const getArticle = cache(async (slug) => {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
@@ -65,6 +67,7 @@ export default async function ArticleDetailPage({ params }) {
     "datePublished": article.publishedAt || article.createdAt,
     "dateModified": article.updatedAt || article.publishedAt || article.createdAt,
     "description": article.excerpt || article.metaDescription || article.title,
+    "url": `${SITE_URL}/articles/${slug}`,
     "author": {
       "@type": "Person",
       "name": "KSubZone Contributor"
@@ -79,9 +82,21 @@ export default async function ArticleDetailPage({ params }) {
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `https://www.ksubzone.com/articles/${slug}`
+      "@id": `${SITE_URL}/articles/${slug}`
     }
   } : null;
+
+  if (!article) notFound();
+
+  const breadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "KSubZone", "item": `${SITE_URL}/` },
+      { "@type": "ListItem", "position": 2, "name": "Articles", "item": `${SITE_URL}/articles` },
+      { "@type": "ListItem", "position": 3, "name": article.title, "item": `${SITE_URL}/articles/${slug}` },
+    ],
+  };
 
   return (
     <>
@@ -89,9 +104,14 @@ export default async function ArticleDetailPage({ params }) {
         <script
           type="application/ld+json"
           id="article-jsonld"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }}
         />
       )}
+      <script
+        id="article-breadcrumbs-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }}
+      />
       <ArticleDetail initialData={initialData} />
     </>
   );

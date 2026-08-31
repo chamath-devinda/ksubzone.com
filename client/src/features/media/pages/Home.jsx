@@ -7,7 +7,6 @@ import apiClient from '@/services/api/apiClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroSlider from '@/features/media/components/HeroSlider';
 import GlassCard from '@/components/ui/GlassCard';
-import SeoTags from '@/components/seo/SeoTags';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { permalinkSlug } from '@/utils/slug';
 import { 
@@ -222,44 +221,39 @@ export default function Home({
       ]);
 
   const isLibraryLoading = moviesLoading || dramasLoading;
-  const brand = content?.brand || {};
-  const seo = content?.seo || {};
   const home = content?.home || {};
-  const seoKeywords = (seo.keywords || '').split(',').map((item) => item.trim()).filter(Boolean);
   const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,190px))] justify-center gap-x-3 sm:gap-x-6 gap-y-6 sm:gap-y-9 items-start';
-
-  let primaryUrl = brand.primaryUrl || 'https://www.ksubzone.com';
-  primaryUrl = primaryUrl.trim().toLowerCase();
-  if (primaryUrl.includes('ksubzone.com') && !primaryUrl.includes('www.ksubzone.com')) {
-    primaryUrl = primaryUrl.replace('ksubzone.com', 'www.ksubzone.com');
-  }
-  if (!primaryUrl.startsWith('http://') && !primaryUrl.startsWith('https://')) {
-    primaryUrl = 'https://' + primaryUrl;
-  }
-
-  const homeSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": brand.siteName || "KSubZone",
-    "url": primaryUrl,
-    "description": seo.homeDescription || "Premium Korean Entertainment Platform. Search and download Sinhala and English subtitles."
-  };
 
   return (
     <div className="w-full flex flex-col gap-10 sm:gap-12 bg-transparent pb-12 sm:pb-20">
       
-      {/* Dynamic SEO Tags */}
-      <SeoTags
-        title={seo.homeTitle || `${brand.siteName || 'KSubZone'} - ${brand.tagline || 'K-Drama & Movie Subtitles'}`}
-        description={seo.homeDescription}
-        keywords={seoKeywords}
-        canonical={primaryUrl}
-        image={seo.ogImage || slideItems[0]?.banner}
-        schemaMarkup={homeSchema}
-      />
-
       {/* Hero Banner Slider */}
       <HeroSlider items={slideItems} loading={homeCatalogLoading} />
+
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center" aria-labelledby="site-introduction-title">
+        <h1 id="site-introduction-title" className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">
+          KSubZone Sinhala &amp; English Korean Subtitles
+        </h1>
+        <p className="mx-auto mt-3 max-w-3xl text-sm sm:text-base leading-7 text-slate-400">
+          Discover Korean dramas, movies, episode guides, and synchronized Sinhala and English subtitle downloads.
+        </p>
+        <nav aria-label="Explore KSubZone" className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+          {[
+            ['/movies', 'Korean Movies'],
+            ['/dramas', 'Korean Dramas'],
+            ['/articles', 'Articles & Guides'],
+            ['/genres', 'Browse Genres'],
+          ].map(([href, label]) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-slate-300 transition hover:border-brand-primary/40 hover:bg-brand-primary/10 hover:text-white"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </section>
 
       {/* Main Page Content Container */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full flex flex-col gap-12 sm:gap-16 mt-2 sm:mt-4">

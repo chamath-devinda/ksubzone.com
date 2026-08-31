@@ -14,7 +14,7 @@ class SeoController {
 
     private static function formatDate($dateStr) {
         $time = strtotime($dateStr);
-        return $time ? date('Y-m-d', $time) : date('Y-m-d');
+        return $time ? date('Y-m-d', $time) : null;
     }
 
     private static function formatIso($dateStr) {
@@ -34,7 +34,7 @@ class SeoController {
         if (!is_dir($cacheDir)) {
             @mkdir($cacheDir, 0777, true);
         }
-        $cacheFile = $cacheDir . '/sitemap_v2_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $cacheKey) . '.xml';
+        $cacheFile = $cacheDir . '/sitemap_v3_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $cacheKey) . '.xml';
 
         if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $ttl)) {
             readfile($cacheFile);
@@ -85,10 +85,11 @@ class SeoController {
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             foreach ($movies as $movie) {
                 $slug = self::permalinkSlug($movie);
+                if (!$slug) continue;
                 $lastmod = self::formatDate($movie['updatedAt'] ?? '');
                 echo "  <url>\n";
                 echo "    <loc>" . self::xml(self::$siteUrl . "/movie/{$slug}") . "</loc>\n";
-                echo "    <lastmod>{$lastmod}</lastmod>\n";
+                if ($lastmod) echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.8</priority>\n";
                 echo "  </url>\n";
@@ -106,12 +107,13 @@ class SeoController {
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             foreach ($dramas as $drama) {
                 $slug    = self::permalinkSlug($drama);
+                if (!$slug) continue;
                 $lastmod = self::formatDate($drama['updatedAt'] ?? '');
 
                 // Drama root page
                 echo "  <url>\n";
                 echo "    <loc>" . self::xml(self::$siteUrl . "/drama/{$slug}") . "</loc>\n";
-                echo "    <lastmod>{$lastmod}</lastmod>\n";
+                if ($lastmod) echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.8</priority>\n";
                 echo "  </url>\n";
@@ -151,9 +153,11 @@ class SeoController {
                 if (!$drama || !$season) continue;
 
                 $slug      = self::permalinkSlug($drama);
+                if (!$slug) continue;
                 $lastmod   = self::formatDate($ep['updatedAt'] ?? $ep['createdAt'] ?? '');
                 $seasonNum = (int)($season['seasonNumber'] ?? 1);
                 $epNum     = (int)($ep['episodeNumber']    ?? 1);
+                if ($seasonNum < 1 || $epNum < 1) continue;
 
                 $url = self::$siteUrl . "/drama/{$slug}/season-{$seasonNum}/episode-{$epNum}";
                 if (isset($seenUrls[$url])) continue;
@@ -161,7 +165,7 @@ class SeoController {
 
                 echo "  <url>\n";
                 echo "    <loc>" . self::xml($url) . "</loc>\n";
-                echo "    <lastmod>{$lastmod}</lastmod>\n";
+                if ($lastmod) echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>monthly</changefreq>\n";
                 echo "    <priority>0.6</priority>\n";
                 echo "  </url>\n";
@@ -229,7 +233,7 @@ class SeoController {
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             $pages = [
-                ['path' => '', 'priority' => '1.0', 'changefreq' => 'daily'],
+                ['path' => '/', 'priority' => '1.0', 'changefreq' => 'daily'],
                 ['path' => '/movies', 'priority' => '0.9', 'changefreq' => 'daily'],
                 ['path' => '/dramas', 'priority' => '0.9', 'changefreq' => 'daily'],
                 ['path' => '/genres', 'priority' => '0.7', 'changefreq' => 'weekly'],
@@ -257,10 +261,11 @@ class SeoController {
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
             foreach ($articles as $article) {
                 $slug = $article['slug'] ?? '';
+                if (!$slug) continue;
                 $lastmod = self::formatDate($article['publishedAt'] ?? $article['updatedAt'] ?? '');
                 echo "  <url>\n";
                 echo "    <loc>" . self::xml(self::$siteUrl . "/articles/{$slug}") . "</loc>\n";
-                echo "    <lastmod>{$lastmod}</lastmod>\n";
+                if ($lastmod) echo "    <lastmod>{$lastmod}</lastmod>\n";
                 echo "    <changefreq>weekly</changefreq>\n";
                 echo "    <priority>0.7</priority>\n";
                 echo "  </url>\n";
@@ -294,6 +299,7 @@ class SeoController {
 
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            $seenGenreUrls = [];
             foreach ($genres as $genre) {
                 $slug = $genre['slug'] ?? '';
                 $name = $genre['name'] ?? '';
@@ -301,14 +307,19 @@ class SeoController {
 
                 if (isset($usedGenres[strtolower(trim($name))])) {
                     $escapedSlug = self::xml($slug);
+                    $dramaUrl = self::$siteUrl . "/drama/genre/{$slug}";
+                    $movieUrl = self::$siteUrl . "/movie/genre/{$slug}";
+                    if (isset($seenGenreUrls[$dramaUrl])) continue;
+                    $seenGenreUrls[$dramaUrl] = true;
+                    $seenGenreUrls[$movieUrl] = true;
                     echo "  <url>\n";
-                    echo "    <loc>" . self::$siteUrl . "/drama/genre/{$escapedSlug}</loc>\n";
+                    echo "    <loc>" . self::xml($dramaUrl) . "</loc>\n";
                     echo "    <changefreq>weekly</changefreq>\n";
                     echo "    <priority>0.6</priority>\n";
                     echo "  </url>\n";
 
                     echo "  <url>\n";
-                    echo "    <loc>" . self::$siteUrl . "/movie/genre/{$escapedSlug}</loc>\n";
+                    echo "    <loc>" . self::xml($movieUrl) . "</loc>\n";
                     echo "    <changefreq>weekly</changefreq>\n";
                     echo "    <priority>0.6</priority>\n";
                     echo "  </url>\n";
