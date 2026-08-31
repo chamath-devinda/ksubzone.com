@@ -161,11 +161,11 @@ export default function GlassCard({ item, type, priority = false }) {
             </div>
           </div>
 
-          {/* Time added to KSubZone */}
+          {/* Latest admin/content update time */}
           {timeAgo && (
             <div className="absolute bottom-3 left-3 z-20 transition-opacity duration-200 group-hover:opacity-0">
               <span
-                title="Latest KSubZone import"
+                title="Latest KSubZone update"
                 suppressHydrationWarning
                 className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[9px] font-black tracking-tight text-slate-950 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
               >

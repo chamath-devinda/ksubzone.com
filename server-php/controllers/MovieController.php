@@ -279,8 +279,11 @@ class MovieController {
         // "Latest" is a strict activity clock. Ongoing/completed status is a
         // visual badge and must not push a more recently updated title down.
         usort($latestDramas, function($a, $b) {
-            $aTime = strtotime($a['contentUpdatedAt'] ?? $a['updatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
-            $bTime = strtotime($b['contentUpdatedAt'] ?? $b['updatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
+            // Only contentUpdatedAt represents public catalog activity. The
+            // generic updatedAt field also changes when a visitor's view is
+            // recorded, so it must never move a title to the top of Latest.
+            $aTime = strtotime($a['contentUpdatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
+            $bTime = strtotime($b['contentUpdatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
             return $bTime <=> $aTime;
         });
 
@@ -548,6 +551,12 @@ class MovieController {
             ]);
             $updates = array_merge($updates, $seoContent);
         }
+
+        // Keep the public activity clock separate from generic record writes
+        // such as view counters. This is intentionally set on every admin
+        // media edit, regardless of which editable field changed.
+        $updates['updatedAt'] = gmdate('Y-m-d H:i:s');
+        $updates['contentUpdatedAt'] = gmdate(DATE_ATOM);
 
         try {
             $db->updateOne('movies', ['_id' => $id], $updates);

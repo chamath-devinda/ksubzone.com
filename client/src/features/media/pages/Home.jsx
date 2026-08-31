@@ -92,8 +92,10 @@ export default function Home({
     const latestMovies = withType(homeCatalog.latestMovies, 'movie').slice(0, 10);
     const latestDramas = withType(homeCatalog.latestDramas, 'drama')
       .sort((a, b) => {
-        const aTime = new Date(a.contentUpdatedAt || a.updatedAt || a.createdAt || 0).getTime();
-        const bTime = new Date(b.contentUpdatedAt || b.updatedAt || b.createdAt || 0).getTime();
+        // updatedAt also changes when a visitor view is recorded. Only the
+        // dedicated content clock belongs in the public Latest ordering.
+        const aTime = new Date(a.contentUpdatedAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.contentUpdatedAt || b.createdAt || 0).getTime();
         return bTime - aTime;
       })
       .slice(0, 10);
@@ -158,7 +160,7 @@ export default function Home({
       {
         id: 'latest-movies',
         title: 'Blockbuster Movies',
-        description: 'Newest feature film additions available with Sinhala & English subtitles.',
+        description: 'Newest feature film additions available with Sinhala subtitles.',
         icon: Film,
         iconColor: 'text-brand-secondary',
         link: '/search?category=movie&sort=newest',
@@ -232,10 +234,10 @@ export default function Home({
 
       <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center" aria-labelledby="site-introduction-title">
         <h1 id="site-introduction-title" className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">
-          KSubZone Sinhala &amp; English Korean Subtitles
+          KSubZone Sinhala Korean Subtitles
         </h1>
         <p className="mx-auto mt-3 max-w-3xl text-sm sm:text-base leading-7 text-slate-400">
-          Discover Korean dramas, movies, episode guides, and synchronized Sinhala and English subtitle downloads.
+          Discover Korean dramas, movies, episode guides, and synchronized Sinhala subtitle downloads.
         </p>
         <nav aria-label="Explore KSubZone" className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
           {[

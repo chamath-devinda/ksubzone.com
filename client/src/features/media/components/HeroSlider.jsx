@@ -177,7 +177,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                   </span>
                   {timeAgo && (
                     <span
-                      title="Added to KSubZone"
+                      title="Latest KSubZone update"
                       suppressHydrationWarning
                       className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[10px] font-black tracking-tight text-slate-950 shadow-[0_4px_16px_rgba(0,0,0,0.28)]"
                     >

@@ -376,7 +376,9 @@ class DramaController {
             'approvalStatus' => 'Approved'
         ]);
 
-        $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['updatedAt'] ?? $drama['createdAt'] ?? null;
+        // updatedAt can be changed by visitor view tracking. It is not a
+        // public content update, so legacy records fall back to creation time.
+        $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['createdAt'] ?? null;
         foreach ($allSubtitles as $sub) {
             $subtitleCreatedAt = $sub['createdAt'] ?? null;
             if ($subtitleCreatedAt && (!$drama['contentUpdatedAt'] || strtotime($subtitleCreatedAt) > strtotime($drama['contentUpdatedAt']))) {
@@ -1105,7 +1107,9 @@ class DramaController {
         // 3. For each drama, compute the summary using the pre-fetched data
         foreach ($dramas as &$drama) {
             $dId = $drama['_id'];
-            $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['updatedAt'] ?? $drama['createdAt'] ?? null;
+            // Never use generic updatedAt here: detail-page view tracking can
+            // update it even though no catalog content changed.
+            $drama['contentUpdatedAt'] = $drama['contentUpdatedAt'] ?? $drama['createdAt'] ?? null;
             $drama['isNew'] = in_array((string)$dId, $latestIds);
             
             $dramaEps = $episodesByDrama[$dId] ?? [];

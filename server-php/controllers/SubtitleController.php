@@ -789,7 +789,15 @@ class SubtitleController {
             // Invalidate cache and trigger revalidation
             \Utils\Cache::flush();
             \Utils\Revalidate::path('/');
-            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType']);
+            // An admin subtitle edit is public content activity. User views
+            // and other generic writes must not affect this clock.
+            $isPublicSubtitle = ($subtitle['approvalStatus'] ?? '') === 'Approved'
+                || (($updates['approvalStatus'] ?? '') === 'Approved');
+            self::revalidateMediaForSubtitle(
+                $subtitle['mediaId'],
+                $subtitle['mediaType'],
+                $isPublicSubtitle
+            );
         }
 
         header('Content-Type: application/json');
@@ -814,8 +822,8 @@ class SubtitleController {
         // Invalidate cache and trigger revalidation
         \Utils\Cache::flush();
         \Utils\Revalidate::path('/');
-        if ($subtitle) {
-            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType']);
+        if ($subtitle && ($subtitle['approvalStatus'] ?? '') === 'Approved') {
+            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
         }
 
         header('Content-Type: application/json');
@@ -830,13 +838,17 @@ class SubtitleController {
             $db = Database::getInstance();
             $mediaTypeClean = strtolower($mediaType);
             $contentUpdatedAt = gmdate(DATE_ATOM);
+            $updatedAt = gmdate('Y-m-d H:i:s');
             
             \Utils\Cache::flush();
             if ($mediaTypeClean === 'episode') {
                 $episode = $db->findOne('episodes', ['_id' => $mediaId]);
                 if ($episode) {
                     if ($recordActivity) {
-                        $db->updateOne('dramas', ['_id' => $episode['dramaId']], ['contentUpdatedAt' => $contentUpdatedAt]);
+                        $db->updateOne('dramas', ['_id' => $episode['dramaId']], [
+                            'updatedAt' => $updatedAt,
+                            'contentUpdatedAt' => $contentUpdatedAt
+                        ]);
                     }
                     
                     $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
@@ -848,7 +860,10 @@ class SubtitleController {
                 $movie = $db->findOne('movies', ['_id' => $mediaId]);
                 if ($movie) {
                     if ($recordActivity) {
-                        $db->updateOne('movies', ['_id' => $mediaId], ['contentUpdatedAt' => $contentUpdatedAt]);
+                        $db->updateOne('movies', ['_id' => $mediaId], [
+                            'updatedAt' => $updatedAt,
+                            'contentUpdatedAt' => $contentUpdatedAt
+                        ]);
                     }
                     if (!empty($movie['slug'])) {
                         \Utils\Revalidate::media('movie', $movie['slug']);
@@ -856,7 +871,10 @@ class SubtitleController {
                 }
             } else { // 'drama' or fallback
                 if ($recordActivity) {
-                    $db->updateOne('dramas', ['_id' => $mediaId], ['contentUpdatedAt' => $contentUpdatedAt]);
+                    $db->updateOne('dramas', ['_id' => $mediaId], [
+                        'updatedAt' => $updatedAt,
+                        'contentUpdatedAt' => $contentUpdatedAt
+                    ]);
                 }
                 
                 $drama = $db->findOne('dramas', ['_id' => $mediaId]);
