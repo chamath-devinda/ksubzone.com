@@ -557,6 +557,16 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('view_analytics'); },
         'Controllers\AnalyticsController::getDashboardStats'
     ]],
+    ['GET', '/api/admin/adsterra/stats', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('view_analytics'); },
+        'Controllers\AdsterraController::getStats'
+    ]],
+    ['POST', '/api/admin/adsterra/config', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
+        'Controllers\AdsterraController::saveConfig'
+    ]],
     ['POST', '/api/admin/clear-cache', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
@@ -867,6 +877,13 @@ $routes = [
         function() {
             $db = \Config\Database::getInstance();
             $settings = $db->find('settings');
+            foreach ($settings as &$setting) {
+                $settingKey = (string)($setting['key'] ?? '');
+                if (preg_match('/(?:api[_-]?key|api[_-]?token|secret|password)/i', $settingKey)) {
+                    $setting['value'] = '********';
+                }
+            }
+            unset($setting);
             header('Content-Type: application/json');
             echo json_encode($settings);
         }
@@ -890,6 +907,9 @@ $routes = [
                 $setting = $db->findOne('settings', ['_id' => $existing['_id']]);
             } else {
                 $setting = $db->insertOne('settings', ['key' => $key, 'value' => $value]);
+            }
+            if (preg_match('/(?:api[_-]?key|api[_-]?token|secret|password)/i', (string)$key)) {
+                $setting['value'] = '********';
             }
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Settings saved successfully', 'setting' => $setting]);

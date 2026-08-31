@@ -10,6 +10,7 @@ import {
   Activity, ArrowUpRight, BarChart3, Globe, Database, Server, Clock,
   Shield, Download, Plus, RefreshCw, ExternalLink, Check, Search,
   Sparkles, ArrowRight, Filter, Zap, FileText, MessageSquare,
+  DollarSign, MousePointerClick,
 } from 'lucide-react';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
@@ -23,6 +24,16 @@ function formatNum(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
   return String(n);
+}
+
+function formatMoney(value) {
+  const amount = Number(value || 0);
+  return amount.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: amount < 1 ? 4 : 2,
+  });
 }
 
 function formatRelativeTime(dateStr) {
@@ -61,6 +72,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
+  const [adsterraStats, setAdsterraStats] = useState(null);
+  const [adsterraLoading, setAdsterraLoading] = useState(true);
+  const [adsterraError, setAdsterraError] = useState('');
+  const [adsterraRange, setAdsterraRange] = useState(30);
+  const [adsterraApiKey, setAdsterraApiKey] = useState('');
+  const [savingAdsterraKey, setSavingAdsterraKey] = useState(false);
 
   useEffect(() => {
     apiClient.get('/api/admin/dashboard')
@@ -68,6 +85,42 @@ export default function AdminDashboard() {
       .catch(err => setError(err.response?.data?.message || 'Failed to load dashboard statistics'))
       .finally(() => setLoading(false));
   }, []);
+
+  const loadAdsterraStats = async (range = adsterraRange) => {
+    setAdsterraLoading(true);
+    setAdsterraError('');
+    try {
+      const res = await apiClient.get(`/api/admin/adsterra/stats?range=${range}`);
+      setAdsterraStats(res.data);
+    } catch (err) {
+      const responseData = err.response?.data;
+      setAdsterraStats(responseData?.configured === false ? { configured: false } : { configured: true });
+      setAdsterraError(responseData?.message || err.message || 'Failed to load Adsterra statistics');
+    } finally {
+      setAdsterraLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAdsterraStats(adsterraRange);
+  }, [adsterraRange]);
+
+  const handleSaveAdsterraKey = async (event) => {
+    event.preventDefault();
+    if (!adsterraApiKey.trim()) return;
+
+    setSavingAdsterraKey(true);
+    try {
+      await apiClient.post('/api/admin/adsterra/config', { apiKey: adsterraApiKey.trim() });
+      setAdsterraApiKey('');
+      toast.success('Adsterra API key saved securely');
+      await loadAdsterraStats(adsterraRange);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to save Adsterra API key');
+    } finally {
+      setSavingAdsterraKey(false);
+    }
+  };
 
   const handleClearCache = async () => {
     setClearingCache(true);
@@ -226,6 +279,22 @@ export default function AdminDashboard() {
             </div>
           </section>
 
+          {/* ── Adsterra Revenue ── */}
+          <section aria-label="Adsterra Revenue">
+            <AdsterraRevenuePanel
+              stats={adsterraStats}
+              loading={adsterraLoading}
+              error={adsterraError}
+              range={adsterraRange}
+              onRangeChange={setAdsterraRange}
+              onRefresh={() => loadAdsterraStats(adsterraRange)}
+              apiKey={adsterraApiKey}
+              onApiKeyChange={setAdsterraApiKey}
+              onSaveKey={handleSaveAdsterraKey}
+              savingKey={savingAdsterraKey}
+            />
+          </section>
+
           {/* ── 3. Secondary Metrics ── */}
           <section aria-label="Secondary Metrics">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -280,6 +349,182 @@ export default function AdminDashboard() {
 
         </main>
       </div>
+    </div>
+  );
+}
+
+function AdsterraRevenuePanel({
+  stats,
+  loading,
+  error,
+  range,
+  onRangeChange,
+  onRefresh,
+  apiKey,
+  onApiKeyChange,
+  onSaveKey,
+  savingKey,
+}) {
+  const [showKeyForm, setShowKeyForm] = useState(false);
+  const summary = stats?.summary || {};
+  const daily = stats?.daily || [];
+  const maxRevenue = Math.max(...daily.map(item => Number(item.revenue || 0)), 0.01);
+  const needsKey = stats?.configured === false;
+
+  return (
+    <div className="ksz-card rounded-2xl border border-emerald-500/15 bg-[#11131A] overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.05]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10">
+            <DollarSign className="h-4 w-4 text-emerald-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[13px] font-semibold text-slate-100">Adsterra Revenue</h3>
+              <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-400">
+                Live API
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-0.5">Publisher earnings and ad performance</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 bg-[#151821] border border-white/[0.05] rounded-lg p-0.5">
+            {[7, 30, 90].map(days => (
+              <button
+                key={days}
+                type="button"
+                onClick={() => onRangeChange(days)}
+                className={`px-2.5 py-1 text-[10.5px] font-semibold rounded-md transition ${
+                  range === days ? 'bg-[#1E2030] text-slate-200 shadow-sm' : 'text-slate-600 hover:text-slate-400'
+                }`}
+              >
+                {days}D
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] text-slate-500 hover:text-white transition disabled:opacity-50"
+            title="Refresh Adsterra statistics"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {loading && !stats ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-5">
+          {Array.from({ length: 4 }).map((_, index) => <Pulse key={index} className="h-20 rounded-xl" />)}
+        </div>
+      ) : needsKey ? (
+        <div className="p-5">
+          <div className="max-w-xl space-y-3">
+            <div>
+              <p className="text-[13px] font-semibold text-slate-200">Connect your Adsterra publisher account</p>
+              <p className="text-[11px] text-slate-500 mt-1">The key is stored only in the backend database and is never sent back to the browser.</p>
+            </div>
+            <form onSubmit={onSaveKey} className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="password"
+                value={apiKey}
+                onChange={event => onApiKeyChange(event.target.value)}
+                placeholder="Paste Adsterra API key"
+                autoComplete="off"
+                required
+                className="flex-1 h-9 rounded-lg border border-white/[0.08] bg-[#08090D] px-3 text-xs font-mono text-slate-200 outline-none focus:border-emerald-500/50"
+              />
+              <button
+                type="submit"
+                disabled={savingKey}
+                className="h-9 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-500 transition disabled:opacity-50"
+              >
+                {savingKey ? 'Connecting…' : 'Connect API'}
+              </button>
+            </form>
+            {error && <p className="text-[11px] text-amber-400">{error}</p>}
+          </div>
+        </div>
+      ) : (
+        <div className="p-5 space-y-5">
+          {error && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.07] px-4 py-3 text-[11px] text-amber-400">
+              <span>{error}</span>
+              <button type="button" onClick={() => setShowKeyForm(value => !value)} className="font-semibold underline underline-offset-2 flex-shrink-0">
+                Update key
+              </button>
+            </div>
+          )}
+
+          {showKeyForm && (
+            <form onSubmit={onSaveKey} className="flex flex-col sm:flex-row gap-2 rounded-xl border border-white/[0.06] bg-[#151821] p-3">
+              <input
+                type="password"
+                value={apiKey}
+                onChange={event => onApiKeyChange(event.target.value)}
+                placeholder="Enter a new Adsterra API key"
+                autoComplete="off"
+                required
+                className="flex-1 h-9 rounded-lg border border-white/[0.08] bg-[#08090D] px-3 text-xs font-mono text-slate-200 outline-none focus:border-emerald-500/50"
+              />
+              <button type="submit" disabled={savingKey} className="h-9 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white disabled:opacity-50">
+                {savingKey ? 'Saving…' : 'Save New Key'}
+              </button>
+            </form>
+          )}
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Revenue', value: formatMoney(summary.revenue), icon: DollarSign, color: 'text-emerald-400' },
+              { label: 'Impressions', value: formatNum(summary.impressions), icon: Eye, color: 'text-violet-400' },
+              { label: 'Clicks', value: formatNum(summary.clicks), icon: MousePointerClick, color: 'text-sky-400' },
+              { label: 'CPM / CTR', value: `${formatMoney(summary.cpm)} / ${Number(summary.ctr || 0).toFixed(2)}%`, icon: TrendingUp, color: 'text-amber-400' },
+            ].map(item => (
+              <div key={item.label} className="rounded-xl border border-white/[0.05] bg-[#151821] p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[9.5px] font-semibold uppercase tracking-wider text-slate-600">{item.label}</p>
+                  <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
+                </div>
+                <p className="mt-2 text-[19px] font-bold font-mono text-slate-100 leading-tight">{item.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-white/[0.05] bg-[#0D0F15] p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-[12px] font-semibold text-slate-300">Daily Revenue</p>
+                <p className="text-[10px] text-slate-600">{stats?.period?.start || '—'} to {stats?.period?.finish || '—'}</p>
+              </div>
+              <span className="text-[10px] text-slate-600">USD</span>
+            </div>
+
+            {daily.length > 0 ? (
+              <div className="flex h-28 items-end gap-1 overflow-hidden">
+                {daily.map((item, index) => {
+                  const height = Math.max((Number(item.revenue || 0) / maxRevenue) * 100, 3);
+                  return (
+                    <div key={`${item.date}-${index}`} className="group relative flex-1 min-w-[3px] h-full flex items-end">
+                      <div
+                        className="w-full rounded-t-sm bg-gradient-to-t from-emerald-600/60 to-emerald-400/90 transition hover:brightness-125"
+                        style={{ height: `${height}%` }}
+                        title={`${item.date}: ${formatMoney(item.revenue)} · ${formatNum(item.impressions)} impressions`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="h-28 flex items-center justify-center text-[11px] text-slate-600">
+                No Adsterra activity recorded for this period yet.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
