@@ -234,7 +234,7 @@ export default function Home({
 
       <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center" aria-labelledby="site-introduction-title">
         <h1 id="site-introduction-title" className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">
-          KSubZone Sinhala Korean Subtitles
+          KSubZone Sinhala Subtitles
         </h1>
         <p className="mx-auto mt-3 max-w-3xl text-sm sm:text-base leading-7 text-slate-400">
           Discover Korean dramas, movies, episode guides, and synchronized Sinhala subtitle downloads.
