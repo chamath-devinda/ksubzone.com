@@ -187,16 +187,51 @@ class TmdbController {
         $queryString = http_build_query($params);
         $fullUrl = $url . ($queryString ? '?' . $queryString : '');
 
+        if (!function_exists('curl_init')) {
+            throw new \RuntimeException('The PHP cURL extension is required for TMDB requests.');
+        }
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $fullUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For localhost Dev environments
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
         
         $response = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        return json_decode($response, true);
+
+        if ($response === false) {
+            throw new \RuntimeException('TMDB request failed: ' . ($curlError ?: 'network error'));
+        }
+
+        $decoded = json_decode($response, true);
+        if (!is_array($decoded)) {
+            throw new \RuntimeException('TMDB returned an invalid JSON response.');
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            $message = $decoded['status_message'] ?? $decoded['message'] ?? ('HTTP ' . $httpCode);
+            throw new \RuntimeException('TMDB request failed: ' . $message);
+        }
+
+        return $decoded;
+    }
+
+    private static function imageUrl($path, $size, $fallback = '') {
+        if (!is_string($path) || trim($path) === '') {
+            return $fallback;
+        }
+
+        $path = trim($path);
+        if (preg_match('/^https?:\/\//i', $path)) {
+            return $path;
+        }
+
+        return 'https://image.tmdb.org/t/p/' . $size . '/' . ltrim($path, '/');
     }
 
     private static function getTmdbApiKey() {
@@ -228,11 +263,17 @@ class TmdbController {
         if (!empty($apiKey)) {
             $endpoint = ($type === 'tv') ? 'search/tv' : 'search/movie';
             $url = "https://api.themoviedb.org/3/{$endpoint}";
-            $res = self::httpGet($url, [
-                'api_key' => $apiKey,
-                'query' => $query,
-                'language' => 'en-US'
-            ]);
+            try {
+                $res = self::httpGet($url, [
+                    'api_key' => $apiKey,
+                    'query' => $query,
+                    'language' => 'en-US'
+                ]);
+            } catch (\Throwable $e) {
+                http_response_code(502);
+                echo json_encode(['message' => $e->getMessage()]);
+                return;
+            }
 
             $results = [];
             if (isset($res['results'])) {
@@ -280,15 +321,24 @@ class TmdbController {
         @ini_set('max_execution_time', 240);
 
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
-        $id = $body['id'] ?? null;
+        // Accept the current contract plus the legacy frontend key so a
+        // staggered frontend/backend deployment cannot break imports.
+        $id = $body['id'] ?? ($body['tmdbId'] ?? null);
         $type = $body['type'] ?? 'movie'; // movie or tv
         $isHistorical = (bool)($body['isHistorical'] ?? false);
 
-        if (!$id) {
+        if (!in_array($type, ['movie', 'tv'], true)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Media type must be movie or tv']);
+            return;
+        }
+
+        if (!is_numeric($id) || (int)$id <= 0) {
             http_response_code(400);
             echo json_encode(['message' => 'TMDB ID is required']);
             return;
         }
+        $id = (int)$id;
 
         // Run synchronously directly to ensure all seasons and episodes are imported reliably.
         try {
@@ -426,7 +476,7 @@ class TmdbController {
                     'append_to_response' => 'credits,videos,images,keywords'
                 ]);
 
-                if (isset($data['success']) && $data['success'] === false) {
+                if ((isset($data['success']) && $data['success'] === false) || empty($data['id'])) {
                     throw new \Exception('Media not found on TMDB');
                 }
 
@@ -462,7 +512,10 @@ class TmdbController {
                 if (isset($data['images']['backdrops'])) {
                     $backdrops = array_slice($data['images']['backdrops'], 0, 5);
                     foreach ($backdrops as $i) {
-                        $imgArr[] = "https://image.tmdb.org/t/p/original" . $i['file_path'];
+                        $image = self::imageUrl($i['file_path'] ?? null, 'original');
+                        if ($image !== '') {
+                            $imgArr[] = $image;
+                        }
                     }
                 }
                 $data['images'] = $imgArr;
@@ -578,7 +631,7 @@ class TmdbController {
                 $cast[] = [
                     'name' => $c['name'],
                     'character' => $c['character'],
-                    'profilePath' => $c['profile_path'] ? "https://image.tmdb.org/t/p/w185" . $c['profile_path'] : ''
+                    'profilePath' => self::imageUrl($c['profile_path'] ?? null, 'w185')
                 ];
             }
         } else {
@@ -590,9 +643,9 @@ class TmdbController {
             'originalTitle' => $data['original_title'] ?? $data['title'],
             'slug' => $slug,
             'description' => $data['overview'],
-            'poster' => !empty($data['poster_path']) ? "https://image.tmdb.org/t/p/w500" . $data['poster_path'] : 'https://placehold.co/500x750/111/fff?text=No+Poster',
-            'banner' => !empty($data['backdrop_path']) ? "https://image.tmdb.org/t/p/original" . $data['backdrop_path'] : 'https://placehold.co/1920x1080/111/fff?text=No+Banner',
-            'backdrops' => !empty($data['backdrop_path']) ? ["https://image.tmdb.org/t/p/original" . $data['backdrop_path']] : [],
+            'poster' => self::imageUrl($data['poster_path'] ?? null, 'w500', 'https://placehold.co/500x750/111/fff?text=No+Poster'),
+            'banner' => self::imageUrl($data['backdrop_path'] ?? null, 'original', 'https://placehold.co/1920x1080/111/fff?text=No+Banner'),
+            'backdrops' => !empty($data['backdrop_path']) ? [self::imageUrl($data['backdrop_path'], 'original')] : [],
             'releaseDate' => $data['release_date'] ?? null,
             'runtime' => $data['runtime'] ?? 120,
             'country' => isset($data['origin_country'][0]) ? $data['origin_country'][0] : 'KR',
@@ -688,7 +741,7 @@ class TmdbController {
                 $cast[] = [
                     'name' => $c['name'],
                     'character' => $c['character'],
-                    'profilePath' => $c['profile_path'] ? "https://image.tmdb.org/t/p/w185" . $c['profile_path'] : ''
+                    'profilePath' => self::imageUrl($c['profile_path'] ?? null, 'w185')
                 ];
             }
         } else {
@@ -700,9 +753,9 @@ class TmdbController {
             'originalTitle' => $data['original_name'] ?? $data['name'],
             'slug' => $slug,
             'description' => $data['overview'],
-            'poster' => !empty($data['poster_path']) ? "https://image.tmdb.org/t/p/w500" . $data['poster_path'] : 'https://placehold.co/500x750/111/fff?text=No+Poster',
-            'banner' => !empty($data['backdrop_path']) ? "https://image.tmdb.org/t/p/original" . $data['backdrop_path'] : 'https://placehold.co/1920x1080/111/fff?text=No+Banner',
-            'backdrops' => !empty($data['backdrop_path']) ? ["https://image.tmdb.org/t/p/original" . $data['backdrop_path']] : [],
+            'poster' => self::imageUrl($data['poster_path'] ?? null, 'w500', 'https://placehold.co/500x750/111/fff?text=No+Poster'),
+            'banner' => self::imageUrl($data['backdrop_path'] ?? null, 'original', 'https://placehold.co/1920x1080/111/fff?text=No+Banner'),
+            'backdrops' => !empty($data['backdrop_path']) ? [self::imageUrl($data['backdrop_path'], 'original')] : [],
             'releaseDate' => $data['first_air_date'] ?? null,
             'runtime' => isset($data['episode_run_time'][0]) ? $data['episode_run_time'][0] : 60,
             'country' => isset($data['origin_country'][0]) ? $data['origin_country'][0] : 'KR',
@@ -765,7 +818,7 @@ class TmdbController {
                     'dramaId' => $drama['_id'],
                     'seasonNumber' => $sNum,
                     'seasonDescription' => $s['overview'] ?? "Season {$sNum} of {$drama['title']}",
-                    'seasonPoster' => $s['poster_path'] ? "https://image.tmdb.org/t/p/w500" . $s['poster_path'] : $drama['poster'],
+                    'seasonPoster' => self::imageUrl($s['poster_path'] ?? null, 'w500', $drama['poster']),
                     'airDate' => $s['air_date'] ?? null
                 ];
 
@@ -787,7 +840,7 @@ class TmdbController {
                         $epSchema = [
                             "@context" => "https://schema.org",
                             "@type" => "TVEpisode",
-                            "name" => $ep['name'],
+                            "name" => $ep['name'] ?? "Episode {$epNum}",
                             "episodeNumber" => $epNum,
                             "description" => $ep['overview'] ?? "Episode {$epNum} of {$drama['title']} Season {$sNum}",
                             "datePublished" => $ep['air_date'] ?? null
@@ -923,7 +976,13 @@ class TmdbController {
         }
 
         $url = "https://api.themoviedb.org/3/{$config['endpoint']}";
-        $res = self::httpGet($url, $params);
+        try {
+            $res = self::httpGet($url, $params);
+        } catch (\Throwable $e) {
+            http_response_code(502);
+            echo json_encode(['message' => $e->getMessage()]);
+            return;
+        }
         $results = $res['results'] ?? [];
 
         // Filter trending/airing for Korean dramas specifically
@@ -969,9 +1028,19 @@ class TmdbController {
         @ini_set('max_execution_time', 240);
 
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
-        $ids = $body['ids'] ?? [];
+        // Keep the legacy tmdbIds alias during rolling deployments.
+        $ids = $body['ids'] ?? ($body['tmdbIds'] ?? []);
         $type = $body['type'] ?? 'tv'; // movie or tv
         $isHistorical = (bool)($body['isHistorical'] ?? false);
+
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        if (!in_array($type, ['movie', 'tv'], true)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Media type must be movie or tv']);
+            return;
+        }
 
         $uniqueIds = array_slice(array_filter(array_unique(array_map('intval', $ids))), 0, 20);
 
@@ -1010,7 +1079,9 @@ class TmdbController {
                 echo json_encode([
                     'message' => 'Bulk import task has been started in the background for ' . count($uniqueIds) . ' titles. Refresh drafts in a few moments.',
                     'status' => 'Importing',
-                    'queuedIds' => $uniqueIds
+                    'queuedIds' => $uniqueIds,
+                    'successCount' => count($uniqueIds),
+                    'failedCount' => 0
                 ]);
                 return;
             }
@@ -1050,7 +1121,9 @@ class TmdbController {
             'status' => $isPartial ? 'Partial' : 'Completed',
             'importedIds' => $importedIds,
             'failedIds' => $failedIds,
-            'skippedIds' => $skippedIds
+            'skippedIds' => $skippedIds,
+            'successCount' => count($importedIds),
+            'failedCount' => count($failedIds) + count($skippedIds)
         ]);
     }
 

@@ -341,7 +341,8 @@ export default function ArticleManager() {
     if (!silent) setLoading(true);
     try {
       const res = await apiClient.get('/api/admin/articles', tokenHeaders());
-      setArticles(res.data);
+      const list = Array.isArray(res.data) ? res.data : res.data?.articles;
+      setArticles(Array.isArray(list) ? list : []);
     } catch (err) {
       toast.error('Failed to load articles list.');
     } finally {

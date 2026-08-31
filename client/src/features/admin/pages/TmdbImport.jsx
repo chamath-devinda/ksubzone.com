@@ -1,20 +1,51 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import DataTable from '@/features/admin/components/DataTable';
 import { useToast } from '@/features/admin/components/Toast';
 import {
-  Tv, Database, Search, Download, RefreshCw, CheckSquare, Clock, Sparkles
+  Search, Download, RefreshCw, CheckSquare, Clock, Sparkles
 } from 'lucide-react';
 
 const IMPORT_TIMEOUT_MS = 240000;
 
+const normalizeTmdbResults = (payload, fallbackType = 'tv') => {
+  const items = Array.isArray(payload)
+    ? payload
+    : (Array.isArray(payload?.results) ? payload.results : []);
+
+  return items
+    .filter((item) => item && item.id !== undefined && item.id !== null)
+    .map((item) => ({
+      ...item,
+      media_type: item.media_type === 'movie' || item.media_type === 'tv'
+        ? item.media_type
+        : fallbackType,
+    }));
+};
+
+const normalizeHistory = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  return Array.isArray(payload?.history) ? payload.history : [];
+};
+
+const errorMessage = (error, fallback) => (
+  error?.response?.data?.message || error?.message || fallback
+);
+
+const posterUrl = (posterPath) => {
+  if (typeof posterPath !== 'string' || !posterPath.trim()) {
+    return 'https://placehold.co/120x180/111/fff?text=No+Photo';
+  }
+  return /^https?:\/\//i.test(posterPath)
+    ? posterPath
+    : `https://image.tmdb.org/t/p/w185/${posterPath.replace(/^\/+/, '')}`;
+};
+
 export default function TmdbImport() {
-  const { admin } = useAuth();
   const toast = useToast();
   
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -47,7 +78,7 @@ export default function TmdbImport() {
     setLoadingHistory(true);
     try {
       const res = await apiClient.get('/api/admin/tmdb/history');
-      setHistory(res.data);
+      setHistory(normalizeHistory(res.data));
     } catch (err) {
       console.error('Failed to load TMDB import history', err);
     } finally {
@@ -63,15 +94,17 @@ export default function TmdbImport() {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!query) return;
+    if (!query.trim()) return;
     setLoading(true);
     setMode('search');
     try {
-      const res = await apiClient.get(`/api/admin/tmdb/search?query=${encodeURIComponent(query)}&type=${type}`);
-      setResults(res.data);
+      const requestedType = type;
+      const res = await apiClient.get(`/api/admin/tmdb/search?query=${encodeURIComponent(query.trim())}&type=${requestedType}`);
+      setResults(normalizeTmdbResults(res.data, requestedType));
       setSelectedIds([]);
     } catch (err) {
-      toast.error('Search query failed');
+      setResults([]);
+      toast.error(errorMessage(err, 'Search query failed'));
     } finally {
       setLoading(false);
     }
@@ -83,27 +116,30 @@ export default function TmdbImport() {
     setLoading(true);
     try {
       const res = await apiClient.get(`/api/admin/tmdb/discover?source=${src}`);
-      setResults(res.data);
+      setResults(normalizeTmdbResults(res.data, 'tv'));
       setSelectedIds([]);
     } catch (err) {
-      toast.error('Failed to discover dramas from TMDB');
+      setResults([]);
+      toast.error(errorMessage(err, 'Failed to discover dramas from TMDB'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleImport = async (tmdbId) => {
+  const handleImport = async (item) => {
+    const tmdbId = item.id;
+    const mediaType = item.media_type === 'movie' ? 'movie' : 'tv';
     setImportingId(tmdbId);
     try {
       const res = await apiClient.post(
         '/api/admin/tmdb/import',
-        { tmdbId, type, isHistorical },
+        { id: tmdbId, type: mediaType, isHistorical },
         { timeout: IMPORT_TIMEOUT_MS }
       );
       toast.success(res.data.message || 'Media imported successfully with full seasons and episodes!');
       fetchHistory();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Import failed');
+      toast.error(errorMessage(err, 'Import failed'));
     } finally {
       setImportingId(null);
     }
@@ -115,14 +151,19 @@ export default function TmdbImport() {
     try {
       const res = await apiClient.post(
         '/api/admin/tmdb/bulk-import',
-        { tmdbIds: selectedIds, type: 'tv', isHistorical },
+        { ids: selectedIds, type: 'tv', isHistorical },
         { timeout: IMPORT_TIMEOUT_MS }
       );
-      toast.success(`Bulk import completed: ${res.data.successCount} added, ${res.data.failedCount} skipped.`);
-      setSelectedIds([]);
+      const response = res.data || {};
+      toast.success(response.message || 'Bulk import request completed.');
+      const retryIds = [
+        ...(Array.isArray(response.failedIds) ? response.failedIds : []),
+        ...(Array.isArray(response.skippedIds) ? response.skippedIds : []),
+      ];
+      setSelectedIds(retryIds);
       fetchHistory();
     } catch (err) {
-      toast.error('Bulk import process failed');
+      toast.error(errorMessage(err, 'Bulk import process failed'));
     } finally {
       setBulkImporting(false);
     }
@@ -356,8 +397,8 @@ export default function TmdbImport() {
                       </label>
                     )}
                     <img
-                      src={item.poster_path ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w185${item.poster_path}`) : 'https://placehold.co/120x180/111/fff?text=No+Photo'}
-                      alt={item.title}
+                      src={posterUrl(item.poster_path)}
+                      alt={item.title || 'TMDB title poster'}
                       className="w-16 h-24 object-cover rounded-lg bg-[#151821] flex-shrink-0 border border-white/[0.06]"
                     />
                     
@@ -386,7 +427,7 @@ export default function TmdbImport() {
                         
                         <button
                           type="button"
-                          onClick={() => handleImport(item.id)}
+                          onClick={() => handleImport(item)}
                           disabled={importingId === item.id}
                           className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-[10px] font-semibold rounded-lg transition flex items-center gap-1"
                         >

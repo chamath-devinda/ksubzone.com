@@ -557,6 +557,20 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('view_analytics'); },
         'Controllers\AnalyticsController::getDashboardStats'
     ]],
+    ['POST', '/api/admin/clear-cache', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
+        function() {
+            header('Content-Type: application/json');
+            try {
+                \Utils\Cache::flush();
+                echo json_encode(['message' => 'Application cache cleared successfully.']);
+            } catch (\Throwable $e) {
+                http_response_code(500);
+                echo json_encode(['message' => 'Failed to clear application cache: ' . $e->getMessage()]);
+            }
+        }
+    ]],
 
     // Admin TMDB Importer
     ['GET', '/api/admin/tmdb/search', [
@@ -907,12 +921,31 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
         'Controllers\BackupController::restoreBackup'
     ]],
-    ['DELETE', '/api/admin/backup/delete/([a-z0-9_-]+)', [
+    ['DELETE', '/api/admin/backup/delete/([A-Za-z0-9_-]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
         'Controllers\BackupController::deleteBackup'
     ]],
     // Admin Database Viewer APIs
+    ['POST', '/api/admin/database/wipe-media', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
+        function() {
+            $db = \Config\Database::getInstance();
+            $collections = ['movies', 'dramas', 'seasons', 'episodes', 'subtitles'];
+            $counts = [];
+            foreach ($collections as $col) {
+                $counts[$col] = $db->deleteMany($col, []);
+            }
+            \Utils\Cache::flush();
+            header('Content-Type: application/json');
+            echo json_encode([
+                'message' => 'Movies, dramas, seasons, episodes, and subtitles were wiped successfully.',
+                'driver' => $db->getDriver(),
+                'deleted' => $counts
+            ]);
+        }
+    ]],
     ['POST', '/api/admin/database/wipe-all', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },

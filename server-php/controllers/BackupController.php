@@ -54,7 +54,6 @@ class BackupController {
 
     public static function saveSettings() {
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
-        $serviceAccountStr = $body['serviceAccount'] ?? '';
         $folderId = $body['folderId'] ?? '1-mG-eq1GNxQrI9Byj23RC-JFOO_3Z57n';
 
         if (empty($folderId)) {
@@ -63,17 +62,25 @@ class BackupController {
             return;
         }
 
-        $serviceAccount = null;
-        if (!empty($serviceAccountStr)) {
-            $serviceAccount = json_decode($serviceAccountStr, true);
-            if (empty($serviceAccount) || !is_array($serviceAccount) || !isset($serviceAccount['private_key']) || !isset($serviceAccount['client_email'])) {
+        $config = self::loadConfig();
+        $serviceAccount = $config['serviceAccount'] ?? null;
+        $credentialInput = $body['serviceAccountJson'] ?? ($body['serviceAccount'] ?? null);
+
+        if (!empty($body['clearServiceAccount'])) {
+            $serviceAccount = null;
+        } elseif ($credentialInput !== null && $credentialInput !== '') {
+            $candidate = is_string($credentialInput)
+                ? json_decode($credentialInput, true)
+                : $credentialInput;
+            if (empty($candidate) || !is_array($candidate) || !isset($candidate['private_key']) || !isset($candidate['client_email'])) {
                 http_response_code(400);
+                header('Content-Type: application/json');
                 echo json_encode(['message' => 'Invalid Google Service Account JSON configuration format.']);
                 return;
             }
+            $serviceAccount = $candidate;
         }
 
-        $config = self::loadConfig();
         $config['serviceAccount'] = $serviceAccount;
         $config['folderId'] = $folderId;
 
@@ -99,8 +106,8 @@ class BackupController {
             $drive = new GoogleDrive($config['serviceAccount'], $config['folderId']);
             $files = $drive->listBackups();
             header('Content-Type: application/json');
-            echo json_encode($files);
-        } catch (\Exception $e) {
+            echo json_encode(['backups' => $files]);
+        } catch (\Throwable $e) {
             http_response_code(500);
             echo json_encode(['message' => 'Google Drive error: ' . $e->getMessage()]);
         }
@@ -150,7 +157,7 @@ class BackupController {
                     throw new \Exception("Zipped archive generation failed.");
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (file_exists($tempZip)) {
                 @unlink($tempZip);
             }
@@ -162,14 +169,16 @@ class BackupController {
 
     public static function restoreBackup() {
         $config = self::loadConfig();
-        $fileId = $_POST['fileId'] ?? '';
-        $isManual = isset($_FILES['backup']);
+        $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        $fileId = $_POST['fileId'] ?? ($body['fileId'] ?? '');
+        $uploadKey = isset($_FILES['backup']) ? 'backup' : (isset($_FILES['backupZip']) ? 'backupZip' : null);
+        $isManual = $uploadKey !== null;
 
         $tempZip = tempnam(sys_get_temp_dir(), 'restore_') . '.zip';
 
         try {
             if ($isManual) {
-                $file = $_FILES['backup'];
+                $file = $_FILES[$uploadKey];
                 if ($file['error'] !== UPLOAD_ERR_OK) {
                     throw new \Exception("File upload failed with error code: " . $file['error']);
                 }
@@ -193,7 +202,7 @@ class BackupController {
 
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Database records and local media files restored successfully.']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (file_exists($tempZip)) {
                 @unlink($tempZip);
             }
@@ -216,7 +225,7 @@ class BackupController {
             $drive->deleteBackup($id);
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Backup file deleted successfully.']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             http_response_code(500);
             echo json_encode(['message' => 'Google Drive error: ' . $e->getMessage()]);
         }
@@ -225,6 +234,9 @@ class BackupController {
     // --- Core Zip/Zip extraction helpers ---
 
     private static function generateZipArchive($zipPath) {
+        if (!class_exists('ZipArchive')) {
+            throw new \RuntimeException('The PHP ZipArchive extension is required to create backups.');
+        }
         $zip = new \ZipArchive();
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== TRUE) {
             throw new \Exception("Failed to initiate zip system.");
@@ -286,6 +298,9 @@ class BackupController {
     }
 
     private static function restoreFromZip($zipPath) {
+        if (!class_exists('ZipArchive')) {
+            throw new \RuntimeException('The PHP ZipArchive extension is required to restore backups.');
+        }
         $zip = new \ZipArchive();
         if ($zip->open($zipPath) !== TRUE) {
             throw new \Exception("Uploaded file is not a valid zip file.");

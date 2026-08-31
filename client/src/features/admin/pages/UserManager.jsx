@@ -31,7 +31,8 @@ export default function UserManager() {
 
     try {
       const res = await apiClient.get('/api/admin/users');
-      setUsers(res.data || []);
+      const list = Array.isArray(res.data) ? res.data : res.data?.users;
+      setUsers(Array.isArray(list) ? list : []);
     } catch (err) {
       setError('Failed to fetch user accounts logs');
       toast.error('Failed to fetch user accounts logs');

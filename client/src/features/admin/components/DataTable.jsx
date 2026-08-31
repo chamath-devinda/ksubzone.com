@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Search, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { ChevronUp, ChevronDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import EmptyState from './EmptyState';
 import Skeleton from './Skeleton';
 
@@ -22,17 +22,18 @@ export default function DataTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState(initialSortKey);
   const [sortDir, setSortDir] = useState(initialSortDir);
+  const safeData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   // 1. Local Search Filtering
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim() || !searchKey) return data;
+    if (!searchTerm.trim() || !searchKey) return safeData;
     const term = searchTerm.toLowerCase();
-    return data.filter(item => {
+    return safeData.filter(item => {
       const val = item[searchKey];
       if (val === null || val === undefined) return false;
       return String(val).toLowerCase().includes(term);
     });
-  }, [data, searchTerm, searchKey]);
+  }, [safeData, searchTerm, searchKey]);
 
   // 2. Local Sorting
   const sortedData = useMemo(() => {
@@ -54,6 +55,9 @@ export default function DataTable({
 
   // 3. Local Pagination
   const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(Math.max(page, 1), totalPages));
+  }, [totalPages]);
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sortedData.slice(start, start + pageSize);

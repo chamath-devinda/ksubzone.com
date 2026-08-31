@@ -30,10 +30,12 @@ export default function ReviewManager() {
     try {
       if (activeTab === 'reviews') {
         const res = await apiClient.get('/api/admin/reviews');
-        setReviews(res.data);
+        const list = Array.isArray(res.data) ? res.data : res.data?.reviews;
+        setReviews(Array.isArray(list) ? list : []);
       } else {
         const res = await apiClient.get('/api/admin/comments');
-        setComments(res.data);
+        const list = Array.isArray(res.data) ? res.data : res.data?.comments;
+        setComments(Array.isArray(list) ? list : []);
       }
     } catch (err) {
       setError('Failed to fetch discussion queue records');

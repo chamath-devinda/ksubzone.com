@@ -97,7 +97,8 @@ export default function SubtitleManager() {
     setLoading(true);
     try {
       const res = await apiClient.get('/api/admin/subtitles');
-      setSubtitles(res.data);
+      const list = Array.isArray(res.data) ? res.data : res.data?.subtitles;
+      setSubtitles(Array.isArray(list) ? list : []);
     } catch (err) {
       toast.error('Failed to fetch subtitles queue');
     } finally {

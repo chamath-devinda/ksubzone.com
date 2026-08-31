@@ -52,9 +52,11 @@ export default function BackupManager() {
       setIsConfigured(res.data.serviceAccountConfigured || false);
       setServiceAccountEmail(res.data.serviceAccountEmail || '');
       setLastBackupTime(res.data.lastBackupTime || null);
+      return Boolean(res.data.serviceAccountConfigured);
     } catch (err) {
       setError('Failed to fetch backup configurations.');
       toast.error('Failed to fetch backup configurations.');
+      return false;
     }
   };
 
@@ -64,7 +66,8 @@ export default function BackupManager() {
     setError('');
     try {
       const res = await apiClient.get('/api/admin/backup/list');
-      setBackups(res.data.backups || []);
+      const list = Array.isArray(res.data) ? res.data : res.data?.backups;
+      setBackups(Array.isArray(list) ? list : []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to list backups from Google Drive.');
       toast.error('Failed to list backups from Google Drive.');
@@ -74,8 +77,20 @@ export default function BackupManager() {
   };
 
   useEffect(() => {
-    fetchSettings();
-    fetchBackups();
+    let active = true;
+    const initialize = async () => {
+      const configured = await fetchSettings();
+      if (!active) return;
+      if (configured) {
+        await fetchBackups();
+      } else {
+        setBackups([]);
+        setLoadingBackups(false);
+      }
+    };
+    initialize();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save Service Account & Folder ID Settings
@@ -108,7 +123,11 @@ export default function BackupManager() {
       setIsConfigured(res.data.serviceAccountConfigured);
       setServiceAccountEmail(res.data.serviceAccountEmail);
       setServiceAccount(''); // Clear sensitive text
-      fetchBackups();
+      if (res.data.serviceAccountConfigured) {
+        fetchBackups();
+      } else {
+        setBackups([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save settings.');
       toast.error('Failed to save settings.');
@@ -124,7 +143,7 @@ export default function BackupManager() {
     setSuccess('');
 
     try {
-      const res = await apiClient.post('/api/admin/backup/create');
+      const res = await apiClient.post('/api/admin/backup/create?drive=true');
       setSuccess(`Backup archive (${res.data.filename}) successfully uploaded to Google Drive.`);
       toast.success('Backup uploaded to Google Drive.');
       setLastBackupTime(new Date().toISOString());
@@ -142,7 +161,7 @@ export default function BackupManager() {
     setDownloadingLocal(true);
     setError('');
     try {
-      const res = await apiClient.get('/api/admin/backup/download-local', {
+      const res = await apiClient.post('/api/admin/backup/create', null, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -199,7 +218,7 @@ export default function BackupManager() {
     setSuccess('');
 
     try {
-      await apiClient.delete(`/api/admin/backup/${fileId}`);
+      await apiClient.delete(`/api/admin/backup/delete/${encodeURIComponent(fileId)}`);
       toast.success('Backup deleted from Google Drive.');
       setBackups(prev => prev.filter(b => b.id !== fileId));
     } catch (err) {
@@ -231,10 +250,10 @@ export default function BackupManager() {
     setSuccess('');
 
     const formData = new FormData();
-    formData.append('backupZip', selectedFile);
+    formData.append('backup', selectedFile);
 
     try {
-      const res = await apiClient.post('/api/admin/backup/restore-upload', formData, {
+      const res = await apiClient.post('/api/admin/backup/restore', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setSuccess(res.data.message || 'Manual backup restored successfully. Reloading...');
