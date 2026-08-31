@@ -562,11 +562,6 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('view_analytics'); },
         'Controllers\AdsterraController::getStats'
     ]],
-    ['POST', '/api/admin/adsterra/config', [
-        'Middleware\AuthMiddleware::protectAdmin',
-        function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
-        'Controllers\AdsterraController::saveConfig'
-    ]],
     ['POST', '/api/admin/clear-cache', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },

@@ -28,7 +28,7 @@ class AdsterraController {
 
         $url = self::API_BASE . $path . '?' . http_build_query($query);
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        $curlOptions = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_CONNECTTIMEOUT => 8,
@@ -36,8 +36,20 @@ class AdsterraController {
             CURLOPT_HTTPHEADER => [
                 'Accept: application/json',
                 'X-API-Key: ' . $apiKey
-            ]
-        ]);
+            ],
+            CURLOPT_USERAGENT => 'KSubZone-Adsterra-Analytics/1.0'
+        ];
+
+        $configuredCaBundle = trim((string)($_ENV['ADSTERRA_CA_BUNDLE'] ?? getenv('ADSTERRA_CA_BUNDLE') ?: ''));
+        if ($configuredCaBundle !== '' && is_file($configuredCaBundle)) {
+            $curlOptions[CURLOPT_CAINFO] = $configuredCaBundle;
+        } elseif (defined('CURLSSLOPT_NATIVE_CA')) {
+            // Use the operating system certificate store when PHP/cURL was
+            // installed without a configured CA bundle (common on Windows).
+            $curlOptions[CURLOPT_SSL_OPTIONS] = CURLSSLOPT_NATIVE_CA;
+        }
+
+        curl_setopt_array($ch, $curlOptions);
 
         $response = curl_exec($ch);
         $curlError = curl_error($ch);
@@ -115,7 +127,7 @@ class AdsterraController {
         $range = in_array($requestedRange, [7, 30, 90], true) ? $requestedRange : 30;
         $finishDate = date('Y-m-d');
         $startDate = date('Y-m-d', strtotime('-' . ($range - 1) . ' days'));
-        $cacheKey = 'adsterra_stats_v1_' . $range . '_' . substr(hash('sha256', $apiKey), 0, 12);
+        $cacheKey = 'adsterra_stats_v2_' . $range . '_' . substr(hash('sha256', $apiKey), 0, 12);
         $cached = Cache::get($cacheKey);
         if ($cached !== false) {
             echo json_encode($cached);
@@ -129,7 +141,9 @@ class AdsterraController {
                 'group_by' => 'date'
             ], $apiKey);
         } catch (\Throwable $error) {
-            http_response_code(502);
+            // Avoid a 502 here because some hosting/CDN layers replace its
+            // JSON body with a generic "Server Error" response.
+            http_response_code(424);
             echo json_encode([
                 'configured' => true,
                 'message' => $error->getMessage()
@@ -149,7 +163,9 @@ class AdsterraController {
         foreach (self::extractRows($payload) as $row) {
             if (!is_array($row)) continue;
 
-            $impressions = self::number($row['impressions'] ?? 0);
+            // The live Publisher API currently returns `impression` while
+            // older documentation and responses use `impressions`.
+            $impressions = self::number($row['impressions'] ?? ($row['impression'] ?? 0));
             $clicks = self::number($row['clicks'] ?? 0);
             $revenue = self::number($row['revenue'] ?? ($row['profit'] ?? 0));
             $date = (string)($row['date'] ?? ($row['day'] ?? ''));
@@ -196,28 +212,4 @@ class AdsterraController {
         echo json_encode($result);
     }
 
-    public static function saveConfig() {
-        header('Content-Type: application/json');
-        $body = json_decode(file_get_contents('php://input'), true) ?: [];
-        $apiKey = trim((string)($body['apiKey'] ?? ''));
-
-        if (!preg_match('/^[A-Za-z0-9_-]{20,200}$/', $apiKey)) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Enter a valid Adsterra API key.']);
-            return;
-        }
-
-        $db = Database::getInstance();
-        $existing = $db->findOne('settings', ['key' => 'ADSTERRA_API_KEY']);
-        if ($existing) {
-            $db->updateOne('settings', ['_id' => $existing['_id']], ['value' => $apiKey]);
-        } else {
-            $db->insertOne('settings', ['key' => 'ADSTERRA_API_KEY', 'value' => $apiKey]);
-        }
-
-        echo json_encode([
-            'configured' => true,
-            'message' => 'Adsterra API key saved securely.'
-        ]);
-    }
 }

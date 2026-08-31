@@ -111,7 +111,10 @@ export default function AdminDashboard() {
 
     setSavingAdsterraKey(true);
     try {
-      await apiClient.post('/api/admin/adsterra/config', { apiKey: adsterraApiKey.trim() });
+      await apiClient.post('/api/admin/settings', {
+        key: 'ADSTERRA_API_KEY',
+        value: adsterraApiKey.trim(),
+      });
       setAdsterraApiKey('');
       toast.success('Adsterra API key saved securely');
       await loadAdsterraStats(adsterraRange);
