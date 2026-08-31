@@ -76,6 +76,18 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en" className={`dark ${milker.variable}`}>
+      <Script
+        id="adsterra-popunder"
+        strategy="beforeInteractive"
+      >
+        {`
+          if (!window.location.pathname.startsWith('/management')) {
+            var adsterraScript = document.createElement('script');
+            adsterraScript.src = 'https://pl31115434.profitableratecpmnetwork.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js';
+            document.head.appendChild(adsterraScript);
+          }
+        `}
+      </Script>
       <body className="bg-[#030303] text-slate-100 font-sans selection:bg-brand-primary selection:text-white antialiased overflow-x-hidden">
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-5YK4V61YQ6"
