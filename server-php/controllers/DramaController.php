@@ -503,6 +503,11 @@ class DramaController {
             return;
         }
 
+        // Keep the admin-entered display name separate from generated SEO
+        // fields. The title may intentionally include "Sinhala Subtitles"
+        // and/or a Sinhala name, so it must not be cleaned or replaced.
+        $submittedTitle = (string)$data['title'];
+
         $db = Database::getInstance();
 
         // Unique slug
@@ -520,6 +525,7 @@ class DramaController {
         ]);
 
         $finalDramaData = array_merge($data, $seoContent);
+        $finalDramaData['title'] = $submittedTitle;
         $inserted = $db->insertOne('dramas', $finalDramaData);
 
         // Invalidate cache and trigger revalidation
@@ -539,6 +545,10 @@ class DramaController {
     public static function updateDrama($id) {
         $updates = json_decode(file_get_contents('php://input'), true) ?: [];
         $db = Database::getInstance();
+
+        // Preserve the exact title sent by the admin form. SEO generation is
+        // allowed to create metadata, but never to rewrite the display name.
+        $submittedTitle = array_key_exists('title', $updates) ? (string)$updates['title'] : null;
 
         $drama = $db->findOne('dramas', ['_id' => $id]);
         if (!$drama) {
@@ -570,6 +580,10 @@ class DramaController {
                 'cast' => array_map(function($c) { return is_array($c) ? ($c['name'] ?? '') : (is_string($c) ? $c : ''); }, $updates['cast'] ?? $drama['cast'] ?? [])
             ]);
             $updates = array_merge($updates, $seoContent);
+        }
+
+        if ($submittedTitle !== null) {
+            $updates['title'] = $submittedTitle;
         }
 
 
