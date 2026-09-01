@@ -37,7 +37,7 @@ Never place ad scripts in the root layout or individual page files. Add page pos
 
 - Admin, authentication, profile/account, static, 404, and error routes do not load ads.
 - Below-the-fold slots use lazy loading and reserve responsive space before loading.
-- Display and native snippets run inside sandboxed frames so provider scripts cannot rewrite the React document.
+- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. The frames grant the provider the same-origin cookie access required by the official Adsterra runtime while retaining navigation and popup sandbox restrictions.
 - The intrusive loader chooses one provider. Adsterra popunder and Monetag OnClick therefore cannot run together.
 - A/B assignments persist in `localStorage` under `ksubzone_ad_variant`.
 - Provider initialization is centralized so a consent check can be added in `AdProvider` before any third-party script runs.

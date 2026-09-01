@@ -40,7 +40,7 @@ function AdFrame({ title, source, width, height, onLoad, responsive = false }) {
       loading="lazy"
       onLoad={onLoad}
       referrerPolicy="no-referrer-when-downgrade"
-      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
       className="block max-w-full border-0 bg-transparent"
     />
   );
@@ -77,7 +77,7 @@ function ScaledAdFrame({ title, source, width, height, onLoad }) {
         loading="lazy"
         onLoad={onLoad}
         referrerPolicy="no-referrer-when-downgrade"
-        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
         className="absolute left-1/2 top-0 block border-0 bg-transparent"
         style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'top center' }}
       />
