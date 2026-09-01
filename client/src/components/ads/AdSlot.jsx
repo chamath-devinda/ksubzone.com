@@ -150,6 +150,19 @@ export default function AdSlot({ slotId, className = '' }) {
       );
     }
 
+    if (placement.format === 'sidebar') {
+      const zone = zones.sidebar;
+      return (
+        <AdFrame
+          title="Sidebar advertisement"
+          source={buildDisplayDocument(zone)}
+          width={zone.width}
+          height={zone.height}
+          onLoad={() => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', slot_id: slotId, format: 'sidebar', page_type: pageType })}
+        />
+      );
+    }
+
     if (!viewportReady) return null;
     if (isDesktop && !config.formats.desktopBanner) return null;
     if (!isDesktop && !config.formats.mobileBanner) return null;
@@ -175,13 +188,18 @@ export default function AdSlot({ slotId, className = '' }) {
   const slotDefinition = placement || config.placements[slotId];
   const isNative = slotDefinition?.format === 'native';
   const isSquare = slotDefinition?.format === 'square';
+  const isSidebar = slotDefinition?.format === 'sidebar';
   const reservationClass = isNative
     ? 'min-h-[358px]'
+    : isSidebar
+      ? 'min-h-[638px]'
     : isSquare
       ? 'min-h-[288px]'
       : 'min-h-[88px] md:min-h-[128px]';
   const placeholderClass = isNative
     ? 'min-h-[320px]'
+    : isSidebar
+      ? 'min-h-[600px]'
     : isSquare
       ? 'min-h-[250px]'
       : 'min-h-[50px] md:min-h-[90px]';
@@ -195,7 +213,7 @@ export default function AdSlot({ slotId, className = '' }) {
       <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
       {renderedAd || (
         <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
-          {config.showDevelopmentPlaceholders ? `${isNative ? 'Native' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}
+          {config.showDevelopmentPlaceholders ? `${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}
         </div>
       )}
     </aside>

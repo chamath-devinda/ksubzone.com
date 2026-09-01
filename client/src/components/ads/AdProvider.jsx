@@ -157,6 +157,7 @@ export function AdProvider({ children }) {
     if (!placement.pages.includes(pageType)) return null;
     if (placement.format === 'native' && (!route.native || !adConfig.formats.native)) return null;
     if (placement.format === 'square' && (!route.square || !adConfig.formats.square)) return null;
+    if (placement.format === 'sidebar' && (!route.sidebar || !adConfig.formats.sidebar)) return null;
     if (placement.format === 'responsiveBanner' && (!route.banner || !adConfig.formats.banner)) return null;
 
     let provider = adConfig.mode === AD_MODES.HYBRID ? placement.provider : defaultProvider;

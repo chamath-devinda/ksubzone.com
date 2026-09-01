@@ -458,7 +458,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
       {/* Media Metadata Layout */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full -mt-16 sm:-mt-52 lg:-mt-64 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 items-start">
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 items-start ${!topOnly ? 'xl:grid-cols-[minmax(190px,1fr)_minmax(0,3fr)_184px]' : ''}`}>
           
           {/* LEFT: POSTER CARD */}
           <div className="flex flex-col gap-4 max-w-[230px] sm:max-w-xs mx-auto md:max-w-none md:w-full w-full">
@@ -495,7 +495,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
           </div>
 
           {/* RIGHT: DETAILS CONTROLLER */}
-          <div className="md:col-span-3 flex flex-col gap-6">
+          <div className={`md:col-span-3 flex flex-col gap-6 ${!topOnly ? 'xl:col-span-1' : ''}`}>
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 {type === 'Drama' && mediaSubtitleSummary.totalSubtitles > 0 && (
@@ -1154,6 +1154,12 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             )}
 
           </div>
+
+          {!topOnly && (
+            <aside className="hidden xl:block sticky top-24 self-start" aria-label="Desktop advertising rail">
+              <AdSlot slotId="media_desktop_sidebar" className="max-w-[184px]" />
+            </aside>
+          )}
         </div>
       </div>
 

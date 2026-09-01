@@ -313,7 +313,8 @@ export default function Home({
                     </div>
                   )}
                 </div>
-                {sectionIndex === 1 && <AdSlot slotId="home_content_banner" />}
+                {sectionIndex === 0 && <AdSlot slotId="home_content_banner" />}
+                {sectionIndex === 2 && <AdSlot slotId="home_content_square" />}
                 {sectionIndex === 3 && <AdSlot slotId="home_content_native" />}
                 </React.Fragment>
               );
