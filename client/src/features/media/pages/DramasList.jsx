@@ -6,12 +6,14 @@ import apiClient from '@/services/api/apiClient';
 import GlassCard from '@/components/ui/GlassCard';
 import { Tv, Filter, Flame, Star, Calendar, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdSlot from '@/components/ads/AdSlot';
 
 export default function DramasList({ initialData }) {
   const [sortBy, setSortBy] = useState('popular');
   const [country, setCountry] = useState('');
   const [page, setPage] = useState(1);
   const limit = 24;
+  const hasInitialData = Array.isArray(initialData?.dramas) && initialData.dramas.length > 0;
 
   const { data, isLoading } = useQuery({
     queryKey: ['dramasDirectory', sortBy, country, page],
@@ -19,9 +21,10 @@ export default function DramasList({ initialData }) {
       const res = await apiClient.get(`/api/media/dramas?sort=${sortBy}&country=${country}&page=${page}&limit=${limit}`);
       return res.data;
     },
-    initialData: (sortBy === 'popular' && country === '' && page === 1) ? initialData : undefined,
+    initialData: (sortBy === 'popular' && country === '' && page === 1 && hasInitialData) ? initialData : undefined,
     staleTime: 60_000,
-    refetchOnMount: false
+    refetchOnMount: hasInitialData ? false : 'always',
+    retry: 2
   });
 
   const dramasMapped = (data?.dramas || []).map(d => ({ ...d, mediaType: 'drama' }));
@@ -96,6 +99,8 @@ export default function DramasList({ initialData }) {
           </div>
         </div>
       </div>
+
+      <AdSlot slotId="listing_content_banner" />
 
       {/* Media Grid */}
       <div className="relative min-h-[400px]">

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api/apiClient';
 import { ArrowLeft, CalendarDays, Clock3, Tag, Eye } from 'lucide-react';
+import AdSlot from '@/components/ads/AdSlot';
 
 // Helper to extract YouTube ID from URL or return plain ID
 const getYoutubeId = (urlOrId) => {
@@ -427,6 +428,8 @@ export default function ArticleDetail({ initialData }) {
   const { article, related = [] } = data;
   const parsedBlocks = parseArticleBlocks(article.content || '');
   const author = getAuthor(article.authorName);
+  const introAdIndex = parsedBlocks.length > 1 ? 1 : 0;
+  const nativeAdIndex = parsedBlocks.length >= 6 ? Math.floor(parsedBlocks.length / 2) : -1;
 
   return (
     <div className="min-h-screen bg-transparent pb-16">
@@ -487,7 +490,13 @@ export default function ArticleDetail({ initialData }) {
                 : 'bg-gradient-to-r from-brand-primary/80 via-violet-500/80 to-brand-secondary/80'
             }`} />
             <div className="p-4 sm:p-10 lg:p-14">
-              {parsedBlocks.map((block, index) => renderBlock(block, index, theme === 'dark'))}
+              {parsedBlocks.map((block, index) => (
+                <React.Fragment key={`article-block-${index}`}>
+                  {renderBlock(block, index, theme === 'dark')}
+                  {index === introAdIndex && <AdSlot slotId="article_intro_banner" className="my-10" />}
+                  {index === nativeAdIndex && <AdSlot slotId="article_mid_native" className="my-12" />}
+                </React.Fragment>
+              ))}
             </div>
           </div>
 

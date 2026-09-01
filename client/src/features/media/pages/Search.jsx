@@ -8,6 +8,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import SeoTags from '@/components/seo/SeoTags';
 import { Search as SearchIcon, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteContent';
+import AdSlot from '@/components/ads/AdSlot';
 
 export default function Search() {
   const searchParams = useSearchParams();
@@ -455,6 +456,8 @@ export default function Search() {
         </div>
 
       </div>
+
+      <AdSlot slotId="search_results_banner" className="mt-4" />
 
     </div>
   );

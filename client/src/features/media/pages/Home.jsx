@@ -9,11 +9,20 @@ import HeroSlider from '@/features/media/components/HeroSlider';
 import GlassCard from '@/components/ui/GlassCard';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { permalinkSlug } from '@/utils/slug';
+import AdSlot from '@/components/ads/AdSlot';
 import { 
   Film, Tv, Clock, Send, 
   Flame, Star, Calendar, Compass, 
   Layers, Filter, RefreshCw, ArrowRight, CheckCircle2
 } from 'lucide-react';
+
+function hasCatalogRows(catalog) {
+  return Object.values(catalog || {}).some((value) => Array.isArray(value) && value.length > 0);
+}
+
+function hasListRows(payload, key) {
+  return Array.isArray(payload?.[key]) && payload[key].length > 0;
+}
 
 export default function Home({ 
   initialHomeCatalog = {}, 
@@ -25,6 +34,10 @@ export default function Home({
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'dramas' | 'movies'
   const [sortBy, setSortBy] = useState('popular'); // 'popular' | 'rating' | 'newest'
   const [country, setCountry] = useState(''); // '' | 'KR' | 'JP'
+  const hasInitialCatalog = hasCatalogRows(initialHomeCatalog);
+  const hasInitialMovies = hasListRows(initialLibraryMovies, 'movies');
+  const hasInitialDramas = hasListRows(initialLibraryDramas, 'dramas');
+  const hasInitialSubtitles = Array.isArray(initialSubtitles) && initialSubtitles.length > 0;
 
   // Fetch combined Home Catalog data (single API request)
   const { data: homeCatalog = initialHomeCatalog, isLoading: homeCatalogLoading } = useQuery({
@@ -33,9 +46,10 @@ export default function Home({
       const res = await apiClient.get('/api/media/home');
       return res.data;
     },
-    initialData: initialHomeCatalog,
+    initialData: hasInitialCatalog ? initialHomeCatalog : undefined,
     staleTime: 60_000,
-    refetchOnMount: false
+    refetchOnMount: hasInitialCatalog ? false : 'always',
+    retry: 2
   });
 
   const featuredItems = React.useMemo(() => {
@@ -55,9 +69,10 @@ export default function Home({
       const res = await apiClient.get(`/api/media/movies?sort=${sortBy}&country=${country}&limit=10`);
       return res.data;
     },
-    initialData: (sortBy === 'popular' && country === '') ? initialLibraryMovies : undefined,
+    initialData: (sortBy === 'popular' && country === '' && hasInitialMovies) ? initialLibraryMovies : undefined,
     staleTime: 60_000,
-    refetchOnMount: false
+    refetchOnMount: hasInitialMovies ? false : 'always',
+    retry: 2
   });
 
   // Fetch Library Dramas (reactive to sort and country)
@@ -67,9 +82,10 @@ export default function Home({
       const res = await apiClient.get(`/api/media/dramas?sort=${sortBy}&country=${country}&limit=10`);
       return res.data;
     },
-    initialData: (sortBy === 'popular' && country === '') ? initialLibraryDramas : undefined,
+    initialData: (sortBy === 'popular' && country === '' && hasInitialDramas) ? initialLibraryDramas : undefined,
     staleTime: 60_000,
-    refetchOnMount: false
+    refetchOnMount: hasInitialDramas ? false : 'always',
+    retry: 2
   });
 
   // Fetch Subtitles (Recent Updates)
@@ -79,10 +95,10 @@ export default function Home({
       const res = await apiClient.get('/api/subtitles/recent?limit=4');
       return res.data;
     },
-    initialData: initialSubtitles,
+    initialData: hasInitialSubtitles ? initialSubtitles : undefined,
     staleTime: 60_000,
-    refetchOnMount: false,
-    retry: false
+    refetchOnMount: hasInitialSubtitles ? false : 'always',
+    retry: 2
   });
 
   const categoryRows = React.useMemo(() => {
@@ -204,23 +220,11 @@ export default function Home({
     .sort((a, b) => new Date(b.contentUpdatedAt || b.createdAt || b.releaseDate || 0) - new Date(a.contentUpdatedAt || a.createdAt || a.releaseDate || 0))
     .slice(0, 10);
 
-  // Handle slide fallbacks
+  // Use only real catalog data. If the server render misses the API, React Query
+  // now retries in the browser instead of pinning an empty object as initial data.
   const slideItems = homeCatalogLoading
     ? []
-    : (featuredItems.length > 0 ? featuredItems : librarySlides.length > 0 ? librarySlides : [
-        {
-          _id: "mock1",
-          title: "Moving",
-          originalTitle: "무빙",
-          banner: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1925&auto=format&fit=crop",
-          poster: "https://placehold.co/500x750/111/fff?text=Moving",
-          tmdbRating: 8.4,
-          imdbRating: 8.4,
-          country: "KR",
-          description: "Children with secret superpowers and their parents who harbor painful secrets from the past face a massive imminent danger together.",
-          slug: "moving"
-        }
-      ]);
+    : (featuredItems.length > 0 ? featuredItems : librarySlides);
 
   const isLibraryLoading = moviesLoading || dramasLoading;
   const home = content?.home || {};
@@ -269,10 +273,11 @@ export default function Home({
               ))}
             </div>
           ) : (
-            categoryRows.map((section) => {
+            categoryRows.map((section, sectionIndex) => {
               const Icon = section.icon;
               return (
-                <div key={section.id} className="flex flex-col gap-5">
+                <React.Fragment key={section.id}>
+                <div className="flex flex-col gap-5">
                   <div className="flex flex-col items-start gap-3 border-b border-white/[0.04] pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                     <div>
                       <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 font-display">
@@ -308,6 +313,9 @@ export default function Home({
                     </div>
                   )}
                 </div>
+                {sectionIndex === 1 && <AdSlot slotId="home_content_banner" />}
+                {sectionIndex === 3 && <AdSlot slotId="home_content_native" />}
+                </React.Fragment>
               );
             })
           )}

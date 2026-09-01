@@ -7,6 +7,7 @@ import apiClient from '@/services/api/apiClient';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpenText, CalendarDays, Clock3, Flame, Loader2, Search, Sparkles, Star, Eye } from 'lucide-react';
 import SeoTags from '@/components/seo/SeoTags';
+import AdSlot from '@/components/ads/AdSlot';
 
 const categories = ['All', 'Guide', 'Character Study', 'Subtitles', 'Movies', 'Romance', 'Watchlist'];
 
@@ -134,6 +135,8 @@ export default function Articles({ initialData }) {
             </div>
           </motion.article>
         )}
+
+        <AdSlot slotId="listing_content_banner" />
 
         <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {otherArticles.map((article, index) => (

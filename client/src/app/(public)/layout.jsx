@@ -10,11 +10,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import MaintenanceMode from '@/components/layout/MaintenanceMode';
 import { usePathname } from 'next/navigation';
 import apiClient from '@/services/api/apiClient';
-import AdsterraNativeBanner from '@/components/ads/AdsterraNativeBanner';
-import {
-  AdsterraLeaderboardBanner,
-  AdsterraRectangleBanner,
-} from '@/components/ads/AdsterraDisplayBanners';
+import { AdProvider } from '@/components/ads/AdProvider';
 
 export default function PublicLayout({ children }) {
   const { content, loading: contentLoading } = useSiteContent();
@@ -51,17 +47,14 @@ export default function PublicLayout({ children }) {
   }
 
   return (
-    <>
+    <AdProvider>
       <ScrollToTop />
       <Navbar />
-      <AdsterraLeaderboardBanner />
       <main className="flex-grow pb-16">
         {children}
       </main>
 
-      <AdsterraRectangleBanner />
-      <AdsterraNativeBanner />
       <Footer />
-    </>
+    </AdProvider>
   );
 }

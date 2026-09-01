@@ -14,6 +14,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, handleImageFallback } from '@/utils/mediaImages';
 import { downloadSubtitle } from '@/utils/subtitleDownload';
+import AdSlot from '@/components/ads/AdSlot';
 
 export default function Detail({ type = 'Movie', initialData, topOnly = false }) {
   const { slug } = useParams();
@@ -579,6 +580,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               </div>
             </div>
 
+            {!topOnly && <AdSlot slotId="media_after_description" className="my-2" />}
+
             {/* Quick Facts & AI Summary Table (GEO Optimized) */}
             <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 flex flex-col gap-4">
               <h2 className="font-black text-white text-sm sm:text-base uppercase tracking-wider">Quick Facts & Subtitle Details</h2>
@@ -695,6 +698,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 </div>
               </div>
             )}
+
+            {!topOnly && <AdSlot slotId="media_before_subtitles" className="my-4" />}
 
             {!topOnly && (
               <>
