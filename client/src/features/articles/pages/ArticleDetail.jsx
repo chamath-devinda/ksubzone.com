@@ -493,7 +493,7 @@ export default function ArticleDetail({ initialData }) {
               {parsedBlocks.map((block, index) => (
                 <React.Fragment key={`article-block-${index}`}>
                   {renderBlock(block, index, theme === 'dark')}
-                  {index === introAdIndex && <AdSlot slotId="article_intro_banner" className="my-10" />}
+                  {index === introAdIndex && <AdSlot slotId="article_intro_square" className="my-10" />}
                   {index === nativeAdIndex && <AdSlot slotId="article_mid_native" className="my-12" />}
                 </React.Fragment>
               ))}

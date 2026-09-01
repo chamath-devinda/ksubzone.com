@@ -16,7 +16,7 @@ function emitAdEvent(name, detail = {}) {
 function providerIsConfigured(provider) {
   if (provider === 'adsterra') {
     const zones = adConfig.providers.adsterra.zones;
-    return Boolean(zones.bannerDesktop.key || zones.bannerMobile.key || zones.native.scriptUrl);
+    return Boolean(zones.bannerDesktop.key || zones.bannerMobile.key || zones.square.key || zones.native.scriptUrl);
   }
   if (provider === 'monetag') {
     const zones = adConfig.providers.monetag.zones;
@@ -43,6 +43,7 @@ function IntrusiveAdLoader({ pageType, provider }) {
 
     let script = null;
     const activate = () => {
+      if (window.__ksubzoneIntrusiveAdLoaded) return;
       let lastLoaded = 0;
       try {
         lastLoaded = Number(window.localStorage.getItem(adConfig.intrusive.storageKey) || 0);
@@ -58,6 +59,7 @@ function IntrusiveAdLoader({ pageType, provider }) {
       script.async = true;
       script.dataset.ksubzoneAd = marker;
       script.onload = () => emitAdEvent('ad_slot_loaded', { provider, format: 'intrusive', page_type: pageType });
+      window.__ksubzoneIntrusiveAdLoaded = true;
       document.body.appendChild(script);
       try {
         window.localStorage.setItem(adConfig.intrusive.storageKey, String(Date.now()));
@@ -70,6 +72,36 @@ function IntrusiveAdLoader({ pageType, provider }) {
     return () => {
       window.removeEventListener('pointerdown', activate);
       if (script?.parentNode) script.parentNode.removeChild(script);
+    };
+  }, [pageType, provider]);
+
+  return null;
+}
+
+function SocialBarLoader({ pageType, provider }) {
+  useEffect(() => {
+    const route = adConfig.routes[pageType];
+    const scriptUrl = adConfig.providers.adsterra.zones.socialBar.scriptUrl;
+    const canLoad = adConfig.enabled
+      && route?.enabled
+      && route?.intrusive
+      && provider === 'adsterra'
+      && adConfig.providers.adsterra.enabled
+      && adConfig.formats.socialBar
+      && scriptUrl;
+
+    if (!canLoad || window.__ksubzoneSocialBarLoaded) return undefined;
+
+    const script = document.createElement('script');
+    script.src = scriptUrl;
+    script.async = true;
+    script.dataset.ksubzoneAd = 'adsterra-social-bar';
+    script.onload = () => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', format: 'social_bar', page_type: pageType });
+    window.__ksubzoneSocialBarLoaded = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) script.parentNode.removeChild(script);
     };
   }, [pageType, provider]);
 
@@ -124,6 +156,7 @@ export function AdProvider({ children }) {
     if (adConfig.mode === AD_MODES.AB_TEST && !variantReady) return null;
     if (!placement.pages.includes(pageType)) return null;
     if (placement.format === 'native' && (!route.native || !adConfig.formats.native)) return null;
+    if (placement.format === 'square' && (!route.square || !adConfig.formats.square)) return null;
     if (placement.format === 'responsiveBanner' && (!route.banner || !adConfig.formats.banner)) return null;
 
     let provider = adConfig.mode === AD_MODES.HYBRID ? placement.provider : defaultProvider;
@@ -150,6 +183,7 @@ export function AdProvider({ children }) {
     <AdContext.Provider value={contextValue}>
       {children}
       <IntrusiveAdLoader pageType={pageType} provider={activeProvider} />
+      <SocialBarLoader pageType={pageType} provider={activeProvider} />
     </AdContext.Provider>
   );
 }

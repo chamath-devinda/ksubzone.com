@@ -24,6 +24,12 @@ function useMediaQuery(query) {
 }
 
 function AdFrame({ title, source, width, height, onLoad, responsive = false }) {
+  if (!responsive) {
+    return (
+      <ScaledAdFrame title={title} source={source} width={width} height={height} onLoad={onLoad} />
+    );
+  }
+
   return (
     <iframe
       title={title}
@@ -40,12 +46,51 @@ function AdFrame({ title, source, width, height, onLoad, responsive = false }) {
   );
 }
 
+function ScaledAdFrame({ title, source, width, height, onLoad }) {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    if (!containerRef.current) return undefined;
+    const updateScale = () => {
+      const availableWidth = containerRef.current?.clientWidth || width;
+      setScale(Math.min(1, availableWidth / width));
+    };
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [width]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden"
+      style={{ maxWidth: width, height: height * scale }}
+    >
+      <iframe
+        title={title}
+        srcDoc={source}
+        width={width}
+        height={height}
+        scrolling="no"
+        loading="lazy"
+        onLoad={onLoad}
+        referrerPolicy="no-referrer-when-downgrade"
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
+        className="absolute left-1/2 top-0 block border-0 bg-transparent"
+        style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'top center' }}
+      />
+    </div>
+  );
+}
+
 export default function AdSlot({ slotId, className = '' }) {
   const { config, pageType, resolvePlacement, emitAdEvent } = useAds();
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
-  const [nearViewport, setNearViewport] = useState(!placement?.lazy);
-  const { matches: isDesktop, ready: viewportReady } = useMediaQuery('(min-width: 640px)');
+  const [nearViewport, setNearViewport] = useState(false);
+  const { matches: isDesktop, ready: viewportReady } = useMediaQuery('(min-width: 768px)');
 
   useEffect(() => {
     if (!placement) return;
@@ -58,7 +103,12 @@ export default function AdSlot({ slotId, className = '' }) {
   }, [emitAdEvent, pageType, placement, slotId]);
 
   useEffect(() => {
-    if (!placement?.lazy || nearViewport || !hostRef.current) return undefined;
+    if (!placement) return undefined;
+    if (!placement.lazy) {
+      setNearViewport(true);
+      return undefined;
+    }
+    if (nearViewport || !hostRef.current) return undefined;
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         setNearViewport(true);
@@ -67,7 +117,7 @@ export default function AdSlot({ slotId, className = '' }) {
     }, { rootMargin: '500px 0px' });
     observer.observe(hostRef.current);
     return () => observer.disconnect();
-  }, [nearViewport, placement?.lazy]);
+  }, [nearViewport, placement]);
 
   const renderedAd = useMemo(() => {
     if (!placement || !nearViewport) return null;
@@ -87,7 +137,22 @@ export default function AdSlot({ slotId, className = '' }) {
       );
     }
 
+    if (placement.format === 'square') {
+      const zone = zones.square;
+      return (
+        <AdFrame
+          title="Content advertisement"
+          source={buildDisplayDocument(zone)}
+          width={zone.width}
+          height={zone.height}
+          onLoad={() => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', slot_id: slotId, format: 'square', page_type: pageType })}
+        />
+      );
+    }
+
     if (!viewportReady) return null;
+    if (isDesktop && !config.formats.desktopBanner) return null;
+    if (!isDesktop && !config.formats.mobileBanner) return null;
     const zone = isDesktop ? zones.bannerDesktop : zones.bannerMobile;
     return (
       <AdFrame
@@ -102,9 +167,24 @@ export default function AdSlot({ slotId, className = '' }) {
 
   if (!placement && !config.showDevelopmentPlaceholders) return null;
 
-  const isNative = placement?.format === 'native';
-  const reservationClass = isNative ? 'min-h-[358px]' : 'min-h-[288px] sm:min-h-[98px]';
-  const placeholderClass = isNative ? 'min-h-[320px]' : 'min-h-[250px] sm:min-h-[60px]';
+  const selectedResponsiveFormatDisabled = placement?.format === 'responsiveBanner'
+    && viewportReady
+    && ((isDesktop && !config.formats.desktopBanner) || (!isDesktop && !config.formats.mobileBanner));
+  if (selectedResponsiveFormatDisabled && !config.showDevelopmentPlaceholders) return null;
+
+  const slotDefinition = placement || config.placements[slotId];
+  const isNative = slotDefinition?.format === 'native';
+  const isSquare = slotDefinition?.format === 'square';
+  const reservationClass = isNative
+    ? 'min-h-[358px]'
+    : isSquare
+      ? 'min-h-[288px]'
+      : 'min-h-[88px] md:min-h-[128px]';
+  const placeholderClass = isNative
+    ? 'min-h-[320px]'
+    : isSquare
+      ? 'min-h-[250px]'
+      : 'min-h-[50px] md:min-h-[90px]';
 
   return (
     <aside
@@ -115,7 +195,7 @@ export default function AdSlot({ slotId, className = '' }) {
       <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
       {renderedAd || (
         <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
-          {config.showDevelopmentPlaceholders ? `${isNative ? 'Native' : 'Responsive'} advertisement — ${slotId}` : null}
+          {config.showDevelopmentPlaceholders ? `${isNative ? 'Native' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}
         </div>
       )}
     </aside>

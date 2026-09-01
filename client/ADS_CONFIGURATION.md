@@ -10,7 +10,11 @@ NEXT_PUBLIC_AD_MODE=HYBRID
 NEXT_PUBLIC_ADSTERRA_ENABLED=true
 NEXT_PUBLIC_MONETAG_ENABLED=false
 NEXT_PUBLIC_BANNER_ADS_ENABLED=true
+NEXT_PUBLIC_DESKTOP_BANNER_ENABLED=true
+NEXT_PUBLIC_MOBILE_BANNER_ENABLED=true
+NEXT_PUBLIC_SQUARE_ADS_ENABLED=true
 NEXT_PUBLIC_NATIVE_ADS_ENABLED=true
+NEXT_PUBLIC_SIDEBAR_ADS_ENABLED=false
 NEXT_PUBLIC_POPUNDER_ENABLED=true
 NEXT_PUBLIC_SOCIAL_BAR_ENABLED=false
 NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED=false
@@ -20,9 +24,11 @@ NEXT_PUBLIC_POPUNDER_COOLDOWN_MS=43200000
 
 `NEXT_PUBLIC_AD_MODE` accepts `ADSTERRA_ONLY`, `MONETAG_ONLY`, `HYBRID`, `AB_TEST`, or `OFF`.
 
+The responsive primary slot loads only one approved unit: 320x50 below 768px and 728x90 from 768px upward. The 300x250 unit is a separate in-content format. Set any corresponding environment switch to `false` to disable that unit, or set `NEXT_PUBLIC_ADS_ENABLED=false` / `NEXT_PUBLIC_AD_MODE=OFF` to disable all advertising.
+
 ## Official provider code locations
 
-- Adsterra: the official banner keys, native script/container, popunder script, and disabled social-bar script supplied by the publisher are in `src/config/ads.js` under `providers.adsterra.zones`.
+- Adsterra: the official 728x90 desktop, 320x50 mobile, 300x250 square, disabled 160x600 sidebar, native, popunder, and disabled social-bar codes supplied by the publisher are in `src/config/ads.js` under `providers.adsterra.zones`.
 - Monetag: no official Monetag code has been supplied. Keep `NEXT_PUBLIC_MONETAG_ENABLED=false`. When official code is available, paste only its exact script URLs into `providers.monetag.zones.multiTagScriptUrl`, `inPagePushScriptUrl`, and `onClickScriptUrl`. The OnClick URL is already connected to the guarded intrusive loader; MultiTag and In-Page Push remain inert placeholders until their exact official snippets and required initialization details are supplied.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.
