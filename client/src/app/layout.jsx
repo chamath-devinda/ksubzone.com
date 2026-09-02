@@ -76,7 +76,7 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en" className={`dark ${milker.variable}`}>
-      <body className="bg-[#030303] text-slate-100 font-sans selection:bg-brand-primary selection:text-white antialiased overflow-x-hidden">
+      <body className="bg-[#030303] text-slate-100 font-sans selection:bg-brand-primary selection:text-white antialiased">
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-5YK4V61YQ6"
           strategy="afterInteractive"

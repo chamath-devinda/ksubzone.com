@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api/apiClient';
 import { ArrowLeft, CalendarDays, Clock3, Tag, Eye } from 'lucide-react';
 import AdSlot from '@/components/ads/AdSlot';
+import SideAdLayout from '@/components/ads/SideAdLayout';
 
 // Helper to extract YouTube ID from URL or return plain ID
 const getYoutubeId = (urlOrId) => {
@@ -432,6 +433,7 @@ export default function ArticleDetail({ initialData }) {
   const nativeAdIndex = parsedBlocks.length >= 6 ? Math.floor(parsedBlocks.length / 2) : -1;
 
   return (
+    <SideAdLayout>
     <div className="min-h-screen bg-transparent pb-16">
       <article>
         {/* Hero Banner */}
@@ -549,5 +551,6 @@ export default function ArticleDetail({ initialData }) {
         </section>
       </article>
     </div>
+    </SideAdLayout>
   );
 }

@@ -16,6 +16,7 @@ import { downloadSubtitle } from '@/utils/subtitleDownload';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import Detail from '@/features/media/pages/Detail';
 import AdSlot from '@/components/ads/AdSlot';
+import SideAdLayout from '@/components/ads/SideAdLayout';
 
 export default function Watch({ initialDramaData }) {
   const { slug, seasonPart, episodePart } = useParams();
@@ -211,6 +212,7 @@ export default function Watch({ initialDramaData }) {
     : (mainSubtitle?.uploader?.username || 'Verified Translator');
 
   return (
+    <SideAdLayout>
     <div className="w-full bg-transparent text-slate-200 min-h-screen pb-20 selection:bg-rose-600 selection:text-white relative">
       
       {/* SEO & Meta Tags */}
@@ -499,5 +501,6 @@ export default function Watch({ initialDramaData }) {
       </div>
 
     </div>
+    </SideAdLayout>
   );
 }

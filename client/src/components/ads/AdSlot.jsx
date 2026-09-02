@@ -37,7 +37,7 @@ function AdFrame({ title, source, width, height, onLoad, responsive = false }) {
       width={responsive ? '100%' : width}
       height={height}
       scrolling="no"
-      loading="lazy"
+      loading="eager"
       onLoad={onLoad}
       referrerPolicy="no-referrer-when-downgrade"
       sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
@@ -74,7 +74,7 @@ function ScaledAdFrame({ title, source, width, height, onLoad }) {
         width={width}
         height={height}
         scrolling="no"
-        loading="lazy"
+        loading="eager"
         onLoad={onLoad}
         referrerPolicy="no-referrer-when-downgrade"
         sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
@@ -91,36 +91,41 @@ export default function AdSlot({ slotId, className = '' }) {
   const hostRef = useRef(null);
   const [nearViewport, setNearViewport] = useState(false);
   const { matches: isDesktop, ready: viewportReady } = useMediaQuery('(min-width: 768px)');
+  const slotDefinition = placement || config.placements[slotId];
+  const { matches: matchesPlacementViewport } = useMediaQuery(slotDefinition?.mediaQuery || '(min-width: 0px)');
+  const viewportAllowed = !slotDefinition?.mediaQuery || matchesPlacementViewport;
 
   useEffect(() => {
-    if (!placement) return;
+    if (!placement || !viewportAllowed) return;
     emitAdEvent('provider_selected', {
       provider: placement.provider,
       slot_id: slotId,
       format: placement.format,
       page_type: pageType,
     });
-  }, [emitAdEvent, pageType, placement, slotId]);
+  }, [emitAdEvent, pageType, placement, slotId, viewportAllowed]);
 
   useEffect(() => {
-    if (!placement) return undefined;
-    if (!placement.lazy) {
+    if (!placement?.lazy || !viewportAllowed) return undefined;
+    if (nearViewport || !hostRef.current) return undefined;
+    if (typeof IntersectionObserver === 'undefined') {
       setNearViewport(true);
       return undefined;
     }
-    if (nearViewport || !hostRef.current) return undefined;
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         setNearViewport(true);
         observer.disconnect();
       }
-    }, { rootMargin: '500px 0px' });
+    }, { rootMargin: '1000px 0px' });
     observer.observe(hostRef.current);
     return () => observer.disconnect();
-  }, [nearViewport, placement]);
+  }, [nearViewport, placement, viewportAllowed]);
 
   const renderedAd = useMemo(() => {
-    if (!placement || !nearViewport) return null;
+    // The slot owns lazy loading. Once eligible, start the iframe immediately
+    // instead of waiting for a second, browser-controlled lazy-loading gate.
+    if (!placement || !viewportAllowed || (placement.lazy && !nearViewport)) return null;
     if (placement.provider !== 'adsterra') return null;
 
     const zones = config.providers.adsterra.zones;
@@ -176,8 +181,9 @@ export default function AdSlot({ slotId, className = '' }) {
         onLoad={() => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', slot_id: slotId, format: 'banner', page_type: pageType })}
       />
     );
-  }, [config, emitAdEvent, isDesktop, nearViewport, pageType, placement, slotId, viewportReady]);
+  }, [config, emitAdEvent, isDesktop, nearViewport, pageType, placement, slotId, viewportReady, viewportAllowed]);
 
+  if (!viewportAllowed) return null;
   if (!placement && !config.showDevelopmentPlaceholders) return null;
 
   const selectedResponsiveFormatDisabled = placement?.format === 'responsiveBanner'
@@ -185,7 +191,6 @@ export default function AdSlot({ slotId, className = '' }) {
     && ((isDesktop && !config.formats.desktopBanner) || (!isDesktop && !config.formats.mobileBanner));
   if (selectedResponsiveFormatDisabled && !config.showDevelopmentPlaceholders) return null;
 
-  const slotDefinition = placement || config.placements[slotId];
   const isNative = slotDefinition?.format === 'native';
   const isSquare = slotDefinition?.format === 'square';
   const isSidebar = slotDefinition?.format === 'sidebar';
@@ -208,6 +213,7 @@ export default function AdSlot({ slotId, className = '' }) {
     <aside
       ref={hostRef}
       aria-label="Advertisement"
+      data-ad-slot={slotId}
       className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.015] px-2 py-3 ${reservationClass} ${className}`}
     >
       <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>

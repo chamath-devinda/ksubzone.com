@@ -10,6 +10,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { permalinkSlug } from '@/utils/slug';
 import AdSlot from '@/components/ads/AdSlot';
+import SideAdLayout from '@/components/ads/SideAdLayout';
 import { 
   Film, Tv, Clock, Send, 
   Flame, Star, Calendar, Compass, 
@@ -262,6 +263,7 @@ export default function Home({
       </section>
 
       {/* Main Page Content Container */}
+      <SideAdLayout slotPrefix="home">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full flex flex-col gap-12 sm:gap-16 mt-2 sm:mt-4">
         
         {/* Curated Category Rows */}
@@ -553,6 +555,7 @@ export default function Home({
         </div>
 
       </div>
+      </SideAdLayout>
     </div>
   );
 }

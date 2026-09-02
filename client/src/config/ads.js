@@ -76,7 +76,7 @@ export const adConfig = Object.freeze({
           height: 250,
         },
         sidebar: {
-          // Official publisher unit. Kept disabled until a safe desktop sidebar exists.
+          // Official publisher unit, isolated in an iframe for each sidebar placement.
           key: 'c13f5f2182fb9c307a05678f246a92d3',
           scriptUrl: 'https://www.highrevenueformat.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
           width: 160,
@@ -95,11 +95,11 @@ export const adConfig = Object.freeze({
     },
   },
   routes: {
-    home: { enabled: true, banner: true, square: true, native: true, sidebar: false, intrusive: true },
+    home: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
     movie: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
     drama: { enabled: true, banner: true, square: false, native: true, sidebar: true, intrusive: true },
-    episode: { enabled: true, banner: true, square: false, native: false, sidebar: false, intrusive: true },
-    article: { enabled: true, banner: false, square: true, native: true, sidebar: false, intrusive: true },
+    episode: { enabled: true, banner: true, square: false, native: false, sidebar: true, intrusive: true },
+    article: { enabled: true, banner: false, square: true, native: true, sidebar: true, intrusive: true },
     search: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
     listing: { enabled: true, banner: true, square: false, native: false, sidebar: false, intrusive: true },
     static: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
@@ -109,12 +109,15 @@ export const adConfig = Object.freeze({
     error: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
   },
   placements: {
-    home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
+    home_sidebar_left: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
+    home_sidebar_right: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
+    single_sidebar_left: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
+    single_sidebar_right: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
     home_content_square: { pages: ['home'], format: 'square', provider: 'adsterra', lazy: true },
     home_content_native: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
     media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     media_before_subtitles: { pages: ['movie', 'drama'], format: 'native', provider: 'adsterra', lazy: true },
-    media_desktop_sidebar: { pages: ['movie', 'drama'], format: 'sidebar', provider: 'adsterra', lazy: true },
     article_intro_square: { pages: ['article'], format: 'square', provider: 'adsterra', lazy: true },
     article_mid_native: { pages: ['article'], format: 'native', provider: 'adsterra', lazy: true },
     episode_content_banner: { pages: ['episode'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },

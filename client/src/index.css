@@ -23,6 +23,37 @@
   }
 }
 
+/* Keep both 160px ad creatives outside the catalog. Below this width the
+   existing full-width layout is retained and AdSlot skips the ad requests. */
+.side-ad-layout {
+  width: 100%;
+  max-width: 1760px;
+  margin-inline: auto;
+}
+
+.side-ad-rail {
+  display: none;
+  min-width: 0;
+}
+
+@media (min-width: 1600px) {
+  .side-ad-layout {
+    display: grid;
+    grid-template-columns: 184px minmax(0, 1fr) 184px;
+    gap: 24px;
+    padding-inline: 24px;
+  }
+
+  .side-ad-rail {
+    display: block;
+    padding-top: 32px;
+  }
+
+  .side-ad-layout[data-ad-layout='home'] > .side-ad-rail {
+    padding-top: 64px;
+  }
+}
+
 /* Luxury Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 7px;
@@ -165,12 +196,13 @@
 }
 
 /* Mobile guardrails: keep wide cards/tables scrollable without letting the
-   page itself grow wider than the phone viewport. */
+   page itself grow wider than the phone viewport. Clip avoids creating a
+   separate scroll container that would prevent sticky navigation/ad rails. */
 html,
 body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 img,
@@ -1252,5 +1284,3 @@ textarea {
 [data-admin-theme='light'] .admin-custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(124, 58, 237, 0.5);
 }
-
-

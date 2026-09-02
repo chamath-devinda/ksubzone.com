@@ -171,6 +171,25 @@ export function AdProvider({ children }) {
     return { ...placement, provider };
   }, [defaultProvider, pageType, variantReady]);
 
+  const displayAdOrigins = useMemo(() => {
+    const zones = adConfig.providers.adsterra.zones;
+    const origins = new Set();
+    for (const slotId of Object.keys(adConfig.placements)) {
+      const placement = resolvePlacement(slotId);
+      if (placement?.provider !== 'adsterra') continue;
+      const selectedZones = placement.format === 'responsiveBanner'
+        ? [
+          ...(adConfig.formats.desktopBanner ? [zones.bannerDesktop] : []),
+          ...(adConfig.formats.mobileBanner ? [zones.bannerMobile] : []),
+        ]
+        : [zones[placement.format]];
+      for (const zone of selectedZones) {
+        if (zone?.scriptUrl) origins.add(new URL(zone.scriptUrl).origin);
+      }
+    }
+    return [...origins];
+  }, [resolvePlacement]);
+
   const contextValue = useMemo(() => ({
     config: adConfig,
     pageType,
@@ -182,6 +201,13 @@ export function AdProvider({ children }) {
 
   return (
     <AdContext.Provider value={contextValue}>
+      {/* Warm only the display providers used on this route before slots mount. */}
+      {displayAdOrigins.map((origin) => (
+        <React.Fragment key={origin}>
+          <link rel="dns-prefetch" href={origin} />
+          <link rel="preconnect" href={origin} />
+        </React.Fragment>
+      ))}
       {children}
       <IntrusiveAdLoader pageType={pageType} provider={activeProvider} />
       <SocialBarLoader pageType={pageType} provider={activeProvider} />
