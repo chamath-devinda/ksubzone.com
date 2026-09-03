@@ -28,21 +28,7 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const abortControllerRef = useRef(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 12) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -183,12 +169,10 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      <header className="sticky top-2 sm:top-3.5 z-50 w-full px-2.5 sm:px-6 lg:px-8">
-        <div className={`max-w-7xl mx-auto rounded-2xl sm:rounded-full h-14 sm:h-16 px-3 sm:px-7 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 relative border ${
-          isScrolled 
-            ? 'bg-luxury-950/90 border-white/[0.12] backdrop-blur-2xl shadow-[0_10px_35px_-5px_rgba(0,0,0,0.8),0_0_20px_rgba(139,92,246,0.15)]' 
-            : 'bg-luxury-950/70 border-white/[0.08] backdrop-blur-xl shadow-xl shadow-black/40'
-        }`}>
+      {/* Reserve the fixed bar's height so page headings start below it. */}
+      <div aria-hidden="true" className="h-14 sm:h-16 shrink-0" />
+      <header className="fixed inset-x-0 top-0 z-50 h-14 sm:h-16 w-full border-b border-white/[0.08] bg-luxury-950 shadow-lg shadow-black/30">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4 relative">
           
           {/* BRAND LOGO */}
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4 z-10 lg:flex-initial">
@@ -427,7 +411,7 @@ export default function Navbar() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.98 }}
               id="mobile-navigation"
-              className="lg:hidden mt-2.5 max-h-[calc(100dvh-5.25rem)] overflow-y-auto overscroll-contain glass-panel-heavy border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col gap-4 shadow-2xl backdrop-blur-2xl relative z-50 text-left"
+              className="lg:hidden mx-3 sm:mx-6 mt-2 max-h-[calc(100dvh-5.25rem)] overflow-y-auto overscroll-contain glass-panel-heavy border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col gap-4 shadow-2xl backdrop-blur-2xl relative z-50 text-left"
             >
               <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <input
