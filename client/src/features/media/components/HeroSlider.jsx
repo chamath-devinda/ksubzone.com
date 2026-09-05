@@ -4,10 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, Clock3, Download, Film, Globe2, Info, Star } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock3, Download, Film, Globe2, Info, Star, Languages } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, imageFallbackFor } from '@/utils/mediaImages';
 import { formatTimeAgo } from '@/utils/timeAgo';
+import { cleanMediaText, cleanMediaTitle } from '@/utils/seo';
 
 const EMPTY_ITEMS = [];
 
@@ -100,6 +101,8 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
   const primaryGenre = Array.isArray(genres) ? genres[0] : genres;
   const rating = current.imdbRating || current.tmdbRating || 0;
   const timeAgo = formatTimeAgo(current.contentUpdatedAt || current.createdAt);
+  const displayTitle = (current.title || 'Korean entertainment').replace(/Subtitiles/gi, 'Subtitles');
+  const synopsis = current.synopsisRewrite || current.description || '';
 
   const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % items.length);
   const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
@@ -188,11 +191,11 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 </div>
 
                 {/* Main Heading */}
-                <h2 className="max-w-4xl text-3xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-[-0.035em] text-white leading-[0.98] font-display drop-shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
-                  {current.title}
+                <h2 className="max-w-4xl text-2xl sm:text-4xl lg:text-5xl xl:text-[3.5rem] font-black tracking-[-0.03em] text-white leading-[1.18] sm:leading-[1.12] font-display drop-shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+                  {displayTitle}
                 </h2>
                 
-                {current.originalTitle && current.originalTitle !== current.title && (
+                {current.originalTitle && current.originalTitle !== displayTitle && (
                   <p className="mt-3 text-base sm:text-xl font-extrabold text-violet-200/80 leading-snug tracking-tight font-display">
                     {current.originalTitle}
                   </p>
@@ -200,6 +203,9 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
                 {/* Badges Row */}
                 <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black uppercase tracking-wider rounded-lg flex items-center gap-1.5 backdrop-blur-md">
+                    <Languages className="w-3.5 h-3.5" /> Sinhala Subs
+                  </span>
                   <span className="px-3 py-1.5 bg-amber-400/12 border border-amber-400/25 text-amber-300 text-[10px] font-black uppercase tracking-wider rounded-lg flex items-center gap-1.5 backdrop-blur-md">
                     <Star className="w-3.5 h-3.5 fill-current text-amber-400" /> {rating ? rating.toFixed(1) : 'NR'} IMDb
                   </span>
@@ -221,7 +227,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
                 {/* Synopsis */}
                 <p className="mt-4 sm:mt-5 max-w-2xl border-l-2 border-brand-primary/60 pl-3 sm:pl-4 text-sm sm:text-[15px] text-slate-300 leading-6 sm:leading-7 line-clamp-2 sm:line-clamp-3 font-normal">
-                  {current.synopsisRewrite || current.description}
+                  {synopsis}
                 </p>
 
                 {/* Fast Meta Info Cards */}
@@ -256,12 +262,16 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                 <div className="mt-5 sm:mt-6 grid w-full max-w-md grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                   <button
                     onClick={openDownloads}
+                    onMouseEnter={() => router.prefetch(`/${type}/${currentSlug}?scrollTo=subtitles`)}
+                    onTouchStart={() => router.prefetch(`/${type}/${currentSlug}?scrollTo=subtitles`)}
                     className="min-h-12 px-3 sm:px-8 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:brightness-110 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.04em] sm:tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-xl shadow-brand-primary/25 ring-1 ring-white/15 hover:-translate-y-0.5 active:translate-y-0 text-center"
                   >
                     <Download className="w-4 h-4" /> Download Subtitles
                   </button>
                   <button
                     onClick={openDetails}
+                    onMouseEnter={() => router.prefetch(`/${type}/${currentSlug}`)}
+                    onTouchStart={() => router.prefetch(`/${type}/${currentSlug}`)}
                     className="min-h-12 px-3 sm:px-7 border border-white/15 bg-black/25 hover:bg-white/10 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.04em] sm:tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 backdrop-blur-xl hover:border-white/25 hover:-translate-y-0.5 active:translate-y-0 text-center"
                   >
                     <Info className="w-4 h-4 text-slate-300" /> Details
@@ -287,7 +297,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                   <div className="relative overflow-hidden rounded-2xl aspect-[2/3] bg-luxury-900 border border-white/10">
                     <Image
                       src={posterUrl}
-                      alt={current.title || 'Poster'}
+                      alt={`${displayTitle} poster`}
                       fill
                       priority={currentIndex === 0}
                       sizes="(max-width: 640px) 200px, (max-width: 1024px) 280px, 340px"
@@ -310,7 +320,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                     <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black via-black/85 to-transparent px-4 pb-4 pt-16">
                         <div className="min-w-0">
                           <p className="text-[9px] font-black uppercase tracking-[0.16em] text-violet-300">Featured Pick</p>
-                          <p className="mt-0.5 text-xs font-black text-white line-clamp-2">{current.title}</p>
+                          <p className="mt-0.5 text-xs font-black text-white line-clamp-2">{displayTitle}</p>
                         </div>
                         <span className="rounded-lg border border-white/10 bg-brand-primary/90 px-2 py-1 text-[8px] font-black text-white flex-shrink-0 uppercase">
                           {type === 'drama' ? 'Series' : 'Movie'}

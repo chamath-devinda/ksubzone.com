@@ -16,7 +16,7 @@ export default function ContactPage() {
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-16 text-left flex flex-col gap-8 sm:gap-10 min-h-screen bg-transparent">
       {/* Header Banner */}
       <div>
-        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight flex items-center gap-2">
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight flex items-center gap-2 font-display">
           Contact KSubZone
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-2xl leading-relaxed">
@@ -33,7 +33,7 @@ export default function ContactPage() {
               <Mail className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">Direct Email</h3>
+              <h2 className="text-sm font-black text-white uppercase tracking-wider">Direct Email</h2>
               <p className="text-xs text-slate-400 mt-1">For official support, partnerships, or legal claims.</p>
               <a 
                 href="mailto:contact@ksubzone.com" 
@@ -50,9 +50,9 @@ export default function ContactPage() {
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">Subtitle Requests</h3>
+              <h2 className="text-sm font-black text-white uppercase tracking-wider">Subtitle Requests</h2>
               <p className="text-xs text-slate-300 leading-5 mt-1 font-light">
-                Please make sure to mention the exact **TMDB ID** or **IMDb link** of the drama/movie and specifies the release name (e.g. *NF.WEB-DL*) to speed up timing alignment.
+                Please include the exact <strong className="font-bold text-white">TMDB ID</strong> or <strong className="font-bold text-white">IMDb link</strong> for the drama or movie, plus the release name (for example, <span className="font-mono text-slate-200">NF.WEB-DL</span>) to speed up timing alignment.
               </p>
             </div>
           </div>
@@ -63,7 +63,7 @@ export default function ContactPage() {
               <MessageCircleHeart className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">Community translators</h3>
+              <h2 className="text-sm font-black text-white uppercase tracking-wider">Community translators</h2>
               <p className="text-xs text-slate-400 leading-5 mt-1 font-light">
                 If you are a member of our community and want to apply for uploader permissions, please include your username in the message.
               </p>

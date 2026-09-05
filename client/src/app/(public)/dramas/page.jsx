@@ -1,6 +1,8 @@
 import React from 'react';
 import DramasList from '@/features/media/pages/DramasList';
 import { compactCatalogItems } from '@/utils/mediaCatalog';
+import { permalinkSlug } from '@/utils/slug';
+import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 export const metadata = {
   title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
@@ -35,5 +37,29 @@ export default async function DramasPage() {
     console.error("Error fetching dramas catalog on server:", error);
   }
 
-  return <DramasList initialData={initialData} />;
+  const items = initialData?.dramas || [];
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Korean TV dramas with Sinhala subtitles',
+    numberOfItems: items.length,
+    itemListElement: items.map((drama, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: cleanMediaTitle(drama.title) || drama.title,
+      url: `${SITE_URL}/drama/${permalinkSlug(drama)}`,
+    })),
+  };
+  const breadcrumbs = buildBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Dramas', url: '/dramas' },
+  ]);
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
+      <DramasList initialData={initialData} />
+    </>
+  );
 }

@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 import ScrollToTop from '@/components/ui/ScrollToTop';
+import TopProgressBar from '@/components/ui/TopProgressBar';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import MaintenanceMode from '@/components/layout/MaintenanceMode';
@@ -48,9 +49,16 @@ export default function PublicLayout({ children }) {
 
   return (
     <AdProvider>
+      <TopProgressBar />
       <ScrollToTop />
+      <a
+        href="#main-content"
+        className="fixed left-4 top-3 z-[70] -translate-y-20 rounded-xl bg-white px-4 py-2 text-xs font-black text-slate-950 shadow-xl transition-transform focus:translate-y-0"
+      >
+        Skip to content
+      </a>
       <Navbar />
-      <main className="flex-grow pb-16">
+      <main id="main-content" className="flex-grow" tabIndex={-1}>
         {children}
       </main>
 

@@ -1,6 +1,9 @@
 export const SITE_URL = 'https://www.ksubzone.com';
 
-const subtitleSuffixPattern = /\s*(?:\(\d{4}\)\s*)?(?:Sinhala\s+Subtit(?:iles|les)|සිංහල\s+උපසිරැසි)[\s\S]*$/iu;
+// A number of legacy titles contain SEO copy in the stored display name
+// (including older "Subtitiles" misspellings). Keep the slug untouched, but
+// remove that copy everywhere a human-readable title is rendered.
+const subtitleSuffixPattern = /\s*(?:\(\d{4}\)\s*)?(?:Sinhala(?:\s+and\s+English)?\s+Subtit\p{L}*|සිංහල\s+උපසිරැසි)[\s\S]*$/iu;
 
 export function normalizeSiteUrl(value = SITE_URL) {
   try {
@@ -34,10 +37,28 @@ export function cleanMediaTitle(value = '') {
 
   const cleaned = original
     .replace(subtitleSuffixPattern, '')
+    .replace(/\s*\(\d{4}\)\s*$/u, '')
     .replace(/\s*\|\s*$/u, '')
     .trim();
 
   return cleaned || original;
+}
+
+export function buildAggregateRating(media = {}) {
+  const ratingValue = Number(media.imdbRating || media.tmdbRating || 0);
+  const ratingCount = Number(media.ratingCount || media.voteCount || 0);
+
+  // Google requires an honest rating count. Never manufacture one from page
+  // views or comments; omit the rich-result field until the source provides it.
+  if (!(ratingValue > 0) || !(ratingCount > 0)) return null;
+
+  return {
+    '@type': 'AggregateRating',
+    ratingValue: Math.min(10, ratingValue),
+    bestRating: 10,
+    worstRating: 0,
+    ratingCount: Math.floor(ratingCount),
+  };
 }
 
 export function getMediaReleaseYear(media = {}) {
@@ -54,15 +75,49 @@ export function getMediaReleaseYear(media = {}) {
 export function buildMediaMetaTitle(media = {}) {
   const rawTitle = String(media.title || '').trim();
   const title = cleanMediaTitle(rawTitle) || 'Korean Entertainment';
-  const configuredTitle = normalizeBrandText(media.metaTitle || '').trim();
-  const configuredLooksClean = configuredTitle
-    && title === rawTitle
-    && !/Subtitiles|සිංහල\s+උපසිරැසි.*(?:Sinhala|English)/iu.test(configuredTitle);
-
-  if (configuredLooksClean) return configuredTitle;
-
   const year = getMediaReleaseYear(media);
-  return `${title}${year ? ` (${year})` : ''} Sinhala & English Subtitles | KSubZone`;
+  const yearStr = year ? ` (${year})` : '';
+
+  // Requirement: Include drama/movie name + year + 'Sinhala Subtitles' and Sinhala keyword
+  return `${title}${yearStr} Sinhala Subtitles | ${title} සිංහල උපසිරැසි - KSubZone`;
+}
+
+export function buildMediaMetaDescription(media = {}) {
+  const rawTitle = String(media.title || '').trim();
+  const title = cleanMediaTitle(rawTitle) || 'Korean Drama';
+  const year = getMediaReleaseYear(media);
+  const yearStr = year ? ` (${year})` : '';
+  const typeLabel = media.seasons || media.mediaType === 'drama' || media.type === 'drama' ? 'Korean drama' : 'Korean movie';
+
+  return `Download synchronized Sinhala & English subtitles for ${title}${yearStr} ${typeLabel} in SRT, VTT, and ASS formats. ${title} සිංහල උපසිරැසි (Sinhala sub download) with episode guide, synopsis, and cast info on KSubZone.`;
+}
+
+export function generateMediaKeywords(media = {}) {
+  const rawTitle = String(media.title || '').trim();
+  const title = cleanMediaTitle(rawTitle);
+  const year = getMediaReleaseYear(media);
+  const rawKeywords = Array.isArray(media.seoKeywords)
+    ? media.seoKeywords
+    : (media.seoKeywords ? [media.seoKeywords] : []);
+
+  if (!title) return rawKeywords;
+
+  const targetKeywords = [
+    `${title} Sinhala Subtitles`,
+    `${title} සිංහල උපසිරැසි`,
+    `${title} SRT download`,
+    `${title} Sinhala sub download`,
+    `${title} English subtitles`,
+    year ? `${title} ${year} Sinhala Subtitles` : null,
+    `${title} Sinhala and English subtitle downloads`,
+    `${title} KDrama Sinhala sub`,
+    'ksubzone',
+    'korean drama sinhala subtitles'
+  ].filter(Boolean);
+
+  // Merge unique
+  const combined = Array.from(new Set([...targetKeywords, ...rawKeywords]));
+  return combined;
 }
 
 export function cleanMediaText(value = '', rawTitle = '', cleanTitle = cleanMediaTitle(rawTitle)) {
@@ -84,4 +139,17 @@ export function cleanMediaText(value = '', rawTitle = '', cleanTitle = cleanMedi
 
 export function serializeJsonLd(value) {
   return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
+export function buildBreadcrumbSchema(items = []) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url.startsWith('http') ? item.url : `${SITE_URL}${item.url.startsWith('/') ? '' : '/'}${item.url}`,
+    })),
+  };
 }

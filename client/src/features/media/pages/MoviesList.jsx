@@ -36,11 +36,11 @@ export default function MoviesList({ initialData }) {
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-28 pb-8 text-left flex flex-col gap-7 sm:gap-8 min-h-screen bg-transparent">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-start sm:items-center gap-2.5 leading-tight">
-          <Film className="w-7 h-7 sm:w-8 sm:h-8 text-brand-primary flex-shrink-0" /> Korean Movies Catalog
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-start sm:items-center gap-2.5 leading-tight font-display">
+          <Film className="w-7 h-7 sm:w-8 sm:h-8 text-brand-primary flex-shrink-0" /> Korean Movies - Sinhala Subtitles
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          Browse the complete catalog of Korean movies with synchronized Sinhala and English subtitles.
+        <p className="text-xs sm:text-sm text-slate-300 mt-1.5">
+          Browse the complete catalog of Korean blockbuster movies with synchronized Sinhala (<span className="text-brand-primary font-bold">සිංහල උපසිරැසි</span>) and English SRT subtitle downloads.
         </p>
       </div>
 

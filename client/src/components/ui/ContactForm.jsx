@@ -41,7 +41,7 @@ export default function ContactForm() {
         <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-2">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h3 className="text-xl sm:text-2xl font-black text-white">Message Sent Successfully!</h3>
+        <h2 className="text-xl sm:text-2xl font-black text-white">Message Sent Successfully!</h2>
         <p className="text-sm text-slate-300 leading-relaxed max-w-md">
           Thank you for reaching out to KSubZone. We have received your inquiry and our editorial team will get back to you within 24 hours.
         </p>

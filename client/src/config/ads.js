@@ -109,6 +109,7 @@ export const adConfig = Object.freeze({
     error: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
   },
   placements: {
+    home_below_hero: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     home_sidebar_left: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
     home_sidebar_right: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
@@ -116,12 +117,15 @@ export const adConfig = Object.freeze({
     single_sidebar_right: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1600px)' },
     home_content_square: { pages: ['home'], format: 'square', provider: 'adsterra', lazy: true },
     home_content_native: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
+    media_below_hero: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     media_before_subtitles: { pages: ['movie', 'drama'], format: 'native', provider: 'adsterra', lazy: true },
+    media_after_downloads: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     article_intro_square: { pages: ['article'], format: 'square', provider: 'adsterra', lazy: true },
     article_mid_native: { pages: ['article'], format: 'native', provider: 'adsterra', lazy: true },
     episode_content_banner: { pages: ['episode'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     listing_content_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    site_footer_banner: { pages: ['home', 'movie', 'drama', 'article', 'listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
   },
 });
 

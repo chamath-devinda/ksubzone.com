@@ -9,6 +9,7 @@ import HeroSlider from '@/features/media/components/HeroSlider';
 import GlassCard from '@/components/ui/GlassCard';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { permalinkSlug } from '@/utils/slug';
+import { cleanMediaTitle } from '@/utils/seo';
 import AdSlot from '@/components/ads/AdSlot';
 import SideAdLayout from '@/components/ads/SideAdLayout';
 import { 
@@ -233,23 +234,28 @@ export default function Home({
 
   return (
     <div className="w-full flex flex-col gap-10 sm:gap-12 bg-transparent pb-12 sm:pb-20">
+      <h1 className="sr-only">KSubZone Sinhala subtitles for Korean dramas and movies</h1>
       
       {/* Hero Banner Slider */}
       <HeroSlider items={slideItems} loading={homeCatalogLoading} />
 
+      {/* High-viewability Below-Hero Ad Slot (AdSense / Ezoic Compliant) */}
+      <div className="max-w-7xl mx-auto px-4 w-full flex justify-center -my-2 sm:my-1">
+        <AdSlot slotId="home_below_hero" />
+      </div>
+
       <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center" aria-labelledby="site-introduction-title">
-        <h1 id="site-introduction-title" className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">
-          KSubZone Sinhala Subtitles
-        </h1>
-        <p className="mx-auto mt-3 max-w-3xl text-sm sm:text-base leading-7 text-slate-400">
-          Discover Korean dramas, movies, episode guides, and synchronized Sinhala subtitle downloads.
+        <h2 id="site-introduction-title" className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white font-display">
+          KSubZone - Sinhala Subtitles for Korean Dramas & Movies
+        </h2>
+        <p className="mx-auto mt-3 max-w-3xl text-xs sm:text-sm md:text-base leading-relaxed text-slate-300">
+          Download 100% free, synchronized Sinhala (<span className="text-brand-primary font-bold">සිංහල උපසිරැසි</span>) and English subtitles in SRT, VTT, and ASS formats. Explore trending K-Dramas, blockbuster movies, episode schedules, and verified downloads.
         </p>
         <nav aria-label="Explore KSubZone" className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
           {[
-            ['/movies', 'Korean Movies'],
-            ['/dramas', 'Korean Dramas'],
-            ['/articles', 'Articles & Guides'],
-            ['/genres', 'Browse Genres'],
+            ['/dramas', 'Korean TV Dramas'],
+            ['/movies', 'Blockbuster Movies'],
+            ['/genres', 'Browse by Genre'],
           ].map(([href, label]) => (
             <Link
               key={href}
@@ -282,7 +288,7 @@ export default function Home({
                 <div className="flex flex-col gap-5">
                   <div className="flex flex-col items-start gap-3 border-b border-white/[0.04] pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 font-display">
+                      <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 font-display">
                         <span className={`p-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] ${section.iconColor || 'text-brand-primary'}`}>
                           <Icon className="w-5 h-5" />
                         </span>
@@ -292,7 +298,7 @@ export default function Home({
                             {section.badge}
                           </span>
                         )}
-                      </h3>
+                      </h2>
                       <p className="text-xs text-slate-400 mt-1 pl-1">{section.description}</p>
                     </div>
                     <Link
@@ -450,7 +456,7 @@ export default function Home({
                 className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-3xl bg-luxury-900/40"
               >
                 <RefreshCw className="w-10 h-10 text-slate-600 mb-3 animate-spin" />
-                <h4 className="text-base font-bold text-white mb-1">{home.emptyTitle || 'No Titles Found'}</h4>
+                <h3 className="text-base font-bold text-white mb-1">{home.emptyTitle || 'No Titles Found'}</h3>
                 <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
                   {home.emptyDescription || 'Try selecting a different filter or search term.'}
                 </p>
@@ -489,12 +495,12 @@ export default function Home({
             <div className="absolute top-0 right-0 w-80 h-80 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-              <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5 font-display">
+              <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5 font-display">
                 <span className="p-1.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-400">
                   <Clock className="w-5 h-5" />
                 </span>
                 {home.subtitleTitle || 'Recent Subtitle Releases'}
-              </h3>
+              </h2>
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:inline-block">
                 Live Community Feed
               </span>
@@ -524,7 +530,7 @@ export default function Home({
                             href={`/${sub.media.type}/${permalinkSlug(sub.media)}`}
                             className="text-xs sm:text-sm font-black text-white group-hover:text-brand-primary transition truncate max-w-[240px] sm:max-w-[420px]"
                           >
-                            {sub.media.title}
+                            {cleanMediaTitle(sub.media.title) || sub.media.title}
                           </Link>
                         ) : (
                           <span className="text-xs font-black text-white uppercase">Unknown Title</span>

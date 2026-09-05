@@ -550,6 +550,9 @@ $routes = [
         echo json_encode(['message' => 'Admin logged out successfully']);
     }]],
     ['GET', '/api/admin/me', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AuthController::getAdminMe']],
+    ['GET', '/api/admin/profile', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AuthController::getAdminMe']],
+    ['PUT', '/api/admin/profile', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AuthController::updateAdminProfile']],
+    ['POST', '/api/admin/profile/avatar', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AuthController::uploadAdminAvatar']],
 
     // Admin Dashboard
     ['GET', '/api/admin/dashboard', [

@@ -138,67 +138,125 @@ class DramaController {
     }
 
     public static function getDramaStructure($id) {
-        $db = Database::getInstance();
-        $drama = $db->findOne('dramas', ['_id' => $id]);
-        if (!$drama) {
-            http_response_code(404);
-            echo json_encode(['message' => 'Drama not found']);
-            return;
-        }
-
-        $seasons = $db->find('seasons', ['dramaId' => $id], ['sort' => ['seasonNumber' => 1]]);
-        $seasonIds = array_map(function($s) { return $s['_id']; }, $seasons);
-
-        $episodes = [];
-        if (!empty($seasonIds)) {
-            $episodes = $db->find('episodes', [
-                '$or' => [
-                    ['dramaId' => $id],
-                    ['seasonId' => ['$in' => $seasonIds]]
-                ]
-            ], ['sort' => ['seasonNumber' => 1, 'episodeNumber' => 1]]);
-        } else {
-            $episodes = $db->find('episodes', ['dramaId' => $id], ['sort' => ['episodeNumber' => 1]]);
-        }
-
-        // Fetch subtitles attached to drama and these episodes
-        $episodeIds = array_map(function($e) { return $e['_id']; }, $episodes);
-        $allIds = array_merge([$id], $episodeIds);
-        $subtitles = !empty($allIds) ? $db->find('subtitles', ['mediaId' => ['$in' => $allIds]]) : [];
-        
-        $subsByMediaId = [];
-        $subsByEpNum = [];
-        foreach ($subtitles as $sub) {
-            $mId = (string)($sub['mediaId'] ?? '');
-            $subsByMediaId[$mId][] = $sub;
-            if (isset($sub['episodeNumber']) && $sub['episodeNumber'] !== null) {
-                $sNum = (int)($sub['seasonNumber'] ?? 1);
-                $eNum = (int)$sub['episodeNumber'];
-                $subsByEpNum["{$sNum}_{$eNum}"][] = $sub;
-            }
-        }
-
-        foreach ($episodes as &$ep) {
-            $epId = (string)$ep['_id'];
-            $epNum = (int)($ep['episodeNumber'] ?? 1);
-            $sNum = (int)($ep['seasonNumber'] ?? 1);
-
-            $epSubs = $subsByMediaId[$epId] ?? [];
-            if (empty($epSubs) && isset($subsByEpNum["{$sNum}_{$epNum}"])) {
-                $epSubs = $subsByEpNum["{$sNum}_{$epNum}"];
+        try {
+            $id = trim((string)$id);
+            $db = Database::getInstance();
+            $drama = $db->findOne('dramas', ['_id' => $id]);
+            if (!$drama) {
+                http_response_code(404);
+                echo json_encode(['message' => 'Drama not found']);
+                return;
             }
 
-            $ep['subtitles'] = $epSubs;
-            $ep['subtitleCount'] = count($epSubs);
-        }
-        unset($ep);
+            // Sort in PHP rather than casting JSON values in PostgreSQL. Some
+            // legacy TMDB imports contain an empty or non-numeric season value;
+            // a database-side INTEGER cast makes the entire Explorer request
+            // fail when just one such row is present.
+            $seasons = $db->find('seasons', ['dramaId' => $id]);
+            usort($seasons, function($a, $b) {
+                return (int)($a['seasonNumber'] ?? 0) <=> (int)($b['seasonNumber'] ?? 0);
+            });
 
-        header('Content-Type: application/json');
-        echo json_encode([
-            'drama' => $drama,
-            'seasons' => array_values($seasons),
-            'episodes' => array_values($episodes)
-        ]);
+            $seasonIds = [];
+            $seasonNumberById = [];
+            foreach ($seasons as $season) {
+                $seasonId = (string)($season['_id'] ?? '');
+                if ($seasonId === '') continue;
+                $seasonIds[] = $seasonId;
+                $seasonNumberById[$seasonId] = (int)($season['seasonNumber'] ?? 0);
+            }
+
+            // Fetch the two legacy relationship shapes independently and merge
+            // them here. This avoids the SQL/Mongo `$or` translation edge case
+            // and still includes old episodes that only have a seasonId.
+            $episodesById = [];
+            foreach ($db->find('episodes', ['dramaId' => $id]) as $episode) {
+                if (!empty($episode['_id'])) {
+                    $episodesById[(string)$episode['_id']] = $episode;
+                }
+            }
+            if (!empty($seasonIds)) {
+                foreach ($db->find('episodes', ['seasonId' => ['$in' => $seasonIds]]) as $episode) {
+                    if (!empty($episode['_id'])) {
+                        $episodesById[(string)$episode['_id']] = $episode;
+                    }
+                }
+            }
+            $episodes = array_values($episodesById);
+
+            usort($episodes, function($a, $b) use ($seasonNumberById) {
+                $aSeasonId = (string)($a['seasonId'] ?? '');
+                $bSeasonId = (string)($b['seasonId'] ?? '');
+                $aSeason = isset($a['seasonNumber'])
+                    ? (int)$a['seasonNumber']
+                    : ($seasonNumberById[$aSeasonId] ?? 0);
+                $bSeason = isset($b['seasonNumber'])
+                    ? (int)$b['seasonNumber']
+                    : ($seasonNumberById[$bSeasonId] ?? 0);
+
+                if ($aSeason !== $bSeason) return $aSeason <=> $bSeason;
+                return (int)($a['episodeNumber'] ?? 0) <=> (int)($b['episodeNumber'] ?? 0);
+            });
+
+            // Fetch subtitles attached to the drama and its episodes.
+            $episodeIds = array_values(array_map(function($episode) {
+                return (string)$episode['_id'];
+            }, $episodes));
+            $allIds = array_values(array_unique(array_merge([$id], $episodeIds)));
+            $subtitles = $db->find('subtitles', ['mediaId' => ['$in' => $allIds]]);
+
+            $subsByMediaId = [];
+            $subsByEpNum = [];
+            foreach ($subtitles as $sub) {
+                $mediaId = (string)($sub['mediaId'] ?? '');
+                if ($mediaId !== '') {
+                    $subsByMediaId[$mediaId][] = $sub;
+                }
+                if (isset($sub['episodeNumber']) && $sub['episodeNumber'] !== null) {
+                    $seasonNumber = (int)($sub['seasonNumber'] ?? 1);
+                    $episodeNumber = (int)$sub['episodeNumber'];
+                    $subsByEpNum["{$seasonNumber}_{$episodeNumber}"][] = $sub;
+                }
+            }
+
+            foreach ($episodes as &$episode) {
+                $episodeId = (string)$episode['_id'];
+                $seasonId = (string)($episode['seasonId'] ?? '');
+                $episodeNumber = (int)($episode['episodeNumber'] ?? 0);
+                $seasonNumber = isset($episode['seasonNumber'])
+                    ? (int)$episode['seasonNumber']
+                    : ($seasonNumberById[$seasonId] ?? 1);
+
+                $episodeSubtitles = $subsByMediaId[$episodeId] ?? [];
+                $numberKey = "{$seasonNumber}_{$episodeNumber}";
+                if (empty($episodeSubtitles) && isset($subsByEpNum[$numberKey])) {
+                    $episodeSubtitles = $subsByEpNum[$numberKey];
+                }
+
+                $episode['seasonNumber'] = $seasonNumber;
+                $episode['subtitles'] = array_values($episodeSubtitles);
+                $episode['subtitleCount'] = count($episodeSubtitles);
+            }
+            unset($episode);
+
+            $payload = [
+                'drama' => $drama,
+                'seasons' => array_values($seasons),
+                'episodes' => array_values($episodes)
+            ];
+            $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($encoded === false) {
+                throw new \RuntimeException('Unable to encode drama structure response');
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo $encoded;
+        } catch (\Throwable $e) {
+            error_log('getDramaStructure failed for ' . (string)$id . ': ' . $e->getMessage());
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['message' => 'Unable to load the season catalog right now.']);
+        }
     }
 
     public static function getAllDramas() {

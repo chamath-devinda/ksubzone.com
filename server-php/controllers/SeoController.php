@@ -56,7 +56,12 @@ class SeoController {
         header('Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
         echo "User-agent: *\n";
         echo "Allow: /\n";
+        echo "Disallow: /management\n";
         echo "Disallow: /management/\n";
+        echo "Disallow: /auth\n";
+        echo "Disallow: /auth/\n";
+        echo "Disallow: /profile\n";
+        echo "Disallow: /profile/\n";
         echo "Disallow: /api/\n\n";
         echo "Sitemap: " . self::$siteUrl . "/sitemap.xml\n";
     }
@@ -238,6 +243,7 @@ class SeoController {
                 ['path' => '/dramas', 'priority' => '0.9', 'changefreq' => 'daily'],
                 ['path' => '/genres', 'priority' => '0.7', 'changefreq' => 'weekly'],
                 ['path' => '/articles', 'priority' => '0.7', 'changefreq' => 'daily'],
+                ['path' => '/sitemap', 'priority' => '0.5', 'changefreq' => 'weekly'],
                 ['path' => '/about', 'priority' => '0.4', 'changefreq' => 'monthly'],
                 ['path' => '/contact', 'priority' => '0.4', 'changefreq' => 'monthly'],
             ];

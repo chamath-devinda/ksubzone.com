@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import GlassCard from '@/components/ui/GlassCard';
 import { Tv } from 'lucide-react';
+import { permalinkSlug } from '@/utils/slug';
+import { serializeJsonLd } from '@/utils/seo';
 
 async function getGenreData(genreSlug) {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
@@ -62,7 +64,7 @@ export default async function DramaGenrePage({ params }) {
         "@type": "ListItem",
         "position": 2,
         "name": "Dramas",
-        "item": "https://www.ksubzone.com/search?category=drama"
+        "item": "https://www.ksubzone.com/dramas"
       },
       {
         "@type": "ListItem",
@@ -80,7 +82,7 @@ export default async function DramaGenrePage({ params }) {
     "itemListElement": dramas.map((d, idx) => ({
       "@type": "ListItem",
       "position": idx + 1,
-      "url": `https://www.ksubzone.com/drama/${d.slug || d._id}`,
+      "url": `https://www.ksubzone.com/drama/${permalinkSlug(d)}`,
       "name": d.title
     }))
   };
@@ -89,11 +91,11 @@ export default async function DramaGenrePage({ params }) {
     <div className="min-h-screen bg-transparent pb-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemList) }}
       />
 
       <section className="relative overflow-hidden border-b border-white/5">
@@ -103,7 +105,7 @@ export default async function DramaGenrePage({ params }) {
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-brand-primary">
               <Tv className="w-3.5 h-3.5" /> Genre Catalog
             </span>
-            <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            <h1 className="mt-4 text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight font-display">
               {genreName} Korean Dramas
             </h1>
             <p className="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
@@ -113,7 +115,7 @@ export default async function DramaGenrePage({ params }) {
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {dramas.length === 0 ? (
           <div className="glass-panel p-16 rounded-3xl border border-white/5 text-center text-slate-400">
             <p className="text-sm font-bold">No dramas found in this genre yet.</p>
@@ -126,7 +128,7 @@ export default async function DramaGenrePage({ params }) {
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

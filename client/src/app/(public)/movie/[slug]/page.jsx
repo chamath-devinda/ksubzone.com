@@ -4,8 +4,11 @@ import { notFound } from 'next/navigation';
 import Detail from '@/features/media/pages/Detail';
 import {
   buildMediaMetaTitle,
+  buildMediaMetaDescription,
+  generateMediaKeywords,
   cleanMediaText,
   cleanMediaTitle,
+  buildAggregateRating,
   serializeJsonLd,
   SITE_URL,
 } from '@/utils/seo';
@@ -13,9 +16,6 @@ import {
 const getMovie = cache(async (slug) => {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   try {
-    // Subtitle availability changes independently from the movie metadata.
-    // Keep the server-rendered snapshot short lived even if on-demand
-    // revalidation is delayed by the hosting layer.
     const res = await fetch(`${backendUrl}/api/media/movies/${slug}`, { next: { revalidate: 60 } });
     if (res.ok) {
       return res.json();
@@ -34,22 +34,23 @@ export async function generateMetadata({ params }) {
     if (media) {
       const cleanTitle = cleanMediaTitle(media.title);
       const canonicalUrl = `${SITE_URL}/movie/${slug}`;
-      const rawKeywords = Array.isArray(media.seoKeywords) ? media.seoKeywords : (media.seoKeywords ? [media.seoKeywords] : []);
+      const title = buildMediaMetaTitle(media);
       const description = cleanMediaText(
-        media.metaDescription || `${media.description || cleanTitle} Sinhala and English subtitle downloads.`,
+        media.metaDescription || buildMediaMetaDescription(media),
         media.title,
         cleanTitle
       );
+      const keywords = generateMediaKeywords(media);
+
       return {
-        title: buildMediaMetaTitle(media),
+        title,
         description,
-        keywords: (rawKeywords.length ? rawKeywords : (cleanTitle ? [cleanTitle.toLowerCase()] : []))
-          .map((keyword) => cleanMediaText(keyword, media.title, cleanTitle)),
+        keywords,
         alternates: {
           canonical: canonicalUrl,
         },
         openGraph: {
-          title: buildMediaMetaTitle(media),
+          title,
           description,
           url: canonicalUrl,
           images: media.poster ? [{ url: media.poster }] : [],
@@ -57,7 +58,7 @@ export async function generateMetadata({ params }) {
         },
         twitter: {
           card: 'summary_large_image',
-          title: buildMediaMetaTitle(media),
+          title,
           description,
           images: media.poster ? [media.poster] : [],
         },
@@ -67,8 +68,8 @@ export async function generateMetadata({ params }) {
     console.error('Error generating movie metadata:', e);
   }
   return {
-    title: 'Movie Subtitles | KSubZone',
-    description: 'Download synchronized Sinhala & English subtitles.',
+    title: 'Korean Movie Sinhala Subtitles | KSubZone',
+    description: 'Download synchronized Sinhala & English subtitles for Korean blockbuster movies.',
   };
 }
 
@@ -81,26 +82,26 @@ export default async function MovieDetailPage({ params }) {
   const canonicalUrl = `${SITE_URL}/movie/${slug}`;
   const cleanTitle = cleanMediaTitle(media.title);
   const cleanDescription = cleanMediaText(
-    media.metaDescription || media.description || `${cleanTitle} Sinhala and English subtitle downloads.`,
+    media.metaDescription || buildMediaMetaDescription(media),
     media.title,
     cleanTitle
   );
 
-  const breadcrumbs = media ? {
+  const breadcrumbs = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
       {
         "@type": "ListItem",
         "position": 1,
-        "name": "KSubZone",
+        "name": "Home",
         "item": `${SITE_URL}/`
       },
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "Movies",
-        "item": "https://www.ksubzone.com/movies"
+        "name": "Korean Movies",
+        "item": `${SITE_URL}/movies`
       },
       {
         "@type": "ListItem",
@@ -109,7 +110,7 @@ export default async function MovieDetailPage({ params }) {
         "item": canonicalUrl
       }
     ]
-  } : null;
+  };
 
   const movieSchema = {
     ...(media.schemaMarkup || {}),
@@ -118,23 +119,30 @@ export default async function MovieDetailPage({ params }) {
     "@id": `${canonicalUrl}#movie`,
     "url": canonicalUrl,
     "name": cleanTitle,
+    "alternateName": [
+      `${cleanTitle} Sinhala Subtitles`,
+      `${cleanTitle} සිංහල උපසිරැසි`,
+      cleanTitle
+    ],
     "description": cleanDescription,
     "mainEntityOfPage": canonicalUrl,
+    "inLanguage": ["ko", "en", "si"],
+    "genre": Array.isArray(media.keywords) ? media.keywords : (media.genre ? [media.genre] : ['Korean Movie']),
   };
-  if (movieSchema) {
-    if (media.poster) {
-      movieSchema.image = media.poster;
-    }
-    if (media.cast && media.cast.length > 0) {
-      movieSchema.actor = media.cast.map(c => ({
-        "@type": "Person",
-        "name": c.name
-      }));
-    }
-    if (movieSchema.aggregateRating && !Number(movieSchema.aggregateRating.ratingCount || movieSchema.aggregateRating.reviewCount)) {
-      delete movieSchema.aggregateRating;
-    }
+
+  if (media.poster) {
+    movieSchema.image = media.poster;
   }
+  if (media.cast && media.cast.length > 0) {
+    movieSchema.actor = media.cast.map(c => ({
+      "@type": "Person",
+      "name": c.name
+    }));
+  }
+  const aggregateRating = buildAggregateRating(media);
+  if (aggregateRating) movieSchema.aggregateRating = aggregateRating;
+  else delete movieSchema.aggregateRating;
+
 
   const faqSchema = media?.faq && media.faq.length > 0 ? {
     "@context": "https://schema.org",

@@ -24,7 +24,20 @@ NEXT_PUBLIC_POPUNDER_COOLDOWN_MS=43200000
 
 `NEXT_PUBLIC_AD_MODE` accepts `ADSTERRA_ONLY`, `MONETAG_ONLY`, `HYBRID`, `AB_TEST`, or `OFF`.
 
-The responsive primary slot loads only one approved unit: 320x50 below 768px and 728x90 from 768px upward. The 300x250 unit is a separate in-content format. The 160x600 unit is shown only in the dedicated `xl` desktop rail on movie/drama detail pages; it is never requested on mobile or episode pages. Set any corresponding environment switch to `false` to disable that unit, or set `NEXT_PUBLIC_ADS_ENABLED=false` / `NEXT_PUBLIC_AD_MODE=OFF` to disable all advertising.
+The responsive primary slot loads only one approved unit: 320x50 below 768px and 728x90 from 768px upward. The 300x250 unit is a separate in-content format. The 160x600 unit is shown only in dedicated wide-desktop rails; it is never requested on mobile. A lazy footer banner is enabled on catalog, detail, article, and home routes. Set any corresponding environment switch to `false` to disable that unit, or set `NEXT_PUBLIC_ADS_ENABLED=false` / `NEXT_PUBLIC_AD_MODE=OFF` to disable all advertising.
+
+## Placement map
+
+| Placement | Routes | Rationale |
+| --- | --- | --- |
+| `home_below_hero` | Home | High viewability after the primary discovery experience, without covering hero actions. |
+| `home_content_banner`, `home_content_square`, `home_content_native` | Home | Separates complete catalog rows so ads never masquerade as poster cards. |
+| `listing_content_banner` | Movies, dramas, genres, article categories | Sits after filters and before results; the catalog controls remain uninterrupted. |
+| `media_below_hero`, `media_after_description` | Movie and drama details | Uses natural content breaks after title metadata and synopsis. |
+| `media_before_subtitles`, `media_after_downloads` | Movie and drama details | The subtitle anchor lands on the download section after the first slot, and the direct download controls are never overlaid or wrapped by ads. |
+| `article_intro_square`, `article_mid_native` | Articles | Inserted only between editorial blocks. |
+| `*_sidebar_left`, `*_sidebar_right` | Home and supported detail routes | Dedicated 160x600 rails appear only at 1600px and wider. |
+| `site_footer_banner` | Monetized public routes | Low-pressure final placement after page content and before footer navigation. |
 
 ## Official provider code locations
 

@@ -4,77 +4,40 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Star, Calendar, Globe, Download, Languages, Clock3 } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, imageFallbackFor } from '@/utils/mediaImages';
 import { formatTimeAgo } from '@/utils/timeAgo';
+import { cleanMediaTitle } from '@/utils/seo';
 
 export default function GlassCard({ item, type, priority = false }) {
   const mediaType = type || (item.seasons ? 'drama' : 'movie');
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
   const posterImage = getMediaImage(item, 'card');
+  const displayTitle = (item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles');
   // This activity clock only moves when the title or one of its subtitles is
   // imported. Generic record updates (views, admin edits, etc.) must not affect it.
   const timeAgo = formatTimeAgo(item.contentUpdatedAt || item.createdAt);
   const [imgSrc, setImgSrc] = useState(posterImage);
-  const cardRef = useRef(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const prefetchedRef = useRef(false);
-
-  // 3D Parallax Tilt calculation (Inspired by img2threejs & Taste-Skill micro-motion)
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 25 });
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 25 });
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['7deg', '-7deg']);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-7deg', '7deg']);
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / rect.width - 0.5;
-    const mouseY = (e.clientY - rect.top) / rect.height - 0.5;
-    x.set(mouseX);
-    y.set(mouseY);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
 
   useEffect(() => {
     setImgSrc(posterImage);
   }, [posterImage]);
 
-  // Prefetch detail route when card enters viewport (IntersectionObserver)
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el || prefetchedRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !prefetchedRef.current) {
-          prefetchedRef.current = true;
-          router.prefetch(detailsUrl);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [detailsUrl, router]);
-
-  // Also prefetch immediately on hover for instant feel
-  const handleMouseEnter = useCallback(() => {
+  const triggerPrefetch = useCallback(() => {
     if (!prefetchedRef.current) {
       prefetchedRef.current = true;
       router.prefetch(detailsUrl);
     }
   }, [detailsUrl, router]);
+
+  const handleClick = useCallback(() => {
+    setIsNavigating(true);
+  }, []);
 
   const subtitleSummary = item.subtitleSummary || {};
   const subtitleLanguages = subtitleSummary.languages || [];
@@ -94,20 +57,16 @@ export default function GlassCard({ item, type, priority = false }) {
   return (
     <Link 
       href={detailsUrl} 
-      className="block relative group w-full min-w-0 perspective-1000 select-none" 
-      ref={cardRef} 
-      onMouseEnter={handleMouseEnter}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      prefetch={true}
+      className={`block relative group w-full min-w-0 perspective-1000 select-none cursor-pointer ${isNavigating ? 'pointer-events-none' : ''}`} 
+      onMouseEnter={triggerPrefetch}
+      onPointerDown={triggerPrefetch}
+      onTouchStart={triggerPrefetch}
+      onClick={handleClick}
     >
-      <motion.div
-        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
-        whileHover={{ y: -6, scale: 1.025 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="relative flex w-full min-w-0 flex-col"
-      >
+      <div className="relative flex w-full min-w-0 flex-col transition-transform duration-300 ease-out group-hover:-translate-y-1.5">
         {/* Poster Image Container */}
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-luxury-900 border border-white/[0.08] shadow-lg shadow-black/60 group-hover:shadow-[0_12px_36px_-6px_rgba(139,92,246,0.3)] group-hover:border-brand-primary/40 transition-all duration-500">
+        <div className={`relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-luxury-900 border border-white/[0.08] shadow-lg shadow-black/60 group-hover:shadow-[0_12px_36px_-6px_rgba(139,92,246,0.3)] group-hover:border-brand-primary/40 transition-all duration-500 ${isNavigating ? 'ring-2 ring-brand-primary border-brand-primary' : ''}`}>
           
           {/* Ambient Lighting Sheen */}
           <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/20 to-transparent z-10 opacity-75 group-hover:opacity-90 transition-opacity duration-300" />
@@ -116,7 +75,7 @@ export default function GlassCard({ item, type, priority = false }) {
           {/* Poster Image */}
           <Image
             src={imgSrc}
-            alt={item.title || 'Media Poster'}
+            alt={`${displayTitle}${releaseYear ? ` (${releaseYear})` : ''} Sinhala subtitles poster`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
             className="w-full h-full object-cover object-center transform scale-100 group-hover:scale-108 transition-transform duration-700 ease-out"
@@ -133,6 +92,9 @@ export default function GlassCard({ item, type, priority = false }) {
           <div className="absolute top-1.5 left-1.5 right-1.5 sm:top-2.5 sm:left-2.5 sm:right-2.5 flex items-start justify-between gap-1 z-20">
             {/* Left Status Tags */}
             <div className="flex flex-col items-start gap-1 flex-shrink-0">
+              <span className="h-5 px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border border-brand-primary/40 bg-luxury-950/90 backdrop-blur-md text-brand-primary text-[8px] sm:text-[9px] font-black uppercase tracking-wide shadow-sm">
+                SRT
+              </span>
               {item.status === 'Upcoming' && (
                 <span className="h-5 max-w-[74px] sm:max-w-none px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border border-indigo-500/40 bg-indigo-950/80 backdrop-blur-md text-indigo-300 text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider shadow-sm truncate">
                   Upcoming
@@ -197,7 +159,7 @@ export default function GlassCard({ item, type, priority = false }) {
 
             {/* Title */}
             <h3 className="text-sm font-black text-white leading-snug tracking-tight drop-shadow-md line-clamp-2">
-              {item.title}
+              {displayTitle}
             </h3>
 
             {/* Meta details */}
@@ -222,15 +184,24 @@ export default function GlassCard({ item, type, priority = false }) {
                 </span>
               )) : (
                 <span className="px-2 py-0.5 rounded-lg bg-white/10 border border-white/10 text-slate-300 text-[9px] font-black uppercase">
-                  Sinhala & English
+                  Sinhala
                 </span>
               )}
             </div>
 
             {/* Action button */}
-            <div className="action-button-fill mt-1 py-1.5 bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary-hover hover:to-purple-500 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-brand-primary/25 transition-all duration-200">
-              <Download className="w-3.5 h-3.5 fill-current" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Download Subs</span>
+            <div className={`action-button-fill mt-1 py-1.5 bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary-hover hover:to-purple-500 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-brand-primary/25 transition-all duration-200 ${isNavigating ? 'opacity-90 ring-1 ring-white/50' : ''}`}>
+              {isNavigating ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Opening...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 fill-current" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Download Subs</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -238,7 +209,7 @@ export default function GlassCard({ item, type, priority = false }) {
         {/* Default Title & Meta below poster */}
         <div className="mt-3 px-1 flex flex-col gap-1 text-left">
           <h3 className="min-h-8 text-xs font-black text-slate-100 group-hover:text-brand-primary transition-colors line-clamp-2 leading-tight tracking-tight">
-            {item.title}
+            {displayTitle}
           </h3>
           <div className="flex min-w-0 items-center justify-between gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
             <span className="flex-shrink-0 text-slate-500">{releaseYear || 'TBA'}</span>
@@ -250,7 +221,7 @@ export default function GlassCard({ item, type, priority = false }) {
           </div>
         </div>
 
-      </motion.div>
+      </div>
     </Link>
   );
 }

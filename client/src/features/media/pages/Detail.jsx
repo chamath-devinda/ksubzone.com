@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/services/api/apiClient';
 import { motion } from 'framer-motion';
-import { Star, Plus, Check, Heart, Upload, Download, Film, Tv, Flame, Languages, ShieldCheck, Clock, CheckCircle2, MessageSquare, ThumbsUp, PlayCircle, Eye, CalendarClock } from 'lucide-react';
+import { Star, Plus, Check, Heart, Upload, Download, Film, Tv, Flame, Languages, ShieldCheck, Clock, CheckCircle2, MessageSquare, ThumbsUp, PlayCircle, Eye, CalendarClock, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import SeoTags from '@/components/seo/SeoTags';
 
@@ -16,6 +16,7 @@ import { getMediaImage, handleImageFallback } from '@/utils/mediaImages';
 import { downloadSubtitle } from '@/utils/subtitleDownload';
 import AdSlot from '@/components/ads/AdSlot';
 import SideAdLayout from '@/components/ads/SideAdLayout';
+import { cleanMediaText, cleanMediaTitle } from '@/utils/seo';
 
 export default function Detail({ type = 'Movie', initialData, topOnly = false }) {
   const { slug } = useParams();
@@ -56,10 +57,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     },
     initialData,
     staleTime: 60_000,
-    // Detail pages can be statically rendered before an admin publishes a
-    // subtitle. Always reconcile that snapshot with the live API on mount so
-    // an old `0 Ready` payload cannot remain in the browser query cache.
-    refetchOnMount: topOnly ? false : 'always'
+    refetchOnMount: false
   });
 
   const media = type === 'Drama' ? data?.drama : data?.movie;
@@ -381,6 +379,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
   };
 
   const imdbRating = media.imdbRating || media.tmdbRating || 0;
+  const displayTitle = cleanMediaTitle(media.title) || media.title;
+  const releaseYear = media.releaseDate ? new Date(media.releaseDate).getFullYear() : null;
+  const synopsis = cleanMediaText(media.synopsisRewrite || media.description, media.title, displayTitle);
+  const storyOverview = cleanMediaText(media.storyOverview, media.title, displayTitle);
   const mediaPermalink = permalinkSlug(media);
   const posterImage = getMediaImage(media, 'poster');
   const backdropImage = getMediaImage(media, 'backdrop');
@@ -435,9 +437,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       {/* Dynamic AI SEO Optimization tags */}
       {!topOnly && (
         <SeoTags
-          title={media.metaTitle || `${media.title} Sinhala & English Subtitles | KSubZone`}
-          description={media.metaDescription || `${media.description || media.title} Sinhala and English subtitle downloads.`}
-          keywords={media.seoKeywords || (media.title ? [media.title.toLowerCase()] : [])}
+          title={media.metaTitle || `${displayTitle} Sinhala & English Subtitles | KSubZone`}
+          description={media.metaDescription || `${synopsis || displayTitle} Sinhala and English subtitle downloads.`}
+          keywords={media.seoKeywords || (displayTitle ? [displayTitle.toLowerCase()] : [])}
           canonical={`https://www.ksubzone.com/${type.toLowerCase()}/${mediaPermalink}`}
           image={media.poster}
           schemaMarkup={media.schemaMarkup}
@@ -448,7 +450,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       <div className="relative w-full h-[42vh] min-h-[300px] sm:h-[70vh] lg:h-[85vh] overflow-hidden">
         <img
           src={backdropImage}
-          alt={media.title}
+          alt={`${displayTitle} backdrop`}
           fetchPriority="high"
           decoding="async"
           className="w-full h-full object-cover object-top"
@@ -467,7 +469,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             <div className="glass-panel border border-white/10 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl aspect-[2/3] w-full">
               <img
                 src={posterImage}
-                alt={media.title}
+                alt={`${displayTitle}${releaseYear ? ` (${releaseYear})` : ''} poster`}
                 loading="lazy"
                 decoding="async"
                 className="w-full h-full object-cover"
@@ -499,6 +501,16 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
           {/* RIGHT: DETAILS CONTROLLER */}
           <div className="min-w-0 md:col-span-3 flex flex-col gap-6">
             <div>
+              <nav aria-label="Breadcrumb" className="mb-4 flex min-w-0 items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <Link href="/" className="transition hover:text-white">Home</Link>
+                <ChevronRight className="h-3 w-3 flex-shrink-0 text-slate-600" aria-hidden="true" />
+                <Link href={type === 'Drama' ? '/dramas' : '/movies'} className="transition hover:text-white">
+                  {type === 'Drama' ? 'Dramas' : 'Movies'}
+                </Link>
+                <ChevronRight className="h-3 w-3 flex-shrink-0 text-slate-600" aria-hidden="true" />
+                <span aria-current="page" className="truncate text-brand-primary">{displayTitle}</span>
+              </nav>
+
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 {type === 'Drama' && mediaSubtitleSummary.totalSubtitles > 0 && (
                   <span className={`px-2.5 py-0.5 border text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1 ${
@@ -532,10 +544,15 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">{media.title}</h1>
-              {media.originalTitle && media.originalTitle !== media.title && (
-                <p className="text-lg font-semibold text-slate-400 mt-1">{media.originalTitle}</p>
-              )}
+              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight font-display">
+                {displayTitle}{releaseYear ? ` (${releaseYear})` : ''} Sinhala Subtitles
+              </h1>
+              <p className="text-sm sm:text-base font-bold text-brand-primary/90 mt-1.5 flex items-center gap-2 flex-wrap">
+                <span>{displayTitle} සිංහල උපසිරැසි (SRT / VTT / ASS)</span>
+                {media.originalTitle && media.originalTitle !== displayTitle && (
+                  <span className="text-slate-400 font-normal">({media.originalTitle})</span>
+                )}
+              </p>
 
               {/* Clickable Genre Badges */}
               {media.keywords && media.keywords.length > 0 && (
@@ -560,7 +577,15 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-xs font-semibold text-slate-400">
                 <span>{media.releaseDate ? new Date(media.releaseDate).getFullYear() : '2026'}</span>
                 <span>•</span>
-                <span>{type === 'Drama' ? 'TV Show' : (media.runtime ? (Math.floor(media.runtime / 60) > 0 ? (media.runtime % 60 > 0 ? `${Math.floor(media.runtime / 60)}h ${media.runtime % 60}m` : `${Math.floor(media.runtime / 60)}h`) : `${media.runtime} Min`) : 'Feature Length')}</span>
+                <span>
+                  {type === 'Drama'
+                    ? 'TV Series'
+                    : (media.runtime
+                        ? (Math.floor(media.runtime / 60) > 0
+                            ? `${Math.floor(media.runtime / 60)}h ${media.runtime % 60}m`
+                            : `${media.runtime}m`)
+                        : 'Feature Film')}
+                </span>
                 <span>•</span>
                 <span className="uppercase">{media.country}</span>
                 <span>•</span>
@@ -568,17 +593,46 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 <span>•</span>
                 <span>{media.viewCount || 0} Views</span>
               </div>
+
+              {/* PROMINENT HERO DOWNLOAD ACTION BAR */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <a
+                  href="#subtitles"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('subtitles')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="min-h-12 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:brightness-110 text-white text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl shadow-brand-primary/30 ring-1 ring-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                >
+                  <Download className="w-4 h-4 animate-bounce" />
+                  <span>Download Sinhala Subtitle</span>
+                </a>
+
+                {media.trailerUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setPlayTrailer(true)}
+                    className="min-h-12 px-5 rounded-2xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/25 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition backdrop-blur-xl"
+                  >
+                    <PlayCircle className="w-4 h-4 text-brand-secondary" />
+                    <span>Trailer</span>
+                  </button>
+                )}
+              </div>
             </div>
+
+            {!topOnly && <AdSlot slotId="media_below_hero" className="my-2" />}
+
             {/* AI SEO Unique Rewrite Block */}
             <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 text-slate-300 flex flex-col gap-4 text-xs sm:text-sm">
               <div>
                 <h2 className="font-extrabold text-white text-sm sm:text-base uppercase tracking-wider mb-2">Synopsis</h2>
-                <p className="leading-relaxed speakable-synopsis">{media.synopsisRewrite || media.description}</p>
+                <p className="leading-relaxed speakable-synopsis">{synopsis}</p>
               </div>
               <hr className="border-white/5" />
               <div>
                 <h2 className="font-extrabold text-white text-sm uppercase tracking-wider mb-2">Story Deep-Dive</h2>
-                <p className="leading-relaxed text-slate-400">{media.storyOverview}</p>
+                <p className="leading-relaxed text-slate-400">{storyOverview}</p>
               </div>
             </div>
 
@@ -592,7 +646,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   <tbody className="divide-y divide-white/[0.02]">
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider w-1/3">Title</td>
-                      <td className="px-4 py-3 text-white font-semibold">{media.title}</td>
+                      <td className="px-4 py-3 text-white font-semibold">{displayTitle}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider">Director</td>
@@ -674,7 +728,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   {playTrailer ? (
                     <iframe
                       src={getEmbedUrl(media.trailer) + (getEmbedUrl(media.trailer).includes('?') ? '&autoplay=1' : '?autoplay=1')}
-                      title={`${media.title} Official Trailer`}
+                      title={`${displayTitle} official trailer`}
                       className="absolute inset-0 w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
@@ -686,7 +740,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     >
                       <img
                         src={backdropImage}
-                        alt={`${media.title} Trailer Cover`}
+                        alt={`${displayTitle} trailer cover`}
                         loading="lazy"
                         decoding="async"
                         className="w-full h-full object-cover brightness-75 group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -904,15 +958,15 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 ) : (
                   <div className="flex flex-col gap-4">
                     {standaloneSubtitles.map((sub) => {
-                      const cleanMediaTitle = (media.title || 'Subtitle').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                      const downloadTitle = (displayTitle || 'Subtitle').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
                       let customFileName = '';
                       const subLang = sub.language || 'Sinhala';
                       if (media.type === 'movie' || (!sub.seasonNumber && !sub.episodeNumber)) {
-                        customFileName = `${cleanMediaTitle}_${subLang}.${sub.format || 'srt'}`;
+                        customFileName = `${downloadTitle}_${subLang}.${sub.format || 'srt'}`;
                       } else {
                         const formattedSeason = String(sub.seasonNumber || 1).padStart(2, '0');
                         const formattedEpisode = String(sub.episodeNumber || 1).padStart(2, '0');
-                        customFileName = `${cleanMediaTitle}_S${formattedSeason}_E${formattedEpisode}_${subLang}.${sub.format || 'srt'}`;
+                        customFileName = `${downloadTitle}_S${formattedSeason}_E${formattedEpisode}_${subLang}.${sub.format || 'srt'}`;
                       }
 
                       return (
@@ -920,6 +974,19 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                           key={sub._id}
                           className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-luxury-900/70 border border-white/10 flex flex-col items-center justify-center text-center gap-4 shadow-2xl backdrop-blur-xl"
                         >
+                          {/* Format Badges */}
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            <span className="px-3 py-1 rounded-full bg-brand-primary/20 border border-brand-primary/40 text-brand-primary text-[10px] font-black uppercase">
+                              .{sub.format?.toUpperCase() || 'SRT'} FORMAT
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black uppercase">
+                              සිංහල උපසිරැසි (UTF-8)
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 text-[10px] font-extrabold uppercase">
+                              1080p / 720p SYNC
+                            </span>
+                          </div>
+
                           {/* Release Compatibility Notice */}
                           <p className="text-xs sm:text-sm font-semibold text-slate-300 max-w-lg leading-relaxed">
                             {sub.releaseNotes 
@@ -972,6 +1039,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             )}
             </div>
 
+            {/* Post-Download Safe Ad Placement (Compliant with AdSense / Ezoic) */}
+            {!topOnly && <AdSlot slotId="media_after_downloads" className="my-6" />}
+
             {/* Visual FAQ Section (AEO / GEO optimized) */}
             {media.faq && media.faq.length > 0 && (
               <div className="flex flex-col gap-6 text-left speakable-faq-section">
@@ -986,7 +1056,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                       className="group rounded-2xl border border-white/5 bg-white/[0.01] p-4 [&_summary::-webkit-details-marker]:hidden cursor-pointer hover:border-brand-primary/20 transition-all duration-300"
                     >
                       <summary className="flex items-center justify-between gap-1.5 text-slate-200">
-                        <h3 className="text-sm font-bold text-white leading-snug">{item.question}</h3>
+                        <h3 className="text-sm font-bold text-white leading-snug">{cleanMediaText(item.question, media.title, displayTitle)}</h3>
                         <span className="shrink-0 rounded-full bg-white/5 p-1.5 text-slate-400 group-open:rotate-180 transition duration-300">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1001,7 +1071,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                         </span>
                       </summary>
                       <div className="mt-4 leading-relaxed text-xs sm:text-sm text-slate-300 border-t border-white/5 pt-3">
-                        <p>{item.answer}</p>
+                        <p>{cleanMediaText(item.answer, media.title, displayTitle)}</p>
                       </div>
                     </details>
                   ))}

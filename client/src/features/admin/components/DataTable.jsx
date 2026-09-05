@@ -79,7 +79,7 @@ export default function DataTable({
     <div className="space-y-3.5">
       {/* Search & Filter Toolbar */}
       {(searchKey || filterComponent) && (
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between border border-white/[0.06] bg-[#11131A] p-2.5 sm:p-3 rounded-xl shadow-sm">
+        <div className="dashstack-card doit-table-toolbar flex flex-col sm:flex-row gap-3 items-center justify-between p-3.5 rounded-[20px]">
           {searchKey && (
             <div className="relative w-full sm:max-w-md">
               <input
@@ -90,9 +90,9 @@ export default function DataTable({
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-9 pl-9 pr-3.5 bg-[#08090D] border border-white/[0.08] rounded-lg focus:border-violet-500 outline-none text-slate-100 text-xs transition placeholder:text-slate-500"
+                className="w-full h-9.5 pl-9 pr-3.5 bg-[#F5F6FA] dark:bg-[#1B2431] border border-[#EAEBF0] dark:border-[#313D4F] rounded-xl focus:border-[#490570] focus:ring-2 focus:ring-[#490570]/20 outline-none text-[#202224] dark:text-slate-100 text-xs transition placeholder:text-slate-400"
               />
-              <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             </div>
           )}
           
@@ -105,7 +105,7 @@ export default function DataTable({
       )}
 
       {/* Main Grid View / Table */}
-      <div className="border border-white/[0.06] bg-[#11131A] rounded-xl overflow-hidden shadow-sm">
+      <div className="dashstack-card doit-data-table rounded-[22px] overflow-hidden">
         {loading ? (
           <Skeleton.Table rows={pageSize} />
         ) : paginatedData.length === 0 ? (
@@ -118,28 +118,28 @@ export default function DataTable({
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-[#151821] text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  <tr className="border-b border-[#EAEBF0] dark:border-[#313D4F] bg-[#F9FAFB] dark:bg-[#1B2431]/70 text-[11px] font-bold uppercase tracking-wider text-[#404040] dark:text-slate-300">
                     {columns.map((col) => (
                       <th
                         key={col.key}
-                        className={`px-4 py-3 ${col.sortable ? 'cursor-pointer hover:text-slate-200 select-none' : ''} ${col.headerAlign || ''}`}
+                        className={`px-4 py-3.5 ${col.sortable ? 'cursor-pointer hover:text-[#B85ADB] select-none' : ''} ${col.headerAlign || ''}`}
                         onClick={() => col.sortable && handleSort(col.key)}
                       >
                         <div className={`flex items-center gap-1.5 ${col.headerAlign === 'text-right' ? 'justify-end' : ''}`}>
                           {col.label}
                           {col.sortable && sortKey === col.key && (
-                            sortDir === 'asc' ? <ChevronUp className="w-3 h-3 text-violet-400" /> : <ChevronDown className="w-3 h-3 text-violet-400" />
+                            sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-[#B85ADB]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#B85ADB]" />
                           )}
                         </div>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04] text-xs text-slate-300">
+                <tbody className="divide-y divide-[#EAEBF0] dark:divide-[#313D4F]/60 text-xs text-[#202224] dark:text-slate-200">
                   {paginatedData.map((row, idx) => (
-                    <tr key={row._id || row.id || idx} className="group hover:bg-[#151821]/60 transition-colors">
+                    <tr key={row._id || row.id || idx} className="group hover:bg-[#F9FAFC] dark:hover:bg-[#313D4F]/30 transition-colors">
                       {columns.map((col) => (
-                        <td key={col.key} className={`px-4 py-3 max-w-[320px] truncate ${col.cellAlign || ''}`}>
+                        <td key={col.key} className={`px-4 py-3.5 max-w-[320px] truncate ${col.cellAlign || ''}`}>
                           {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
                         </td>
                       ))}
@@ -150,21 +150,21 @@ export default function DataTable({
             </div>
 
             {/* Mobile Stacked Card View */}
-            <div className="md:hidden divide-y divide-white/[0.06]">
+            <div className="md:hidden divide-y divide-[#EAEBF0] dark:divide-[#313D4F]/60">
               {paginatedData.map((row, idx) => (
-                <div key={row._id || row.id || idx} className="p-4 space-y-3 hover:bg-[#151821]/60 transition-colors">
+                <div key={row._id || row.id || idx} className="p-4 space-y-3 hover:bg-[#F9FAFC] dark:hover:bg-[#313D4F]/30 transition-colors">
                   {columns.map((col) => {
                     if (col.key === 'actions') {
                       return (
-                        <div key={col.key} className="flex justify-end gap-2 pt-2 border-t border-white/[0.04]">
+                        <div key={col.key} className="flex justify-end gap-2 pt-2 border-t border-[#EAEBF0] dark:border-[#313D4F]/60">
                           {col.render ? col.render(row[col.key], row) : null}
                         </div>
                       );
                     }
                     return (
                       <div key={col.key} className="flex items-center justify-between text-xs gap-3">
-                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{col.label}</span>
-                        <div className="text-slate-200 truncate font-medium">
+                        <span className="text-[#606060] dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">{col.label}</span>
+                        <div className="text-[#202224] dark:text-slate-200 truncate font-medium">
                           {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
                         </div>
                       </div>
@@ -178,9 +178,9 @@ export default function DataTable({
 
         {/* Bottom Pagination */}
         {sortedData.length > pageSize && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-white/[0.06] bg-[#0D0F15] text-xs text-slate-400">
-            <span className="text-[11px] text-slate-500 font-mono">
-              Showing <b className="text-slate-300">{startIdx}</b> to <b className="text-slate-300">{endIdx}</b> of <b className="text-slate-300">{sortedData.length}</b> records
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3.5 border-t border-[#EAEBF0] dark:border-[#313D4F] bg-[#F9FAFB] dark:bg-[#1B2431]/40 text-xs text-[#606060] dark:text-slate-400">
+            <span className="text-[11.5px] font-mono">
+              Showing <b className="text-[#202224] dark:text-slate-200">{startIdx}</b> to <b className="text-[#202224] dark:text-slate-200">{endIdx}</b> of <b className="text-[#202224] dark:text-slate-200">{sortedData.length}</b> records
             </span>
 
             <div className="flex items-center gap-1.5">
@@ -188,12 +188,12 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/[0.06] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#EAEBF0] dark:border-[#313D4F] bg-white dark:bg-[#273142] text-xs font-semibold text-[#202224] dark:text-slate-200 hover:bg-[#F5F6FA] dark:hover:bg-[#313D4F] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
               
-              <span className="px-2 text-xs font-mono text-slate-400">
+              <span className="px-2 text-xs font-mono font-semibold text-[#B85ADB]">
                 {currentPage} / {totalPages}
               </span>
 
@@ -201,7 +201,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/[0.06] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#EAEBF0] dark:border-[#313D4F] bg-white dark:bg-[#273142] text-xs font-semibold text-[#202224] dark:text-slate-200 hover:bg-[#F5F6FA] dark:hover:bg-[#313D4F] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>

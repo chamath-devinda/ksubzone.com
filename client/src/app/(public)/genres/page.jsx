@@ -23,7 +23,16 @@ export const metadata = {
 };
 
 export default async function GenresPage() {
-  const genres = await getGenresData();
+  const genres = Array.from(
+    (await getGenresData()).reduce((map, genre) => {
+      if (!genre?.slug) return map;
+      const current = map.get(genre.slug);
+      if (!current || Number(genre.totalCount || 0) > Number(current.totalCount || 0)) {
+        map.set(genre.slug, genre);
+      }
+      return map;
+    }, new Map()).values()
+  );
 
   // JSON-LD Breadcrumbs for SEO
   const breadcrumbs = {
@@ -72,7 +81,7 @@ export default async function GenresPage() {
       </section>
 
       {/* Main Grid Content */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10">
         {genres.length === 0 ? (
           <div className="glass-panel p-8 sm:p-20 rounded-2xl sm:rounded-3xl border border-white/5 text-center text-slate-400">
             <p className="text-sm font-bold">No genres found in the database.</p>
@@ -81,10 +90,9 @@ export default async function GenresPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {genres.map((genre) => (
-              <Link
+              <article
                 key={genre._id || genre.slug}
-                href={`/search?category=all&genre=${encodeURIComponent(genre.slug)}`}
-                className="glass-panel group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 hover:border-brand-primary/40 h-28 sm:h-36 flex flex-col items-center justify-center p-3 sm:p-6 text-center cursor-pointer transition-all duration-500 hover:shadow-glass-neon hover:shadow-brand-primary/15"
+                className="glass-panel group relative isolate overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 hover:border-brand-primary/40 min-h-36 sm:min-h-44 flex flex-col items-center justify-end p-3 sm:p-5 text-center transition-all duration-500 hover:shadow-glass-neon hover:shadow-brand-primary/15"
               >
                 {/* Dynamically Loaded Banner Backdrop from High-Rated Media */}
                 {genre.banner && (
@@ -102,18 +110,32 @@ export default async function GenresPage() {
 
                 {/* Card Content */}
                 <div className="relative z-20 flex flex-col items-center justify-center">
-                  <h2 className="text-sm sm:text-base font-black tracking-wider uppercase text-white group-hover:text-brand-primary transition-colors duration-300 font-sans">
+                  <h2 className="text-sm sm:text-base font-black tracking-wider uppercase text-white group-hover:text-brand-primary transition-colors duration-300 font-display">
                     {genre.name}
                   </h2>
                   <span className="mt-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-slate-300 group-hover:bg-brand-primary/20 group-hover:border-brand-primary/30 group-hover:text-brand-primary transition-all duration-300">
                     {genre.totalCount || 0} {genre.totalCount === 1 ? 'Title' : 'Titles'}
                   </span>
+                  <div className="mt-3 grid w-full grid-cols-2 gap-2">
+                    <Link
+                      href={`/drama/genre/${genre.slug}`}
+                      className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-brand-primary/30 bg-brand-primary/15 px-2 text-[9px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-brand-primary hover:text-white"
+                    >
+                      <Tv className="h-3 w-3" /> Dramas
+                    </Link>
+                    <Link
+                      href={`/movie/genre/${genre.slug}`}
+                      className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-wider text-slate-200 transition hover:border-brand-primary/40 hover:text-white"
+                    >
+                      <Film className="h-3 w-3" /> Movies
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

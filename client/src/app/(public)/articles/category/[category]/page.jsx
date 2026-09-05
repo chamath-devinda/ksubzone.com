@@ -115,7 +115,7 @@ export default async function ArticleCategoryPage({ params }) {
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex flex-col gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex flex-col gap-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
             {['All', 'Guide', 'Character Study', 'Subtitles', 'Movies', 'Romance', 'Watchlist'].map((cat) => {
@@ -208,7 +208,7 @@ export default async function ArticleCategoryPage({ params }) {
             })}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

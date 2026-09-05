@@ -180,6 +180,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateAdminProfile = async (profileData) => {
+    const res = await apiClient.put('/api/admin/profile', profileData);
+    if (res.data?.admin) {
+      setAdmin(res.data.admin);
+      tokenService.setAdminProfile(res.data.admin);
+    }
+    return res.data;
+  };
+
+  const uploadAdminAvatar = async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await apiClient.post('/api/admin/profile/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    if (res.data?.avatarUrl) {
+      setAdmin((prev) => {
+        const next = { ...(prev || {}), avatar: res.data.avatarUrl };
+        tokenService.setAdminProfile(next);
+        return next;
+      });
+    }
+    return res.data;
+  };
+
+  const refreshAdminProfile = async () => {
+    try {
+      const res = await apiClient.get('/api/admin/me');
+      if (res.data) {
+        setAdmin(res.data);
+        tokenService.setAdminProfile(res.data);
+      }
+    } catch (err) {
+      console.error('Refresh admin profile error:', err);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -190,6 +229,9 @@ export const AuthProvider = ({ children }) => {
       logoutUser,
       logoutAdmin,
       refreshProfile,
+      updateAdminProfile,
+      uploadAdminAvatar,
+      refreshAdminProfile,
       setUser,
       setAdmin
     }}>

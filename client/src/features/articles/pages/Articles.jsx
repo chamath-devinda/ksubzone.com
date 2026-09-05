@@ -76,7 +76,7 @@ export default function Articles({ initialData }) {
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10 flex flex-col gap-8 sm:gap-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10 flex flex-col gap-8 sm:gap-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
             {categories.map((category) => {
@@ -186,7 +186,7 @@ export default function Articles({ initialData }) {
             KSubZone editorial section
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

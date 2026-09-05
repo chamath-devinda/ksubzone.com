@@ -41,6 +41,7 @@ class MediaPayload {
         'language',
         'imdbRating',
         'tmdbRating',
+        'ratingCount',
         'viewCount',
         'runtime',
         'keywords',

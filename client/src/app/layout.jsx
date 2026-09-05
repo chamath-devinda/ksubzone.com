@@ -11,13 +11,10 @@ import '@fontsource/outfit/latin-600.css';
 import '@fontsource/outfit/latin-700.css';
 import '@fontsource/outfit/latin-800.css';
 import Providers from './Providers';
-import dynamic from 'next/dynamic';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import '@/index.css';
 import { SITE_URL } from '@/utils/seo';
-
-const ParticleBackground = dynamic(() => import('@/components/layout/ParticleBackground'), { ssr: false });
 
 const milker = localFont({
   src: '../../public/fonts/Milker.otf',
@@ -75,8 +72,8 @@ export default async function RootLayout({ children }) {
   }
 
   return (
-    <html lang="en" className={`dark ${milker.variable}`}>
-      <body className="bg-[#030303] text-slate-100 font-sans selection:bg-brand-primary selection:text-white antialiased">
+    <html lang="en-LK" className={`dark ${milker.variable}`}>
+      <body className="bg-luxury-950 text-slate-100 font-sans selection:bg-brand-primary selection:text-white antialiased">
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-5YK4V61YQ6"
           strategy="afterInteractive"
@@ -91,11 +88,8 @@ export default async function RootLayout({ children }) {
           `}
         </Script>
         <Providers initialSiteContent={initialSiteContent}>
-          <div className="flex flex-col min-h-screen bg-[#030303] text-slate-100 selection:bg-brand-primary selection:text-white relative">
-            <ParticleBackground />
-            <div className="relative z-10 flex flex-col min-h-screen bg-transparent">
-              {children}
-            </div>
+          <div className="site-shell flex min-h-screen flex-col text-slate-100 selection:bg-brand-primary selection:text-white">
+            {children}
           </div>
         </Providers>
         <Analytics />

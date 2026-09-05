@@ -6,16 +6,32 @@ import { usePathname } from 'next/navigation';
 import { Clapperboard, Facebook, Instagram, Mail, MapPin, MessageCircle, Play, Search, Send, Star, Youtube, Sparkles } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { resolveLogoUrl } from '@/utils/mediaImages';
+import AdSlot from '@/components/ads/AdSlot';
+import { useAds } from '@/components/ads/AdProvider';
 
 const socialIcons = { Facebook, Instagram, YouTube: Youtube, Youtube };
 
 export default function Footer() {
   const pathname = usePathname();
   const { content } = useSiteContent();
+  const { pageType } = useAds();
   const hideFooter = pathname?.startsWith('/management') || pathname?.includes('/episode-');
   const brand = content?.brand || {};
   const footer = content?.footer || {};
-  const footerLinks = (footer.links || []).filter((link) => link.label && link.url);
+  const defaultFooterLinks = [
+    { label: 'Korean Dramas', url: '/dramas' },
+    { label: 'Korean Movies', url: '/movies' },
+    { label: 'Genre Directory', url: '/genres' },
+    { label: 'About Us', url: '/about' },
+    { label: 'Contact Us', url: '/contact' },
+  ];
+  const customFooterLinks = (footer.links || []).filter(
+    (link) => link.label && link.url && link.url !== '/articles' && link.url !== '/sitemap' && link.label !== 'Articles & Guides' && link.label !== 'HTML Sitemap'
+  );
+  const footerLinks = [
+    ...customFooterLinks,
+    ...defaultFooterLinks.filter((fallback) => !customFooterLinks.some((link) => link.url === fallback.url)),
+  ];
   const socialLinks = (footer.socials || []).filter((link) => link.label && link.url);
   const featureLabels = footer.featureLabels || [];
 
@@ -24,9 +40,14 @@ export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-luxury-950">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-primary/60 to-transparent" />
+      {['home', 'movie', 'drama', 'article', 'listing'].includes(pageType) && (
+        <div className="mx-auto w-full max-w-7xl px-3 pt-8 sm:px-6 lg:px-8">
+          <AdSlot slotId="site_footer_banner" />
+        </div>
+      )}
       <div className="bg-luxury-900/70">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-4 text-left">
             <div className="space-y-5">
               <Link href="/" className="inline-flex min-w-0 items-center gap-3">
                 {resolveLogoUrl(brand.logoUrl) ? (
@@ -40,17 +61,26 @@ export default function Footer() {
                   {brand.logoText || brand.siteName || 'KSUBZONE'}
                 </span>
               </Link>
-              <p className="max-w-sm text-sm leading-7 text-slate-400">{footer.description}</p>
+              <p className="max-w-sm text-xs sm:text-sm leading-relaxed text-slate-400">
+                {footer.description || 'Sri Lanka’s premier platform for synchronized Korean Drama and Movie Sinhala subtitles (SRT, VTT, ASS). Fast, free, and community-powered.'}
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['සිංහල උපසිරැසි', 'K-Drama Subtitles', 'SRT Downloads', 'Korean Movies'].map((badge) => (
+                  <span key={badge} className="px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-bold text-slate-400">
+                    {badge}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div>
               <h3 className="mb-5 text-sm font-extrabold uppercase tracking-wider text-white">
-                {footer.quickLinksTitle || 'Quick Links'}
+                {footer.quickLinksTitle || 'Quick Navigation'}
                 <span className="mt-2 block h-0.5 w-8 rounded-full bg-brand-accent" />
               </h3>
-              <nav className="flex flex-col gap-3 text-sm text-slate-400">
+              <nav className="flex flex-col gap-2.5 text-xs sm:text-sm text-slate-400">
                 {footerLinks.map((link) => (
-                  <Link key={`${link.label}-${link.url}`} href={link.url} className="transition hover:text-brand-primary">
+                  <Link key={`${link.label}-${link.url}`} href={link.url} className="transition hover:text-brand-primary hover:translate-x-1 duration-150 inline-block">
                     {link.label}
                   </Link>
                 ))}

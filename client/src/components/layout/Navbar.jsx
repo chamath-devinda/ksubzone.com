@@ -52,7 +52,17 @@ export default function Navbar() {
   }, [mobileMenuOpen]);
 
   const searchRef = useRef(null);
-  const catalogLinks = (content?.navigation?.links || []).filter((item) => item.label && item.url);
+  const defaultNavLinks = [
+    { label: 'Home', url: '/' },
+    { label: 'Movies', url: '/movies' },
+    { label: 'Dramas', url: '/dramas' },
+    { label: 'Genres', url: '/genres' },
+    { label: 'Articles', url: '/articles' },
+    { label: 'About', url: '/about' },
+    { label: 'Contact', url: '/contact' },
+  ];
+  const customLinks = (content?.navigation?.links || []).filter((item) => item.label && item.url);
+  const catalogLinks = customLinks.length > 0 ? customLinks : defaultNavLinks;
   const searchPlaceholder = content?.navigation?.searchPlaceholder || 'Search dramas, movies...';
   const brand = content?.brand || {};
 
@@ -189,16 +199,23 @@ export default function Navbar() {
           </div>
 
           {/* CENTER NAVIGATION LINKS */}
-          <nav className="hidden lg:flex items-center justify-center gap-5 xl:gap-7 flex-grow z-10">
-            {catalogLinks.map((item) => (
-              <Link 
-                key={`${item.label}-${item.url}`} 
-                href={item.url} 
-                className="text-slate-300 hover:text-white transition-colors duration-200 text-xs font-bold uppercase tracking-wider whitespace-nowrap hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-              >
-                {item.label}
-              </Link>
-            ))}
+          <nav className="hidden lg:flex items-center justify-center gap-4 xl:gap-6 flex-grow z-10">
+            {catalogLinks.map((item) => {
+              const isActive = pathname === item.url || (item.url !== '/' && pathname?.startsWith(item.url));
+              return (
+                <Link
+                  key={`${item.label}-${item.url}`}
+                  href={item.url}
+                  className={`transition-all duration-200 text-xs font-bold uppercase tracking-wider whitespace-nowrap px-2.5 py-1.5 rounded-xl ${
+                    isActive
+                      ? 'text-white bg-white/[0.08] shadow-[0_0_12px_rgba(139,92,246,0.35)] border border-brand-primary/40 font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-white/[0.04]'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* RIGHT CONTROLS */}
@@ -442,13 +459,23 @@ export default function Navbar() {
               )}
 
               <div className="flex flex-col gap-1">
-                <Link href="/" onClick={() => setMobileMenuOpen(false)} className="text-slate-200 hover:text-white text-xs font-bold uppercase tracking-wider py-2 border-b border-white/[0.06]">Home</Link>
-                <Link href="/search" onClick={() => setMobileMenuOpen(false)} className="text-slate-200 hover:text-white text-xs font-bold uppercase tracking-wider py-2 border-b border-white/[0.06]">Browse Catalog</Link>
-                {catalogLinks.map((item) => (
-                  <Link key={`${item.label}-${item.url}`} href={item.url} onClick={() => setMobileMenuOpen(false)} className="text-slate-200 hover:text-white text-xs font-bold uppercase tracking-wider py-2 border-b border-white/[0.06]">
-                    {item.label}
-                  </Link>
-                ))}
+                {catalogLinks.map((item) => {
+                  const isActive = pathname === item.url || (item.url !== '/' && pathname?.startsWith(item.url));
+                  return (
+                    <Link
+                      key={`${item.label}-${item.url}`}
+                      href={item.url}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-xl transition ${
+                        isActive
+                          ? 'bg-brand-primary/20 text-brand-primary border border-brand-primary/30 font-black'
+                          : 'text-slate-200 hover:text-white hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
 
               {user && (

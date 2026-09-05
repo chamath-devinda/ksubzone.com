@@ -8,17 +8,18 @@ export default {
     extend: {
       colors: {
         luxury: {
-          950: '#030008', // Ultra dark obsidian background
-          900: '#080414', // Deep luxury violet-black
-          850: '#0e0720', // Layered surface
-          800: '#140c2d', // Drawer & elevated cards
-          700: '#231548', // Card hover / border focus
-          600: '#38226b',
-          DEFAULT: '#080414',
+          950: '#06040b', // Obsidian violet canvas
+          900: '#0d0916', // Primary card surface
+          850: '#110c1d', // Layered surface
+          800: '#151024', // Drawer & elevated cards
+          700: '#251a3f', // Card hover / border focus
+          600: '#3d286b',
+          DEFAULT: '#0d0916',
         },
         brand: {
-          primary: '#8b5cf6',   // Electric Violet
-          'primary-hover': '#7c3aed',
+          primary: '#490570',   // User defined brand aubergine (primary)
+          'primary-hover': '#72149A', // High contrast hover state
+          'primary-light': '#b85adb', // Accessible text/accent on dark canvas
           secondary: '#ec4899', // Hot pink / Magenta
           accent: '#f59e0b',    // Luxury amber (IMDB)
           emerald: '#10b981',   // Approved / Success
@@ -36,8 +37,8 @@ export default {
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.45)',
-        'glass-neon': '0 8px 32px 0 rgba(139, 92, 246, 0.22)',
-        'glow-primary': '0 0 25px -5px rgba(139, 92, 246, 0.4)',
+        'glass-neon': '0 8px 32px 0 rgba(73, 5, 112, 0.35)',
+        'glow-primary': '0 0 25px -5px rgba(73, 5, 112, 0.55)',
         'glow-pink': '0 0 25px -5px rgba(236, 72, 153, 0.4)',
         'glow-amber': '0 0 25px -5px rgba(245, 158, 11, 0.4)',
       },

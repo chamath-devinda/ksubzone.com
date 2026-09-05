@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -20,7 +20,6 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   Server,
   Settings2,
   Sparkles,
@@ -30,23 +29,26 @@ import {
   WandSparkles,
   X,
   MessageSquareText,
-  Clapperboard,
-  Star,
+  UserCheck,
+  ShieldCheck,
+  Sliders,
+  Compass
 } from 'lucide-react';
 
 const NAV_GROUPS = [
   {
-    label: 'Workspace',
+    label: 'PAGES',
     links: [
-      { to: '/management/dashboard', label: 'Overview', icon: LayoutDashboard },
+      { to: '/management/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/management/profile', label: 'Admin Profile', icon: UserCheck, badge: 'Profile' },
       { to: '/management/import', label: 'TMDB Import', icon: Sparkles, badge: 'Auto' },
     ],
   },
   {
-    label: 'Content',
+    label: 'CONTENT ENGINE',
     links: [
       { to: '/management/movies', label: 'Movies', icon: Film },
-      { to: '/management/dramas', label: 'Dramas', icon: Tv },
+      { to: '/management/dramas', label: 'Dramas & TV', icon: Tv },
       { to: '/management/articles', label: 'Articles', icon: BookOpenText },
       { to: '/management/subtitles', label: 'Subtitles', icon: Languages },
       { to: '/management/comments', label: 'Comments', icon: MessageSquareText },
@@ -54,7 +56,7 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Creator Tools',
+    label: 'STUDIO & TOOLS',
     links: [
       { to: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles },
       { to: '/management/srt-cleaner', label: 'SRT Cleaner', icon: Languages },
@@ -62,10 +64,10 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'System',
+    label: 'SYSTEM & DATA',
     links: [
       { to: '/management/database', label: 'Database', icon: Database },
-      { to: '/management/backup', label: 'Backups', icon: Cloud },
+      { to: '/management/backup', label: 'Cloud Backups', icon: Cloud },
       { to: '/management/seo', label: 'SEO & Config', icon: Server },
     ],
   },
@@ -97,51 +99,51 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
     });
   };
 
-  const adminName = admin?.username || admin?.name || 'Admin';
+  const adminName = admin?.displayName || admin?.username || admin?.name || 'Admin';
   const adminInitial = adminName.charAt(0).toUpperCase();
-  const adminRoleName = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Administrator'));
+  const adminRoleName = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Admin'));
+  const avatarUrl = admin?.avatar;
 
   return (
     <>
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={onCloseMobileNav}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar Shell */}
+      {/* KSubZone Studio Sidebar Shell */}
       <aside
-        className={`ksz-sidebar fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-[width,transform] duration-[220ms] ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
-          collapsed ? 'lg:w-[72px]' : 'lg:w-[256px]'
-        } w-[256px] ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`dashstack-sidebar ksz-studio-sidebar fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+          collapsed ? 'lg:w-[84px]' : 'lg:w-[276px]'
+        } w-[276px] ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
       >
         {/* ── Brand Header ── */}
-        <div className={`flex h-[60px] items-center border-b border-white/[0.05] flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'justify-between px-4'}`}>
+        <div className={`ksz-studio-brand flex h-[82px] items-center flex-shrink-0 ${
+          collapsed ? 'justify-center px-0' : 'justify-between px-6'
+        }`}>
           <Link
             href="/management/dashboard"
-            className="flex items-center gap-2.5 min-w-0 group"
+            className="flex items-center gap-3 min-w-0 group"
             title="KSubZone Control Center"
           >
-            <div className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#1A1B25] border border-white/[0.07]">
+            <div className="ksz-studio-logo flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[15px] text-white font-black">
               {logoUrl ? (
-                <img src={logoUrl} alt={brand.siteName || 'KSubZone'} className="h-5 w-5 object-contain" />
+                <img src={logoUrl} alt={brand.siteName || 'KSubZone'} className="h-6 w-6 object-contain" />
               ) : (
-                <span className="font-display text-xs font-black text-violet-400">K</span>
+                <span className="font-display text-base font-black">K</span>
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 h-1.5 w-1.5 rounded-full border border-[#090A0F] bg-emerald-400" />
             </div>
 
             {!collapsed && (
-              <div className="min-w-0 leading-none">
-                <span className="block truncate text-[13px] font-bold text-slate-100 tracking-tight">
+              <div className="min-w-0">
+                <span className="block truncate text-[18px] font-black tracking-tight text-white">
                   {brand.logoText || brand.siteName || 'KSubZone'}
                 </span>
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500 mt-0.5">
-                  Control Center
-                </span>
+                <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.2em] text-white/45">Content studio</span>
               </div>
             )}
           </Link>
@@ -149,38 +151,38 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           <button
             type="button"
             onClick={onCloseMobileNav}
-            className="lg:hidden flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.05] transition"
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
             aria-label="Close menu"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
 
           {!collapsed && (
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:text-slate-300 hover:bg-white/[0.04] transition"
+              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
-              <PanelLeftClose className="h-3.5 w-3.5" />
+              <PanelLeftClose className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        {/* ── Navigation ── */}
-        <nav className="ksz-nav-scroll flex-1 overflow-y-auto overflow-x-hidden py-3 space-y-5 min-h-0" aria-label="Main navigation">
+        {/* ── Navigation List ── */}
+        <nav className="admin-custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-5 space-y-6 min-h-0" aria-label="Main navigation">
           {NAV_GROUPS.map((group) => (
-            <div key={group.label} className={collapsed ? '' : 'px-3'}>
+            <div key={group.label} className={collapsed ? '' : 'px-4'}>
               {!collapsed ? (
-                <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                <p className="px-3 mb-2 text-[10px] font-bold tracking-[0.16em] text-white/35 uppercase">
                   {group.label}
                 </p>
               ) : (
-                <div className="mx-auto mb-2 h-px w-8 bg-white/[0.05]" />
+                <div className="mx-auto mb-3 h-px w-8 bg-slate-200 dark:bg-white/[0.08]" />
               )}
 
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {group.links.map((link) => {
                   const Icon = link.icon;
                   const isActive = pathname === link.to || (link.to !== '/management/dashboard' && pathname.startsWith(`${link.to}/`));
@@ -191,30 +193,28 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                       href={link.to}
                       title={collapsed ? link.label : undefined}
                       onClick={() => { if (mobileOpen) onCloseMobileNav(); }}
-                      className={`group relative flex items-center gap-2.5 rounded-lg text-[12.5px] font-medium transition-all duration-150 ${
-                        collapsed ? 'h-9 w-9 mx-auto justify-center' : 'h-9 px-2.5'
+                      className={`ksz-studio-nav group relative flex items-center gap-3.5 rounded-[14px] text-[13px] font-semibold transition-all duration-150 ${
+                        collapsed ? 'h-11 w-11 mx-auto justify-center' : 'h-11 px-3.5'
                       } ${
                         isActive
-                          ? 'bg-white/[0.06] text-slate-100'
-                          : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.03]'
+                          ? 'is-active text-white font-bold'
+                          : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
                       }`}
                     >
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-r-full bg-violet-500" />
-                      )}
-
-                      <Icon
-                        className={`h-[15px] w-[15px] flex-shrink-0 transition-colors ${
-                          isActive ? 'text-violet-400' : 'text-slate-600 group-hover:text-slate-400'
-                        }`}
-                      />
+                      <Icon className={`h-[18px] w-[18px] flex-shrink-0 ${
+                        isActive ? 'text-white' : 'text-white/45 group-hover:text-white'
+                      }`} />
 
                       {!collapsed && (
                         <span className="flex-1 truncate">{link.label}</span>
                       )}
 
                       {!collapsed && link.badge && (
-                        <span className="rounded-md bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold text-violet-400 leading-none">
+                        <span className={`rounded-md px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider leading-none ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300'
+                        }`}>
                           {link.badge}
                         </span>
                       )}
@@ -226,46 +226,65 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           ))}
         </nav>
 
-        {/* ── Bottom Bar ── */}
-        <div className="border-t border-white/[0.05] flex-shrink-0 p-2 space-y-1">
+        {/* ── Bottom Section: profile and actions ── */}
+        <div className="ksz-studio-profile flex-shrink-0 p-3">
           {collapsed && (
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden lg:flex mx-auto h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/[0.04] transition"
+              className="hidden lg:flex mx-auto mb-2 h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
               title="Expand sidebar"
               aria-label="Expand sidebar"
             >
-              <PanelLeftOpen className="h-3.5 w-3.5" />
+              <PanelLeftOpen className="h-4 w-4" />
             </button>
           )}
 
-          {/* User Profile Footer */}
+          {/* User Profile Tile */}
           <div
-            className={`flex items-center gap-2 rounded-lg p-1.5 hover:bg-white/[0.03] transition ${
-              collapsed ? 'justify-center' : ''
+            className={`flex items-center gap-3 rounded-[16px] p-2 bg-white/[0.055] border border-white/[0.07] hover:border-white/15 transition ${
+              collapsed ? 'justify-center p-1.5' : ''
             }`}
           >
-            <span className="relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-indigo-600 text-[11px] font-bold text-white shadow-sm">
-              {adminInitial}
-            </span>
-
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-slate-200">{adminName}</p>
-                <p className="truncate text-[9px] capitalize text-slate-500">{adminRoleName}</p>
+            <Link
+              href="/management/profile"
+              className="flex items-center gap-3 min-w-0 flex-1"
+              title="Edit Admin Profile & Photo"
+            >
+              <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#490570] text-xs font-black text-white overflow-hidden shadow-sm">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={adminName} className="h-full w-full object-cover" />
+                ) : (
+                  <span>{adminInitial}</span>
+                )}
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-[#273142] bg-[#00B69B]" />
               </div>
-            )}
+
+              {!collapsed && (
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-xs font-bold text-white">
+                    {adminName}
+                  </p>
+                  <p className="truncate text-[10.5px] font-semibold text-[#D599EC]">
+                    {adminRoleName}
+                  </p>
+                </div>
+              )}
+            </Link>
 
             {!collapsed && (
               <button
                 type="button"
-                onClick={() => logoutAdmin()}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 transition"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to sign out from Admin Control?')) {
+                    logoutAdmin();
+                  }
+                }}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-500/15 hover:text-rose-500 transition"
                 title="Sign out"
                 aria-label="Sign out"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" />
               </button>
             )}
           </div>

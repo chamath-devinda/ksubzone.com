@@ -1,6 +1,8 @@
 import React from 'react';
 import MoviesList from '@/features/media/pages/MoviesList';
 import { compactCatalogItems } from '@/utils/mediaCatalog';
+import { permalinkSlug } from '@/utils/slug';
+import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 export const metadata = {
   title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
@@ -35,5 +37,29 @@ export default async function MoviesPage() {
     console.error("Error fetching movies catalog on server:", error);
   }
 
-  return <MoviesList initialData={initialData} />;
+  const items = initialData?.movies || [];
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Korean movies with Sinhala subtitles',
+    numberOfItems: items.length,
+    itemListElement: items.map((movie, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: cleanMediaTitle(movie.title) || movie.title,
+      url: `${SITE_URL}/movie/${permalinkSlug(movie)}`,
+    })),
+  };
+  const breadcrumbs = buildBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Movies', url: '/movies' },
+  ]);
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
+      <MoviesList initialData={initialData} />
+    </>
+  );
 }

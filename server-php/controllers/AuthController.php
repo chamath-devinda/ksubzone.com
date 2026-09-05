@@ -321,6 +321,8 @@ class AuthController {
                 'id' => $admin['_id'],
                 'username' => $admin['username'],
                 'email' => $admin['email'],
+                'avatar' => $admin['avatar'] ?? '',
+                'displayName' => $admin['displayName'] ?? $admin['username'],
                 'role' => $roleName
             ]
         ]);
@@ -411,10 +413,153 @@ class AuthController {
             'id' => $admin['_id'],
             'username' => $admin['username'],
             'email' => $admin['email'],
+            'avatar' => $admin['avatar'] ?? '',
+            'displayName' => $admin['displayName'] ?? $admin['username'],
+            'bio' => $admin['bio'] ?? '',
             'role' => $admin['role']['name'] ?? 'Admin',
             'twoFactorEnabled' => !empty($admin['twoFactorEnabled']),
             'lastLogin' => $admin['lastLogin'] ?? null,
             'createdAt' => $admin['createdAt'] ?? null
+        ]);
+    }
+
+    public static function updateAdminProfile() {
+        $admin = AuthMiddleware::$currentAdmin;
+        if (!$admin) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized']);
+            return;
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        $username = trim($body['username'] ?? '');
+        $email = trim(strtolower($body['email'] ?? ''));
+        $displayName = trim($body['displayName'] ?? '');
+        $bio = trim($body['bio'] ?? '');
+        $avatar = trim($body['avatar'] ?? '');
+        $currentPassword = $body['currentPassword'] ?? '';
+        $newPassword = $body['newPassword'] ?? '';
+
+        $db = Database::getInstance();
+        $adminId = $admin['_id'];
+
+        // Check for duplicate email
+        if (!empty($email) && $email !== strtolower($admin['email'] ?? '')) {
+            $existing = $db->findOne('admins', ['email' => $email, '_id' => ['$ne' => $adminId]]);
+            if ($existing) {
+                http_response_code(400);
+                echo json_encode(['message' => 'This email address is already in use by another admin.']);
+                return;
+            }
+        }
+        // Check for duplicate username
+        if (!empty($username) && $username !== ($admin['username'] ?? '')) {
+            $existing = $db->findOne('admins', ['username' => $username, '_id' => ['$ne' => $adminId]]);
+            if ($existing) {
+                http_response_code(400);
+                echo json_encode(['message' => 'This username is already in use by another admin.']);
+                return;
+            }
+        }
+
+        $update = [];
+        if (!empty($username)) $update['username'] = $username;
+        if (!empty($email)) $update['email'] = $email;
+        if (isset($body['displayName'])) $update['displayName'] = $displayName;
+        if (isset($body['bio'])) $update['bio'] = $bio;
+        if (isset($body['avatar'])) $update['avatar'] = $avatar;
+
+        // If changing password, verify current password
+        if (!empty($newPassword)) {
+            if (empty($currentPassword)) {
+                http_response_code(400);
+                echo json_encode(['message' => 'Current password is required to set a new password.']);
+                return;
+            }
+            if (!password_verify($currentPassword, $admin['password'] ?? '')) {
+                http_response_code(400);
+                echo json_encode(['message' => 'Current password does not match.']);
+                return;
+            }
+            if (strlen($newPassword) < 6) {
+                http_response_code(400);
+                echo json_encode(['message' => 'New password must be at least 6 characters long.']);
+                return;
+            }
+            $update['password'] = password_hash($newPassword, PASSWORD_BCRYPT);
+        }
+
+        if (!empty($update)) {
+            $db->updateOne('admins', ['_id' => $adminId], $update);
+        }
+
+        $updatedAdmin = $db->findOne('admins', ['_id' => $adminId]);
+        $roleName = $admin['role']['name'] ?? 'Admin';
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'message' => 'Admin profile updated successfully.',
+            'admin' => [
+                'id' => $updatedAdmin['_id'],
+                'username' => $updatedAdmin['username'],
+                'email' => $updatedAdmin['email'],
+                'avatar' => $updatedAdmin['avatar'] ?? '',
+                'displayName' => $updatedAdmin['displayName'] ?? $updatedAdmin['username'],
+                'bio' => $updatedAdmin['bio'] ?? '',
+                'role' => $roleName,
+                'twoFactorEnabled' => !empty($updatedAdmin['twoFactorEnabled']),
+                'lastLogin' => $updatedAdmin['lastLogin'] ?? null,
+                'createdAt' => $updatedAdmin['createdAt'] ?? null
+            ]
+        ]);
+    }
+
+    public static function uploadAdminAvatar() {
+        $admin = AuthMiddleware::$currentAdmin;
+        if (!$admin) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Unauthorized']);
+            return;
+        }
+
+        if (empty($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            echo json_encode(['message' => 'No valid image file uploaded.']);
+            return;
+        }
+
+        $file = $_FILES['avatar'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+        if (!in_array($ext, $allowedExts, true)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Allowed image formats: PNG, JPG, JPEG, WEBP, GIF.']);
+            return;
+        }
+
+        if ($file['size'] > 5 * 1024 * 1024) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Image size must be 5MB or less.']);
+            return;
+        }
+
+        $url = \Utils\Storage::uploadFile($file, 'avatars');
+        if (!$url) {
+            http_response_code(500);
+            echo json_encode(['message' => 'Failed to store avatar image.']);
+            return;
+        }
+
+        $db = Database::getInstance();
+        $db->updateOne('admins', ['_id' => $admin['_id']], [
+            'avatar' => $url
+        ]);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'avatarUrl' => $url,
+            'message' => 'Profile picture updated successfully.'
         ]);
     }
 

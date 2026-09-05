@@ -10,13 +10,15 @@ const AdminThemeContext = createContext({
   mounted: false,
 });
 
+const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v2';
+
 export function AdminThemeProvider({ children }) {
   const [theme, setThemeState] = useState('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem('ksz-admin-theme');
+      const savedTheme = localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
       if (savedTheme === 'light' || savedTheme === 'dark') {
         setThemeState(savedTheme);
       }
@@ -34,7 +36,7 @@ export function AdminThemeProvider({ children }) {
     const validTheme = newTheme === 'light' ? 'light' : 'dark';
     setThemeState(validTheme);
     try {
-      localStorage.setItem('ksz-admin-theme', validTheme);
+      localStorage.setItem(ADMIN_THEME_STORAGE_KEY, validTheme);
     } catch (_) {}
   };
 

@@ -82,6 +82,7 @@ export default function DramaManager() {
   const [explorerDrama, setExplorerDrama] = useState(null);
   const [expandedData, setExpandedData] = useState({ seasons: [], episodes: [] });
   const [loadingExpansion, setLoadingExpansion] = useState(false);
+  const [expansionError, setExpansionError] = useState('');
 
   // Season Modal State
   const [showSeasonModal, setShowSeasonModal] = useState(false);
@@ -139,18 +140,30 @@ export default function DramaManager() {
   }, [filterStatus]);
 
   // Explorer expander
+  const fetchDramaStructure = async (dramaId) => {
+    const res = await apiClient.get(`/api/admin/dramas/${dramaId}/structure`);
+    const payload = res?.data;
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('The server returned an invalid season catalog response.');
+    }
+
+    return {
+      seasons: Array.isArray(payload.seasons) ? payload.seasons : [],
+      episodes: Array.isArray(payload.episodes) ? payload.episodes : []
+    };
+  };
+
   const handleOpenExplorer = async (drama) => {
     setExplorerDrama(drama);
+    setExpandedData({ seasons: [], episodes: [] });
+    setExpansionError('');
     setLoadingExpansion(true);
     try {
-      const res = await apiClient.get(`/api/admin/dramas/${drama._id}/structure`);
-      setExpandedData({
-        seasons: res.data.seasons || [],
-        episodes: res.data.episodes || []
-      });
+      setExpandedData(await fetchDramaStructure(drama._id));
     } catch (err) {
-      toast.error('Failed to retrieve season catalog.');
-      setExplorerDrama(null);
+      const message = err?.message || 'Failed to retrieve season catalog.';
+      setExpansionError(message);
+      toast.error(message);
     } finally {
       setLoadingExpansion(false);
     }
@@ -158,14 +171,16 @@ export default function DramaManager() {
 
   const refreshExplorer = async () => {
     if (!explorerDrama) return;
+    setExpansionError('');
+    setLoadingExpansion(true);
     try {
-      const res = await apiClient.get(`/api/admin/dramas/${explorerDrama._id}/structure`);
-      setExpandedData({
-        seasons: res.data.seasons || [],
-        episodes: res.data.episodes || []
-      });
+      setExpandedData(await fetchDramaStructure(explorerDrama._id));
     } catch (err) {
-      console.error(err);
+      const message = err?.message || 'Failed to retrieve season catalog.';
+      setExpansionError(message);
+      toast.error(message);
+    } finally {
+      setLoadingExpansion(false);
     }
   };
 
@@ -802,6 +817,18 @@ export default function DramaManager() {
             <div className="text-xs text-slate-400 text-center py-12 flex flex-col items-center gap-2">
               <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
               <span>Loading seasons and episodes structure...</span>
+            </div>
+          ) : expansionError ? (
+            <div className="text-center py-12 bg-rose-500/[0.05] rounded-xl border border-rose-500/20 text-xs space-y-3">
+              <p className="font-semibold text-rose-300">Season catalog could not be loaded</p>
+              <p className="text-[11px] text-slate-400">{expansionError}</p>
+              <button
+                type="button"
+                onClick={refreshExplorer}
+                className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 font-semibold transition"
+              >
+                Try Again
+              </button>
             </div>
           ) : expandedData.seasons.length === 0 ? (
             <div className="text-center py-12 bg-[#151821] rounded-xl border border-white/[0.06] text-slate-400 text-xs space-y-2">

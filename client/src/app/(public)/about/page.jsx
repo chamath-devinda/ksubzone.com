@@ -20,7 +20,7 @@ export default function AboutPage() {
           <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">
             <Info className="w-3.5 h-3.5" /> Our Journey
           </span>
-          <h1 className="mt-5 text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight">
+          <h1 className="mt-5 text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight font-display">
             Connecting South Asian Fans with Korean Cinema
           </h1>
           <p className="mt-4 text-sm sm:text-base text-slate-300 leading-7 font-light">
@@ -86,7 +86,7 @@ export default function AboutPage() {
             </div>
             <h3 className="text-sm font-black text-white uppercase tracking-wider">Guides & Analysis</h3>
             <p className="text-xs text-slate-400 leading-6 font-light">
-              We publish detailed ending explanations, character arcs analyses, romance tropes retrospectives, and watchlists lists.
+              We publish detailed ending explanations, character-arc analysis, romance-trope retrospectives, and curated watchlists.
             </p>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function AboutPage() {
 
       {/* Editorial Note */}
       <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 sm:p-10 text-center flex flex-col items-center gap-4">
-        <h3 className="text-lg sm:text-xl font-bold text-white">Join the Community</h3>
+        <h2 className="text-lg sm:text-xl font-bold text-white">Join the Community</h2>
         <p className="text-xs sm:text-sm text-slate-300 leading-7 max-w-2xl font-light">
           KSubZone is powered by Hallyu fans, for Hallyu fans. If you are a Sinhala/English translator, feel free to register on our platform and share your sync translation files with the community.
         </p>
