@@ -465,21 +465,28 @@ export default function SrtCleaner() {
               'www.', '.com', '.org', '.net', '.lk', '.info', 'http://', 'https://',
               'subtitles by', 'opensubtitles', 'translated by', 'synchronized by', 'corrected by',
               'support us', 'subtitles downloaded', 'rip', 'remux', 'bluray', 'web-dl',
-              'encode', 'synchronization', 'captioned by', 'join us on', '@adl_drama'
+              'encode', 'synchronization', 'captioned by', 'join us on', '@adl_drama',
+              'adl-drama', 'adl drama', 'adl_drama', 'best drama world', 'sri lanka best drama world',
+              'subtitles & upload', 'subtitles and upload', 'subtitle & upload'
             ];
             
             text = text.split('\n').filter(line => {
               const lLower = line.toLowerCase();
               const isAd = adKeywords.some(keyword => lLower.includes(keyword)) ||
+                           /adl[-_\s]*drama/i.test(lLower) ||
+                           /best\s*drama\s*world/i.test(lLower) ||
+                           /subtitles?\s*(&|and)\s*upload/i.test(lLower) ||
                            lLower.includes('.lk') || lLower.includes('.com') ||
-                           lLower.includes('@adl_drama') ||
+                           lLower.includes('@adl_drama') || lLower.includes('@adl-drama') ||
                            (lLower.includes('@') && !lLower.includes(' '));
               return !isAd;
             }).join('\n');
           }
 
-          // Always remove the forbidden word @ADL_Drama from the subtitle content
-          text = text.replace(/@ADL_Drama/gi, '');
+          // Always remove forbidden promo words and competitor signatures
+          text = text.replace(/subtitles?\s*(&|and)\s*upload\s*[-–—]?\s*adl[-_\s]*drama[™\s]*/gi, '');
+          text = text.replace(/sri\s*lanka\s*best\s*drama\s*world/gi, '');
+          text = text.replace(/[@#]?adl[-_\s]*drama[™]?/gi, '');
 
           // Specific Words
           if (config.specificWords) {

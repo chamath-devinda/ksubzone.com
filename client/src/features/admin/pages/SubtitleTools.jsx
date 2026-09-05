@@ -86,8 +86,8 @@ const cleanBaseName = (fileName) => {
     const prev = base;
     base = base.replace(/_(KSubZone|KSubZone_branded|cleaned|www\.ksubzone\.com|branded|KSubZonesrt)/gi, '');
     base = base.replace(/-(cleaned|branded)/gi, '');
-    // Remove forbidden word @ADL_Drama (and any surrounding spaces/underscores/hyphens)
-    base = base.replace(/[-_@\s]*ADL_Drama[-_@\s]*/gi, '');
+    // Remove competitor tags: ADL-Drama, @ADL_Drama, etc.
+    base = base.replace(/[-_@\s]*ADL[-_\s]*Drama[™\s]*[-_@\s]*/gi, '');
     if (base === prev) break;
   }
   return base.trim().replace(/\.+$/, '');
@@ -102,7 +102,7 @@ const parseDramaAndEpisode = (fileName) => {
     const prev = base;
     base = base.replace(/_(KSubZone|KSubZone_branded|cleaned|www\.ksubzone\.com|branded|KSubZonesrt)/gi, '');
     base = base.replace(/-(cleaned|branded)/gi, '');
-    base = base.replace(/[-_@\s]*ADL_Drama[-_@\s]*/gi, '');
+    base = base.replace(/[-_@\s]*ADL[-_\s]*Drama[™\s]*[-_@\s]*/gi, '');
     if (base === prev) break;
   }
 
@@ -218,7 +218,9 @@ export default function SubtitleTools() {
             const competitorKeywords = [
               'baiscope', 'cineru', 'zoom.lk', 'subz.lk', 'sinhalasub',
               'subz.site', 'subzlk', 'baiscopelk', 'zoom', 'බයිස්කෝප්', 'සිනේරු',
-              'cinerulk', 'subz', 'adl_drama', '@adl_drama'
+              'cinerulk', 'subz', 'adl_drama', '@adl_drama', 'adl-drama', '@adl-drama',
+              'adl drama', 'adldrama', 'sri lanka best drama world', 'best drama world',
+              'subtitles & upload', 'subtitles and upload', 'subtitle & upload', 'subtitle and upload'
             ];
 
             const detected = [];
@@ -226,11 +228,16 @@ export default function SubtitleTools() {
 
             parsed.forEach((sub) => {
               const textLower = (sub.text || '').toLowerCase();
-              const matches = competitorKeywords.some(keyword => textLower.includes(keyword));
+              const matches = competitorKeywords.some(keyword => textLower.includes(keyword)) ||
+                              /adl[-_\s]*drama/i.test(sub.text || '') ||
+                              /best\s*drama\s*world/i.test(sub.text || '') ||
+                              /subtitles?\s*(&|and)\s*upload/i.test(sub.text || '') ||
+                              textLower.includes('.lk') || textLower.includes('.com') ||
+                              textLower.includes('පරිවර්තනය') || textLower.includes('උපසිරැසි');
 
               if (matches) {
                 detected.push(sub);
-                initialActions[sub.id] = 'replace';
+                initialActions[sub.id] = 'remove';
               }
             });
 
@@ -364,7 +371,9 @@ export default function SubtitleTools() {
           const competitorKeywords = [
             'baiscope', 'cineru', 'zoom.lk', 'subz.lk', 'sinhalasub',
             'subz.site', 'subzlk', 'baiscopelk', 'zoom', 'බයිස්කෝප්', 'සිනේරු',
-            'cinerulk', 'subz', 'adl_drama', '@adl_drama'
+            'cinerulk', 'subz', 'adl_drama', '@adl_drama', 'adl-drama', '@adl-drama',
+            'adl drama', 'adldrama', 'sri lanka best drama world', 'best drama world',
+            'subtitles & upload', 'subtitles and upload', 'subtitle & upload', 'subtitle and upload'
           ];
 
           const detected = [];
@@ -373,12 +382,15 @@ export default function SubtitleTools() {
           parsed.forEach((sub) => {
             const textLower = (sub.text || '').toLowerCase();
             const matches = competitorKeywords.some(keyword => textLower.includes(keyword)) ||
+                            /adl[-_\s]*drama/i.test(sub.text || '') ||
+                            /best\s*drama\s*world/i.test(sub.text || '') ||
+                            /subtitles?\s*(&|and)\s*upload/i.test(sub.text || '') ||
                             textLower.includes('.lk') || textLower.includes('.com') ||
                             textLower.includes('පරිවර්තනය') || textLower.includes('උපසිරැසි');
 
             if (matches) {
               detected.push(sub);
-              initialActions[sub.id] = 'replace';
+              initialActions[sub.id] = 'remove';
             }
           });
 
@@ -481,6 +493,22 @@ export default function SubtitleTools() {
       }
       return sub;
     }).filter(sub => sub !== null);
+
+    // 2. Strip any remaining competitor watermark lines or ad-only blocks (ADL-Drama, Sri Lanka Best Drama World, etc.)
+    workingSubs = workingSubs.map((sub) => {
+      let cleanedText = sub.text || '';
+      const lines = cleanedText.split('\n').filter(line => {
+        const lineLower = line.toLowerCase();
+        if (/adl[-_\s]*drama/i.test(lineLower)) return false;
+        if (/best\s*drama\s*world/i.test(lineLower)) return false;
+        if (/subtitles?\s*(&|and)\s*upload/i.test(lineLower)) return false;
+        if (lineLower.includes('@adl_drama') || lineLower.includes('@adl-drama')) return false;
+        return true;
+      });
+      cleanedText = lines.join('\n').trim();
+      if (!cleanedText) return null; // Entire block was competitor promo
+      return { ...sub, text: cleanedText };
+    }).filter(Boolean);
 
     // 2. Inject Ads (Start, End, Gaps)
     const adsToInject = [];
