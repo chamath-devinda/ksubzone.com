@@ -47,7 +47,7 @@ White text on the primary violet is used for large button labels. Muted text nev
 
 ## Performance guardrails
 
-- No global particle/canvas engine is loaded.
+- Lightweight particle background rendered client-side on non-admin routes.
 - Next image optimization emits AVIF/WebP with a one-day cache floor.
 - Poster links do not bulk-prefetch on mobile; only hover intent prefetches a detail route.
 - Non-critical advertisements and article imagery lazy-load with reserved space to limit layout shift.

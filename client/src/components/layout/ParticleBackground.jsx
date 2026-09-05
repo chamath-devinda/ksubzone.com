@@ -1,68 +1,34 @@
 'use client';
 
-import { useMemo, useEffect, useState, useCallback } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import Particles, { ParticlesProvider } from "@tsparticles/react";
+import { loadSlim } from "@tsparticles/slim";
+
+// Stable initialization callback defined outside the component
+const initParticles = async (engine) => {
+  await loadSlim(engine);
+};
 
 export default function ParticleBackground() {
+  const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
-  const [particleRuntime, setParticleRuntime] = useState(null);
+  const [shouldRender, setShouldRender] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname?.startsWith('/management')) {
-      setParticleRuntime(null);
-      return undefined;
-    }
-
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const saveData = navigator.connection?.saveData === true;
-    if (reduceMotion || saveData) return undefined;
-
-    let cancelled = false;
+    setMounted(true);
+    setShouldRender(true);
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
-
-    // Particles are decorative. Load their sizeable engine only after the
-    // critical page, login controls and poster images have had first access to
-    // the network and main thread.
-    const loadParticles = async () => {
-      const [reactParticles, slimParticles] = await Promise.all([
-        import('@tsparticles/react'),
-        import('@tsparticles/slim')
-      ]);
-      if (!cancelled) {
-        setParticleRuntime({
-          Particles: reactParticles.default,
-          ParticlesProvider: reactParticles.ParticlesProvider,
-          loadSlim: slimParticles.loadSlim
-        });
-      }
-    };
-
-    let idleId;
-    let timerId;
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(loadParticles, { timeout: 2500 });
-    } else {
-      timerId = window.setTimeout(loadParticles, 1500);
-    }
     
     return () => {
-      cancelled = true;
       window.removeEventListener("resize", checkMobile);
-      if (idleId !== undefined) window.cancelIdleCallback(idleId);
-      if (timerId !== undefined) window.clearTimeout(timerId);
     };
-  }, [pathname]);
-
-  const initParticles = useCallback(async (engine) => {
-    if (particleRuntime?.loadSlim) {
-      await particleRuntime.loadSlim(engine);
-    }
-  }, [particleRuntime]);
+  }, []);
 
   const options = useMemo(
     () => {
@@ -238,9 +204,8 @@ export default function ParticleBackground() {
     [isMobile],
   );
 
-  if (!particleRuntime) return null;
-
-  const { Particles, ParticlesProvider } = particleRuntime;
+  if (pathname?.startsWith('/management')) return null;
+  if (!mounted || !shouldRender) return null;
 
   return (
     <ParticlesProvider init={initParticles}>

@@ -11,10 +11,13 @@ import '@fontsource/outfit/latin-600.css';
 import '@fontsource/outfit/latin-700.css';
 import '@fontsource/outfit/latin-800.css';
 import Providers from './Providers';
+import dynamic from 'next/dynamic';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import '@/index.css';
 import { SITE_URL } from '@/utils/seo';
+
+const ParticleBackground = dynamic(() => import('@/components/layout/ParticleBackground'), { ssr: false });
 
 const milker = localFont({
   src: '../../public/fonts/Milker.otf',
@@ -88,8 +91,11 @@ export default async function RootLayout({ children }) {
           `}
         </Script>
         <Providers initialSiteContent={initialSiteContent}>
-          <div className="site-shell flex min-h-screen flex-col text-slate-100 selection:bg-brand-primary selection:text-white">
-            {children}
+          <div className="site-shell relative flex min-h-screen flex-col text-slate-100 selection:bg-brand-primary selection:text-white">
+            <ParticleBackground />
+            <div className="relative z-10 flex min-h-screen flex-col bg-transparent">
+              {children}
+            </div>
           </div>
         </Providers>
         <Analytics />
