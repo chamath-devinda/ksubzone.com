@@ -74,6 +74,8 @@
   .side-ad-rail {
     display: block;
     padding-top: 32px;
+    height: 100%;
+    align-self: stretch;
   }
 
   .side-ad-layout[data-ad-layout='home'] > .side-ad-rail {

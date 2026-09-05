@@ -94,15 +94,15 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       inspect();
       if (finished) return;
       clearTimeout(timeout);
-      timeout = setTimeout(() => finish(false, 'empty_or_timeout'), 15000);
+      timeout = setTimeout(() => finish(false, 'empty_or_timeout'), 4000);
       observer = new MutationObserver(inspect);
       observer.observe(document.body, { childList: true, subtree: true, attributes: true });
       document.addEventListener('load', inspect, true);
       document.addEventListener('error', handleError, true);
     }
-    // Give a slow script request time to complete; the shorter no-fill timer
-    // starts after the document loads, not before the network has responded.
-    timeout = setTimeout(() => finish(false, 'network_timeout'), 30000);
+    // Give a script request reasonable time to respond. If no creative
+    // appears within 6s, fail fast to collapse the slot cleanly without blank gaps.
+    timeout = setTimeout(() => finish(false, 'network_timeout'), 6000);
     frame.addEventListener('load', handleLoad);
     // Covers a cached srcdoc that completed before effects were installed.
     if (frame.contentDocument?.readyState === 'complete' && frame.contentDocument?.URL === 'about:srcdoc') handleLoad();

@@ -29,11 +29,16 @@ export default function AdSlot({ slotId, className = '' }) {
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
   const [failedZone, setFailedZone] = useState(null);
+  const [adLoaded, setAdLoaded] = useState(false);
   const [nearViewport, setNearViewport] = useState(false);
   const { matches: isDesktop, ready: viewportReady } = useMediaQuery('(min-width: 768px)');
   const slotDefinition = placement || config.placements[slotId];
   const { matches: matchesPlacementViewport } = useMediaQuery(slotDefinition?.mediaQuery || '(min-width: 0px)');
   const viewportAllowed = !slotDefinition?.mediaQuery || matchesPlacementViewport;
+
+  useEffect(() => {
+    setAdLoaded(false);
+  }, [slotId, zoneName]);
 
   useEffect(() => {
     if (!placement || !viewportAllowed) return;
@@ -87,15 +92,19 @@ export default function AdSlot({ slotId, className = '' }) {
       width={zone.width}
       height={isNativePlacement ? zone.reservedHeight : zone.height}
       responsive={isNativePlacement}
-      onLoad={() => emitAdEvent('ad_slot_loaded', eventDetail)}
+      onLoad={() => {
+        setAdLoaded(true);
+        emitAdEvent('ad_slot_loaded', eventDetail);
+      }}
       onUnavailable={(reason) => {
+        setAdLoaded(false);
         setFailedZone(zone.scriptUrl);
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
       }}
     />
   ) : null;
 
-  if (!viewportAllowed || (failed && !config.showDevelopmentPlaceholders)) return null;
+  if (!viewportAllowed || failed) return null;
   if (!placement && !config.showDevelopmentPlaceholders) return null;
 
   if (selectedResponsiveFormatDisabled && !config.showDevelopmentPlaceholders) return null;
@@ -103,13 +112,17 @@ export default function AdSlot({ slotId, className = '' }) {
   const isNative = slotDefinition?.format === 'native';
   const isSquare = slotDefinition?.format === 'square';
   const isSidebar = slotDefinition?.format === 'sidebar';
+  const isDevPlaceholder = config.showDevelopmentPlaceholders && !renderedAd;
+
+  if (!renderedAd && !isDevPlaceholder) return null;
+
   const reservationClass = isNative
     ? 'min-h-[358px]'
     : isSidebar
-      ? 'min-h-[638px]'
+      ? (adLoaded ? 'min-h-[624px]' : 'min-h-0')
     : isSquare
-      ? 'min-h-[288px]'
-      : 'min-h-[88px] md:min-h-[128px]';
+      ? (adLoaded ? 'min-h-[288px]' : 'min-h-0')
+      : (adLoaded ? 'min-h-[88px] md:min-h-[128px]' : 'min-h-0');
   const placeholderClass = isNative
     ? 'min-h-[320px]'
     : isSidebar
@@ -118,17 +131,23 @@ export default function AdSlot({ slotId, className = '' }) {
       ? 'min-h-[250px]'
       : 'min-h-[50px] md:min-h-[90px]';
 
+  const containerVisibility = adLoaded || isDevPlaceholder
+    ? 'border-white/[0.05] bg-white/[0.015] opacity-100'
+    : 'border-transparent bg-transparent opacity-0 pointer-events-none';
+
   return (
     <aside
       ref={hostRef}
       aria-label="Advertisement"
       data-ad-slot={slotId}
-      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.015] px-2 py-3 ${reservationClass} ${className}`}
+      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border px-2 py-3 transition-all duration-300 ${containerVisibility} ${reservationClass} ${className}`}
     >
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
+      {(adLoaded || isDevPlaceholder) && (
+        <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
+      )}
       {renderedAd || (
         <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
-          {config.showDevelopmentPlaceholders ? `${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}
+          {isDevPlaceholder ? `${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}
         </div>
       )}
     </aside>
