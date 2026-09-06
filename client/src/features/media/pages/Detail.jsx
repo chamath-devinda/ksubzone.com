@@ -432,7 +432,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
   return (
     <SideAdLayout enabled={!topOnly}>
-    <div className="w-full flex flex-col gap-12 bg-transparent text-left pb-16">
+    <div className={`w-full flex flex-col bg-transparent text-left ${topOnly ? 'gap-0 pb-0' : 'gap-12 pb-16'}`}>
       
       {/* Dynamic AI SEO Optimization tags */}
       {!topOnly && (
@@ -624,6 +624,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             {!topOnly && <AdSlot slotId="media_below_hero" className="my-2" />}
 
             {/* AI SEO Unique Rewrite Block */}
+            {!topOnly && (
             <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 text-slate-300 flex flex-col gap-4 text-xs sm:text-sm">
               <div>
                 <h2 className="font-extrabold text-white text-sm sm:text-base uppercase tracking-wider mb-2">Synopsis</h2>
@@ -635,10 +636,12 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 <p className="leading-relaxed text-slate-400">{storyOverview}</p>
               </div>
             </div>
+            )}
 
             {!topOnly && <AdSlot slotId="media_after_description" className="my-2" />}
 
             {/* Quick Facts & AI Summary Table (GEO Optimized) */}
+            {!topOnly && (
             <div className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 flex flex-col gap-4">
               <h2 className="font-black text-white text-sm sm:text-base uppercase tracking-wider">Quick Facts & Subtitle Details</h2>
               <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.01]">
@@ -678,8 +681,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 </table>
               </div>
             </div>
+            )}
 
             {/* Casting / Studio Metadata */}
+            {!topOnly && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="glass-panel p-4 rounded-2xl border border-white/5">
                 <p className="text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">Director</p>
@@ -690,9 +695,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 <p className="text-white font-bold">{media.studio || 'N/A'}</p>
               </div>
             </div>
+            )}
 
             {/* Cast details Section */}
-            {media.cast && media.cast.length > 0 && (
+            {!topOnly && media.cast && media.cast.length > 0 && (
               <div className="flex flex-col gap-4 text-left">
                 <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Starring Cast</h2>
                 <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-white/10 select-none">
@@ -719,7 +725,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             )}
 
             {/* YouTube Trailer Section */}
-            {media.trailer && (
+            {!topOnly && media.trailer && (
               <div className="flex flex-col gap-4 text-left">
                 <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
                   <PlayCircle className="w-4 h-4 text-brand-primary" /> Official Trailer
