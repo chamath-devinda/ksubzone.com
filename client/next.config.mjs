@@ -39,6 +39,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'lhbmpnnjrbvqvumtydcx.supabase.co',
+      },
+      {
+        protocol: 'https',
         hostname: 'www.ksubzone.com',
       },
       {
