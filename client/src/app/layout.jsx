@@ -14,6 +14,7 @@ import Providers from './Providers';
 import dynamic from 'next/dynamic';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import '@/index.css';
 import { SITE_URL } from '@/utils/seo';
 
@@ -99,6 +100,7 @@ export default async function RootLayout({ children }) {
           </div>
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
