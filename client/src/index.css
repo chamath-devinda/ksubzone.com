@@ -63,12 +63,12 @@
   min-width: 0;
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 1280px) {
   .side-ad-layout {
     display: grid;
-    grid-template-columns: 184px minmax(0, 1fr) 184px;
-    gap: 24px;
-    padding-inline: 24px;
+    grid-template-columns: 170px minmax(0, 1fr) 170px;
+    gap: 16px;
+    padding-inline: 16px;
   }
 
   .side-ad-rail {
@@ -79,7 +79,7 @@
   }
 
   .side-ad-layout[data-ad-layout='home'] > .side-ad-rail {
-    padding-top: 64px;
+    padding-top: 56px;
   }
 }
 

@@ -97,14 +97,12 @@ export default function AdSlot({ slotId, className = '' }) {
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
       onUnavailable={(reason) => {
-        setAdLoaded(false);
-        setFailedZone(zone.scriptUrl);
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
       }}
     />
   ) : null;
 
-  if (!viewportAllowed || failed) return null;
+  if (!viewportAllowed) return null;
   if (!placement && !config.showDevelopmentPlaceholders) return null;
 
   if (selectedResponsiveFormatDisabled && !config.showDevelopmentPlaceholders) return null;
@@ -117,12 +115,12 @@ export default function AdSlot({ slotId, className = '' }) {
   if (!renderedAd && !isDevPlaceholder) return null;
 
   const reservationClass = isNative
-    ? 'min-h-[358px]'
+    ? 'min-h-[340px]'
     : isSidebar
-      ? (adLoaded ? 'min-h-[624px]' : 'min-h-0')
+      ? 'min-h-[610px]'
     : isSquare
-      ? (adLoaded ? 'min-h-[288px]' : 'min-h-0')
-      : (adLoaded ? 'min-h-[88px] md:min-h-[128px]' : 'min-h-0');
+      ? 'min-h-[270px]'
+      : 'min-h-[70px] md:min-h-[110px]';
   const placeholderClass = isNative
     ? 'min-h-[320px]'
     : isSidebar
@@ -131,20 +129,14 @@ export default function AdSlot({ slotId, className = '' }) {
       ? 'min-h-[250px]'
       : 'min-h-[50px] md:min-h-[90px]';
 
-  const containerVisibility = adLoaded || isDevPlaceholder
-    ? 'border-white/[0.05] bg-white/[0.015] opacity-100'
-    : 'border-transparent bg-transparent opacity-0 pointer-events-none';
-
   return (
     <aside
       ref={hostRef}
       aria-label="Advertisement"
       data-ad-slot={slotId}
-      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border px-2 py-3 transition-all duration-300 ${containerVisibility} ${reservationClass} ${className}`}
+      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.015] px-2 py-3 transition-all duration-300 ${reservationClass} ${className}`}
     >
-      {(adLoaded || isDevPlaceholder) && (
-        <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
-      )}
+      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
       {renderedAd || (
         <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
           {isDevPlaceholder ? `${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}

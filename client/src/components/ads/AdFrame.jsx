@@ -3,28 +3,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // A successful script/iframe HTTP response can be completely empty. Report
-// a load only after the frame contains a visible creative.
-function hasCreative(document) {
-  if (!document?.body) return false;
-  return [...document.body.querySelectorAll('iframe, img, video, object, embed, a[href]')].some((element) => {
-    const bounds = element.getBoundingClientRect();
-    if (bounds.width < 30 || bounds.height < 20) return false;
-    if (element.tagName === 'IMG') return element.complete && element.naturalWidth > 1;
-    if (element.tagName === 'IFRAME') {
-      try {
-        const child = element.contentDocument;
-        // A cross-origin ad document cannot be inspected by policy — treat any
-        // cross-origin iframe with valid dimensions as a loaded creative so that
-        // Adsterra's dynamically-injected frames are counted immediately.
-        if (!child) return true;
-        return child.readyState === 'complete' && (Boolean(child.body?.innerText.trim()) || hasCreative(child));
-      } catch {
-        // Access denied = cross-origin = creative is present.
-        return true;
-      }
-    }
-    return true;
-  });
+// a load only after the frame contains a visible creative or iframe.
+function hasCreative(doc) {
+  if (!doc?.body) return false;
+  // If Adsterra injected an iframe, img, or link, creative is present
+  const elements = doc.body.querySelectorAll('iframe, img, video, object, embed, a[href]');
+  if (elements.length > 0) return true;
+  // Also check if text content or child nodes were injected into body
+  return Boolean(doc.body.childNodes?.length > 2);
 }
 
 export default function AdFrame({ title, source, width, height, onLoad, onUnavailable, responsive = false }) {
@@ -37,7 +23,12 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
 
   useEffect(() => {
     if (responsive || !containerRef.current) return undefined;
-    const updateScale = () => setScale(Math.min(1, (containerRef.current?.clientWidth || width) / width));
+    const updateScale = () => {
+      const clientWidth = containerRef.current?.clientWidth;
+      if (clientWidth && clientWidth > 0 && width > 0) {
+        setScale(Math.min(1, clientWidth / width));
+      }
+    };
     updateScale();
     const observer = new ResizeObserver(updateScale);
     observer.observe(containerRef.current);
@@ -49,7 +40,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     if (!frame) return undefined;
     let finished = false;
     let observer;
-    let document;
+    let doc;
     let timeout;
     const watched = new Set();
     setReady(false);
@@ -58,8 +49,8 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       clearTimeout(timeout);
       observer?.disconnect();
       frame.removeEventListener('load', handleLoad);
-      document?.removeEventListener('load', inspect, true);
-      document?.removeEventListener('error', handleError, true);
+      doc?.removeEventListener('load', inspect, true);
+      doc?.removeEventListener('error', handleError, true);
       for (const child of watched) child.removeEventListener('load', handleChildLoad);
     };
     const finish = (loaded, reason) => {
@@ -76,46 +67,49 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     }
     function inspect() {
       if (finished) return;
-      for (const child of document?.querySelectorAll('iframe') || []) {
+      for (const child of doc?.querySelectorAll('iframe') || []) {
         if (!watched.has(child)) {
           watched.add(child);
           child.addEventListener('load', handleChildLoad);
         }
       }
-      if (hasCreative(document)) finish(true);
+      if (hasCreative(doc)) finish(true);
     }
     function handleError(event) {
       if (event.target?.tagName === 'SCRIPT') finish(false, 'script_error');
     }
     function handleLoad() {
-      document = frame.contentDocument;
-      if (!document?.body) return;
+      doc = frame.contentDocument;
+      if (!doc?.body) return;
       observer?.disconnect();
-      // The outer load event waits for already-inserted child frames.
-      for (const child of document.querySelectorAll('iframe')) child.dataset.creativeLoaded = 'true';
+      for (const child of doc.querySelectorAll('iframe')) child.dataset.creativeLoaded = 'true';
       inspect();
       if (finished) return;
       clearTimeout(timeout);
-      // Give Adsterra's script ample time to inject the creative iframe after load.
-      timeout = setTimeout(() => finish(false, 'empty_or_timeout'), 8000);
+      // Give ad network reasonable time to bid and inject the ad
+      timeout = setTimeout(() => {
+        if (hasCreative(doc)) finish(true);
+        else finish(false, 'empty_or_timeout');
+      }, 12000);
       observer = new MutationObserver(inspect);
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-      document.addEventListener('load', inspect, true);
-      document.addEventListener('error', handleError, true);
+      observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
+      doc.addEventListener('load', inspect, true);
+      doc.addEventListener('error', handleError, true);
     }
-    // Give a script request reasonable time to respond. If no creative
-    // appears within 6s, fail fast to collapse the slot cleanly without blank gaps.
-    timeout = setTimeout(() => finish(false, 'network_timeout'), 6000);
+
+    timeout = setTimeout(() => {
+      if (hasCreative(frame.contentDocument)) finish(true);
+      else finish(false, 'network_timeout');
+    }, 12000);
     frame.addEventListener('load', handleLoad);
-    // Covers a cached srcdoc that completed before effects were installed.
-    if (frame.contentDocument?.readyState === 'complete' && frame.contentDocument?.URL === 'about:srcdoc') handleLoad();
+    if (frame.contentDocument?.readyState === 'complete') handleLoad();
     return () => { finished = true; cleanup(); };
   }, [source]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden flex items-center justify-center"
       style={{ maxWidth: responsive ? undefined : width, height: responsive ? height : height * scale }}
     >
       <iframe
@@ -126,14 +120,14 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         height={height}
         scrolling="no"
         loading="eager"
-        referrerPolicy="no-referrer-when-downgrade"
-        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
+        referrerPolicy="origin"
         data-ad-state={ready ? 'loaded' : 'loading'}
-        className="absolute left-1/2 top-0 block border-0 bg-transparent"
-        // Keep the frame visible while the provider initializes: some networks
-        // wait for visibility before serving. Matching the document's scheme
-        // keeps its transparent background from becoming a white rectangle.
-        style={{ colorScheme: 'dark', transform: `translateX(-50%) scale(${responsive ? 1 : scale})`, transformOrigin: 'top center' }}
+        className="block border-0 bg-transparent mx-auto"
+        style={{
+          colorScheme: 'dark',
+          transform: !responsive && scale < 1 ? `scale(${scale})` : undefined,
+          transformOrigin: 'top center'
+        }}
       />
     </div>
   );
