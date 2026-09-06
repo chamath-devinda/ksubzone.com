@@ -12,7 +12,13 @@ async function createResponseError(response) {
     // CDN and shared-hosting errors are frequently returned as HTML.
   }
 
-  if (message && (message.includes('exceed_egress_quota') || message.includes('restricted due to the following violations') || message.includes('spend caps'))) {
+  if (response.status === 402 || (message && (
+    message.includes('exceed_egress_quota') ||
+    message.includes('restricted due to the following violations') ||
+    message.includes('spend caps') ||
+    message.includes('SUBTITLE_STORAGE_RESTRICTED') ||
+    message.includes('Subtitle backup storage is restricted')
+  ))) {
     message = 'උපසිරැසි සේවාදායකයේ තාවකාලික සීමාවක් පවතී. කරුණාකර සුළු මොහොතකින් නැවත උත්සාහ කරන්න.';
   }
 
