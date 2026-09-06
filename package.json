@@ -19,6 +19,8 @@
     "sqlite3": "^6.0.1"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.6",
+    "@supabase/supabase-js": "^2.115.0",
     "bcrypt": "^6.0.0",
     "pg": "^8.22.0"
   }

@@ -52,30 +52,22 @@ class Database {
                 }
             }
         } elseif ($dbDriver === 'mysql') {
-            if (!$allowSqlFallback) {
-                throw new \RuntimeException('MySQL is disabled. Set DB_DRIVER=mongodb and MONGODB_URI for this deployment.');
-            }
-
             try {
-                if (file_exists($mysqlCircuitBreaker)) {
-                    $lastFailed = (int)@file_get_contents($mysqlCircuitBreaker);
-                    if (time() - $lastFailed <= 60) {
-                        throw new \RuntimeException('MySQL retry circuit is still open.');
-                    }
-                    @unlink($mysqlCircuitBreaker);
-                }
                 $this->initMySQL();
             } catch (\Exception $e) {
-                @file_put_contents($mysqlCircuitBreaker, time());
-                $this->fallbackWarning = "MySQL Connection Failed: " . $e->getMessage() . " (SQLite Fallback active because ALLOW_SQL_FALLBACK=true)";
-                error_log($this->fallbackWarning);
-                $this->initSQLite();
+                if ($allowSqlFallback || !$isProduction) {
+                    $this->fallbackWarning = "MySQL Connection Failed: " . $e->getMessage() . " (SQLite Fallback active)";
+                    error_log($this->fallbackWarning);
+                    $this->initSQLite();
+                } else {
+                    throw new \RuntimeException('MySQL connection failed: ' . $e->getMessage(), 0, $e);
+                }
             }
         } else {
             if ($allowSqlFallback || !$isProduction) {
                 $this->initSQLite();
             } else {
-                throw new \RuntimeException('No database configured. Set DB_DRIVER=mongodb/pgsql or DATABASE_URL for production.');
+                throw new \RuntimeException('No database configured. Set DB_DRIVER=mysql/pgsql/mongodb or DATABASE_URL for production.');
             }
         }
 
@@ -141,19 +133,37 @@ class Database {
         $user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'root';
         $pass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
 
-        // Connect to MySQL server without dbname to create database if it doesn't exist
-        $pdo = new \PDO("mysql:host={$host};port={$port}", $user, $pass, [
-            \PDO::ATTR_TIMEOUT => 2,
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
-        ]);
-        $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-
-        // Connect to the specific database
-        $this->pdo = new \PDO("mysql:host={$host};port={$port};dbname={$dbName}", $user, $pass, [
-            \PDO::ATTR_TIMEOUT => 2,
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC
-        ]);
+        // First attempt: Connect directly to the specific database (cPanel shared hosting compatible)
+        try {
+            $this->pdo = new \PDO("mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4", $user, $pass, [
+                \PDO::ATTR_TIMEOUT => 5,
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+            ]);
+            return;
+        } catch (\PDOException $e) {
+            // If the database does not exist (code 1049) and user has create permissions (e.g. local XAMPP root)
+            if ($e->getCode() == 1049 || strpos($e->getMessage(), 'Unknown database') !== false) {
+                try {
+                    $pdoRoot = new \PDO("mysql:host={$host};port={$port}", $user, $pass, [
+                        \PDO::ATTR_TIMEOUT => 3,
+                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+                    ]);
+                    $pdoRoot->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    $this->pdo = new \PDO("mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4", $user, $pass, [
+                        \PDO::ATTR_TIMEOUT => 5,
+                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                        \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+                    ]);
+                    return;
+                } catch (\Exception $createEx) {
+                    throw $e;
+                }
+            }
+            throw $e;
+        }
     }
 
     private function initPostgres(string $databaseUrl = '') {
@@ -192,12 +202,13 @@ class Database {
                 $pass   = rawurldecode($parts['pass'] ?? '');
             }
 
-            // Auto-translate IPv6 host to IPv4 Session Pooler (port 5432 is open on most firewalls)
-            if ($host === 'db.ejvczjiueysbiewzsuin.supabase.co') {
-                $host = 'aws-1-ap-south-1.pooler.supabase.com';
+            // Auto-translate direct Supabase host to Session Pooler
+            if (preg_match('/^db\.([a-z0-9]+)\.supabase\.co$/i', $host, $m)) {
+                $ref = $m[1];
+                $host = 'aws-0-ap-south-1.pooler.supabase.com';
                 $port = 5432;
-                if (strpos($user, 'ejvczjiueysbiewzsuin') === false) {
-                    $user = $user . '.ejvczjiueysbiewzsuin';
+                if (strpos($user, $ref) === false) {
+                    $user = $user . '.' . $ref;
                 }
             }
 
@@ -209,11 +220,12 @@ class Database {
             $user   = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'postgres';
             $pass   = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
 
-            if ($host === 'db.ejvczjiueysbiewzsuin.supabase.co') {
-                $host = 'aws-1-ap-south-1.pooler.supabase.com';
+            if (preg_match('/^db\.([a-z0-9]+)\.supabase\.co$/i', $host, $m)) {
+                $ref = $m[1];
+                $host = 'aws-0-ap-south-1.pooler.supabase.com';
                 $port = 5432;
-                if (strpos($user, 'ejvczjiueysbiewzsuin') === false) {
-                    $user = $user . '.ejvczjiueysbiewzsuin';
+                if (strpos($user, $ref) === false) {
+                    $user = $user . '.' . $ref;
                 }
             }
 
@@ -244,6 +256,9 @@ class Database {
                 $tablesExist = $stmt->fetch() !== false;
             } elseif ($this->driver === 'sqlite') {
                 $stmt = $this->pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='movies' LIMIT 1");
+                $tablesExist = $stmt->fetch() !== false;
+            } elseif ($this->driver === 'mysql') {
+                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'movies' LIMIT 1");
                 $tablesExist = $stmt->fetch() !== false;
             }
         } catch (\Exception $e) {
@@ -863,8 +878,10 @@ class Database {
             if ($this->driver === 'pgsql') {
                 $q = "\"_id\", \"data\", \"createdAt\", \"updatedAt\"";
                 $stmt = $this->pdo->prepare("INSERT INTO \"{$collection}\" ({$q}) VALUES (:id, :data, :created, :updated) ON CONFLICT (\"_id\") DO NOTHING");
+            } elseif ($this->driver === 'mysql') {
+                $stmt = $this->pdo->prepare("INSERT INTO `{$collection}` (`_id`, `data`, `createdAt`, `updatedAt`) VALUES (:id, :data, :created, :updated) ON DUPLICATE KEY UPDATE `data` = VALUES(`data`), `updatedAt` = VALUES(`updatedAt`)");
             } else {
-                $stmt = $this->pdo->prepare("INSERT INTO {$collection} (_id, data, createdAt, updatedAt) VALUES (:id, :data, :created, :updated)");
+                $stmt = $this->pdo->prepare("INSERT OR IGNORE INTO {$collection} (_id, data, createdAt, updatedAt) VALUES (:id, :data, :created, :updated)");
             }
             $stmt->execute([
                 'id' => $id,

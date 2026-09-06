@@ -263,6 +263,7 @@ $routes = [
             'status' => $dbError ? 'error' : 'ok',
             'serverTime' => date('Y-m-d H:i:s'),
             'databaseDriver' => $db ? $db->getDriver() : ($_ENV['DB_DRIVER'] ?? getenv('DB_DRIVER') ?: 'unknown'),
+            'fallbackWarning' => $db ? $db->getFallbackWarning() : null,
             'databaseError' => $dbError,
             'diagnostics' => [
                 'dbFileExists' => $dbFileExists,
