@@ -12,6 +12,10 @@ async function createResponseError(response) {
     // CDN and shared-hosting errors are frequently returned as HTML.
   }
 
+  if (message && (message.includes('exceed_egress_quota') || message.includes('restricted due to the following violations') || message.includes('spend caps'))) {
+    message = 'උපසිරැසි සේවාදායකයේ තාවකාලික සීමාවක් පවතී. කරුණාකර සුළු මොහොතකින් නැවත උත්සාහ කරන්න.';
+  }
+
   const error = new Error(message || `${DEFAULT_ERROR} (HTTP ${response.status})`);
   error.status = response.status;
   return error;

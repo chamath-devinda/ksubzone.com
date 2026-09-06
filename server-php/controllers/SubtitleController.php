@@ -348,42 +348,54 @@ class SubtitleController {
             }
         }
 
-        // Public Supabase objects are already served from a storage CDN. Do
-        // not download the file into PHP and upload the same bytes again.
-        // Older frontend clients receive a fast redirect; the current client
-        // downloads from this URL directly and tracks via the POST endpoint.
-        $remoteScheme = strtolower((string)parse_url($fileUrl, PHP_URL_SCHEME));
-        $remoteHost = strtolower((string)parse_url($fileUrl, PHP_URL_HOST));
-        $isSupabaseObject = $remoteScheme === 'https'
-            && $remoteHost !== ''
-            && substr($remoteHost, -12) === '.supabase.co';
+        // Clean and prepare local caching directory
+        $baseFileName = basename(parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl);
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        $legacyServerRoot = !empty($docRoot)
+            ? dirname(rtrim($docRoot, '/\\')) . '/server-php'
+            : dirname(dirname(__DIR__)) . '/server-php';
 
-        if ($isSupabaseObject) {
-            header('Cache-Control: no-store');
-            header('Location: ' . $fileUrl, true, 302);
-
-            // Flush the redirect before the non-critical analytics update on
-            // FastCGI hosts, so the download is never held behind a DB write.
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
-
-            try {
-                $db->updateOne('subtitles', ['_id' => $id], [
-                    'downloads' => ($subtitle['downloads'] ?? 0) + 1,
-                    'lastDownloadedAt' => date('Y-m-d H:i:s')
-                ]);
-            } catch (\Exception $e) {
-                error_log('Subtitle redirect count update failed: ' . $e->getMessage());
-            }
-            exit;
+        $localDir = dirname(__DIR__) . '/uploads/subtitles';
+        if (!file_exists($localDir)) {
+            @mkdir($localDir, 0777, true);
         }
 
-        // Retrieve file content
+        // 1. Check local storage paths first (cPanel disk)
+        $possiblePaths = [
+            $localDir . '/' . $baseFileName,
+            dirname(__DIR__) . '/' . ltrim($fileUrl, '/'),
+            dirname(__DIR__) . $fileUrl,
+            dirname(dirname(__DIR__)) . '/' . ltrim($fileUrl, '/'),
+            dirname(dirname(__DIR__)) . $fileUrl,
+            $docRoot . '/uploads/subtitles/' . $baseFileName,
+            $docRoot . '/' . ltrim($fileUrl, '/'),
+            $docRoot . '/api/' . ltrim($fileUrl, '/'),
+            $docRoot . '/api/uploads/subtitles/' . $baseFileName,
+            $legacyServerRoot . '/uploads/subtitles/' . $baseFileName,
+            dirname(dirname(__DIR__)) . '/uploads/subtitles/' . $baseFileName,
+            dirname(dirname(__DIR__)) . '/server-php/uploads/subtitles/' . $baseFileName
+        ];
+
         $fileContent = '';
-        if (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0) {
-            // Fetch remote file (e.g. from Supabase)
-            $httpCode = 0;
+        foreach ($possiblePaths as $testPath) {
+            if (!empty($testPath) && file_exists($testPath) && !is_dir($testPath) && filesize($testPath) > 0) {
+                $content = @file_get_contents($testPath);
+                if ($content !== false && strlen($content) > 0) {
+                    $fileContent = $content;
+                    break;
+                }
+            }
+        }
+
+        // 2. If not cached locally and URL is remote (e.g. Supabase), fetch and cache it permanently on cPanel
+        if (empty($fileContent) && (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0)) {
+            $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
+            $headers = [];
+            if (!empty($supabaseKey) && strpos($fileUrl, 'supabase.co') !== false) {
+                $headers[] = "Authorization: Bearer {$supabaseKey}";
+                $headers[] = "apikey: {$supabaseKey}";
+            }
+
             for ($attempt = 1; $attempt <= 3; $attempt++) {
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $fileUrl);
@@ -391,14 +403,30 @@ class SubtitleController {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
                 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 20);
                 curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-                $fileContent = curl_exec($ch);
+                if (!empty($headers)) {
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+                }
+
+                $fetched = curl_exec($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $curlError = curl_error($ch);
                 curl_close($ch);
 
-                if ($httpCode === 200 && $fileContent !== false && strlen($fileContent) > 0) {
+                if ($httpCode === 200 && $fetched !== false && strlen($fetched) > 0) {
+                    $fileContent = $fetched;
+                    // Cache to local cPanel disk permanently so future downloads use 0 remote bandwidth
+                    @file_put_contents($localDir . '/' . $baseFileName, $fileContent);
+
+                    // Auto-heal database record to point to local path
+                    try {
+                        $db->updateOne('subtitles', ['_id' => $id], [
+                            'fileUrl' => '/uploads/subtitles/' . $baseFileName
+                        ]);
+                    } catch (\Exception $e) {
+                        error_log('Failed to update subtitle to local path: ' . $e->getMessage());
+                    }
                     break;
                 }
 
@@ -406,92 +434,19 @@ class SubtitleController {
                     "Subtitle remote download attempt {$attempt} failed with HTTP {$httpCode}: " .
                     ($curlError ?: $fileUrl)
                 );
-                $fileContent = false;
+
                 if ($attempt < 3) {
                     usleep(250000 * $attempt);
                 }
             }
+        }
 
-            if ($httpCode !== 200 || $fileContent === false || strlen($fileContent) === 0) {
-                // If remote fetch failed, redirect to the URL as fallback
-                header("Location: " . $fileUrl);
-                exit;
-            }
-        } else {
-            // Local file - test multiple potential paths
-            $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
-            $legacyServerRoot = !empty($docRoot)
-                ? dirname(rtrim($docRoot, '/\\')) . '/server-php'
-                : dirname(dirname(__DIR__)) . '/server-php';
-            $possiblePaths = [
-                dirname(__DIR__) . '/' . ltrim($fileUrl, '/'),
-                dirname(__DIR__) . $fileUrl,
-                dirname(dirname(__DIR__)) . '/' . ltrim($fileUrl, '/'),
-                dirname(dirname(__DIR__)) . $fileUrl,
-                $docRoot . '/' . ltrim($fileUrl, '/'),
-                $docRoot . '/api/' . ltrim($fileUrl, '/'),
-                dirname(__DIR__) . '/uploads/subtitles/' . basename($fileUrl),
-                dirname(dirname(__DIR__)) . '/uploads/subtitles/' . basename($fileUrl),
-                $docRoot . '/uploads/subtitles/' . basename($fileUrl),
-                $docRoot . '/api/uploads/subtitles/' . basename($fileUrl),
-                // Older deployments stored uploads beside the new `api`
-                // document root at public_html/server-php/uploads.
-                $legacyServerRoot . '/uploads/subtitles/' . basename($fileUrl),
-                dirname(dirname(__DIR__)) . '/server-php/uploads/subtitles/' . basename($fileUrl)
-            ];
-
-            $foundPath = null;
-            foreach ($possiblePaths as $testPath) {
-                if (!empty($testPath) && file_exists($testPath) && !is_dir($testPath)) {
-                    $foundPath = $testPath;
-                    break;
-                }
-            }
-
-            if ($foundPath) {
-                $fileContent = @file_get_contents($foundPath);
-                if ($fileContent === false) {
-                    http_response_code(500);
-                    echo json_encode(['message' => 'Failed to read subtitle file']);
-                    return;
-                }
-            } else {
-                // Fallback: Check Supabase storage if configured
-                $supabaseUrl = $_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '';
-                $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
-                $supabaseBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
-                $baseFileName = basename($fileUrl);
-
-                if (!empty($supabaseUrl) && !empty($baseFileName)) {
-                    $supabasePublicUrl = rtrim($supabaseUrl, '/') . "/storage/v1/object/public/{$supabaseBucket}/subtitles/{$baseFileName}";
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $supabasePublicUrl);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                    if (!empty($supabaseKey)) {
-                        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                            "Authorization: Bearer {$supabaseKey}",
-                            "apikey: {$supabaseKey}"
-                        ]);
-                    }
-                    $remoteData = curl_exec($ch);
-                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_close($ch);
-
-                    if ($httpCode === 200 && $remoteData !== false && strlen($remoteData) > 0) {
-                        $fileContent = $remoteData;
-                        // Auto-heal database record with the working remote URL
-                        $db->updateOne('subtitles', ['_id' => $id], ['fileUrl' => $supabasePublicUrl]);
-                    }
-                }
-
-                if (empty($fileContent)) {
-                    http_response_code(404);
-                    echo json_encode(['message' => 'Subtitle file not found on server']);
-                    return;
-                }
-            }
+        // 3. If file content could not be found or resolved
+        if (empty($fileContent)) {
+            http_response_code(503);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode(['message' => 'මෙම උපසිරැසි ගොනුව දැන් බාගත කළ නොහැක. කරුණාකර සුළු මොහොතකින් නැවත උත්සාහ කරන්න.']);
+            return;
         }
 
         // Count only downloads for which the file was actually resolved. A
