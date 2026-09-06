@@ -8,13 +8,13 @@ export default {
     extend: {
       colors: {
         luxury: {
-          950: '#06040b', // Obsidian violet canvas
-          900: '#0d0916', // Primary card surface
-          850: '#110c1d', // Layered surface
-          800: '#151024', // Drawer & elevated cards
-          700: '#251a3f', // Card hover / border focus
-          600: '#3d286b',
-          DEFAULT: '#0d0916',
+          950: '#09090B', // Modern neutral black canvas
+          900: '#0F0F12', // Primary card surface
+          850: '#141418', // Layered surface
+          800: '#1A1A20', // Drawer & elevated cards
+          700: '#26263A', // Card hover / border focus
+          600: '#3A3A5C',
+          DEFAULT: '#0F0F12',
         },
         brand: {
           primary: '#490570',   // User defined brand aubergine (primary)

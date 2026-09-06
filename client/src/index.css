@@ -7,9 +7,9 @@
     color-scheme: dark;
     --font-inter: 'Inter';
     --font-outfit: 'Outfit';
-    --ksz-bg: #06040b;
-    --ksz-surface: #0d0916;
-    --ksz-surface-raised: #151024;
+    --ksz-bg: #09090B;
+    --ksz-surface: #0F0F12;
+    --ksz-surface-raised: #1A1A20;
     --ksz-primary: #490570;
     --ksz-primary-hover: #72149A;
     --ksz-text: #f8fafc;
@@ -25,9 +25,9 @@
     background-color: var(--ksz-bg);
     color: #f8fafc;
     background-image:
-      radial-gradient(circle at 12% -8%, rgba(73, 5, 112, 0.28), transparent 27rem),
-      radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.07), transparent 24rem),
-      linear-gradient(180deg, #06040b 0%, #090611 52%, #06040b 100%);
+      radial-gradient(circle at 12% -8%, rgba(73, 5, 112, 0.20), transparent 27rem),
+      radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.05), transparent 24rem),
+      linear-gradient(180deg, #09090B 0%, #0D0D10 52%, #09090B 100%);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
   }
