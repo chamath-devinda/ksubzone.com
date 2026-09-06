@@ -36,7 +36,7 @@ async function fetchWithRetry(url, maxAttempts, timeoutMs = 15000) {
     } catch (error) {
       lastError = error?.name === 'AbortError'
         ? new Error(`${DEFAULT_ERROR} (request timeout)`)
-        : error;
+        : new Error(DEFAULT_ERROR);
     } finally {
       window.clearTimeout(timeoutId);
     }
@@ -50,13 +50,8 @@ async function fetchWithRetry(url, maxAttempts, timeoutMs = 15000) {
 }
 
 export async function downloadSubtitle({ downloadUrl, fileUrl, fileName }) {
-  // Always route through the PHP backend proxy (cPanel server).
-  // The backend handles:
-  //   - Supabase-hosted files → 302 redirect to Supabase CDN URL
-  //   - Local/cPanel-hosted files → streams bytes directly
-  // Previously the client fetched Supabase/uploads URLs directly through
-  // Vercel's edge, which exceeded Vercel's egress quota and blocked downloads.
-  // Routing via PHP avoids any Vercel bandwidth consumption.
+  // Use the same-origin API rewrite. PHP resolves local/backup storage and
+  // streams the file, keeping storage credentials and errors on the server.
   const response = await fetchWithRetry(downloadUrl, 3, 20000);
 
   const blob = await response.blob();

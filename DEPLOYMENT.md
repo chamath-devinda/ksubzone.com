@@ -1,5 +1,27 @@
 # KSubZone deployment
 
+## Subtitle storage recovery (2026-09-06)
+
+The live health endpoint reported PostgreSQL working. The affected Episode 1
+download returned HTTP 503 because its local subtitle could not be resolved.
+The corresponding Supabase backup returned HTTP 402 with `exceed_egress_quota`.
+Changing database credentials will not restore that file.
+
+- Deploy the frontend changes and `controllers/SubtitleController.php` to the
+  PHP backend. Browser API requests now use the same-origin Next.js rewrite.
+- Restore `subtitles-1785677440-2909.srt` from a backup to the backend's
+  `uploads/subtitles/` directory, or replace the subtitle through management.
+  Alternatively, restore Supabase service through the owner's billing/quota
+  controls; the updated backend can then recover the backup automatically.
+- Preserve the backend `uploads/` directory across deployments. Remote source
+  URLs are now retained when files are cached, so lost caches can be rebuilt.
+- Verify the authenticated management drama list and Episode 1 download after
+  deployment. The authenticated list returned all 54 dramas through both the
+  direct API and frontend proxy during recovery verification.
+
+The frontend production build alone does not deploy these changes or remove
+the external storage restriction.
+
 ## Vercel frontend
 
 Import `chamath-devinda/ksubzone.com` and use these values:

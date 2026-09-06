@@ -116,7 +116,7 @@ export default function DramaManager() {
       setDramas(fetched);
       try { sessionStorage.setItem(DRAMA_CACHE_KEY + '_' + selectedStatus, JSON.stringify(fetched)); } catch(_) {}
     } catch (err) {
-      toast.error('Failed to fetch drama series.');
+      toast.error(err.response?.data?.message || err.message || 'Failed to fetch drama series.');
     } finally {
       if (!silent) setLoading(false);
     }

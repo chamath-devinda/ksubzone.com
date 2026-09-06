@@ -387,7 +387,18 @@ class SubtitleController {
             }
         }
 
-        // 2. If not cached locally and URL is remote (e.g. Supabase), fetch and cache it permanently on cPanel
+        // Older records were rewritten to local URLs after caching. Recover
+        // from their backup if the local cache was lost during deployment.
+        if (empty($fileContent) && strpos($fileUrl, '/uploads/subtitles/') === 0) {
+            $backupOrigin = rtrim($_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '', '/');
+            $backupBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
+            if ($backupOrigin !== '') {
+                $fileUrl = $backupOrigin . '/storage/v1/object/public/' . rawurlencode($backupBucket)
+                    . '/subtitles/' . rawurlencode($baseFileName);
+            }
+        }
+
+        // 2. If not cached locally and URL is remote, fetch and cache on cPanel.
         if (empty($fileContent) && (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0)) {
             $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
             $headers = [];
@@ -419,14 +430,7 @@ class SubtitleController {
                     // Cache to local cPanel disk permanently so future downloads use 0 remote bandwidth
                     @file_put_contents($localDir . '/' . $baseFileName, $fileContent);
 
-                    // Auto-heal database record to point to local path
-                    try {
-                        $db->updateOne('subtitles', ['_id' => $id], [
-                            'fileUrl' => '/uploads/subtitles/' . $baseFileName
-                        ]);
-                    } catch (\Exception $e) {
-                        error_log('Failed to update subtitle to local path: ' . $e->getMessage());
-                    }
+                    // Preserve the remote source so a lost cache can be rebuilt.
                     break;
                 }
 
@@ -434,6 +438,17 @@ class SubtitleController {
                     "Subtitle remote download attempt {$attempt} failed with HTTP {$httpCode}: " .
                     ($curlError ?: $fileUrl)
                 );
+
+                if ($httpCode === 402) {
+                    http_response_code(402);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode([
+                        'code' => 'SUBTITLE_STORAGE_RESTRICTED',
+                        'message' => 'Subtitle backup storage is restricted. Please contact the site administrator to restore the file or storage service.'
+                    ]);
+                    return;
+                }
+                if (in_array($httpCode, [400, 401, 403, 404], true)) break;
 
                 if ($attempt < 3) {
                     usleep(250000 * $attempt);
