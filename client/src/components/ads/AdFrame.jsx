@@ -13,12 +13,14 @@ function hasCreative(document) {
     if (element.tagName === 'IFRAME') {
       try {
         const child = element.contentDocument;
-        // A cross-origin ad document cannot be inspected. Its completed load
-        // is checked by the parent's load event or the listener below.
-        if (!child) return element.dataset.creativeLoaded === 'true';
+        // A cross-origin ad document cannot be inspected by policy — treat any
+        // cross-origin iframe with valid dimensions as a loaded creative so that
+        // Adsterra's dynamically-injected frames are counted immediately.
+        if (!child) return true;
         return child.readyState === 'complete' && (Boolean(child.body?.innerText.trim()) || hasCreative(child));
       } catch {
-        return element.dataset.creativeLoaded === 'true';
+        // Access denied = cross-origin = creative is present.
+        return true;
       }
     }
     return true;
@@ -94,7 +96,8 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       inspect();
       if (finished) return;
       clearTimeout(timeout);
-      timeout = setTimeout(() => finish(false, 'empty_or_timeout'), 4000);
+      // Give Adsterra's script ample time to inject the creative iframe after load.
+      timeout = setTimeout(() => finish(false, 'empty_or_timeout'), 8000);
       observer = new MutationObserver(inspect);
       observer.observe(document.body, { childList: true, subtree: true, attributes: true });
       document.addEventListener('load', inspect, true);

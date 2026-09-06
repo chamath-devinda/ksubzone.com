@@ -225,6 +225,9 @@ export default function Watch({ initialDramaData }) {
       {/* Keep the complete drama presentation above the episode download area. */}
       <Detail type="Drama" initialData={dramaData} topOnly />
 
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 w-full mb-8">
+        <AdSlot slotId="episode_content_banner" />
+      </div>
 
       {/* Match the episode content to the same right-hand column used above. */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
