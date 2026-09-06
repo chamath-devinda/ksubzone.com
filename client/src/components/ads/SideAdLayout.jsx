@@ -8,6 +8,11 @@ import AdSlot from './AdSlot';
 export default function SideAdLayout({ children, slotPrefix = 'single', enabled = true }) {
   const { config, pageType, pathname, resolvePlacement } = useAds();
 
+  const route = config.routes[pageType];
+  const sidebarEnabled = enabled && config.formats?.sidebar && route?.enabled && route.sidebar;
+
+  if (!sidebarEnabled) return children;
+
   const hasMultiSlots = Boolean(config.placements?.[`${slotPrefix}_sidebar_left_1`]);
   const leftSlots = hasMultiSlots
     ? [`${slotPrefix}_sidebar_left_1`, `${slotPrefix}_sidebar_left_2`, `${slotPrefix}_sidebar_left_3`]
@@ -17,16 +22,10 @@ export default function SideAdLayout({ children, slotPrefix = 'single', enabled 
     : [`${slotPrefix}_sidebar_right`];
 
   const primaryLeft = leftSlots[0];
-  const route = config.routes[pageType];
-  const showRails = enabled && (
-    leftSlots.some((slot) => Boolean(resolvePlacement(slot))) || (
-      config.showDevelopmentPlaceholders
-      && config.mode !== AD_MODES.OFF
-      && config.placements[primaryLeft]?.pages.includes(pageType)
-      && route?.enabled
-      && route.sidebar
-      && config.formats.sidebar
-    )
+  const showRails = leftSlots.some((slot) => Boolean(resolvePlacement(slot))) || (
+    config.showDevelopmentPlaceholders
+    && config.mode !== AD_MODES.OFF
+    && config.placements[primaryLeft]?.pages.includes(pageType)
   );
 
   if (!showRails) return children;
