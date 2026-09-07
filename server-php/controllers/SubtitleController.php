@@ -387,72 +387,79 @@ class SubtitleController {
             }
         }
 
-        // Older records were rewritten to local URLs after caching. Recover
-        // from their backup if the local cache was lost during deployment.
-        if (empty($fileContent) && strpos($fileUrl, '/uploads/subtitles/') === 0) {
-            $backupOrigin = rtrim($_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '', '/');
-            $backupBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
-            if ($backupOrigin !== '') {
-                $fileUrl = $backupOrigin . '/storage/v1/object/public/' . rawurlencode($backupBucket)
-                    . '/subtitles/' . rawurlencode($baseFileName);
-            }
-        }
-
         // 2. If not cached locally and URL is remote, fetch and cache on cPanel.
+        // Existing records can still point at an older Supabase project. Try
+        // the record URL first, then the currently configured project. This
+        // lets a migrated bucket recover downloads without rewriting every
+        // subtitle row by hand.
         if (empty($fileContent) && (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0)) {
             $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
-            $headers = [];
-            if (!empty($supabaseKey) && strpos($fileUrl, 'supabase.co') !== false) {
-                $headers[] = "Authorization: Bearer {$supabaseKey}";
-                $headers[] = "apikey: {$supabaseKey}";
+            $remoteCandidates = [$fileUrl];
+            $configuredOrigin = rtrim($_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '', '/');
+            $configuredBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
+
+            // A legacy public URL may return 402 after the old project hits
+            // its egress cap. Keep the same object path on the active project
+            // as a fallback when the storage migration has copied the file.
+            $parsedPath = parse_url($fileUrl, PHP_URL_PATH) ?: '';
+            if ($configuredOrigin !== '' && strpos($parsedPath, '/storage/v1/object/') !== false) {
+                $objectMarker = '/storage/v1/object/';
+                $markerPosition = strpos($parsedPath, $objectMarker);
+                $objectPath = substr($parsedPath, $markerPosition + strlen($objectMarker));
+                $objectPath = preg_replace('#^public/#', '', $objectPath);
+                $segments = explode('/', trim($objectPath, '/'));
+                if (count($segments) >= 2) {
+                    array_shift($segments); // discard the old bucket name
+                    $remoteCandidates[] = $configuredOrigin . '/storage/v1/object/public/'
+                        . rawurlencode($configuredBucket) . '/' . implode('/', array_map('rawurlencode', $segments));
+                }
             }
 
-            for ($attempt = 1; $attempt <= 3; $attempt++) {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $fileUrl);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-                curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-                if (!empty($headers)) {
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            $lastRemoteStatus = 0;
+            foreach (array_unique($remoteCandidates) as $candidateUrl) {
+                $headers = [];
+                if (!empty($supabaseKey) && strpos($candidateUrl, 'supabase.co') !== false) {
+                    $headers[] = "Authorization: Bearer {$supabaseKey}";
+                    $headers[] = "apikey: {$supabaseKey}";
                 }
 
-                $fetched = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $curlError = curl_error($ch);
-                curl_close($ch);
+                for ($attempt = 1; $attempt <= 3; $attempt++) {
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $candidateUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+                    curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+                    if (!empty($headers)) curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-                if ($httpCode === 200 && $fetched !== false && strlen($fetched) > 0) {
-                    $fileContent = $fetched;
-                    // Cache to local cPanel disk permanently so future downloads use 0 remote bandwidth
-                    @file_put_contents($localDir . '/' . $baseFileName, $fileContent);
+                    $fetched = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    $curlError = curl_error($ch);
+                    curl_close($ch);
+                    $lastRemoteStatus = $httpCode;
 
-                    // Preserve the remote source so a lost cache can be rebuilt.
-                    break;
+                    if ($httpCode === 200 && $fetched !== false && strlen($fetched) > 0) {
+                        $fileContent = $fetched;
+                        @file_put_contents($localDir . '/' . $baseFileName, $fileContent);
+                        break 2;
+                    }
+
+                    error_log("Subtitle remote download attempt {$attempt} failed with HTTP {$httpCode}: " . ($curlError ?: $candidateUrl));
+                    if (in_array($httpCode, [400, 401, 403, 404], true)) break;
+                    if ($attempt < 3) usleep(250000 * $attempt);
                 }
+            }
 
-                error_log(
-                    "Subtitle remote download attempt {$attempt} failed with HTTP {$httpCode}: " .
-                    ($curlError ?: $fileUrl)
-                );
-
-                if ($httpCode === 402) {
-                    http_response_code(402);
-                    header('Content-Type: application/json; charset=UTF-8');
-                    echo json_encode([
-                        'code' => 'SUBTITLE_STORAGE_RESTRICTED',
-                        'message' => 'Subtitle backup storage is restricted. Please contact the site administrator to restore the file or storage service.'
-                    ]);
-                    return;
-                }
-                if (in_array($httpCode, [400, 401, 403, 404], true)) break;
-
-                if ($attempt < 3) {
-                    usleep(250000 * $attempt);
-                }
+            if (empty($fileContent) && $lastRemoteStatus === 402) {
+                http_response_code(402);
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode([
+                    'code' => 'SUBTITLE_STORAGE_RESTRICTED',
+                    'message' => 'Subtitle backup storage is restricted. Please contact the site administrator to restore the file or storage service.'
+                ]);
+                return;
             }
         }
 
