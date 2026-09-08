@@ -84,19 +84,14 @@ export default async function HomePage() {
   const backendUrl = getBackendUrl();
   
   let initialHomeCatalog = {};
-  let initialSubtitles = [];
   let initialLibraryMovies = { movies: [], totalPages: 1 };
   let initialLibraryDramas = { dramas: [], totalPages: 1 };
   const siteContent = await getSiteContent();
   
   try {
-    const [catalogRes, subsRes] = await Promise.all([
-      fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : {}),
-      fetch(`${backendUrl}/api/subtitles/recent?limit=4`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : [])
-    ]);
+    const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : {});
     
     initialHomeCatalog = compactHomeCatalog(catalogRes);
-    initialSubtitles = subsRes;
     // Home already contains the same view-ranked records. Reuse them instead
     // of making two more server requests and embedding duplicate JSON.
     initialLibraryMovies = {
@@ -186,7 +181,6 @@ export default async function HomePage() {
       />
       <Home
         initialHomeCatalog={initialHomeCatalog}
-        initialSubtitles={initialSubtitles}
         initialLibraryMovies={initialLibraryMovies}
         initialLibraryDramas={initialLibraryDramas}
       />

@@ -31,8 +31,6 @@ export const defaultSiteContent = {
     catalogDescription: 'Discover popular Asian dramas and movies with Sinhala subtitles.',
     emptyTitle: 'No Titles Found',
     emptyDescription: 'We could not find any items matching these filters. Try changing your search options or check the admin manager.',
-    subtitleTitle: 'Recent Subtitle Releases',
-    subtitleEmpty: 'Community subtitles are pending uploader approvals. Check back later!',
     newsletterTitle: 'Subscribe to Releases',
     newsletterDescription: 'Receive weekly digests containing fresh Korean drama imports, subtitle sync patches, and custom reviews direct to your inbox.',
     newsletterPlaceholder: 'Enter your email address',

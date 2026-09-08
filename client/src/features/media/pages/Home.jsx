@@ -8,14 +8,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import HeroSlider from '@/features/media/components/HeroSlider';
 import GlassCard from '@/components/ui/GlassCard';
 import { useSiteContent } from '@/hooks/useSiteContent';
-import { permalinkSlug } from '@/utils/slug';
-import { cleanMediaTitle } from '@/utils/seo';
 import AdSlot from '@/components/ads/AdSlot';
 import SideAdLayout from '@/components/ads/SideAdLayout';
 import { 
-  Film, Tv, Clock, Send, 
+  Film, Tv, Send,
   Flame, Star, Calendar, Compass, 
-  Layers, Filter, RefreshCw, ArrowRight, CheckCircle2
+  Layers, Filter, RefreshCw, ArrowRight
 } from 'lucide-react';
 
 function hasCatalogRows(catalog) {
@@ -28,7 +26,6 @@ function hasListRows(payload, key) {
 
 export default function Home({ 
   initialHomeCatalog = {}, 
-  initialSubtitles = [], 
   initialLibraryMovies = { movies: [] }, 
   initialLibraryDramas = { dramas: [] } 
 }) {
@@ -39,7 +36,6 @@ export default function Home({
   const hasInitialCatalog = hasCatalogRows(initialHomeCatalog);
   const hasInitialMovies = hasListRows(initialLibraryMovies, 'movies');
   const hasInitialDramas = hasListRows(initialLibraryDramas, 'dramas');
-  const hasInitialSubtitles = Array.isArray(initialSubtitles) && initialSubtitles.length > 0;
 
   // Fetch combined Home Catalog data (single API request)
   const { data: homeCatalog = initialHomeCatalog, isLoading: homeCatalogLoading } = useQuery({
@@ -87,19 +83,6 @@ export default function Home({
     initialData: (sortBy === 'popular' && country === '' && hasInitialDramas) ? initialLibraryDramas : undefined,
     staleTime: 60_000,
     refetchOnMount: hasInitialDramas ? false : 'always',
-    retry: 2
-  });
-
-  // Fetch Subtitles (Recent Updates)
-  const { data: subtitleQueue = initialSubtitles, isLoading: subsLoading } = useQuery({
-    queryKey: ['homeSubtitles'],
-    queryFn: async () => {
-      const res = await apiClient.get('/api/subtitles/recent?limit=4');
-      return res.data;
-    },
-    initialData: hasInitialSubtitles ? initialSubtitles : undefined,
-    staleTime: 60_000,
-    refetchOnMount: hasInitialSubtitles ? false : 'always',
     retry: 2
   });
 
@@ -486,79 +469,6 @@ export default function Home({
           </div>
 
         </section>
-
-        {/* RECENT SUBTITLES SHOWCASE */}
-        <div className="grid grid-cols-1 gap-8 border-t border-white/[0.07] pt-14">
-          <div className="glass-panel-heavy rounded-3xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-5 text-left relative overflow-hidden">
-            
-            {/* Ambient Background Flare */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-              <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5 font-display">
-                <span className="p-1.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-400">
-                  <Clock className="w-5 h-5" />
-                </span>
-                {home.subtitleTitle || 'Recent Subtitle Releases'}
-              </h2>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:inline-block">
-                Live Community Feed
-              </span>
-            </div>
-            
-            {subsLoading ? (
-              <div className="flex flex-col gap-2.5">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-luxury-900/80 animate-pulse rounded-2xl border border-white/5" />
-                ))}
-              </div>
-            ) : subtitleQueue.length === 0 ? (
-              <div className="text-center py-8 text-xs text-slate-400">
-                {home.subtitleEmpty || 'No recently uploaded subtitles.'}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {subtitleQueue.map((sub) => (
-                  <div
-                    key={sub._id}
-                    className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-2xl flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.05] hover:border-brand-primary/30 transition-all duration-300 group"
-                  >
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {sub.media?.title ? (
-                          <Link
-                            href={`/${sub.media.type}/${permalinkSlug(sub.media)}`}
-                            className="text-xs sm:text-sm font-black text-white group-hover:text-brand-primary transition truncate max-w-[240px] sm:max-w-[420px]"
-                          >
-                            {cleanMediaTitle(sub.media.title) || sub.media.title}
-                          </Link>
-                        ) : (
-                          <span className="text-xs font-black text-white uppercase">Unknown Title</span>
-                        )}
-                        {(sub.seasonNumber || sub.episodeNumber) && (
-                          <span className="px-2 py-0.5 rounded-lg bg-brand-primary/15 border border-brand-primary/30 text-brand-primary text-[9px] font-black uppercase">
-                            {sub.seasonNumber ? `S${sub.seasonNumber}` : ''} {sub.episodeNumber ? `EP ${sub.episodeNumber}` : ''}
-                          </span>
-                        )}
-                        <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-[9px] font-extrabold uppercase">
-                          {sub.language} ({sub.format?.toUpperCase() || 'SRT'})
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">
-                        Version: <span className="text-slate-300 font-bold">{sub.version}</span> • Uploader: <span className="text-brand-primary/90 font-bold">{sub.adminUploader?.username || sub.uploader?.username || 'Translator'}</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                      <span className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-black rounded-xl flex items-center gap-1 shadow-sm">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Approved
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
       </div>
       </SideAdLayout>
