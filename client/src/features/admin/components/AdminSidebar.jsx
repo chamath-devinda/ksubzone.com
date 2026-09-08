@@ -9,65 +9,52 @@ import { resolveLogoUrl } from '@/utils/mediaImages';
 import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 import {
   BookOpenText,
-  ChevronRight,
   Cloud,
   Database,
-  ExternalLink,
   Film,
   Languages,
   LayoutDashboard,
   LogOut,
-  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Server,
   Settings2,
   Sparkles,
-  Sun,
   Tv,
   Users,
   WandSparkles,
   X,
   MessageSquareText,
-  UserCheck,
-  ShieldCheck,
-  Sliders,
-  Compass
+  UserCheck
 } from 'lucide-react';
 
-const NAV_GROUPS = [
+const NAV_SECTIONS = [
   {
-    label: 'PAGES',
-    links: [
+    title: 'PAGES',
+    items: [
       { to: '/management/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/management/profile', label: 'Admin Profile', icon: UserCheck, badge: 'Profile' },
-      { to: '/management/import', label: 'TMDB Import', icon: Sparkles, badge: 'Auto' },
+      { to: '/management/profile', label: 'Admin Profile', icon: UserCheck, badge: 'PROFILE' },
+      { to: '/management/import', label: 'TMDB Import', icon: Sparkles, badge: 'AUTO' },
     ],
   },
   {
-    label: 'CONTENT ENGINE',
-    links: [
+    title: 'CONTENT ENGINE',
+    items: [
       { to: '/management/movies', label: 'Movies', icon: Film },
       { to: '/management/dramas', label: 'Dramas & TV', icon: Tv },
       { to: '/management/articles', label: 'Articles', icon: BookOpenText },
       { to: '/management/subtitles', label: 'Subtitles', icon: Languages },
       { to: '/management/comments', label: 'Comments', icon: MessageSquareText },
-      { to: '/management/users', label: 'Members', icon: Users },
     ],
   },
   {
-    label: 'STUDIO & TOOLS',
-    links: [
+    title: 'SYSTEM & TOOLS',
+    items: [
+      { to: '/management/users', label: 'Members', icon: Users },
       { to: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles },
       { to: '/management/srt-cleaner', label: 'SRT Cleaner', icon: Languages },
       { to: '/management/settings', label: 'Site Builder', icon: Settings2 },
-    ],
-  },
-  {
-    label: 'SYSTEM & DATA',
-    links: [
       { to: '/management/database', label: 'Database', icon: Database },
-      { to: '/management/backup', label: 'Cloud Backups', icon: Cloud },
       { to: '/management/seo', label: 'SEO & Config', icon: Server },
     ],
   },
@@ -75,7 +62,7 @@ const NAV_GROUPS = [
 
 export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = () => {} }) {
   const { admin, logoutAdmin } = useAuth();
-  const { theme, toggleTheme, isLight } = useAdminTheme();
+  const { isLight } = useAdminTheme();
   const pathname = usePathname();
   const { content } = useSiteContent();
   const brand = content?.brand || {};
@@ -99,9 +86,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
     });
   };
 
-  const adminName = admin?.displayName || admin?.username || admin?.name || 'Admin';
+  const adminName = admin?.displayName || admin?.username || admin?.name || 'System Admin';
   const adminInitial = adminName.charAt(0).toUpperCase();
-  const adminRoleName = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Admin'));
+  const adminRoleName = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Administrator'));
   const avatarUrl = admin?.avatar;
 
   return (
@@ -109,41 +96,53 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={onCloseMobileNav}
           aria-hidden="true"
         />
       )}
 
-      {/* KSubZone Studio Sidebar Shell */}
+      {/* ── Fixed Frosted Glass Sidebar ── */}
       <aside
-        className={`dashstack-sidebar ksz-studio-sidebar fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
-          collapsed ? 'lg:w-[84px]' : 'lg:w-[276px]'
-        } w-[276px] ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+          collapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'
+        } w-[280px] ${
+          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        } bg-white/85 dark:bg-[#0B0813]/85 backdrop-blur-2xl border-r border-slate-200/60 dark:border-white/[0.08]`}
+        style={{
+          boxShadow: isLight
+            ? '4px 0 32px -4px rgba(124, 58, 237, 0.04)'
+            : '4px 0 32px -4px rgba(0, 0, 0, 0.45)',
+        }}
       >
-        {/* ── Brand Header ── */}
-        <div className={`ksz-studio-brand flex h-[82px] items-center flex-shrink-0 ${
-          collapsed ? 'justify-center px-0' : 'justify-between px-6'
-        }`}>
+        {/* ── Top Brand Section ── */}
+        <div
+          className={`flex h-[88px] items-center flex-shrink-0 ${
+            collapsed ? 'justify-center px-0' : 'justify-between px-6'
+          } border-b border-slate-200/50 dark:border-white/[0.06]`}
+        >
           <Link
             href="/management/dashboard"
-            className="flex items-center gap-3 min-w-0 group"
+            className="flex items-center gap-3.5 min-w-0 group"
             title="KSubZone Control Center"
           >
-            <div className="ksz-studio-logo flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[15px] text-white font-black">
+            {/* Logo container matching reference card style with hover micro-interaction */}
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#A855F7] text-white font-black shadow-lg shadow-[#7C3AED]/25 group-hover:scale-105 group-hover:shadow-[#7C3AED]/40 transition-all duration-300">
               {logoUrl ? (
                 <img src={logoUrl} alt={brand.siteName || 'KSubZone'} className="h-6 w-6 object-contain" />
               ) : (
-                <span className="font-display text-base font-black">K</span>
+                <span className="font-sans text-lg font-black tracking-tight">K</span>
               )}
             </div>
 
             {!collapsed && (
               <div className="min-w-0">
-                <span className="block truncate text-[18px] font-black tracking-tight text-white">
+                <span className="block truncate text-[17px] font-black tracking-tight text-slate-900 dark:text-white">
                   {brand.logoText || brand.siteName || 'KSubZone'}
                 </span>
-                <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.2em] text-white/45">Content studio</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#7C3AED] dark:text-[#A855F7]">
+                  Executive Studio
+                </span>
               </div>
             )}
           </Link>
@@ -151,7 +150,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           <button
             type="button"
             onClick={onCloseMobileNav}
-            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
             aria-label="Close menu"
           >
             <X className="h-4 w-4" />
@@ -161,7 +160,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:text-[#7C3AED] hover:bg-[#7C3AED]/10 transition"
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
@@ -170,69 +169,78 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           )}
         </div>
 
-        {/* ── Navigation List ── */}
-        <nav className="admin-custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-5 space-y-6 min-h-0" aria-label="Main navigation">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label} className={collapsed ? '' : 'px-4'}>
-              {!collapsed ? (
-                <p className="px-3 mb-2 text-[10px] font-bold tracking-[0.16em] text-white/35 uppercase">
-                  {group.label}
-                </p>
-              ) : (
-                <div className="mx-auto mb-3 h-px w-8 bg-slate-200 dark:bg-white/[0.08]" />
+        {/* ── Navigation List (Categorized Sections with 18px Rounded Pills) ── */}
+        <nav
+          className="admin-custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-4 min-h-0"
+          aria-label="Main navigation"
+        >
+          {NAV_SECTIONS.map((section, sIdx) => (
+            <div key={sIdx} className="space-y-1">
+              {!collapsed && (
+                <div className="px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                  {section.title}
+                </div>
               )}
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.to ||
+                  (item.to !== '/management/dashboard' && pathname.startsWith(`${item.to}/`));
 
-              <div className="space-y-1">
-                {group.links.map((link) => {
-                  const Icon = link.icon;
-                  const isActive = pathname === link.to || (link.to !== '/management/dashboard' && pathname.startsWith(`${link.to}/`));
-
-                  return (
-                    <Link
-                      key={link.to}
-                      href={link.to}
-                      title={collapsed ? link.label : undefined}
-                      onClick={() => { if (mobileOpen) onCloseMobileNav(); }}
-                      className={`ksz-studio-nav group relative flex items-center gap-3.5 rounded-[14px] text-[13px] font-semibold transition-all duration-150 ${
-                        collapsed ? 'h-11 w-11 mx-auto justify-center' : 'h-11 px-3.5'
-                      } ${
+                return (
+                  <Link
+                    key={item.to}
+                    href={item.to}
+                    title={collapsed ? item.label : undefined}
+                    onClick={() => {
+                      if (mobileOpen) onCloseMobileNav();
+                    }}
+                    className={`group relative flex items-center gap-3.5 rounded-[18px] text-[13px] font-semibold transition-all duration-200 ${
+                      collapsed ? 'h-11 w-11 mx-auto justify-center' : 'h-11 px-3.5'
+                    } ${
+                      isActive
+                        ? 'bg-[#7C3AED]/12 dark:bg-[#7C3AED]/22 text-[#7C3AED] dark:text-[#C084FC] font-bold shadow-[0_4px_16px_rgba(124,58,237,0.1)]'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/[0.06] hover:translate-x-1'
+                    }`}
+                  >
+                    <Icon
+                      className={`h-4.5 w-4.5 flex-shrink-0 transition-colors ${
                         isActive
-                          ? 'is-active text-white font-bold'
-                          : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
+                          ? 'text-[#7C3AED] dark:text-[#C084FC]'
+                          : 'text-slate-400 dark:text-slate-500 group-hover:text-[#7C3AED] dark:group-hover:text-white'
                       }`}
-                    >
-                      <Icon className={`h-[18px] w-[18px] flex-shrink-0 ${
-                        isActive ? 'text-white' : 'text-white/45 group-hover:text-white'
-                      }`} />
+                      strokeWidth={isActive ? 2.2 : 1.9}
+                    />
 
-                      {!collapsed && (
-                        <span className="flex-1 truncate">{link.label}</span>
-                      )}
+                    {!collapsed && (
+                      <span className="flex-1 truncate tracking-tight">{item.label}</span>
+                    )}
 
-                      {!collapsed && link.badge && (
-                        <span className={`rounded-md px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider leading-none ${
+                    {!collapsed && item.badge && (
+                      <span
+                        className={`rounded-md px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider ${
                           isActive
-                            ? 'bg-white/20 text-white'
-                            : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300'
-                        }`}>
-                          {link.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
+                            ? 'bg-[#7C3AED] text-white'
+                            : 'bg-slate-200/80 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           ))}
         </nav>
 
-        {/* ── Bottom Section: profile and actions ── */}
-        <div className="ksz-studio-profile flex-shrink-0 p-3">
+        {/* ── Bottom Section: Red-Tinted Logout & Profile Pill ── */}
+        <div className="flex-shrink-0 p-3.5 border-t border-slate-200/50 dark:border-white/[0.06] space-y-2">
           {collapsed && (
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden lg:flex mx-auto mb-2 h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+              className="hidden lg:flex mx-auto mb-2 h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:text-[#7C3AED] hover:bg-[#7C3AED]/10 transition"
               title="Expand sidebar"
               aria-label="Expand sidebar"
             >
@@ -240,54 +248,52 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
             </button>
           )}
 
-          {/* User Profile Tile */}
-          <div
-            className={`flex items-center gap-3 rounded-[16px] p-2 bg-white/[0.055] border border-white/[0.07] hover:border-white/15 transition ${
+          {/* User Profile Pill */}
+          <Link
+            href="/management/profile"
+            className={`flex items-center gap-3 rounded-[18px] p-2 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] hover:border-[#7C3AED]/30 transition group ${
               collapsed ? 'justify-center p-1.5' : ''
             }`}
+            title="Edit Admin Profile & Photo"
           >
-            <Link
-              href="/management/profile"
-              className="flex items-center gap-3 min-w-0 flex-1"
-              title="Edit Admin Profile & Photo"
-            >
-              <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#490570] text-xs font-black text-white overflow-hidden shadow-sm">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={adminName} className="h-full w-full object-cover" />
-                ) : (
-                  <span>{adminInitial}</span>
-                )}
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-[#273142] bg-[#00B69B]" />
-              </div>
-
-              {!collapsed && (
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-xs font-bold text-white">
-                    {adminName}
-                  </p>
-                  <p className="truncate text-[10.5px] font-semibold text-[#D599EC]">
-                    {adminRoleName}
-                  </p>
-                </div>
+            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-xs font-black text-white overflow-hidden shadow-sm">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={adminName} className="h-full w-full object-cover" />
+              ) : (
+                <span>{adminInitial}</span>
               )}
-            </Link>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-[#0B0813] bg-[#10B981]" />
+            </div>
 
             {!collapsed && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to sign out from Admin Control?')) {
-                    logoutAdmin();
-                  }
-                }}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-500/15 hover:text-rose-500 transition"
-                title="Sign out"
-                aria-label="Sign out"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                  {adminName}
+                </p>
+                <p className="truncate text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                  {adminRoleName}
+                </p>
+              </div>
             )}
-          </div>
+          </Link>
+
+          {/* Dedicated Red-Tinted Logout Button Matching Reference Image */}
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to sign out from Admin Control?')) {
+                logoutAdmin();
+              }
+            }}
+            className={`flex items-center gap-3 rounded-[16px] text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-all duration-200 w-full ${
+              collapsed ? 'h-10 w-10 mx-auto justify-center' : 'h-11 px-4'
+            }`}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+            {!collapsed && <span>Logout</span>}
+          </button>
         </div>
       </aside>
     </>

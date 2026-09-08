@@ -192,7 +192,7 @@ export default function AdminProfile() {
   const adminRole = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Super Administrator'));
 
   return (
-    <div className="admin-shell flex min-h-screen bg-[#07080D] text-slate-100 font-sans">
+    <div className="admin-shell flex min-h-screen font-sans">
       <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
       <div className="flex flex-1 flex-col min-w-0">
@@ -201,18 +201,18 @@ export default function AdminProfile() {
         <main className="admin-main p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto space-y-6 sm:space-y-8">
 
           {/* ── Top Hero Profile Banner ── */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-[#131522] to-[#0A0C14] shadow-2xl">
+          <div className="admin-profile-hero relative overflow-hidden rounded-3xl border border-white/[0.15] shadow-2xl">
             {/* Ambient Background Gradient Art */}
             <div className="absolute inset-0 pointer-events-none opacity-40">
-              <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-violet-600/30 blur-[100px]" />
-              <div className="absolute top-10 right-0 h-64 w-80 rounded-full bg-fuchsia-600/20 blur-[110px]" />
-              <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]" />
+              <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-violet-400/30 blur-[100px]" />
+              <div className="absolute top-10 right-0 h-64 w-80 rounded-full bg-fuchsia-400/20 blur-[110px]" />
+              <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:16px_16px]" />
             </div>
 
             {/* Banner Cover Line */}
-            <div className="h-32 sm:h-44 w-full bg-gradient-to-r from-violet-900/40 via-purple-900/30 to-indigo-950/50 border-b border-white/[0.06] relative">
+            <div className="h-32 sm:h-44 w-full bg-gradient-to-r from-violet-900/50 via-purple-900/40 to-indigo-950/60 border-b border-white/[0.1] relative">
               <div className="absolute top-4 right-4 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-[11px] font-bold text-slate-300">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-[11px] font-bold text-white shadow-sm">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                   Live Session
                 </span>
@@ -223,8 +223,8 @@ export default function AdminProfile() {
             <div className="relative px-6 pb-6 pt-0 sm:px-8 sm:pb-8 flex flex-col sm:flex-row items-center sm:items-end gap-5 -mt-16 sm:-mt-20">
               {/* Avatar Circle with Upload Overlay */}
               <div className="relative group">
-                <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-3xl p-1 bg-gradient-to-br from-violet-500 via-indigo-600 to-purple-800 shadow-[0_10px_35px_rgba(124,58,237,0.35)]">
-                  <div className="h-full w-full rounded-[22px] overflow-hidden bg-[#0A0C14] flex items-center justify-center relative border border-black/40">
+                <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-3xl p-1 bg-gradient-to-br from-violet-400 via-indigo-500 to-purple-700 shadow-[0_10px_35px_rgba(124,58,237,0.35)]">
+                  <div className="h-full w-full rounded-[22px] overflow-hidden bg-[#0A0C14] flex items-center justify-center relative border border-white/20">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
@@ -232,7 +232,7 @@ export default function AdminProfile() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-4xl sm:text-5xl font-black text-violet-300 select-none">
+                      <span className="text-4xl sm:text-5xl font-black text-violet-200 select-none">
                         {adminInitial}
                       </span>
                     )}
@@ -258,7 +258,7 @@ export default function AdminProfile() {
                 </div>
 
                 {/* Status Dot */}
-                <span className="absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-[#0A0C14] bg-emerald-400 shadow-md" />
+                <span className="absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-purple-950 bg-emerald-400 shadow-md" />
               </div>
 
               {/* Hidden File Input */}
@@ -273,20 +273,20 @@ export default function AdminProfile() {
               {/* Text Info */}
               <div className="flex-1 text-center sm:text-left space-y-1">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-sm">
                     {adminName}
                   </h1>
-                  <span className="px-3 py-0.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-[10px] font-black uppercase tracking-wider text-violet-300">
+                  <span className="px-3 py-0.5 rounded-lg bg-white/20 border border-white/30 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
                     {adminRole}
                   </span>
                 </div>
 
-                <p className="text-sm font-medium text-slate-400">
-                  {email} <span className="mx-1.5 text-slate-600">•</span> @{username}
+                <p className="text-sm font-medium text-white/85">
+                  {email} <span className="mx-1.5 text-white/50">•</span> @{username}
                 </p>
 
                 {bio && (
-                  <p className="text-xs text-slate-300/80 max-w-xl line-clamp-2 pt-1 font-normal">
+                  <p className="text-xs text-white/90 max-w-xl line-clamp-2 pt-1 font-normal">
                     {bio}
                   </p>
                 )}
@@ -298,9 +298,9 @@ export default function AdminProfile() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingFile}
-                  className="flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-violet-600/25 transition active:scale-95 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl bg-white hover:bg-white/90 px-4 py-2.5 text-xs font-black text-purple-950 shadow-lg transition active:scale-95 disabled:opacity-50"
                 >
-                  {uploadingFile ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploadingFile ? <RefreshCw className="h-4 w-4 animate-spin text-purple-950" /> : <Upload className="h-4 w-4 text-purple-950" />}
                   <span>Upload Photo</span>
                 </button>
 
@@ -308,7 +308,7 @@ export default function AdminProfile() {
                   <button
                     type="button"
                     onClick={handleRemoveAvatar}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white/80 hover:text-rose-300 hover:border-rose-400/40 hover:bg-rose-500/20 transition"
                     title="Remove custom avatar"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -319,7 +319,7 @@ export default function AdminProfile() {
           </div>
 
           {/* ── Navigation Tabs ── */}
-          <div className="flex items-center gap-2 border-b border-white/[0.08] pb-1 overflow-x-auto">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-white/[0.08] pb-1 overflow-x-auto">
             {[
               { id: 'general', label: 'Personal Information', icon: User },
               { id: 'avatar', label: 'Photo & Presets', icon: Camera },
@@ -332,8 +332,8 @@ export default function AdminProfile() {
                 onClick={() => setActiveTab(id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                   activeTab === id
-                    ? 'bg-violet-600/20 text-violet-300 border border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                    ? 'bg-violet-600 text-white shadow-md shadow-violet-600/25 border border-violet-500'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/[0.04]'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -346,13 +346,13 @@ export default function AdminProfile() {
           {activeTab === 'general' && (
             <div className="grid lg:grid-cols-3 gap-6 animate-fadeInAdmin">
               <div className="lg:col-span-2 space-y-6">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+                <div className="dashstack-card p-6 sm:p-7 space-y-6">
                   <div>
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                      <User className="h-4 w-4 text-violet-400" />
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <User className="h-4 w-4 text-violet-500" />
                       Account Identity
                     </h2>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Update your administrator credentials, email address, and visible name.
                     </p>
                   </div>
@@ -360,7 +360,7 @@ export default function AdminProfile() {
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                        <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Display Name
                         </label>
                         <input
@@ -368,12 +368,12 @@ export default function AdminProfile() {
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
                           placeholder="e.g. Chamath Devinda"
-                          className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                          className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                        <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Username
                         </label>
                         <input
@@ -382,13 +382,13 @@ export default function AdminProfile() {
                           onChange={(e) => setUsername(e.target.value)}
                           placeholder="e.g. superadmin"
                           required
-                          className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                          className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Email Address
                       </label>
                       <input
@@ -397,12 +397,12 @@ export default function AdminProfile() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="admin@ksubzone.com"
                         required
-                        className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                        className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Administrator Bio & Notes
                       </label>
                       <textarea
@@ -410,7 +410,7 @@ export default function AdminProfile() {
                         value={bio}
                         onChange={(e) => setBio(e.target.value)}
                         placeholder="Add a short bio or notes about your administrative role..."
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05] resize-none"
+                        className="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] p-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 resize-none"
                       />
                     </div>
 
@@ -430,38 +430,38 @@ export default function AdminProfile() {
 
               {/* Side Summary */}
               <div className="space-y-6">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 backdrop-blur-xl shadow-xl space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                    <Zap className="h-3.5 w-3.5 text-amber-400" />
+                <div className="dashstack-card p-6 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Zap className="h-3.5 w-3.5 text-amber-500" />
                     Account Status
                   </h3>
 
                   <div className="space-y-3 pt-1">
-                    <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
-                      <span className="text-slate-400">Role Status</span>
-                      <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-white/[0.04] text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">Role Status</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         {adminRole}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
-                      <span className="text-slate-400">Two-Factor Auth</span>
-                      <span className="font-semibold text-slate-300">
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-white/[0.04] text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">Two-Factor Auth</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
                         {admin?.twoFactorEnabled ? 'Enabled' : 'Disabled'}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between py-2 border-b border-white/[0.04] text-xs">
-                      <span className="text-slate-400">Last Login</span>
-                      <span className="font-semibold text-slate-300">
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-white/[0.04] text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">Last Login</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
                         {admin?.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Active Now'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between py-2 text-xs">
-                      <span className="text-slate-400">Account Type</span>
-                      <span className="font-mono text-violet-400 font-bold">System SuperAdmin</span>
+                      <span className="text-slate-500 dark:text-slate-400">Account Type</span>
+                      <span className="font-mono text-violet-600 dark:text-violet-400 font-bold">System SuperAdmin</span>
                     </div>
                   </div>
                 </div>
@@ -474,13 +474,13 @@ export default function AdminProfile() {
             <div className="grid lg:grid-cols-3 gap-6 animate-fadeInAdmin">
               <div className="lg:col-span-2 space-y-6">
                 {/* Upload or Drop File */}
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 sm:p-7 backdrop-blur-xl shadow-xl space-y-5">
+                <div className="dashstack-card p-6 sm:p-7 space-y-5">
                   <div>
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                      <Camera className="h-4 w-4 text-violet-400" />
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Camera className="h-4 w-4 text-violet-500" />
                       Upload Avatar Image
                     </h2>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Upload an image file from your computer (PNG, JPG, WEBP, or GIF up to 5MB).
                     </p>
                   </div>
@@ -488,9 +488,9 @@ export default function AdminProfile() {
                   {/* Drag and Drop Zone */}
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="group border-2 border-dashed border-white/[0.1] hover:border-violet-500/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+                    className="group border-2 border-dashed border-slate-200 dark:border-white/[0.1] hover:border-violet-500/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer bg-slate-50/60 dark:bg-white/[0.02] hover:bg-violet-50/40 dark:hover:bg-white/[0.04] transition-all"
                   >
-                    <div className="h-14 w-14 rounded-2xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 group-hover:scale-110 transition-transform">
+                    <div className="h-14 w-14 rounded-2xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-600 dark:text-violet-300 group-hover:scale-110 transition-transform">
                       {uploadingFile ? (
                         <RefreshCw className="h-6 w-6 animate-spin" />
                       ) : (
@@ -498,7 +498,7 @@ export default function AdminProfile() {
                       )}
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
                         Click to browse or drag & drop image here
                       </p>
                       <p className="text-[11px] text-slate-500 mt-1">
@@ -508,9 +508,9 @@ export default function AdminProfile() {
                   </div>
 
                   {/* Or Custom URL */}
-                  <div className="pt-2 border-t border-white/[0.06] space-y-3">
-                    <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                      <LinkIcon className="h-3.5 w-3.5 text-violet-400" />
+                  <div className="pt-2 border-t border-slate-100 dark:border-white/[0.06] space-y-3">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <LinkIcon className="h-3.5 w-3.5 text-violet-500" />
                       Or use an external Image URL
                     </label>
                     <div className="flex gap-2">
@@ -519,7 +519,7 @@ export default function AdminProfile() {
                         value={customAvatarInput}
                         onChange={(e) => setCustomAvatarInput(e.target.value)}
                         placeholder="https://example.com/avatar.jpg"
-                        className="h-10 flex-1 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                        className="h-10 flex-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                       />
                       <button
                         type="button"
@@ -534,13 +534,13 @@ export default function AdminProfile() {
                 </div>
 
                 {/* Preset Avatars Selection */}
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 backdrop-blur-xl shadow-xl space-y-4">
+                <div className="dashstack-card p-6 space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-pink-400" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-pink-500" />
                       Curated Preset Avatars
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Choose from our collection of high-resolution designer avatars with a single click.
                     </p>
                   </div>
@@ -553,8 +553,8 @@ export default function AdminProfile() {
                         onClick={() => handleApplyAvatarUrl(preset)}
                         className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all p-0.5 ${
                           avatarUrl === preset
-                            ? 'border-violet-400 ring-2 ring-violet-500/40 scale-105'
-                            : 'border-white/[0.08] hover:border-violet-400/50 hover:scale-105'
+                            ? 'border-violet-500 ring-2 ring-violet-500/40 scale-105'
+                            : 'border-slate-200 dark:border-white/[0.08] hover:border-violet-500 hover:scale-105'
                         }`}
                       >
                         <img
@@ -575,31 +575,31 @@ export default function AdminProfile() {
 
               {/* Avatar Live Preview Card */}
               <div className="space-y-6">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 backdrop-blur-xl shadow-xl space-y-4 text-center">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <div className="dashstack-card p-6 space-y-4 text-center">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Live Avatar Preview
                   </h3>
 
-                  <div className="mx-auto h-32 w-32 rounded-3xl p-1 bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+                  <div className="mx-auto h-32 w-32 rounded-3xl p-1 bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_0_30px_rgba(139,92,246,0.25)]">
                     <div className="h-full w-full rounded-[22px] overflow-hidden bg-[#0A0C14] flex items-center justify-center">
                       {avatarUrl ? (
                         <img src={avatarUrl} alt="Preview" className="h-full w-full object-cover" />
                       ) : (
-                        <span className="text-4xl font-black text-violet-300">{adminInitial}</span>
+                        <span className="text-4xl font-black text-violet-200">{adminInitial}</span>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-bold text-white">{adminName}</p>
-                    <p className="text-xs text-violet-400 font-semibold mt-0.5">{adminRole}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{adminName}</p>
+                    <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mt-0.5">{adminRole}</p>
                   </div>
 
                   {avatarUrl && (
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-bold text-rose-400 hover:bg-rose-500/20 transition"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-bold text-rose-500 hover:bg-rose-500/20 transition"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>Remove Photo</span>
@@ -614,13 +614,13 @@ export default function AdminProfile() {
           {activeTab === 'security' && (
             <div className="grid lg:grid-cols-3 gap-6 animate-fadeInAdmin">
               <div className="lg:col-span-2">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+                <div className="dashstack-card p-6 sm:p-7 space-y-6">
                   <div>
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                      <Key className="h-4 w-4 text-violet-400" />
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Key className="h-4 w-4 text-violet-500" />
                       Change Password
                     </h2>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Ensure your account is protected with a strong, complex password.
                     </p>
                   </div>
@@ -628,7 +628,7 @@ export default function AdminProfile() {
                   <form onSubmit={handleUpdatePassword} className="space-y-4">
                     {/* Current Password */}
                     <div className="space-y-1.5">
-                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Current Password
                       </label>
                       <div className="relative">
@@ -638,12 +638,12 @@ export default function AdminProfile() {
                           onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="Enter your current password"
                           required
-                          className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-3.5 pr-10 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                          className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] pl-3.5 pr-10 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                         />
                         <button
                           type="button"
                           onClick={() => setShowCurrentPass(!showCurrentPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                         >
                           {showCurrentPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -652,7 +652,7 @@ export default function AdminProfile() {
 
                     {/* New Password */}
                     <div className="space-y-1.5">
-                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         New Password
                       </label>
                       <div className="relative">
@@ -662,12 +662,12 @@ export default function AdminProfile() {
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="Enter a new password (min. 6 characters)"
                           required
-                          className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-3.5 pr-10 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                          className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] pl-3.5 pr-10 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                         />
                         <button
                           type="button"
                           onClick={() => setShowNewPass(!showNewPass)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                         >
                           {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -676,7 +676,7 @@ export default function AdminProfile() {
 
                     {/* Confirm New Password */}
                     <div className="space-y-1.5">
-                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="text-[11.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Confirm New Password
                       </label>
                       <input
@@ -685,7 +685,7 @@ export default function AdminProfile() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter new password"
                         required
-                        className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-xs text-white placeholder:text-slate-600 outline-none transition focus:border-violet-500/50 focus:bg-white/[0.05]"
+                        className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#151124] px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                       />
                     </div>
 
@@ -705,23 +705,23 @@ export default function AdminProfile() {
 
               {/* Security Tips */}
               <div className="space-y-6">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 backdrop-blur-xl shadow-xl space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                    <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
+                <div className="dashstack-card p-6 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
                     Security Recommendations
                   </h3>
 
-                  <ul className="space-y-2.5 text-xs text-slate-400">
+                  <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400">
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                       <span>Use at least 10 characters with numbers and special symbols.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                       <span>Do not reuse passwords across multiple websites.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                       <span>Log out when accessing from shared or public computers.</span>
                     </li>
                   </ul>
@@ -733,14 +733,14 @@ export default function AdminProfile() {
           {/* ── TAB 4: Permissions & System ── */}
           {activeTab === 'permissions' && (
             <div className="space-y-6 animate-fadeInAdmin">
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0E1017]/80 p-6 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+              <div className="dashstack-card p-6 sm:p-7 space-y-6">
                 <div>
-                  <h2 className="text-base font-bold text-white flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
                     Administrative Privileges & Permissions
                   </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Authorized features granted to your current role (<strong className="text-violet-300">{adminRole}</strong>).
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Authorized features granted to your current role (<strong className="text-violet-600 dark:text-violet-400">{adminRole}</strong>).
                   </p>
                 </div>
 
@@ -758,14 +758,14 @@ export default function AdminProfile() {
                   ].map((perm, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 hover:border-violet-500/30 transition-colors"
+                      className="flex items-start gap-3 rounded-xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-50/80 dark:bg-white/[0.02] p-3.5 hover:border-violet-500/40 transition-colors"
                     >
-                      <div className="h-6 w-6 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0 mt-0.5">
+                      <div className="h-6 w-6 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500 flex-shrink-0 mt-0.5">
                         <Check className="h-3.5 w-3.5" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">{perm.title}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{perm.desc}</p>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{perm.title}</h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{perm.desc}</p>
                       </div>
                     </div>
                   ))}

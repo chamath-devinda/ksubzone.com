@@ -66,7 +66,7 @@ export default function ModalDrawer({
               opacity: 0 
             }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className={`admin-modal-drawer w-full border border-white/[0.08] bg-[#11131A] shadow-2xl relative overflow-hidden z-10 flex flex-col
+            className={`admin-modal-drawer w-full border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#11131A] text-slate-900 dark:text-slate-100 shadow-2xl relative overflow-hidden z-10 flex flex-col
               /* Mobile Styles */
               fixed bottom-0 inset-x-0 rounded-t-2xl max-h-[94vh] border-b-0
               /* Desktop Styles */
@@ -75,18 +75,18 @@ export default function ModalDrawer({
           >
             {/* Grab handle bar on mobile */}
             <div className="w-full flex justify-center py-2 md:hidden">
-              <div className="w-10 h-1 bg-white/20 rounded-full" />
+              <div className="w-10 h-1 bg-slate-300 dark:bg-white/20 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-[#151821]/90 flex-shrink-0">
-              <h3 className="text-sm font-bold text-slate-100 tracking-tight truncate mr-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate mr-4">
                 {title}
               </h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="text-slate-400 hover:text-white transition p-1.5 hover:bg-white/[0.06] rounded-lg flex-shrink-0"
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition p-1.5 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] rounded-lg flex-shrink-0"
                 aria-label="Close dialog"
               >
                 <X className="w-4 h-4" />
@@ -100,7 +100,7 @@ export default function ModalDrawer({
 
             {/* Optional Sticky Footer */}
             {footer && (
-              <div className="px-6 py-3.5 border-t border-white/[0.06] bg-[#151821]/90 flex-shrink-0">
+              <div className="px-6 py-3.5 border-t border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
                 {footer}
               </div>
             )}

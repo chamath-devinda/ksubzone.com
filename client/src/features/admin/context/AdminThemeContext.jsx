@@ -13,9 +13,17 @@ const AdminThemeContext = createContext({
 const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v2';
 
 export function AdminThemeProvider({ children }) {
-  // The management UI is intentionally light-first: it keeps the glass surfaces
-  // airy and lets the KSubZone purple accents carry the hierarchy.
-  const [theme, setThemeState] = useState('light');
+  const [theme, setThemeState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTheme = localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          return savedTheme;
+        }
+      } catch (_) {}
+    }
+    return 'dark';
+  });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -30,7 +38,16 @@ export function AdminThemeProvider({ children }) {
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
+      const isDark = theme === 'dark';
       document.documentElement.setAttribute('data-admin-theme', theme);
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.classList.toggle('light', !isDark);
+
+      if (document.body) {
+        document.body.setAttribute('data-admin-theme', theme);
+        document.body.classList.toggle('dark', isDark);
+        document.body.classList.toggle('light', !isDark);
+      }
     }
   }, [theme]);
 
@@ -52,7 +69,7 @@ export function AdminThemeProvider({ children }) {
     <AdminThemeContext.Provider value={{ theme, setTheme, toggleTheme, isLight, mounted }}>
       <div
         data-admin-theme={theme}
-        className={`admin-theme-wrapper ${isLight ? 'admin-theme-light' : 'admin-theme-dark'} min-h-screen w-full`}
+        className={`admin-theme-wrapper ${isLight ? 'admin-theme-light' : 'admin-theme-dark'} min-h-screen w-full transition-colors duration-200`}
       >
         {children}
       </div>
