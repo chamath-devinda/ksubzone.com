@@ -1654,3 +1654,141 @@ textarea {
   .doit-stat,
   .doit-quick-action { transition: none !important; }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   KSUBZONE ADMIN — LIGHT FROSTED PURPLE PASS
+   Reference: airy operations dashboard, adapted to the public site's purple.
+   Kept as a final layer so legacy admin screens inherit the same shell without
+   requiring every page to be rewritten.
+   ────────────────────────────────────────────────────────────────────────── */
+[data-admin-theme='light'] .admin-theme-wrapper,
+.admin-theme-light {
+  --studio-canvas: #f8f9fd;
+  --studio-card: rgba(255, 255, 255, 0.9);
+  --studio-border: rgba(73, 5, 112, 0.1);
+  --studio-text: #171326;
+  --studio-muted: #727087;
+  --studio-blue: #64108c;
+  background:
+    radial-gradient(circle at 92% 2%, rgba(174, 109, 231, 0.13), transparent 23rem),
+    radial-gradient(circle at 18% 90%, rgba(231, 190, 255, 0.14), transparent 25rem),
+    var(--studio-canvas);
+}
+
+[data-admin-theme='light'] .ksz-studio-sidebar,
+.admin-theme-light .ksz-studio-sidebar {
+  color: #4b5568 !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-right: 1px solid rgba(73, 5, 112, 0.08) !important;
+  box-shadow: 12px 0 34px rgba(73, 5, 112, 0.045) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+[data-admin-theme='light'] .ksz-studio-brand,
+[data-admin-theme='light'] .ksz-studio-profile,
+.admin-theme-light .ksz-studio-brand,
+.admin-theme-light .ksz-studio-profile {
+  border-color: rgba(73, 5, 112, 0.08) !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-logo,
+.admin-theme-light .ksz-studio-logo {
+  background: linear-gradient(145deg, #9c4dcc, #64108c 68%, #490570) !important;
+  box-shadow: 0 10px 24px rgba(100, 16, 140, 0.24), inset 0 1px 0 rgba(255,255,255,.35) !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-nav,
+.admin-theme-light .ksz-studio-nav {
+  color: #6f7484 !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-nav:not(.is-active):hover,
+.admin-theme-light .ksz-studio-nav:not(.is-active):hover {
+  color: #64108c !important;
+  background: rgba(100, 16, 140, 0.055) !important;
+  transform: translateX(4px);
+}
+
+[data-admin-theme='light'] .ksz-studio-nav.is-active,
+.admin-theme-light .ksz-studio-nav.is-active {
+  color: #64108c !important;
+  background: linear-gradient(135deg, rgba(100, 16, 140, 0.12), rgba(174, 109, 231, 0.1)) !important;
+  box-shadow: inset 3px 0 0 #64108c, 0 7px 18px rgba(100, 16, 140, 0.08) !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-nav.is-active svg,
+.admin-theme-light .ksz-studio-nav.is-active svg {
+  color: #7b24a5 !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-nav.is-active::after,
+.admin-theme-light .ksz-studio-nav.is-active::after {
+  background: #9c4dcc;
+  box-shadow: 0 0 0 4px rgba(156, 77, 204, 0.13);
+}
+
+[data-admin-theme='light'] .ksz-studio-topbar,
+.admin-theme-light .ksz-studio-topbar {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-bottom-color: rgba(73, 5, 112, 0.08) !important;
+  box-shadow: 0 8px 26px rgba(73, 5, 112, 0.035) !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-search,
+.admin-theme-light .ksz-studio-search {
+  background: rgba(248, 249, 253, 0.92) !important;
+  border-color: rgba(73, 5, 112, 0.1) !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-search:focus,
+.admin-theme-light .ksz-studio-search:focus {
+  border-color: rgba(100, 16, 140, 0.42) !important;
+  box-shadow: 0 0 0 4px rgba(100, 16, 140, 0.09) !important;
+}
+
+[data-admin-theme='light'] .ksz-studio-create,
+.admin-theme-light .ksz-studio-create {
+  background: linear-gradient(135deg, #8b35b4, #64108c) !important;
+  box-shadow: 0 10px 22px rgba(100, 16, 140, 0.22) !important;
+}
+
+[data-admin-theme='light'] .doit-dashboard-hero,
+.admin-theme-light .doit-dashboard-hero {
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255,255,255,.22), transparent 14rem),
+    radial-gradient(circle at 60% 130%, rgba(206, 145, 235, .28), transparent 18rem),
+    linear-gradient(125deg, #4a0870 0%, #64108c 56%, #8b35b4 100%);
+  border-radius: 30px;
+  box-shadow: 0 18px 40px rgba(100, 16, 140, 0.2), inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+[data-admin-theme='light'] .dashstack-card,
+.admin-theme-light .dashstack-card {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(73, 5, 112, 0.09) !important;
+  border-radius: 26px !important;
+  box-shadow: 0 10px 30px rgba(29, 20, 58, 0.055) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+[data-admin-theme='light'] .dashstack-card:hover,
+.admin-theme-light .dashstack-card:hover {
+  border-color: rgba(100, 16, 140, 0.2) !important;
+  box-shadow: 0 17px 36px rgba(73, 5, 112, 0.1) !important;
+}
+
+[data-admin-theme='light'] .admin-main h1,
+[data-admin-theme='light'] .admin-main h2,
+[data-admin-theme='light'] .admin-main h3,
+.admin-theme-light .admin-main h1,
+.admin-theme-light .admin-main h2,
+.admin-theme-light .admin-main h3 {
+  letter-spacing: -0.045em;
+}
+
+@media (max-width: 767px) {
+  [data-admin-theme='light'] .ksz-studio-sidebar,
+  .admin-theme-light .ksz-studio-sidebar { box-shadow: 18px 0 42px rgba(28, 15, 54, 0.18) !important; }
+}

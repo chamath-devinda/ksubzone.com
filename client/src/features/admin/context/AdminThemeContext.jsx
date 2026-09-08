@@ -13,7 +13,9 @@ const AdminThemeContext = createContext({
 const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v2';
 
 export function AdminThemeProvider({ children }) {
-  const [theme, setThemeState] = useState('dark');
+  // The management UI is intentionally light-first: it keeps the glass surfaces
+  // airy and lets the KSubZone purple accents carry the hierarchy.
+  const [theme, setThemeState] = useState('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
