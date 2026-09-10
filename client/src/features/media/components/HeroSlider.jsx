@@ -336,20 +336,26 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
       </div>
 
       {/* Slider Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 hidden sm:flex h-11 w-11 items-center justify-center rounded-full btn-glass-subtle text-white transition-all duration-200 z-20 opacity-75 hover:opacity-100 hover:scale-110 shadow-lg"
-        aria-label="Previous hero title"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex h-11 w-11 items-center justify-center rounded-full btn-glass-subtle text-white transition-all duration-200 z-20 opacity-75 hover:opacity-100 hover:scale-110 shadow-lg"
-        aria-label="Next hero title"
-      >
-        <ChevronRight className="w-5 h-5" />
-      </button>
+      {items.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={prevSlide}
+            className="!absolute left-3 sm:left-6 lg:left-8 top-1/2 -translate-y-1/2 hidden sm:flex h-12 w-12 items-center justify-center rounded-full bg-black/45 hover:bg-black/80 border border-white/15 hover:border-violet-500/60 text-white/85 hover:text-white backdrop-blur-xl shadow-2xl transition-all duration-300 z-30 hover:scale-110 active:scale-95 group/arrow cursor-pointer"
+            aria-label="Previous featured title"
+          >
+            <ChevronLeft className="w-6 h-6 transition-transform duration-200 group-hover/arrow:-translate-x-0.5" />
+          </button>
+          <button
+            type="button"
+            onClick={nextSlide}
+            className="!absolute right-3 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 hidden sm:flex h-12 w-12 items-center justify-center rounded-full bg-black/45 hover:bg-black/80 border border-white/15 hover:border-violet-500/60 text-white/85 hover:text-white backdrop-blur-xl shadow-2xl transition-all duration-300 z-30 hover:scale-110 active:scale-95 group/arrow cursor-pointer"
+            aria-label="Next featured title"
+          >
+            <ChevronRight className="w-6 h-6 transition-transform duration-200 group-hover/arrow:translate-x-0.5" />
+          </button>
+        </>
+      )}
 
       {/* Pagination Dots */}
       <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/45 border border-white/10 px-3 py-2 rounded-full backdrop-blur-xl">
