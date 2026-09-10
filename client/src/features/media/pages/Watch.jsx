@@ -123,7 +123,7 @@ export default function Watch({ initialDramaData }) {
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadAlert, setDownloadAlert] = useState(null);
 
-  const handleDownloadSubtitle = async (subId, fileUrl, customFileName) => {
+  const handleDownloadSubtitle = async (subId, fileUrl, customFileName, subtitleObj = null) => {
     if (downloadingId) return;
     setDownloadingId(subId);
     setDownloadAlert(null);
@@ -133,6 +133,8 @@ export default function Watch({ initialDramaData }) {
       const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download?name=${encodeURIComponent(customFileName)}`;
 
       await downloadSubtitle({
+        subtitle: subtitleObj || { _id: subId, fileUrl },
+        subId,
         downloadUrl,
         fileUrl,
         fileName: customFileName || `subtitle-${subId}.srt`
@@ -261,15 +263,15 @@ export default function Watch({ initialDramaData }) {
                 const cleanTitle = (drama.title || 'Subtitle').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
                 const subLang = sub.language || 'Sinhala';
                 const customFileName = `${cleanTitle}_${formattedSeason}_${formattedEpisode}_${subLang}.${sub.format || 'srt'}`;
-                handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName);
+                handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName, sub);
               }}
-              className="group relative w-full max-w-md min-h-14 rounded-2xl sm:rounded-full px-4 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 disabled:opacity-60 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
+              className="group relative w-full max-w-md min-h-14 rounded-full px-6 btn-oio-pill disabled:opacity-60 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center cursor-pointer"
             >
               <Download className={`w-5 h-5 ${downloadingId ? 'animate-bounce' : 'group-hover:-translate-y-0.5'} transition-transform`} />
               <span>{downloadingId ? 'බාගත වෙමින් පවතී...' : 'සිංහල උපසිරැසිය (DOWNLOAD)'}</span>
             </button>
           ) : (
-            <div className="w-full max-w-md p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-slate-400 text-xs font-bold">
+            <div className="w-full max-w-md p-4 rounded-full bg-white/[0.03] border border-white/10 text-slate-400 text-xs font-bold text-center">
               මෙම කොටස සඳහා උපසිරැසි නිකුත් වෙමින් පවතී (Pending Release)
             </div>
           )}
@@ -301,9 +303,9 @@ export default function Watch({ initialDramaData }) {
                     const cleanTitle = (drama.title || 'Subtitle').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
                     const subLang = sub.language || 'Sinhala';
                     const customFileName = `${cleanTitle}_${formattedSeason}_${formattedEpisode}_${subLang}_v${sub.version}.${sub.format || 'srt'}`;
-                    handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName);
+                    handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName, sub);
                   }}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-brand-primary/20 border border-white/10 text-xs font-bold text-white transition"
+                  className="flex items-center justify-between p-3 rounded-full bg-white/[0.03] hover:bg-brand-primary/20 border border-white/10 text-xs font-bold text-white transition"
                 >
                   <span className="flex items-center gap-2">
                     <Download className="w-3.5 h-3.5 text-brand-primary" />
@@ -332,50 +334,51 @@ export default function Watch({ initialDramaData }) {
               href="https://t.me/ksubzone"
               target="_blank"
               rel="noopener noreferrer"
-              className="h-10 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition flex-shrink-0"
+              className="h-10 px-5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 shadow-[0_10px_25px_-8px_rgba(14,165,233,0.8)] border border-sky-400/40 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:-translate-y-0.5 active:scale-[0.985] transition-all flex-shrink-0 cursor-pointer"
             >
-              Join <ExternalLink className="w-3 h-3" />
+              <span>Join</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
             </a>
           </div>
           </div>
         </div>
 
-        {/* ─── 3-PILL EPISODE NAVIGATION ─── */}
-        <div className="w-full max-w-xl mx-auto grid grid-cols-3 items-stretch gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-luxury-900/80 border border-white/10 backdrop-blur-xl shadow-lg mt-2">
+        {/* ─── 3-PILL EPISODE NAVIGATION (HIRU LUXURY CAPSULES) ─── */}
+        <div className="w-full max-w-xl mx-auto grid grid-cols-3 items-stretch gap-2 p-1.5 rounded-full bg-luxury-900/80 border border-white/10 backdrop-blur-xl shadow-lg mt-2">
           {prevEp ? (
             <button
               onClick={() => router.push(`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${prevEp.episodeNumber}`)}
-              className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center justify-center gap-1"
+              className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-200 btn-oio-glass flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 text-brand-primary" />
-              <span>කලින් කොටස</span>
+              <ChevronLeft className="w-4 h-4 text-purple-300" />
+              <span className="truncate">කලින් කොටස</span>
             </button>
           ) : (
-            <div className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1 pointer-events-none">
-              <ChevronLeft className="w-4 h-4 opacity-40" />
-              <span>කලින් කොටස</span>
+            <div className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed">
+              <ChevronLeft className="w-4 h-4" />
+              <span className="truncate">කලින් කොටස</span>
             </div>
           )}
 
           <Link
             href={`/drama/${dramaPermalink}#subtitles`}
-            className="min-w-0 py-2.5 px-2 sm:px-4 rounded-xl text-[10px] sm:text-xs font-black text-white bg-gradient-to-r from-brand-primary/30 to-brand-secondary/30 hover:from-brand-primary/50 hover:to-brand-secondary/50 border border-brand-primary/40 transition flex items-center justify-center text-center shadow-sm"
+            className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-black text-white btn-oio-pill flex items-center justify-center text-center cursor-pointer"
           >
-            සියලුම කොටස්
+            <span className="truncate">සියලුම කොටස්</span>
           </Link>
 
           {nextEp ? (
             <button
               onClick={() => router.push(`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${nextEp.episodeNumber}`)}
-              className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center justify-center gap-1"
+              className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-200 btn-oio-glass flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>ඊළඟ කොටස</span>
-              <ChevronRight className="w-4 h-4 text-brand-primary" />
+              <span className="truncate">ඊළඟ කොටස</span>
+              <ChevronRight className="w-4 h-4 text-purple-300" />
             </button>
           ) : (
-            <div className="min-w-0 py-2.5 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1 pointer-events-none">
-              <span>ඊළඟ කොටස</span>
-              <ChevronRight className="w-4 h-4 opacity-40" />
+            <div className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed">
+              <span className="truncate">ඊළඟ කොටස</span>
+              <ChevronRight className="w-4 h-4" />
             </div>
           )}
         </div>
@@ -435,7 +438,7 @@ export default function Watch({ initialDramaData }) {
               <button
                 type="submit"
                 disabled={commentStatus.loading || (!user && !admin && commentName.trim().length < 2)}
-                className="h-11 px-6 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 hover:from-purple-600 hover:to-brand-primary disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-brand-primary/25"
+                className="h-11 px-6 rounded-full btn-oio-pill disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
               >
                 <Send className="w-3.5 h-3.5" />
                 {commentStatus.loading ? 'Posting...' : 'Post Comment'}

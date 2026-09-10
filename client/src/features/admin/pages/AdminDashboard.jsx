@@ -219,15 +219,15 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2.5 flex-wrap">
               <Link
                 href="/management/profile"
-                className="flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-bold text-white hover:bg-white/15 transition"
+                className="flex h-10 items-center gap-2 rounded-full px-4 text-xs font-bold text-white btn-oio-glass transition"
               >
-                <User className="h-4 w-4 text-[#D599EC]" />
+                <User className="h-4 w-4 text-purple-200" />
                 <span>Admin Profile</span>
               </Link>
 
               <Link
                 href="/management/import"
-                className="flex h-10 items-center gap-2 rounded-xl bg-white hover:bg-fuchsia-50 px-4 text-xs font-bold text-[#490570] shadow-sm transition active:scale-95"
+                className="flex h-10 items-center gap-2 rounded-full px-5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill transition"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>TMDB Auto Import</span>
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
               <Link
                 href="/"
                 target="_blank"
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white hover:bg-white/15 transition"
+                className="flex h-10 w-10 items-center justify-center rounded-full btn-oio-glass text-white transition"
                 title="View Public Site"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -245,21 +245,21 @@ export default function AdminDashboard() {
           </div>
 
           {/* ── DashStack Quick Action Launcher ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
             {[
-              { href: '/management/import', label: 'TMDB Import', icon: Sparkles, color: 'text-[#7C3AED]', bg: 'bg-[#7C3AED]/12' },
-              { href: '/management/movies', label: 'Movies', icon: Film, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/12' },
-              { href: '/management/dramas', label: 'Dramas', icon: Tv, color: 'text-[#F59E0B]', bg: 'bg-[#F59E0B]/12' },
-              { href: '/management/subtitles', label: 'Subtitles', icon: Languages, color: 'text-[#10B981]', bg: 'bg-[#10B981]/12' },
-              { href: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles, color: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/12' },
-              { href: '/management/database', label: 'Database', icon: Database, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-500/12' },
+              { href: '/management/import', label: 'TMDB Import', icon: Sparkles, color: 'text-[#8A2BE2]', bg: 'bg-[#8A2BE2]/15' },
+              { href: '/management/movies', label: 'Movies', icon: Film, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/15' },
+              { href: '/management/dramas', label: 'Dramas', icon: Tv, color: 'text-[#F59E0B]', bg: 'bg-[#F59E0B]/15' },
+              { href: '/management/subtitles', label: 'Subtitles', icon: Languages, color: 'text-[#10B981]', bg: 'bg-[#10B981]/15' },
+              { href: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles, color: 'text-[#8A2BE2]', bg: 'bg-[#8A2BE2]/15' },
+              { href: '/management/database', label: 'Database', icon: Database, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-500/15' },
             ].map((item, idx) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={idx}
                   href={item.href}
-                  className="dashstack-card doit-quick-action flex items-center gap-3 rounded-[22px] p-3.5 text-xs font-semibold bg-white/85 dark:bg-[#120E1E]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] hover:border-[#7C3AED]/30 hover:-translate-y-0.5 transition-all shadow-sm group"
+                  className="dashstack-card doit-quick-action flex items-center gap-3 rounded-[22px] p-3.5 text-xs font-semibold bg-white/85 dark:bg-[#120E1E]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] hover:border-[#8A2BE2]/40 hover:-translate-y-0.5 transition-all shadow-sm group"
                 >
                   <div className={`h-9 w-9 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
                     <Icon className="h-4 w-4" />
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
 
           {/* ── 2. Primary DashStack 4-Metric Row ── */}
           <section aria-label="Primary KPIs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
               <StatCard
                 label="Total Users"
                 value={formatNum(stats?.counts?.totalUsers)}
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
 
           {/* ── 3. Secondary Metrics Row ── */}
           <section aria-label="Secondary Metrics">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
               <StatCard label="Movies" value={formatNum(stats?.counts?.totalMovies)} icon={Film} variant="secondary" accentColor="coral" href="/management/movies" />
               <StatCard label="Dramas" value={formatNum(stats?.counts?.totalDramas)} icon={Tv} variant="secondary" accentColor="yellow" href="/management/dramas" />
               <StatCard label="Episodes" value={formatNum(stats?.counts?.totalEpisodes)} icon={Clapperboard} variant="secondary" accentColor="blue" href="/management/dramas" />
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
           </section>
 
           {/* ── 4. Analytics + Content Distribution ── */}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6" aria-label="Analytics">
+          <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6" aria-label="Analytics">
             <div className="lg:col-span-2">
               <TrafficOverviewChart allLogs={sortedLogs} />
             </div>
@@ -365,7 +365,7 @@ export default function AdminDashboard() {
           </section>
 
           {/* ── 6. Top Content + Recent Activity ── */}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6" aria-label="Content Performance">
+          <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6" aria-label="Content Performance">
             <div className="lg:col-span-2">
               <TopPerformingContent content={stats?.topContent || []} />
             </div>
@@ -419,8 +419,10 @@ function AdsterraRevenuePanel({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Adsterra Revenue</h3>
-              <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/25 px-2.5 py-0.5 text-[9.5px] font-bold text-[#10B981]">
-                Live Verified
+              <span className={`rounded-full px-2.5 py-0.5 text-[9.5px] font-bold ${needsKey
+                ? 'bg-amber-500/15 border border-amber-500/25 text-amber-400'
+                : 'bg-[#10B981]/15 border border-[#10B981]/25 text-[#10B981]'}`}>
+                {needsKey ? 'Setup Required' : 'Live Verified'}
               </span>
             </div>
             <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">Publisher earnings and ad performance</p>
@@ -1025,7 +1027,7 @@ function SystemHealthPanel({ health, seoScore, onClearCache, clearingCache }) {
   ];
 
   return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 shadow-sm">
+    <div className="admin-system-panel dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#7C3AED]/15 text-[#7C3AED]">
@@ -1048,7 +1050,7 @@ function SystemHealthPanel({ health, seoScore, onClearCache, clearingCache }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div className="admin-health-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {healthItems.map((item, idx) => (
           <div key={idx} className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4.5 space-y-1.5 backdrop-blur-sm">
             <div className="flex items-center gap-2">

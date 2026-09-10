@@ -2,33 +2,46 @@
 
 import { useMemo, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import Particles, { ParticlesProvider } from "@tsparticles/react";
-import { loadSlim } from "@tsparticles/slim";
-
-// Stable initialization callback defined outside the component
-const initParticles = async (engine) => {
-  await loadSlim(engine);
-};
 
 export default function ParticleBackground() {
-  const [mounted, setMounted] = useState(false);
+  const [particlesLoaded, setParticlesLoaded] = useState(false);
+  const [modules, setModules] = useState(null);
   const [isMobile, setIsMobile] = useState(true);
-  const [shouldRender, setShouldRender] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    setMounted(true);
-    setShouldRender(true);
+    if (pathname?.startsWith('/management')) return;
+
+    let mounted = true;
+    Promise.all([
+      import("@tsparticles/react"),
+      import("@tsparticles/slim")
+    ]).then(([reactParticles, slimModule]) => {
+      if (!mounted) return;
+      setModules({
+        Particles: reactParticles.default || reactParticles.Particles,
+        ParticlesProvider: reactParticles.ParticlesProvider,
+        initParticles: async (engine) => {
+          await slimModule.loadSlim(engine);
+        }
+      });
+      setIsMobile(window.innerWidth < 768);
+      setParticlesLoaded(true);
+    }).catch((err) => {
+      console.warn("Failed to load particles:", err);
+    });
+
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
+
     return () => {
+      mounted = false;
       window.removeEventListener("resize", checkMobile);
     };
-  }, []);
+  }, [pathname]);
 
   const options = useMemo(
     () => {
@@ -205,7 +218,9 @@ export default function ParticleBackground() {
   );
 
   if (pathname?.startsWith('/management')) return null;
-  if (!mounted || !shouldRender) return null;
+  if (!particlesLoaded || !modules) return null;
+
+  const { Particles, ParticlesProvider, initParticles } = modules;
 
   return (
     <ParticlesProvider init={initParticles}>

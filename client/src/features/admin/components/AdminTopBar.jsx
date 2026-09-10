@@ -96,7 +96,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-[80px] w-full items-center justify-between px-4 sm:px-7 lg:px-9 bg-white/80 dark:bg-[#0B0813]/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-white/[0.06] transition-colors">
+    <header className="admin-topbar sticky top-0 z-30 flex h-[80px] w-full items-center justify-between px-4 sm:px-7 lg:px-9 bg-white/80 dark:bg-[#0B0813]/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-white/[0.06] transition-colors">
       {/* ── Left: Mobile Menu, Studio Breadcrumb & Search ── */}
       <div className="flex items-center gap-3 sm:gap-5 flex-1 max-w-xl">
         <button
@@ -140,7 +140,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
           <button
             type="button"
             onClick={() => setQuickAddOpen(!quickAddOpen)}
-            className="hidden sm:flex h-10 items-center gap-2 rounded-[14px] px-3.5 text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#A855F7] shadow-md shadow-[#7C3AED]/25 hover:shadow-lg hover:shadow-[#7C3AED]/35 hover:scale-[1.02] active:scale-95 transition-all"
+            className="hidden sm:flex h-9.5 items-center gap-2 rounded-full px-4 text-xs font-bold text-white btn-oio-pill"
           >
             <Plus className="h-4 w-4" />
             <span>Create</span>
@@ -153,7 +153,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
               </div>
               <div className="space-y-1 mt-1">
                 {[
-                  { href: '/management/import', icon: Sparkles, label: 'Import from TMDB', color: 'text-[#8B5CF6]' },
+                  { href: '/management/import', icon: Sparkles, label: 'Import from TMDB', color: 'text-[#8A2BE2]' },
                   { href: '/management/movies', icon: Film, label: 'Add New Movie', color: 'text-[#3B82F6]' },
                   { href: '/management/dramas', icon: Tv, label: 'Add New Drama', color: 'text-[#06B6D4]' },
                   { href: '/management/subtitles', icon: Languages, label: 'Upload Subtitle', color: 'text-[#10B981]' },
@@ -181,7 +181,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.05] text-slate-500 dark:text-slate-300 hover:text-[#7C3AED] dark:hover:text-white transition shadow-sm"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.05] text-slate-500 dark:text-slate-300 hover:text-[#8A2BE2] dark:hover:text-white transition shadow-sm"
           aria-label={isLight ? 'Switch to Dark mode' : 'Switch to Light mode'}
           title={isLight ? 'Switch to Dark mode' : 'Switch to Light mode'}
         >
@@ -192,9 +192,9 @@ export default function AdminTopBar({ onOpenMobileNav }) {
         <Link
           href="/"
           target="_blank"
-          className="hidden md:flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.05] px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#7C3AED] dark:hover:text-white transition shadow-sm"
+          className="hidden md:flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.05] px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#8A2BE2] dark:hover:text-white transition shadow-sm"
         >
-          <ExternalLink className="h-3.5 w-3.5 text-[#7C3AED]" />
+          <ExternalLink className="h-3.5 w-3.5 text-[#8A2BE2]" />
           <span>Site</span>
         </Link>
 
@@ -203,11 +203,11 @@ export default function AdminTopBar({ onOpenMobileNav }) {
           <button
             type="button"
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex items-center gap-3 py-1.5 px-3 sm:px-4 rounded-full bg-white/90 dark:bg-white/[0.06] border border-slate-200/70 dark:border-white/[0.08] shadow-sm hover:border-[#7C3AED]/30 transition group"
+            className="flex items-center gap-3 py-1.5 px-3 sm:px-4 rounded-full bg-white/90 dark:bg-white/[0.06] border border-slate-200/70 dark:border-white/[0.08] shadow-sm hover:border-[#8A2BE2]/40 transition group"
             aria-label="User profile menu"
           >
             {/* Circular Avatar with Gradient Initials */}
-            <div className="relative flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#A855F7] text-[11px] font-black text-white shadow-md shadow-[#7C3AED]/20">
+            <div className="relative flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#8A2BE2] via-[#9D4EDD] to-[#7B2CBF] text-[11px] font-black text-white shadow-md shadow-[#8A2BE2]/30">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={adminName} className="h-full w-full rounded-full object-cover" />
               ) : (

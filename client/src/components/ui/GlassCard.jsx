@@ -186,19 +186,19 @@ export default function GlassCard({ item, type, priority = false }) {
               )}
             </div>
 
-            {/* Action button */}
-            <div className={`action-button-fill mt-1 py-1.5 bg-gradient-to-r from-brand-primary to-purple-600 hover:from-brand-primary-hover hover:to-purple-500 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-brand-primary/25 transition-all duration-200 ${isNavigating ? 'opacity-90 ring-1 ring-white/50' : ''}`}>
-              {isNavigating ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[10px] font-black uppercase tracking-wider">Opening...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5 fill-current" />
-                  <span className="text-[10px] font-black uppercase tracking-wider">Download Subs</span>
-                </>
-              )}
+            {/* Action button — shown only while the card is hovered. */}
+            <div className={`action-button-fill mt-1 py-1.5 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all duration-200 ${isNavigating ? 'opacity-90 ring-1 ring-white/50' : ''}`}>
+            {isNavigating ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="text-[10px] font-black uppercase tracking-wider">Opening...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5 fill-current" />
+                <span className="text-[10px] font-black uppercase tracking-wider">Download Subs</span>
+              </>
+            )}
             </div>
           </div>
         </div>

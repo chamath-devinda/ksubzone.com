@@ -66,7 +66,7 @@ export default async function RootLayout({ children }) {
   );
   let initialSiteContent = null;
   try {
-    const res = await fetch(`${backendUrl}/api/site-content`, { next: { revalidate: 300 } });
+    const res = await fetch(`${backendUrl}/api/site-content`, { next: { revalidate: 1800, tags: ['site-content'] } });
     if (res.ok) {
       initialSiteContent = await res.json();
     }

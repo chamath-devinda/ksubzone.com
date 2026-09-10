@@ -8,9 +8,11 @@ import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import ModalDrawer from '@/features/admin/components/ModalDrawer';
 import { useToast } from '@/features/admin/components/Toast';
 import { useSiteContent } from '@/hooks/useSiteContent';
+import { resolveSubtitleDownloadUrl, isR2Subtitle } from '@/utils/subtitleUrl';
 import {
   Film, Languages, Check, X, Clipboard, Download,
-  Edit2, Trash2, Eye, Sparkles, Wand2, Loader2, AlertCircle, UploadCloud, FileText
+  Edit2, Trash2, Eye, Sparkles, Wand2, Loader2, AlertCircle, UploadCloud, FileText,
+  Cloud, Database, Copy, ExternalLink
 } from 'lucide-react';
 
 export default function SubtitleManager() {
@@ -27,8 +29,10 @@ export default function SubtitleManager() {
   const [moderatorNotes, setModeratorNotes] = useState({});
   const [processingId, setProcessingId] = useState(null);
 
-  // Tabs
+  // Tabs & Storage filter
   const [filterTab, setFilterTab] = useState('Pending');
+  const [storageFilter, setStorageFilter] = useState('All'); // 'All', 'r2', 'supabase', 'local'
+  const [copiedUrlId, setCopiedUrlId] = useState(null);
 
   // View/Edit/Replace states
   const [selectedSubtitle, setSelectedSubtitle] = useState(null);
@@ -242,8 +246,17 @@ export default function SubtitleManager() {
   };
 
   const filteredSubtitles = subtitles.filter(sub => {
-    if (filterTab === 'All') return true;
-    return sub.approvalStatus === filterTab;
+    const statusMatch = filterTab === 'All' || sub.approvalStatus === filterTab;
+    if (!statusMatch) return false;
+    if (storageFilter === 'All') return true;
+
+    const provider = (
+      sub.storageProvider ||
+      sub.storage_provider ||
+      (isR2Subtitle(sub) ? 'r2' : (sub.fileUrl?.includes('supabase.co') ? 'supabase' : 'supabase'))
+    ).toLowerCase();
+
+    return provider === storageFilter.toLowerCase();
   });
 
   return (
@@ -272,34 +285,60 @@ export default function SubtitleManager() {
             )}
           </div>
 
-          {/* Status Filter Tabs */}
-          <div className="flex gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
-            {['Pending', 'Approved', 'Rejected', 'All'].map((status) => {
-              const count = status === 'All' ? subtitles.length : subtitles.filter(s => s.approvalStatus === status).length;
-              return (
+          {/* Filters Row: Status + Storage Provider */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Status Filter Tabs */}
+            <div className="flex gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
+              {['Pending', 'Approved', 'Rejected', 'All'].map((status) => {
+                const count = status === 'All' ? subtitles.length : subtitles.filter(s => s.approvalStatus === status).length;
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setFilterTab(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                      filterTab === status
+                        ? 'bg-violet-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    <span>{status}</span>
+                    {count > 0 && (
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                        filterTab === status
+                          ? 'bg-white/20 text-white'
+                          : 'bg-white/[0.06] text-slate-400'
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Storage Provider Filter */}
+            <div className="flex items-center gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] text-xs">
+              <span className="text-[10px] uppercase font-bold text-slate-500 px-2">Storage:</span>
+              {[
+                { id: 'All', label: 'All' },
+                { id: 'r2', label: 'Cloudflare R2' },
+                { id: 'supabase', label: 'Supabase Legacy' }
+              ].map((prov) => (
                 <button
-                  key={status}
+                  key={prov.id}
                   type="button"
-                  onClick={() => setFilterTab(status)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                    filterTab === status
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                  onClick={() => setStorageFilter(prov.id)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition ${
+                    storageFilter === prov.id
+                      ? 'bg-white/10 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <span>{status}</span>
-                  {count > 0 && (
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                      filterTab === status
-                        ? 'bg-white/20 text-white'
-                        : 'bg-white/[0.06] text-slate-400'
-                    }`}>
-                      {count}
-                    </span>
-                  )}
+                  {prov.label}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
           {/* Subtitles List */}
@@ -309,10 +348,13 @@ export default function SubtitleManager() {
             ) : filteredSubtitles.length === 0 ? (
               <div className="text-center py-16 text-slate-400 bg-[#11131A] border border-white/[0.06] rounded-xl flex flex-col items-center justify-center gap-2">
                 <AlertCircle className="w-6 h-6 text-slate-500 mb-1" />
-                <span className="text-xs">No subtitles found in the "{filterTab}" queue.</span>
+                <span className="text-xs">No subtitles found matching filter criteria.</span>
               </div>
             ) : (
-              filteredSubtitles.map((sub) => (
+              filteredSubtitles.map((sub) => {
+                const publicUrl = resolveSubtitleDownloadUrl(sub);
+                const isR2 = isR2Subtitle(sub);
+                return (
                 <div 
                   key={sub._id}
                   className="bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl flex flex-col lg:flex-row justify-between gap-5 hover:border-white/[0.12] transition-colors"
@@ -322,6 +364,15 @@ export default function SubtitleManager() {
                       <span className="px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 text-violet-300 font-bold uppercase text-[10px] tracking-wider">
                         {sub.language}
                       </span>
+                      {isR2 ? (
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center gap-1">
+                          <Cloud className="w-3 h-3" /> Storage: Cloudflare R2
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-[10px] flex items-center gap-1">
+                          <Database className="w-3 h-3" /> Storage: Supabase Legacy
+                        </span>
+                      )}
                       <span className="px-2 py-0.5 rounded bg-[#151821] text-slate-300 font-mono text-[10px] uppercase">
                         Format: {sub.format}
                       </span>
@@ -347,6 +398,27 @@ export default function SubtitleManager() {
                         <span>{sub.mediaTitle || `${sub.mediaType} ID: ${sub.mediaId}`}</span>
                       </p>
                     </div>
+
+                    {publicUrl && (
+                      <div className="flex items-center gap-2 p-1.5 rounded-lg bg-black/40 border border-white/5 w-fit max-w-full">
+                        <span className="text-[10px] text-slate-400 font-mono truncate max-w-sm sm:max-w-md">
+                          {publicUrl}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(publicUrl);
+                            setCopiedUrlId(sub._id);
+                            setTimeout(() => setCopiedUrlId(null), 2000);
+                            toast.success('Direct public URL copied!');
+                          }}
+                          className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition flex-shrink-0"
+                          title="Copy public URL"
+                        >
+                          {copiedUrlId === sub._id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    )}
 
                     {sub.releaseNotes && (
                       <div className="bg-[#151821] p-3 rounded-lg border border-white/[0.04] text-xs text-slate-400">
@@ -383,9 +455,10 @@ export default function SubtitleManager() {
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-2">
                         <a
-                          href={sub.fileUrl}
+                          href={publicUrl || sub.fileUrl}
                           target="_blank"
                           rel="noreferrer"
+                          download
                           className="flex-1 p-2 bg-[#151821] hover:bg-white/[0.08] text-slate-200 rounded-lg text-xs font-semibold text-center border border-white/[0.06] transition flex items-center justify-center gap-1.5"
                           title="Download File"
                         >
@@ -453,7 +526,8 @@ export default function SubtitleManager() {
                     </div>
                   </div>
                 </div>
-              ))
+              );
+            })
             )}
           </div>
         </main>
@@ -658,8 +732,17 @@ export default function SubtitleManager() {
 
           <input
             type="file"
-            accept=".srt,.vtt,.ass,.txt"
-            onChange={e => setReplaceFileInput(e.target.files?.[0] || null)}
+            accept=".srt,.vtt,.ass,.zip"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file && file.size > 10 * 1024 * 1024) {
+                toast.error('File exceeds 10 MB limit.');
+                e.target.value = '';
+                setReplaceFileInput(null);
+                return;
+              }
+              setReplaceFileInput(file || null);
+            }}
             className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:bg-violet-600 file:text-white file:text-xs file:font-semibold"
           />
 

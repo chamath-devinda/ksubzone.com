@@ -322,7 +322,7 @@ export default function TmdbImport() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 h-10 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition shadow-sm flex items-center justify-center gap-1.5 flex-shrink-0"
+                className="px-5 h-10 rounded-full btn-oio-pill disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-1.5 flex-shrink-0"
               >
                 {loading ? 'Searching...' : 'Find Matches'}
               </button>
@@ -429,7 +429,7 @@ export default function TmdbImport() {
                           type="button"
                           onClick={() => handleImport(item)}
                           disabled={importingId === item.id}
-                          className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-[10px] font-semibold rounded-lg transition flex items-center gap-1"
+                          className="px-3.5 py-1.5 btn-oio-pill disabled:opacity-50 text-white text-[10px] font-black rounded-full flex items-center gap-1"
                         >
                           {importingId === item.id ? (
                             <>

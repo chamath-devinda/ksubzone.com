@@ -520,7 +520,7 @@ export default function DramaManager() {
             <button
               type="button"
               onClick={handleOpenCreateDrama}
-              className="flex h-9 items-center gap-1.5 px-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-lg text-xs font-semibold text-white shadow-sm transition active:scale-95 flex-shrink-0"
+              className="flex h-9.5 items-center gap-1.5 px-4 rounded-full btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
             >
               <Plus className="w-3.5 h-3.5" /> Add Drama
             </button>

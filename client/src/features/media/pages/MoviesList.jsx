@@ -12,7 +12,7 @@ export default function MoviesList({ initialData }) {
   const [sortBy, setSortBy] = useState('popular');
   const [country, setCountry] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 24;
+  const limit = 12;
   const hasInitialData = Array.isArray(initialData?.movies) && initialData.movies.length > 0;
 
   const { data, isLoading } = useQuery({
@@ -62,10 +62,10 @@ export default function MoviesList({ initialData }) {
               <button
                 key={pill.id}
                 onClick={() => { setSortBy(pill.id); setPage(1); }}
-                className={`px-3.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 flex items-center gap-1.5 ${
                   active 
-                    ? 'bg-brand-secondary/15 border-brand-secondary/30 text-brand-secondary' 
-                    : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-slate-200 hover:border-white/10'
+                    ? 'btn-glass-purple text-white shadow-md' 
+                    : 'btn-glass-subtle text-slate-400 hover:text-white'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ export default function MoviesList({ initialData }) {
           <button
             disabled={page === 1 || isLoading}
             onClick={() => setPage(p => Math.max(1, p - 1))}
-            className="px-3 sm:px-4 h-10 flex-1 max-w-28 bg-white/5 border border-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white hover:bg-white/10 transition"
+            className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white transition"
           >
             Previous
           </button>
@@ -166,7 +166,7 @@ export default function MoviesList({ initialData }) {
           <button
             disabled={page === totalPages || isLoading}
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            className="px-3 sm:px-4 h-10 flex-1 max-w-28 bg-white/5 border border-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white hover:bg-white/10 transition"
+            className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white transition"
           >
             Next
           </button>

@@ -260,8 +260,8 @@ class DramaController {
     }
 
     public static function getAllDramas() {
-        $page = (int)($_GET['page'] ?? 1);
-        $limit = (int)($_GET['limit'] ?? 12);
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = max(1, min((int)($_GET['limit'] ?? 12), 24));
         $search = $_GET['search'] ?? null;
         $genre = $_GET['genre'] ?? null;
         $year = $_GET['year'] ?? null;
@@ -358,6 +358,7 @@ class DramaController {
         $payload = [
             'total' => $total,
             'page' => $page,
+            'pageSize' => $limit,
             'totalPages' => ceil($total / $limit),
             'dramas' => $dramas
         ];

@@ -11,7 +11,13 @@
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "build:client": "npm --prefix client run build",
     "import:mongo": "node scripts/import-mongo-to-sqlite.js",
-    "start:server": "node server-php/run-server.js"
+    "start:server": "node server-php/run-server.js",
+    "test": "node --test tests/r2-features.test.mjs",
+    "test:php": "php server-php/tests/test-r2-features.php",
+    "test:all": "npm run test && npm run test:php",
+    "migrate:subtitles": "php server-php/scripts/migrate-subtitles-to-r2.php",
+    "migrate:subtitles:node": "node scripts/migrate-subtitles-to-r2.mjs",
+    "package:backend": "powershell -ExecutionPolicy Bypass -File scripts/package-backend.ps1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -19,6 +25,7 @@
     "sqlite3": "^6.0.1"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1129.0",
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.115.0",
     "bcrypt": "^6.0.0",

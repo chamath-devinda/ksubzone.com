@@ -28,7 +28,7 @@ export default async function MoviesPage() {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   let initialData = null;
   try {
-    const res = await fetch(`${backendUrl}/api/media/movies?sort=popular&page=1&limit=24`, { next: { revalidate: 60 } });
+    const res = await fetch(`${backendUrl}/api/media/movies?sort=popular&page=1&limit=12`, { next: { revalidate: 1800, tags: ['movies'] } });
     if (res.ok) {
       initialData = await res.json();
       initialData.movies = compactCatalogItems(initialData.movies);

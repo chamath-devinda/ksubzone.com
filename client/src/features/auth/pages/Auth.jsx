@@ -256,7 +256,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="h-11 bg-brand-primary hover:bg-brand-primary/80 disabled:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center transition shadow-lg mt-2"
+                className="h-11 btn-oio-pill rounded-full disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition mt-2"
               >
                 Sign In
               </button>
@@ -326,7 +326,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="h-11 bg-brand-primary hover:bg-brand-primary/80 disabled:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center transition shadow-lg mt-2"
+                className="h-11 btn-oio-pill rounded-full disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition mt-2"
               >
                 Register
               </button>
@@ -370,7 +370,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="h-11 bg-brand-primary hover:bg-brand-primary/80 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center transition"
+                className="h-11 btn-oio-pill rounded-full text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition"
               >
                 Verify & Sign In
               </button>
@@ -402,7 +402,7 @@ export default function Auth() {
               </div>
               <button
                 type="submit"
-                className="h-11 bg-brand-primary hover:bg-brand-primary/80 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center transition"
+                className="h-11 btn-oio-pill rounded-full text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition"
               >
                 Request Code
               </button>
@@ -448,7 +448,7 @@ export default function Auth() {
               </div>
               <button
                 type="submit"
-                className="h-11 bg-brand-primary hover:bg-brand-primary/80 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center transition"
+                className="h-11 btn-oio-pill rounded-full text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition"
               >
                 Save New Password
               </button>

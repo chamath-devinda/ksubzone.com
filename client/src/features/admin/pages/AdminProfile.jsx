@@ -418,7 +418,7 @@ export default function AdminProfile() {
                       <button
                         type="submit"
                         disabled={savingProfile}
-                        className="flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-violet-600/25 transition active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill disabled:opacity-50"
                       >
                         {savingProfile ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         <span>Save Changes</span>
@@ -525,7 +525,7 @@ export default function AdminProfile() {
                         type="button"
                         onClick={() => handleApplyAvatarUrl(customAvatarInput.trim())}
                         disabled={!customAvatarInput.trim() || uploadingFile}
-                        className="px-4 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition disabled:opacity-40"
+                        className="px-5 h-10 rounded-full btn-oio-pill text-xs font-bold text-white disabled:opacity-40"
                       >
                         Apply
                       </button>
@@ -693,7 +693,7 @@ export default function AdminProfile() {
                       <button
                         type="submit"
                         disabled={savingPassword}
-                        className="flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-violet-600/25 transition active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill disabled:opacity-50"
                       >
                         {savingPassword ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                         <span>Update Password</span>

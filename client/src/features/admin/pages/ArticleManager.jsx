@@ -526,7 +526,7 @@ export default function ArticleManager() {
             </div>
             <button
               onClick={openCreate}
-              className="flex h-9 items-center gap-1.5 px-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-lg text-xs font-semibold text-white shadow-sm transition active:scale-95 flex-shrink-0"
+              className="flex h-9.5 items-center gap-1.5 px-4 rounded-full btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
             >
               <Plus className="w-3.5 h-3.5" /> Compose Article
             </button>
@@ -711,8 +711,8 @@ export default function ArticleManager() {
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.06]">
-            <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white transition">Cancel</button>
-            <button type="submit" disabled={saving} className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 transition disabled:opacity-50 flex items-center gap-1.5">
+            <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-full btn-oio-glass text-xs font-bold text-slate-300 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={saving} className="px-6 py-2.5 rounded-full btn-oio-pill text-xs font-black uppercase tracking-wider text-white shadow-sm disabled:opacity-50 flex items-center gap-1.5">
               <Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Article'}
             </button>
           </div>

@@ -319,7 +319,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     );
   }
 
-  const handleDownloadSubtitle = async (subId, fileUrl, customFileName) => {
+  const handleDownloadSubtitle = async (subId, fileUrl, customFileName, subtitleObj = null) => {
     if (downloadingId) return;
     setDownloadingId(subId);
     setDownloadAlert(null);
@@ -329,6 +329,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download?name=${encodeURIComponent(customFileName)}`;
 
       await downloadSubtitle({
+        subtitle: subtitleObj || { _id: subId, fileUrl },
+        subId,
         downloadUrl,
         fileUrl,
         fileName: customFileName || `subtitle-${subId}.srt`
@@ -482,13 +484,13 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => toggleWatchlistMutation.mutate()}
-                  className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${inWatchlist ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'}`}
+                  className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${inWatchlist ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 backdrop-blur-md shadow-sm' : 'btn-glass-subtle'}`}
                 >
                   {inWatchlist ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />} Watchlist
                 </button>
                 <button
                   onClick={() => toggleFavoritesMutation.mutate()}
-                  className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${inFavorites ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'}`}
+                  className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${inFavorites ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 backdrop-blur-md shadow-sm' : 'btn-glass-subtle'}`}
                 >
                   <Heart className="w-3.5 h-3.5 fill-current" /> Favorite
                 </button>
@@ -602,7 +604,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     e.preventDefault();
                     document.getElementById('subtitles')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="min-h-12 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:brightness-110 text-white text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl shadow-brand-primary/30 ring-1 ring-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                  className="min-h-12 px-6 sm:px-8 rounded-full btn-oio-pill btn-kz-cta text-white text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2.5 cursor-pointer"
                 >
                   <Download className="w-4 h-4 animate-bounce" />
                   <span>Download Sinhala Subtitle</span>
@@ -612,9 +614,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   <button
                     type="button"
                     onClick={() => setPlayTrailer(true)}
-                    className="min-h-12 px-5 rounded-2xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/25 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition backdrop-blur-xl"
+                    className="min-h-12 px-6 rounded-full btn-oio-glass text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <PlayCircle className="w-4 h-4 text-brand-secondary" />
+                    <PlayCircle className="w-4 h-4 text-purple-300" />
                     <span>Trailer</span>
                   </button>
                 )}
@@ -778,7 +780,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     <button
                       key={s._id}
                       onClick={() => setSelectedSeason(s.seasonNumber)}
-                      className={`h-9 px-4 rounded-xl text-xs font-bold transition flex-shrink-0 ${selectedSeason === s.seasonNumber ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'bg-white/5 border border-white/5 text-slate-300 hover:bg-white/10'}`}
+                      className={`h-9 px-4 rounded-xl text-xs font-bold transition flex-shrink-0 ${selectedSeason === s.seasonNumber ? 'btn-glass-purple text-white shadow-md' : 'btn-glass-subtle text-slate-300'}`}
                     >
                       Season {s.seasonNumber}
                     </button>
@@ -911,14 +913,14 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                               {hasSubtitles ? (
                                 <Link
                                   href={episodeUrl}
-                                  className="w-full sm:w-auto h-11 px-5 rounded-2xl bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-brand-primary text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/25 hover:shadow-brand-primary/45 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
+                                  className="w-full sm:w-auto h-10 px-5 rounded-full btn-oio-pill text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2"
                                 >
                                   <Download className="w-4 h-4" /> {formattedEpisode} සිංහල උපසිරැසිය
                                 </Link>
                               ) : (
                                 <button
                                   disabled
-                                  className="w-full sm:w-auto h-11 px-5 rounded-2xl bg-white/5 border border-white/5 text-slate-500 text-xs font-bold uppercase flex items-center justify-center gap-2 cursor-not-allowed"
+                                  className="w-full sm:w-auto h-10 px-5 rounded-full bg-white/5 border border-white/10 text-slate-500 text-xs font-bold uppercase flex items-center justify-center gap-2 cursor-not-allowed"
                                 >
                                   <Download className="w-4 h-4 opacity-40" /> Pending Release
                                 </button>
@@ -1005,8 +1007,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                           <button
                             type="button"
                             disabled={downloadingId === sub._id}
-                            onClick={() => handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName)}
-                            className="group relative w-full max-w-md min-h-14 rounded-2xl sm:rounded-full px-4 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:from-brand-primary hover:to-purple-600 disabled:opacity-60 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center shadow-xl shadow-brand-primary/30 hover:shadow-brand-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
+                            onClick={() => handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName, sub)}
+                            className="group relative w-full max-w-md min-h-14 rounded-full px-6 btn-oio-pill disabled:opacity-60 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center cursor-pointer"
                           >
                             <Download className={`w-5 h-5 ${downloadingId === sub._id ? 'animate-bounce' : 'group-hover:-translate-y-0.5'} transition-transform`} />
                             <span>{downloadingId === sub._id ? 'බාගත වෙමින් පවතී...' : `${sub.language || 'SINHALA'} උපසිරැසිය (DOWNLOAD)`}</span>
@@ -1120,7 +1122,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 <button
                   type="submit"
                   disabled={submitCommentMutation.isPending}
-                  className="h-9 px-4 self-end bg-brand-primary hover:bg-brand-primary/80 disabled:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center justify-center transition"
+                  className="h-9 px-5 self-end btn-oio-pill disabled:opacity-50 text-white text-xs font-bold rounded-full flex items-center justify-center cursor-pointer shadow-md"
                 >
                   {submitCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
                 </button>
@@ -1210,7 +1212,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                               type="button"
                               onClick={() => handleAddReply(comment._id)}
                               disabled={!user || !replyText[comment._id]?.trim()}
-                              className="px-3 py-1 bg-brand-primary hover:bg-brand-primary/80 disabled:bg-slate-700 text-white text-[10px] font-bold rounded-lg transition"
+                              className="px-3.5 py-1 btn-oio-pill disabled:opacity-40 text-white text-[10px] font-bold rounded-full transition shadow-sm"
                             >
                               Reply
                             </button>

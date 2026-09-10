@@ -1,7 +1,11 @@
 export const formatTimeAgo = (value) => {
   if (!value) return '';
 
-  const timestamp = new Date(value).getTime();
+  const strVal = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(value.trim())
+    ? value.trim().replace(' ', 'T') + 'Z'
+    : value;
+
+  const timestamp = new Date(strVal).getTime();
   if (Number.isNaN(timestamp)) return '';
 
   const elapsed = Math.max(0, Date.now() - timestamp);

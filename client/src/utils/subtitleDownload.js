@@ -1,7 +1,30 @@
+import { resolveSubtitleDownloadUrl, isR2Subtitle, getSafeSubtitleFilename } from './subtitleUrl';
+
 const DEFAULT_ERROR = 'මෙම උපසිරැසි ගොනුව දැන් බාගත කළ නොහැක. කරුණාකර නැවත උත්සාහ කරන්න.';
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 const wait = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+// In-memory cache to prevent crawler/double-click duplicate tracking
+const recentTrackings = new Map();
+
+async function trackDownloadSafely(subId) {
+  if (!subId) return;
+  const now = Date.now();
+  const lastTracked = recentTrackings.get(subId);
+  if (lastTracked && now - lastTracked < 10000) {
+    return; // Ignore duplicate click within 10s
+  }
+  recentTrackings.set(subId, now);
+
+  try {
+    fetch(`/api/subtitles/${subId}/track-download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true
+    }).catch(() => {});
+  } catch (_) {}
+}
 
 async function createResponseError(response) {
   let message = '';
@@ -9,7 +32,7 @@ async function createResponseError(response) {
     const data = await response.clone().json();
     message = data?.message || data?.error || '';
   } catch (_) {
-    // CDN and shared-hosting errors are frequently returned as HTML.
+    // HTML / proxy errors
   }
 
   if (response.status === 402 || (message && (
@@ -55,20 +78,59 @@ async function fetchWithRetry(url, maxAttempts, timeoutMs = 15000) {
   throw lastError || new Error(DEFAULT_ERROR);
 }
 
-export async function downloadSubtitle({ downloadUrl, fileUrl, fileName }) {
-  // Use the same-origin API rewrite. PHP resolves local/backup storage and
-  // streams the file, keeping storage credentials and errors on the server.
-  const response = await fetchWithRetry(downloadUrl, 3, 20000);
+/**
+ * Downloads a subtitle file directly from Cloudflare R2 if available,
+ * or through the backward-compatible proxy endpoint for legacy Supabase files.
+ */
+export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, fileName }) {
+  const targetId = subId || subtitle?._id || subtitle?.id;
+  const safeName = getSafeSubtitleFilename(subtitle, fileName);
 
-  const blob = await response.blob();
-  if (!blob.size) throw new Error(DEFAULT_ERROR);
+  // Trigger lightweight background tracking without proxying file bytes
+  if (targetId) {
+    trackDownloadSafely(targetId);
+  }
 
-  const blobUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = fileName || 'subtitle.srt';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  // Check if we can download directly from Cloudflare R2
+  const directR2Url = isR2Subtitle(subtitle) ? resolveSubtitleDownloadUrl(subtitle) : (
+    (fileUrl && (fileUrl.startsWith('https://files.ksubzone.com') || fileUrl.includes('.r2.cloudflarestorage.com')))
+      ? fileUrl
+      : null
+  );
+
+  let targetUrl = directR2Url || downloadUrl || (targetId ? `/api/subtitles/${targetId}/download` : fileUrl);
+
+  try {
+    const response = await fetchWithRetry(targetUrl, 3, 20000);
+    const blob = await response.blob();
+    if (!blob.size) throw new Error(DEFAULT_ERROR);
+
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = safeName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  } catch (err) {
+    // If direct R2 fetch fails due to any reason, fall back to backend proxy endpoint
+    if (directR2Url && targetId) {
+      const fallbackUrl = `/api/subtitles/${targetId}/download`;
+      const fallbackResponse = await fetchWithRetry(fallbackUrl, 2, 20000);
+      const blob = await fallbackResponse.blob();
+      if (!blob.size) throw new Error(DEFAULT_ERROR);
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = safeName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+      return;
+    }
+    throw err;
+  }
 }

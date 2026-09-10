@@ -102,7 +102,7 @@ export default function Footer() {
                   {footer.email}
                 </a>
               </div>
-              
+
               {/* Follow Us / Socials integrated into contact col */}
               <div className="mt-8 flex gap-3">
                 {socialLinks.map(({ label, url }) => {
@@ -142,14 +142,20 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="mt-10 border-t border-white/10 pt-6 flex flex-col items-center justify-center gap-1 text-center text-sm text-slate-400">
-            <p className="font-medium text-slate-300 flex items-center gap-1.5 flex-wrap justify-center">
-              © {new Date().getFullYear()} {brand.siteName || 'KSubZone'}. <span className="text-slate-400">Designed by <span className="text-brand-primary font-bold">Chamath Devinda</span>.</span>
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
+            <p
+              className="text-sm font-medium text-slate-300"
+              suppressHydrationWarning
+            >
+              © {new Date().getFullYear()} {brand.siteName || 'KSubZone'}. All Rights Reserved.
             </p>
-            <div className="mt-2 mb-1 flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-accent/10 border border-brand-accent/20 text-[10px] font-black uppercase tracking-widest text-brand-accent shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-              <Sparkles className="w-3 h-3" /> AI Powered Platform
-            </div>
-            {footer.bottomText && <p className="text-xs text-slate-500 mt-2">{footer.bottomText}</p>}
+
+            <p className="text-sm font-medium text-slate-400">
+              Developed by{' '}
+              <span className="font-semibold text-brand-primary">
+                C² Digital Creations
+              </span>
+            </p>
           </div>
         </div>
       </div>

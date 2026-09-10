@@ -90,8 +90,10 @@ class MovieController {
     }
 
     public static function getAllMovies() {
-        $page = (int)($_GET['page'] ?? 1);
-        $limit = (int)($_GET['limit'] ?? 12);
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        // Public catalog responses are deliberately bounded at the API edge.
+        // Admin management has a separate route and is not affected.
+        $limit = max(1, min((int)($_GET['limit'] ?? 12), 24));
         $search = $_GET['search'] ?? null;
         $genre = $_GET['genre'] ?? null;
         $year = $_GET['year'] ?? null;
@@ -188,6 +190,7 @@ class MovieController {
         $payload = [
             'total' => $total,
             'page' => $page,
+            'pageSize' => $limit,
             'totalPages' => ceil($total / $limit),
             'movies' => $movies
         ];
@@ -201,7 +204,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v6');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v7');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -213,30 +216,27 @@ class MovieController {
         $heroExcludes = MediaPayload::detailOnlyFields(true);
         $cardExcludes = MediaPayload::detailOnlyFields();
 
-        // 1. Latest movies by media/subtitle import activity
-        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 12, 'excludeFields' => $heroExcludes]);
+        // Homepage sections have strict, intentionally small budgets. The
+        // previous implementation loaded the whole drama catalog (up to 200)
+        // just to sort it again in PHP.
+        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 10, 'excludeFields' => $heroExcludes]);
         
-        // 2. Load the complete compact drama catalog before calculating real
-        // activity timestamps. An old title can become the newest item after
-        // an episode or subtitle update, so pre-limiting by creation time can
-        // silently exclude the item that should appear first.
         $latestDramas = $db->find('dramas', $statusFilter, [
             'sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1],
-            'limit' => 200,
+            'limit' => 10,
             'excludeFields' => $heroExcludes
         ]);
         
-        // 3. Historical movies (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
-        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
+        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
         
         // 4. Historical dramas (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
-        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
+        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
         
         // 5. Trending movies (status: Published, sort: viewCount DESC, limit 12)
-        $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
+        $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'excludeFields' => $cardExcludes]);
         
         // 6. Trending dramas (status: Published, sort: viewCount DESC, limit 12)
-        $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
+        $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'excludeFields' => $cardExcludes]);
         
         // Popular and trending use the same view-count ranking. Reuse these
         // records instead of issuing two duplicate remote database queries.
@@ -244,10 +244,10 @@ class MovieController {
         $popularDramas = $trendingDramas;
 
         // 9. Upcoming movies (status: Upcoming, sort: releaseDate ASC, limit 12)
-        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
+        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
 
         // 10. Upcoming dramas (status: Upcoming, sort: releaseDate ASC, limit 12)
-        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 12, 'excludeFields' => $cardExcludes]);
+        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
 
         // Batch append subtitle summaries to all fetched drama lists
         $allDramas = [];
@@ -388,7 +388,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v6', $catalogData, 300);
+        \Utils\Cache::set('home_catalog_v7', $catalogData, 1800);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);

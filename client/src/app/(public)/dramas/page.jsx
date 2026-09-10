@@ -28,7 +28,7 @@ export default async function DramasPage() {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   let initialData = null;
   try {
-    const res = await fetch(`${backendUrl}/api/media/dramas?sort=popular&page=1&limit=24`, { next: { revalidate: 60 } });
+    const res = await fetch(`${backendUrl}/api/media/dramas?sort=popular&page=1&limit=12`, { next: { revalidate: 1800, tags: ['dramas'] } });
     if (res.ok) {
       initialData = await res.json();
       initialData.dramas = compactCatalogItems(initialData.dramas);

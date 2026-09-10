@@ -264,7 +264,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                     onClick={openDownloads}
                     onMouseEnter={() => router.prefetch(`/${type}/${currentSlug}?scrollTo=subtitles`)}
                     onTouchStart={() => router.prefetch(`/${type}/${currentSlug}?scrollTo=subtitles`)}
-                    className="min-h-12 px-3 sm:px-8 bg-gradient-to-r from-brand-primary via-purple-600 to-brand-secondary hover:brightness-110 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.04em] sm:tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-xl shadow-brand-primary/25 ring-1 ring-white/15 hover:-translate-y-0.5 active:translate-y-0 text-center"
+                    className="min-h-12 px-4 sm:px-8 btn-oio-pill btn-kz-cta text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.06em] sm:tracking-[0.1em] rounded-full flex items-center justify-center gap-2.5 text-center cursor-pointer"
                   >
                     <Download className="w-4 h-4" /> Download Subtitles
                   </button>
@@ -272,9 +272,9 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
                     onClick={openDetails}
                     onMouseEnter={() => router.prefetch(`/${type}/${currentSlug}`)}
                     onTouchStart={() => router.prefetch(`/${type}/${currentSlug}`)}
-                    className="min-h-12 px-3 sm:px-7 border border-white/15 bg-black/25 hover:bg-white/10 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.04em] sm:tracking-[0.08em] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 backdrop-blur-xl hover:border-white/25 hover:-translate-y-0.5 active:translate-y-0 text-center"
+                    className="min-h-12 px-4 sm:px-7 btn-oio-glass text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.06em] sm:tracking-[0.1em] rounded-full flex items-center justify-center gap-2 text-center cursor-pointer"
                   >
-                    <Info className="w-4 h-4 text-slate-300" /> Details
+                    <Info className="w-4 h-4 text-purple-200" /> Details
                   </button>
                 </div>
               </motion.div>
@@ -338,14 +338,14 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
       {/* Slider Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 hidden sm:flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/45 hover:bg-brand-primary/80 text-white transition-all duration-200 z-20 opacity-60 group-hover:opacity-100 backdrop-blur-xl shadow-lg hover:scale-105"
+        className="absolute left-4 top-1/2 -translate-y-1/2 hidden sm:flex h-11 w-11 items-center justify-center rounded-full btn-glass-subtle text-white transition-all duration-200 z-20 opacity-75 hover:opacity-100 hover:scale-110 shadow-lg"
         aria-label="Previous hero title"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/45 hover:bg-brand-primary/80 text-white transition-all duration-200 z-20 opacity-60 group-hover:opacity-100 backdrop-blur-xl shadow-lg hover:scale-105"
+        className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex h-11 w-11 items-center justify-center rounded-full btn-glass-subtle text-white transition-all duration-200 z-20 opacity-75 hover:opacity-100 hover:scale-110 shadow-lg"
         aria-label="Next hero title"
       >
         <ChevronRight className="w-5 h-5" />

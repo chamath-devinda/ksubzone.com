@@ -18,7 +18,7 @@ const getBackendUrl = () => process.env.BACKEND_URL || (
 
 const getSiteContent = cache(async () => {
   try {
-    const res = await fetch(`${getBackendUrl()}/api/site-content`, { next: { revalidate: 300 } });
+    const res = await fetch(`${getBackendUrl()}/api/site-content`, { next: { revalidate: 1800, tags: ['site-content'] } });
     return res.ok ? res.json() : null;
   } catch (error) {
     console.error('Error fetching site content for homepage SEO:', error);
@@ -89,7 +89,7 @@ export default async function HomePage() {
   const siteContent = await getSiteContent();
   
   try {
-    const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : {});
+    const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 1800, tags: ['home'] } }).then(r => r.ok ? r.json() : {});
     
     initialHomeCatalog = compactHomeCatalog(catalogRes);
     // Home already contains the same view-ranked records. Reuse them instead

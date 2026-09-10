@@ -101,6 +101,8 @@ if (strpos($uri, '/api/') === 0) {
 
     if ($publicCacheSeconds > 0) {
         header("Cache-Control: public, max-age=30, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
+        header("CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
+        header("Vercel-CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
     } else {
         header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
         header("Cache-Control: post-check=0, pre-check=0", false);

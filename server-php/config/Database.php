@@ -232,12 +232,29 @@ class Database {
             $dsn    = "pgsql:host={$host};port={$port};dbname={$dbName}";
         }
 
-        $this->pdo = new \PDO($dsn, $user, $pass, [
-            \PDO::ATTR_TIMEOUT            => 8,
-            \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-            \PDO::ATTR_EMULATE_PREPARES   => true, // required for named params in pgsql
-        ]);
+        try {
+            $this->pdo = new \PDO($dsn, $user, $pass, [
+                \PDO::ATTR_TIMEOUT            => 8,
+                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                \PDO::ATTR_EMULATE_PREPARES   => true, // required for named params in pgsql
+            ]);
+        } catch (\PDOException $e) {
+            if (strpos($e->getMessage(), 'could not translate host name') !== false) {
+                $resolvedIp = gethostbyname($host);
+                if ($resolvedIp && $resolvedIp !== $host) {
+                    $dsnIp = preg_replace('/host=[^;]+/', "host={$resolvedIp}", $dsn);
+                    $this->pdo = new \PDO($dsnIp, $user, $pass, [
+                        \PDO::ATTR_TIMEOUT            => 8,
+                        \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                        \PDO::ATTR_EMULATE_PREPARES   => true,
+                    ]);
+                    return;
+                }
+            }
+            throw $e;
+        }
     }
 
     public function getDriver() {
@@ -946,6 +963,32 @@ class Database {
             ]);
             return 1;
         }
+    }
+
+    /** Increment a JSON document counter atomically without returning the row. */
+    public function incrementJsonCounter($collection, $id, $counterField, $timestampField = null) {
+        if ($this->driver === 'pgsql') {
+            $table = '"' . str_replace('"', '', $collection) . '"';
+            $counterPath = '{' . preg_replace('/[^A-Za-z0-9_]/', '', $counterField) . '}';
+            $dataExpression = "jsonb_set(data, '{$counterPath}', to_jsonb(coalesce((data->>'{$counterField}')::integer, 0) + 1), true)";
+            if ($timestampField) {
+                $safeTimestamp = preg_replace('/[^A-Za-z0-9_]/', '', $timestampField);
+                $dataExpression = "jsonb_set({$dataExpression}, '{${safeTimestamp}}', to_jsonb(to_char(now(), 'YYYY-MM-DD HH24:MI:SS')), true)";
+            }
+            $set = "data = {$dataExpression}";
+            $set .= ", \"updatedAt\" = to_char(now(), 'YYYY-MM-DD HH24:MI:SS')";
+            $stmt = $this->pdo->prepare("UPDATE {$table} SET {$set} WHERE \"_id\" = :id RETURNING (data->>'{$counterField}')::integer");
+            $stmt->execute([':id' => $id]);
+            $value = $stmt->fetchColumn();
+            return $value === false ? null : (int)$value;
+        }
+        $doc = $this->findOne($collection, ['_id' => $id]);
+        if (!$doc) return null;
+        $next = (int)($doc[$counterField] ?? 0) + 1;
+        $update = [$counterField => $next];
+        if ($timestampField) $update[$timestampField] = date('Y-m-d H:i:s');
+        $this->updateOne($collection, ['_id' => $id], $update);
+        return $next;
     }
 
     public function deleteOne($collection, $filter) {

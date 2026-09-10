@@ -324,7 +324,7 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => { setShowUserDropdown(!showUserDropdown); setShowNotifications(false); }}
-                    className="flex items-center gap-2 p-1.5 pl-2.5 pr-3 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] transition"
+                    className="flex items-center gap-2 p-1.5 pl-2.5 pr-3 rounded-full btn-glass-subtle transition"
                   >
                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-primary to-purple-500 flex items-center justify-center text-white overflow-hidden shadow-sm">
                       {user?.avatar || admin?.avatar ? (
@@ -387,7 +387,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/auth"
-                className="hidden lg:flex h-9 px-5 rounded-full bg-gradient-to-r from-brand-primary to-purple-600 hover:brightness-110 text-white text-xs font-black uppercase tracking-wider items-center gap-2 transition shadow-lg shadow-brand-primary/25 border border-white/15 hover:scale-105 active:scale-95"
+                className="hidden lg:flex h-9 px-5 rounded-full btn-oio-pill btn-kz-cta text-white text-xs font-black uppercase tracking-wider items-center gap-2 cursor-pointer"
               >
                 <User className="w-3.5 h-3.5 text-white" />
                 <span>{content?.navigation?.signInLabel || 'Sign In'}</span>
@@ -413,7 +413,7 @@ export default function Navbar() {
               aria-label="Toggle mobile menu"
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation"
-              className="h-11 w-11 flex-shrink-0 rounded-xl lg:hidden text-slate-300 hover:text-white hover:bg-white/10 transition flex items-center justify-center"
+              className="h-11 w-11 flex-shrink-0 rounded-xl lg:hidden text-slate-300 btn-glass-subtle transition flex items-center justify-center"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -513,7 +513,7 @@ export default function Navbar() {
                 <Link
                   href="/auth"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full h-11 px-5 rounded-2xl bg-gradient-to-r from-brand-primary to-purple-600 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg shadow-brand-primary/25 border border-white/10 mt-1"
+                  className="w-full h-11 px-5 rounded-full btn-oio-pill btn-kz-cta text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 mt-1"
                 >
                   <User className="w-4 h-4 text-white" />
                   <span>{content?.navigation?.signInLabel || 'Sign In'}</span>

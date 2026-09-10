@@ -18,9 +18,9 @@ export default {
           DEFAULT: '#0F0F12',
         },
         brand: {
-          primary: '#490570',   // User defined brand aubergine (primary)
-          'primary-hover': '#72149A', // High contrast hover state
-          'primary-light': '#b85adb', // Accessible text/accent on dark canvas
+          primary: '#8A2BE2',   // Electric BlueViolet (#8A2BE2)
+          'primary-hover': '#9D4EDD', // Radiant purple hover state
+          'primary-light': '#C084FC', // Accessible text/accent on dark canvas
           secondary: '#ec4899', // Hot pink / Magenta
           accent: '#f59e0b',    // Luxury amber (IMDB)
           emerald: '#10b981',   // Approved / Success
@@ -38,8 +38,8 @@ export default {
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.45)',
-        'glass-neon': '0 8px 32px 0 rgba(73, 5, 112, 0.35)',
-        'glow-primary': '0 0 25px -5px rgba(73, 5, 112, 0.55)',
+        'glass-neon': '0 8px 32px 0 rgba(138, 43, 226, 0.35)',
+        'glow-primary': '0 0 25px -5px rgba(138, 43, 226, 0.55)',
         'glow-pink': '0 0 25px -5px rgba(236, 72, 153, 0.4)',
         'glow-amber': '0 0 25px -5px rgba(245, 158, 11, 0.4)',
       },

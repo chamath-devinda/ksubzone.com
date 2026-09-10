@@ -6,70 +6,7 @@ use Middleware\AuthMiddleware;
 
 class SubtitleController {
     public static function uploadSubtitle() {
-        $mediaId = $_POST['mediaId'] ?? '';
-        $mediaType = $_POST['mediaType'] ?? '';
-        $language = $_POST['language'] ?? '';
-        $version = $_POST['version'] ?? '1.0';
-        $releaseNotes = $_POST['releaseNotes'] ?? '';
-        $seasonNumber = isset($_POST['seasonNumber']) ? (int)$_POST['seasonNumber'] : null;
-        $episodeNumber = isset($_POST['episodeNumber']) ? (int)$_POST['episodeNumber'] : null;
-        $seasonStatus = ($_POST['seasonStatus'] ?? 'Ongoing') === 'Complete' ? 'Complete' : 'Ongoing';
-
-        if (!isset($_FILES['subtitle'])) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Subtitle file is required']);
-            return;
-        }
-
-        $file = $_FILES['subtitle'];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Error uploading file']);
-            return;
-        }
-
-        if (empty($mediaId) || empty($mediaType) || empty($language)) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Media ID, Media Type (Movie/Drama/Episode), and Language are required']);
-            return;
-        }
-
-        if (!in_array($language, ['Sinhala', 'English'])) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Only Sinhala and English subtitles are supported']);
-            return;
-        }
-
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['srt', 'vtt', 'ass'])) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Invalid subtitle format. Supported formats: SRT, VTT, ASS']);
-            return;
-        }
-
-        // Save file
-        $fileUrl = \Utils\Storage::uploadFile($file, 'subtitles');
-        if (!$fileUrl) {
-            http_response_code(500);
-            // Return detailed diagnostic to help identify the failure
-            $diagTargetDir = dirname(__DIR__) . '/uploads/subtitles';
-            $diagInfo = [
-                'php_upload_enabled' => (bool)ini_get('file_uploads'),
-                'upload_max_filesize' => ini_get('upload_max_filesize'),
-                'post_max_size' => ini_get('post_max_size'),
-                'uploads_dir_exists' => file_exists($diagTargetDir),
-                'uploads_dir_writable' => is_writable($diagTargetDir),
-                'uploads_parent_writable' => is_writable(dirname($diagTargetDir)),
-                'tmp_file_exists' => file_exists($file['tmp_name']),
-                'file_size' => $file['size'],
-                'file_error' => $file['error'],
-                'supabase_configured' => !empty($_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '')
-            ];
-            echo json_encode(['message' => 'Failed to save subtitle file. Please check server storage configuration.', 'diagnostics' => $diagInfo]);
-            return;
-        }
-
-        $db = Database::getInstance();
+        // Phase 4: Early Authentication & Permission verification
         $user = AuthMiddleware::$currentUser;
         $admin = AuthMiddleware::$currentAdmin;
 
@@ -86,6 +23,115 @@ class SubtitleController {
             echo json_encode(['message' => 'Please sign in before uploading subtitles']);
             return;
         }
+
+        $mediaId = trim((string)($_POST['mediaId'] ?? ''));
+        $mediaType = trim((string)($_POST['mediaType'] ?? ''));
+        $language = trim((string)($_POST['language'] ?? ''));
+        $version = trim((string)($_POST['version'] ?? '1.0'));
+        $releaseNotes = trim((string)($_POST['releaseNotes'] ?? ''));
+        $seasonNumber = isset($_POST['seasonNumber']) && $_POST['seasonNumber'] !== '' ? (int)$_POST['seasonNumber'] : null;
+        $episodeNumber = isset($_POST['episodeNumber']) && $_POST['episodeNumber'] !== '' ? (int)$_POST['episodeNumber'] : null;
+        $seasonStatus = ($_POST['seasonStatus'] ?? 'Ongoing') === 'Complete' ? 'Complete' : 'Ongoing';
+
+        if (!isset($_FILES['subtitle'])) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Subtitle file is required']);
+            return;
+        }
+
+        $file = $_FILES['subtitle'];
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Error uploading file. Code: ' . ($file['error'] ?? 'unknown')]);
+            return;
+        }
+
+        if (empty($mediaId) || empty($mediaType) || empty($language)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Media ID, Media Type (Movie/Drama/Episode), and Language are required']);
+            return;
+        }
+
+        if (!in_array($language, ['Sinhala', 'English'], true)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Only Sinhala and English subtitles are supported']);
+            return;
+        }
+
+        // Validate file format and size (< 10MB)
+        $fileValidation = \Utils\Storage::validateSubtitleFile($file);
+        if (!$fileValidation['valid']) {
+            http_response_code(400);
+            echo json_encode(['message' => $fileValidation['error']]);
+            return;
+        }
+
+        $checksum = @hash_file('sha256', $file['tmp_name']);
+        $db = Database::getInstance();
+
+        // Exact duplicate prevention
+        if ($checksum) {
+            $duplicate = $db->findOne('subtitles', [
+                'fileChecksum' => $checksum,
+                'mediaId' => $mediaId,
+                'language' => $language
+            ]);
+            if ($duplicate) {
+                http_response_code(409);
+                echo json_encode(['message' => 'An identical subtitle already exists for this title and language.']);
+                return;
+            }
+        }
+
+        // Resolve media slug for safe lowercase object key generation
+        $mediaSlug = 'untitled';
+        $mediaTitle = '';
+        if (strtolower($mediaType) === 'episode') {
+            $episode = $db->findOne('episodes', ['_id' => $mediaId]);
+            if ($episode && !empty($episode['dramaId'])) {
+                $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
+                if ($drama) {
+                    $mediaSlug = $drama['slug'] ?? \Utils\Slug::slugify($drama['title'] ?? '');
+                    $mediaTitle = $drama['title'] ?? '';
+                }
+            }
+            if ($seasonNumber === null && $episode) $seasonNumber = (int)($episode['seasonNumber'] ?? 1);
+            if ($episodeNumber === null && $episode) $episodeNumber = (int)($episode['episodeNumber'] ?? 1);
+        } elseif (strtolower($mediaType) === 'movie') {
+            $movie = $db->findOne('movies', ['_id' => $mediaId]);
+            if ($movie) {
+                $mediaSlug = $movie['slug'] ?? \Utils\Slug::slugify($movie['title'] ?? '');
+                $mediaTitle = $movie['title'] ?? '';
+            }
+        } else {
+            $drama = $db->findOne('dramas', ['_id' => $mediaId]);
+            if ($drama) {
+                $mediaSlug = $drama['slug'] ?? \Utils\Slug::slugify($drama['title'] ?? '');
+                $mediaTitle = $drama['title'] ?? '';
+            }
+        }
+
+        // Phase 5 & 7: Two-step upload transaction to Cloudflare R2 / Storage
+        $context = [
+            'mediaSlug' => $mediaSlug,
+            'mediaTitle' => $mediaTitle,
+            'mediaType' => $mediaType,
+            'seasonNumber' => $seasonNumber,
+            'episodeNumber' => $episodeNumber,
+            'language' => $language,
+            'version' => $version,
+            'originalFilename' => $fileValidation['originalFilename']
+        ];
+
+        $uploadMeta = \Utils\Storage::uploadSubtitle($file, $context);
+        if (!$uploadMeta || empty($uploadMeta['url'])) {
+            http_response_code(500);
+            echo json_encode(['message' => 'Failed to save subtitle file to storage provider.']);
+            return;
+        }
+
+        $fileUrl = $uploadMeta['url'];
+        $ext = $fileValidation['ext'];
 
         $subtitle = [
             'mediaId' => $mediaId,
@@ -104,13 +150,35 @@ class SubtitleController {
             'rating' => 0,
             'ratings' => [],
             'approvalStatus' => $approvalStatus,
-            'releaseNotes' => $releaseNotes
+            'releaseNotes' => $releaseNotes,
+            'storageProvider' => $uploadMeta['provider'] ?? 'r2',
+            'storageBucket' => $uploadMeta['bucket'] ?? null,
+            'storageObjectKey' => $uploadMeta['objectKey'] ?? null,
+            'originalFilename' => $uploadMeta['originalFilename'] ?? $fileValidation['originalFilename'],
+            'storedFilename' => basename($uploadMeta['objectKey'] ?? $fileUrl),
+            'fileSizeBytes' => $uploadMeta['sizeBytes'] ?? $fileValidation['size'],
+            'fileChecksum' => $uploadMeta['checksum'] ?? $checksum,
+            'mimeType' => $uploadMeta['mimeType'] ?? $fileValidation['mime'],
+            'uploadedAt' => $uploadMeta['uploadedAt'] ?? date('Y-m-d H:i:s'),
+            'createdAt' => date('Y-m-d H:i:s'),
+            'updatedAt' => date('Y-m-d H:i:s')
         ];
 
-        $inserted = $db->insertOne('subtitles', $subtitle);
+        try {
+            $inserted = $db->insertOne('subtitles', $subtitle);
+            if (!$inserted) {
+                throw new \Exception('Database insert returned empty result');
+            }
+        } catch (\Throwable $e) {
+            // Transaction Rollback: delete the newly uploaded object from R2
+            error_log('Database insert failed. Rolling back uploaded storage object: ' . $e->getMessage());
+            \Utils\Storage::rollbackUpload($uploadMeta['provider'], $uploadMeta['objectKey'] ?? '');
+            http_response_code(500);
+            echo json_encode(['message' => 'Failed to record subtitle in database. Storage upload was rolled back.']);
+            return;
+        }
 
         if ($uploaderRole === 'User') {
-            // Add notification for admins
             $db->insertOne('notifications', [
                 'recipientType' => 'Admin',
                 'title' => 'New Subtitle Pending Approval',
@@ -132,7 +200,12 @@ class SubtitleController {
             'message' => $uploaderRole === 'Admin'
                 ? 'Admin subtitle uploaded and published successfully.'
                 : 'Subtitle uploaded successfully. Pending moderator approval.',
-            'subtitle' => $inserted
+            'subtitle' => [
+                '_id' => $inserted['_id'] ?? null,
+                'fileUrl' => $fileUrl,
+                'storageProvider' => $subtitle['storageProvider'],
+                'storageObjectKey' => $subtitle['storageObjectKey']
+            ]
         ]);
     }
 
@@ -302,18 +375,17 @@ class SubtitleController {
 
     public static function trackDownload($id) {
         $db = Database::getInstance();
-        $subtitle = $db->findOne('subtitles', ['_id' => $id]);
-        if (!$subtitle) {
+        try {
+            $downloads = $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
+        } catch (\Throwable $e) {
+            error_log('Atomic subtitle counter unavailable: ' . $e->getMessage());
+            $downloads = null;
+        }
+        if ($downloads === null) {
             http_response_code(404);
             echo json_encode(['message' => 'Subtitle not found']);
             return;
         }
-
-        $downloads = ($subtitle['downloads'] ?? 0) + 1;
-        $db->updateOne('subtitles', ['_id' => $id], [
-            'downloads' => $downloads,
-            'lastDownloadedAt' => date('Y-m-d H:i:s')
-        ]);
 
         header('Content-Type: application/json');
         echo json_encode(['message' => 'Download tracked', 'downloads' => $downloads]);
@@ -333,6 +405,17 @@ class SubtitleController {
             http_response_code(404);
             echo json_encode(['message' => 'Subtitle file URL not found']);
             return;
+        }
+
+        // R2 is a public immutable object store. Redirect instead of proxying
+        // the file through PHP/Vercel, which avoids duplicate egress and
+        // function transfer. Existing Supabase/local records keep the legacy
+        // path below unchanged.
+        if (($subtitle['storageProvider'] ?? '') === 'r2' && preg_match('#^https?://#i', $fileUrl)) {
+            header('Cache-Control: public, max-age=31536000, immutable');
+            header('Content-Disposition: attachment; filename="' . preg_replace('/[^a-zA-Z0-9._-]/', '_', 'subtitle-' . $id . '.' . ($subtitle['format'] ?? 'srt')) . '"');
+            header('Location: ' . $fileUrl, true, 302);
+            exit;
         }
 
         // Determine filename
@@ -523,37 +606,96 @@ class SubtitleController {
         }
 
         $file = $_FILES['subtitle'];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
             http_response_code(400);
-            echo json_encode(['message' => 'Error uploading file']);
+            echo json_encode(['message' => 'Error uploading file. Code: ' . ($file['error'] ?? 'unknown')]);
             return;
         }
 
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['srt', 'vtt', 'ass'])) {
+        $fileValidation = \Utils\Storage::validateSubtitleFile($file);
+        if (!$fileValidation['valid']) {
             http_response_code(400);
-            echo json_encode(['message' => 'Invalid subtitle format. Supported formats: SRT, VTT, ASS']);
+            echo json_encode(['message' => $fileValidation['error']]);
             return;
         }
 
-        // Delete old file if exists
-        if (!empty($subtitle['fileUrl'])) {
-            \Utils\Storage::deleteFile($subtitle['fileUrl']);
+        // Resolve media context
+        $mediaId = $subtitle['mediaId'] ?? '';
+        $mediaType = $subtitle['mediaType'] ?? 'Drama';
+        $mediaSlug = 'untitled';
+        $mediaTitle = '';
+        if (strtolower($mediaType) === 'episode') {
+            $episode = $db->findOne('episodes', ['_id' => $mediaId]);
+            if ($episode && !empty($episode['dramaId'])) {
+                $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
+                if ($drama) {
+                    $mediaSlug = $drama['slug'] ?? \Utils\Slug::slugify($drama['title'] ?? '');
+                    $mediaTitle = $drama['title'] ?? '';
+                }
+            }
+        } elseif (strtolower($mediaType) === 'movie') {
+            $movie = $db->findOne('movies', ['_id' => $mediaId]);
+            if ($movie) {
+                $mediaSlug = $movie['slug'] ?? \Utils\Slug::slugify($movie['title'] ?? '');
+                $mediaTitle = $movie['title'] ?? '';
+            }
+        } else {
+            $drama = $db->findOne('dramas', ['_id' => $mediaId]);
+            if ($drama) {
+                $mediaSlug = $drama['slug'] ?? \Utils\Slug::slugify($drama['title'] ?? '');
+                $mediaTitle = $drama['title'] ?? '';
+            }
         }
 
-        // Save new file
-        $fileUrl = \Utils\Storage::uploadFile($file, 'subtitles');
-        if (!$fileUrl) {
+        $context = [
+            'mediaSlug' => $mediaSlug,
+            'mediaTitle' => $mediaTitle,
+            'mediaType' => $mediaType,
+            'seasonNumber' => $subtitle['seasonNumber'] ?? 1,
+            'episodeNumber' => $subtitle['episodeNumber'] ?? 1,
+            'language' => $subtitle['language'] ?? 'Sinhala',
+            'version' => ($subtitle['version'] ?? '1.0') . '-replaced',
+            'originalFilename' => $fileValidation['originalFilename']
+        ];
+
+        // Upload new file to R2 / Storage
+        $uploadMeta = \Utils\Storage::uploadSubtitle($file, $context);
+        if (!$uploadMeta || empty($uploadMeta['url'])) {
             http_response_code(500);
-            echo json_encode(['message' => 'Failed to save new subtitle file']);
+            echo json_encode(['message' => 'Failed to save new subtitle file to storage provider.']);
             return;
         }
 
-        $db->updateOne('subtitles', ['_id' => $id], [
-            'fileUrl' => $fileUrl,
-            'format' => $ext,
+        $updates = [
+            'fileUrl' => $uploadMeta['url'],
+            'format' => $fileValidation['ext'],
+            'storageProvider' => $uploadMeta['provider'] ?? 'r2',
+            'storageBucket' => $uploadMeta['bucket'] ?? null,
+            'storageObjectKey' => $uploadMeta['objectKey'] ?? null,
+            'originalFilename' => $uploadMeta['originalFilename'] ?? $fileValidation['originalFilename'],
+            'storedFilename' => basename($uploadMeta['objectKey'] ?? $uploadMeta['url']),
+            'fileSizeBytes' => $uploadMeta['sizeBytes'] ?? $fileValidation['size'],
+            'fileChecksum' => $uploadMeta['checksum'] ?? null,
+            'mimeType' => $uploadMeta['mimeType'] ?? $fileValidation['mime'],
             'updatedAt' => date('Y-m-d H:i:s')
-        ]);
+        ];
+
+        try {
+            $db->updateOne('subtitles', ['_id' => $id], $updates);
+        } catch (\Throwable $e) {
+            error_log('Replace subtitle DB update failed, rolling back uploaded R2 object: ' . $e->getMessage());
+            \Utils\Storage::rollbackUpload($uploadMeta['provider'], $uploadMeta['objectKey'] ?? '');
+            http_response_code(500);
+            echo json_encode(['message' => 'Database update failed. Storage upload was rolled back.']);
+            return;
+        }
+
+        // Safety note: Do not delete existing Supabase file!
+        // If old file was purely local, delete local disk copy:
+        $oldUrl = $subtitle['fileUrl'] ?? '';
+        if (strpos($oldUrl, '/uploads/') === 0) {
+            \Utils\Storage::deleteFile($oldUrl);
+        }
 
         \Utils\Cache::flush();
         \Utils\Revalidate::path('/');

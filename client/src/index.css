@@ -10,11 +10,11 @@
     --ksz-bg: #09090B;
     --ksz-surface: #0F0F12;
     --ksz-surface-raised: #1A1A20;
-    --ksz-primary: #490570;
-    --ksz-primary-hover: #72149A;
+    --ksz-primary: #8A2BE2;
+    --ksz-primary-hover: #9D4EDD;
     --ksz-text: #f8fafc;
     --ksz-text-muted: #94a3b8;
-    --action-button: #490570;
+    --action-button: #8A2BE2;
   }
 
   html {
@@ -25,8 +25,8 @@
     background-color: var(--ksz-bg);
     color: #f8fafc;
     background-image:
-      radial-gradient(circle at 12% -8%, rgba(73, 5, 112, 0.20), transparent 27rem),
-      radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.05), transparent 24rem),
+      radial-gradient(circle at 12% -8%, rgba(138, 43, 226, 0.22), transparent 27rem),
+      radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.06), transparent 24rem),
       linear-gradient(180deg, #09090B 0%, #0D0D10 52%, #09090B 100%);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
@@ -142,34 +142,316 @@
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
 }
 
-/* Primary actions use a dedicated surface color so text, icons, status
-   badges, and decorative brand accents can keep their brighter contrast. */
+/* ──────────────────────────────────────────────────────────────────────────
+   OIO.LK-INSPIRED ULTRA-PREMIUM BUTTON SYSTEM (#8A2BE2)
+   Glossy top-highlight border, electric violet radiant gradient, drop aura,
+   and pill / capsule geometry for user-side and admin panel.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ──────────────────────────────────────────────────────────────────────────
+   HIRU RESORTS-INSPIRED LUXURY BUTTON SYSTEM (ADAPTED FOR KSUBZONE)
+   Signature capsule geometry, deep negative-spread ambient aura,
+   radiant violet gradient, border-2 glass outline, and smooth floating hover.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 1. Primary Luxury Radiant Gradient Pill (CTAs, Downloads, Main Actions) */
 :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'],
 :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'],
-.action-button-fill {
-  background-color: var(--action-button) !important;
-  background-image: none !important;
-  box-shadow: 0 10px 28px rgba(73, 5, 112, 0.38) !important;
+.action-button-fill,
+.oio-btn-primary,
+.btn-oio-pill,
+.oio-pill,
+.btn-primary-glow,
+.btn-glass-purple,
+.btn-kz-cta {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 9999px !important;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 75%),
+    linear-gradient(135deg, #8A2BE2 0%, #9D4EDD 48%, #7B2CBF 100%) !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow:
+    0 18px 50px -20px rgba(138, 43, 226, 0.95),
+    0 4px 14px -2px rgba(138, 43, 226, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  font-weight: 700 !important;
+  letter-spacing: 0.045em !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+:where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'] > *,
+:where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'] > *,
+.action-button-fill > *,
+.oio-btn-primary > *,
+.btn-oio-pill > *,
+.oio-pill > *,
+.btn-primary-glow > *,
+.btn-glass-purple > *,
+.btn-kz-cta > * {
+  position: relative;
+  z-index: 2;
+}
+
+:where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']::before,
+:where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']::before,
+.action-button-fill::before,
+.oio-btn-primary::before,
+.btn-oio-pill::before,
+.oio-pill::before,
+.btn-primary-glow::before,
+.btn-glass-purple::before,
+.btn-kz-cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 100%
+  );
+  transform: skewX(-22deg);
+  transition: left 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
 }
 
 @media (hover: hover) {
   :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover,
   :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover,
-  .action-button-fill:hover {
-    background-color: var(--ksz-primary-hover) !important;
-    filter: brightness(1.16);
+  .action-button-fill:hover,
+  .oio-btn-primary:hover,
+  .btn-oio-pill:hover,
+  .oio-pill:hover,
+  .btn-primary-glow:hover,
+  .btn-glass-purple:hover,
+  .btn-kz-cta:hover {
+    background:
+      radial-gradient(130% 90% at 50% -15%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 50%, transparent 80%),
+      linear-gradient(135deg, #9D4EDD 0%, #B066FF 48%, #8A2BE2 100%) !important;
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    box-shadow:
+      0 24px 55px -16px rgba(157, 78, 221, 1),
+      0 0 25px rgba(138, 43, 226, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+    transform: translateY(-2px) !important;
+    filter: brightness(1.08) !important;
   }
+
+  :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover::before,
+  :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover::before,
+  .action-button-fill:hover::before,
+  .oio-btn-primary:hover::before,
+  .btn-oio-pill:hover::before,
+  .oio-pill:hover::before,
+  .btn-primary-glow:hover::before,
+  .btn-glass-purple:hover::before,
+  .btn-kz-cta:hover::before {
+    left: 150%;
+  }
+}
+
+:where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:active,
+:where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:active,
+.action-button-fill:active,
+.oio-btn-primary:active,
+.btn-oio-pill:active,
+.oio-pill:active,
+.btn-primary-glow:active,
+.btn-glass-purple:active,
+.btn-kz-cta:active {
+  transform: translateY(0px) scale(0.985) !important;
+  box-shadow: 0 8px 25px -10px rgba(138, 43, 226, 0.8) !important;
+}
+
+/* KSubZone CTA treatment inspired by the supplied premium pill reference. */
+.btn-kz-cta {
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  gap: 0.65rem;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%) !important;
+  border: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 10px 24px -10px rgba(124, 58, 237, 0.85) !important;
+  text-shadow: none !important;
+}
+
+.btn-kz-cta::before {
+  display: none !important;
+}
+
+@media (hover: hover) {
+  .btn-kz-cta:hover {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%) !important;
+    border: 0 !important;
+    box-shadow: 0 14px 30px -10px rgba(139, 92, 246, 0.9) !important;
+    filter: none !important;
+  }
+}
+
+/* Apply the same non-glass treatment to legacy primary CTA buttons too. */
+.btn-oio-pill,
+.oio-btn-primary,
+.oio-pill,
+.btn-primary-glow,
+.btn-glass-purple,
+.action-button-fill {
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%) !important;
+  border: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 10px 24px -10px rgba(124, 58, 237, 0.85) !important;
+  text-shadow: none !important;
+}
+
+.btn-oio-pill::before,
+.oio-btn-primary::before,
+.oio-pill::before,
+.btn-primary-glow::before,
+.btn-glass-purple::before,
+.action-button-fill::before {
+  display: none !important;
+}
+
+@media (hover: hover) {
+  .btn-oio-pill:hover,
+  .oio-btn-primary:hover,
+  .oio-pill:hover,
+  .btn-primary-glow:hover,
+  .btn-glass-purple:hover,
+  .action-button-fill:hover {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%) !important;
+    border: 0 !important;
+    box-shadow: 0 14px 30px -10px rgba(139, 92, 246, 0.9) !important;
+    filter: none !important;
+  }
+}
+
+.btn-kz-cta .btn-kz-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.btn-kz-cta:hover .btn-kz-arrow {
+  transform: translateX(0.18rem);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 2. Secondary Luxury Outlined Glass Pill (Details, Inquire, Secondary Actions) */
+.btn-oio-glass,
+.oio-btn-secondary,
+.oio-btn-glass,
+.btn-glass-purple-ghost {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 2px solid rgba(255, 255, 255, 0.85) !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow:
+    0 10px 30px -15px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-oio-glass > *,
+.oio-btn-secondary > *,
+.oio-btn-glass > *,
+.btn-glass-purple-ghost > * {
+  position: relative;
+  z-index: 2;
+}
+
+.btn-oio-glass::before,
+.oio-btn-secondary::before,
+.oio-btn-glass::before,
+.btn-glass-purple-ghost::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  transform: skewX(-22deg);
+  transition: left 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  .btn-oio-glass:hover,
+  .oio-btn-secondary:hover,
+  .oio-btn-glass:hover,
+  .btn-glass-purple-ghost:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: #FFFFFF !important;
+    box-shadow:
+      0 18px 45px -15px rgba(138, 43, 226, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+    transform: translateY(-2px) !important;
+    color: #FFFFFF !important;
+  }
+
+  .btn-oio-glass:hover::before,
+  .oio-btn-secondary:hover::before,
+  .oio-btn-glass:hover::before,
+  .btn-glass-purple-ghost:hover::before {
+    left: 150%;
+  }
+}
+
+.btn-oio-glass:active,
+.oio-btn-secondary:active,
+.oio-btn-glass:active,
+.btn-glass-purple-ghost:active {
+  transform: translateY(0px) scale(0.985) !important;
 }
 
 /* Ensure text using brand-primary on dark backgrounds remains crisp and readable */
 :where(.text-brand-primary, [class*='text-brand-primary/']) {
-  color: #b85adb;
+  color: #C084FC;
 }
 
 :where(button, input[type='submit']):disabled[class~='bg-brand-primary'],
-:where(button, input[type='submit']):disabled[class~='from-brand-primary'] {
-  filter: none;
-  opacity: 0.5;
+:where(button, input[type='submit']):disabled[class~='from-brand-primary'],
+.oio-btn-primary:disabled {
+  filter: none !important;
+  opacity: 0.5 !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Premium Text Glows */
@@ -386,14 +668,17 @@ textarea {
 }
 
 .admin-login-submit {
-  background: linear-gradient(135deg, #72149A, #490570 55%, #30034a);
-  box-shadow: 0 15px 38px rgba(73, 5, 112, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  border-radius: 9999px !important;
+  background: linear-gradient(135deg, #8A2BE2 0%, #9D4EDD 48%, #7B2CBF 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 4px 20px rgba(138, 43, 226, 0.45), 0 0 15px rgba(138, 43, 226, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .admin-login-submit:hover:not(:disabled) {
-  filter: brightness(1.12);
-  box-shadow: 0 19px 45px rgba(73, 5, 112, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
+  filter: brightness(1.12) !important;
+  box-shadow: 0 8px 30px rgba(138, 43, 226, 0.65), 0 0 25px rgba(138, 43, 226, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-1.5px) !important;
 }
 
 .admin-shell::before {
@@ -1389,8 +1674,8 @@ textarea {
 
 /* ─── DASHSTACK UI KIT THEME TOKENS & UTILITIES ─────────────────────────── */
 :root {
-  --dashstack-primary: #490570;
-  --dashstack-primary-hover: #5F0A8E;
+  --dashstack-primary: #8A2BE2;
+  --dashstack-primary-hover: #9D4EDD;
 }
 
 [data-admin-theme='light'],
@@ -1450,13 +1735,13 @@ textarea {
 
 /* ── Base Token Definitions ── */
 .admin-theme-wrapper {
-  --studio-blue: #7C3AED;
-  --studio-blue-strong: #6D28D9;
+  --studio-blue: #8A2BE2;
+  --studio-blue-strong: #7B1FA2;
   --studio-ink: #0C1424;
   --studio-teal: #10B981;
   --studio-coral: #F43F5E;
   --studio-amber: #F59E0B;
-  --studio-violet: #8B5CF6;
+  --studio-violet: #9D4EDD;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
@@ -1796,4 +2081,329 @@ textarea {
 @media (min-width: 1024px) {
   [data-admin-theme='light'] .admin-main,
   .admin-theme-light .admin-main { padding-inline: 3.1rem !important; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   HIRU RESORTS-INSPIRED SUBTLE PILLS & ADMIN ACTIONS
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Hiru Resorts Filter / Action Subtle Pills & Chips ── */
+.btn-glass-subtle,
+.btn-glass-purple-tint {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.16) !important;
+  color: #e2e8f0 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-glass-subtle:hover,
+.btn-glass-purple-tint:hover {
+  background: rgba(138, 43, 226, 0.2) !important;
+  border-color: rgba(192, 132, 252, 0.55) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    0 12px 30px -12px rgba(138, 43, 226, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-glass-subtle:active,
+.btn-glass-purple-tint:active {
+  transform: translateY(0px) scale(0.985) !important;
+}
+
+/* ── Admin Management Studio Action Buttons (Unified Hiru Luxury Pill) ── */
+.admin-shell button:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']),
+.admin-shell a:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']),
+.admin-shell .btn-admin-action {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 75%),
+    linear-gradient(135deg, #8A2BE2 0%, #9D4EDD 48%, #7B2CBF 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow:
+    0 18px 50px -20px rgba(138, 43, 226, 0.95),
+    0 4px 14px -2px rgba(138, 43, 226, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.045em !important;
+  border-radius: 9999px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.admin-shell button:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):hover,
+.admin-shell a:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):hover,
+.admin-shell .btn-admin-action:hover {
+  background:
+    radial-gradient(130% 90% at 50% -15%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 50%, transparent 80%),
+    linear-gradient(135deg, #9D4EDD 0%, #B066FF 48%, #8A2BE2 100%) !important;
+  border-color: rgba(255, 255, 255, 0.65) !important;
+  box-shadow:
+    0 24px 55px -16px rgba(157, 78, 221, 1),
+    0 0 25px rgba(138, 43, 226, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  transform: translateY(-2px) !important;
+  filter: brightness(1.08) !important;
+}
+
+.admin-shell button:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):active,
+.admin-shell a:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):active,
+.admin-shell .btn-admin-action:active {
+  transform: translateY(0px) scale(0.985) !important;
+  box-shadow: 0 8px 25px -10px rgba(138, 43, 226, 0.8) !important;
+}
+
+/* ── Admin Dashboard Quick Action Launcher Cards ── */
+.doit-quick-action {
+  border-radius: 20px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.doit-quick-action:hover {
+  border-color: rgba(138, 43, 226, 0.5) !important;
+  box-shadow: 0 10px 25px -5px rgba(138, 43, 226, 0.25) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ── Public & Admin Floating Action Buttons ── */
+.floating-action-glow,
+.ai-chat-launcher {
+  background:
+    radial-gradient(100% 70% at 50% 0%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 40%, transparent 70%),
+    linear-gradient(135deg, rgba(147, 51, 234, 0.92) 0%, rgba(168, 85, 247, 0.78) 45%, rgba(124, 58, 237, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow:
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 3px 0 rgba(0, 0, 0, 0.3),
+    inset 0 0 20px 0 rgba(216, 180, 254, 0.4),
+    0 10px 32px rgba(138, 43, 226, 0.6),
+    0 0 22px rgba(168, 85, 247, 0.45) !important;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.floating-action-glow:hover,
+.ai-chat-launcher:hover {
+  background:
+    radial-gradient(100% 70% at 50% 0%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.2) 40%, transparent 70%),
+    linear-gradient(135deg, rgba(168, 85, 247, 0.96) 0%, rgba(192, 132, 252, 0.88) 45%, rgba(147, 51, 234, 0.96) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+  box-shadow:
+    inset 0 2px 3px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 28px 0 rgba(233, 213, 255, 0.65),
+    0 14px 40px rgba(147, 51, 234, 0.78),
+    0 0 32px rgba(192, 132, 252, 0.65) !important;
+  transform: scale(1.1) translateY(-2px) !important;
+}
+
+/* ── Admin dark theme: matte KSubZone public-site palette ──────────────── */
+.admin-theme-dark .admin-shell,
+[data-admin-theme='dark'] .admin-shell {
+  --ksz-bg: #09090B;
+  --ksz-sidebar: #0F0F12;
+  --ksz-surface: #0F0F12;
+  --ksz-card: #1A1A20;
+  --ksz-elevated: #202027;
+  --ksz-border: rgba(255, 255, 255, 0.08);
+  --ksz-violet: #8A2BE2;
+  --admin-canvas: #09090B;
+  --admin-sidebar: #0F0F12;
+  --admin-surface: #0F0F12;
+  --admin-card-bg: #1A1A20;
+  --admin-elevated: #202027;
+  --admin-border: rgba(255, 255, 255, 0.08);
+  background: #09090B !important;
+  background-image: none !important;
+  mask-image: none !important;
+}
+
+.admin-theme-dark .admin-main,
+[data-admin-theme='dark'] .admin-main {
+  background: #09090B !important;
+  background-image: none !important;
+}
+
+.admin-theme-dark .ksz-sidebar,
+.admin-theme-dark .admin-sidebar,
+[data-admin-theme='dark'] .ksz-sidebar,
+[data-admin-theme='dark'] .admin-sidebar {
+  background: #0F0F12 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-right-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 1px 0 18px rgba(0, 0, 0, 0.34) !important;
+}
+
+.admin-theme-dark .ksz-topbar,
+.admin-theme-dark .admin-topbar,
+.admin-theme-dark .admin-mobile-bar,
+[data-admin-theme='dark'] .ksz-topbar,
+[data-admin-theme='dark'] .admin-topbar,
+[data-admin-theme='dark'] .admin-mobile-bar {
+  background: #0F0F12 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-theme-dark .ksz-card,
+.admin-theme-dark .admin-surface-card,
+.admin-theme-dark .admin-stat-card,
+.admin-theme-dark .admin-table-toolbar,
+.admin-theme-dark .admin-data-table,
+.admin-theme-dark .admin-modal-drawer,
+.admin-theme-dark .admin-toast,
+[data-admin-theme='dark'] .ksz-card,
+[data-admin-theme='dark'] .admin-surface-card,
+[data-admin-theme='dark'] .admin-stat-card,
+[data-admin-theme='dark'] .admin-table-toolbar,
+[data-admin-theme='dark'] .admin-data-table,
+[data-admin-theme='dark'] .admin-modal-drawer,
+[data-admin-theme='dark'] .admin-toast {
+  background: #1A1A20 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+.admin-theme-dark .ksz-dropdown,
+.admin-theme-dark .admin-notification-panel,
+.admin-theme-dark .admin-notification-toast,
+[data-admin-theme='dark'] .ksz-dropdown,
+[data-admin-theme='dark'] .admin-notification-panel,
+[data-admin-theme='dark'] .admin-notification-toast {
+  background: #202027 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-theme-dark .admin-dashboard-header,
+[data-admin-theme='dark'] .admin-dashboard-header {
+  background: #1A1A20 !important;
+  background-image: none !important;
+  border-color: rgba(138, 43, 226, 0.34) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3) !important;
+}
+
+.admin-theme-dark .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']),
+[data-admin-theme='dark'] .admin-main :where(input, select, textarea):not([type='checkbox']):not([type='radio']) {
+  background: #0F0F12 !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-theme-dark .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'],
+.admin-theme-dark .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'],
+[data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'],
+[data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'] {
+  background: #8A2BE2 !important;
+  background-image: none !important;
+  border-color: #9D4EDD !important;
+  box-shadow: 0 8px 20px rgba(138, 43, 226, 0.28) !important;
+}
+
+@media (hover: hover) {
+  .admin-theme-dark .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover,
+  .admin-theme-dark .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover,
+  [data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover,
+  [data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover {
+    background: #9D4EDD !important;
+    background-image: none !important;
+    filter: none !important;
+    box-shadow: 0 10px 24px rgba(138, 43, 226, 0.36) !important;
+  }
+}
+
+/* Keep dashboard cards readable at laptop widths and remove the last dark-mode glass layers. */
+.admin-theme-dark .dashstack-card,
+[data-admin-theme='dark'] .dashstack-card {
+  background: #1A1A20 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+.admin-theme-dark .dashstack-card:hover,
+[data-admin-theme='dark'] .dashstack-card:hover {
+  background: #202027 !important;
+  border-color: rgba(138, 43, 226, 0.34) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34) !important;
+}
+
+.admin-theme-dark .doit-quick-action,
+[data-admin-theme='dark'] .doit-quick-action {
+  min-width: 0;
+}
+
+@media (min-width: 640px) and (max-width: 1279px) {
+  .admin-theme-dark .admin-main,
+  [data-admin-theme='dark'] .admin-main {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+/* Matte treatment for the dashboard's last nested surfaces. */
+.admin-theme-dark .admin-system-panel,
+[data-admin-theme='dark'] .admin-system-panel {
+  border-radius: 18px !important;
+  background: #0F0F12 !important;
+  background-image: none !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24) !important;
+}
+
+.admin-theme-dark .admin-system-panel .admin-health-grid > div,
+[data-admin-theme='dark'] .admin-system-panel .admin-health-grid > div {
+  border-radius: 14px !important;
+  background: #1A1A20 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-theme-dark .admin-system-panel button,
+[data-admin-theme='dark'] .admin-system-panel button {
+  background: #1A1A20 !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-dark .admin-topbar,
+[data-admin-theme='dark'] .admin-topbar {
+  background: #09090B !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: #24242B !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-dark .admin-topbar :where(input, button, a),
+[data-admin-theme='dark'] .admin-topbar :where(input, button, a) {
+  box-shadow: none !important;
 }

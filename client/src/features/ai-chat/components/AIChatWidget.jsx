@@ -56,7 +56,8 @@ export default function AIChatWidget() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-brand-primary text-white shadow-lg shadow-brand-primary/30 transition-transform hover:scale-110 flex items-center justify-center ${isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
+        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full btn-oio-pill floating-action-glow text-white transition-transform hover:scale-110 flex items-center justify-center cursor-pointer ${isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
+        aria-label="Open AI Chat"
       >
         <MessageSquare className="w-6 h-6" />
       </button>
@@ -138,9 +139,9 @@ export default function AIChatWidget() {
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading}
-                  className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brand-primary hover:text-white transition"
+                  className="w-8 h-8 rounded-lg btn-oio-pill disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition shadow-sm"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
             </form>

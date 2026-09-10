@@ -29,13 +29,7 @@ export default function PublicLayout({ children }) {
     logVisit();
   }, [pathname]);
 
-  if (contentLoading) {
-    return (
-      <div className="min-h-screen bg-luxury-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-primary"></div>
-      </div>
-    );
-  }
+
 
   if (content?.system?.maintenanceMode && !admin) {
     return (

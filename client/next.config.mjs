@@ -15,6 +15,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  devIndicators: {
+    buildActivity: false,
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
@@ -24,6 +27,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'image.tmdb.org',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.themoviedb.org',
       },
       {
         protocol: 'https',
@@ -82,6 +89,9 @@ const nextConfig = {
         destination: `${backendUrl}/uploads/:path*`,
       },
     ];
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['@tsparticles/react', '@tsparticles/slim', '@tsparticles/engine'],
   },
 };
 

@@ -47,7 +47,7 @@ export default function ContactForm() {
         </p>
         <button
           onClick={() => setStatus('idle')}
-          className="mt-4 px-5 py-2.5 rounded-xl bg-brand-primary text-white text-xs font-bold uppercase tracking-wider hover:bg-brand-primary/80 transition"
+          className="mt-4 px-6 py-2.5 rounded-full btn-oio-pill text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow-md"
         >
           Send Another Message
         </button>
@@ -143,7 +143,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="mt-2 h-11 w-full rounded-xl bg-brand-primary hover:bg-brand-primary/85 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-primary/10"
+        className="mt-2 h-12 w-full rounded-full btn-oio-pill text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-xl cursor-pointer"
       >
         {status === 'loading' ? (
           <>
