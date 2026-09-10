@@ -17,6 +17,7 @@ const nextConfig = {
   },
   devIndicators: {
     buildActivity: false,
+    appIsrStatus: false,
   },
   images: {
     formats: ['image/avif', 'image/webp'],

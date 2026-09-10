@@ -2407,3 +2407,16 @@ textarea {
 [data-admin-theme='dark'] .admin-topbar :where(input, button, a) {
   box-shadow: none !important;
 }
+
+/* Hide Next.js Development Indicator */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dev-indicator],
+[data-nextjs-route-announcer],
+div[data-nextjs-dev-tools-button],
+button[aria-label*="Next.js"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
