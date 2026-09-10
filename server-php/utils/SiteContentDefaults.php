@@ -64,9 +64,8 @@ class SiteContentDefaults {
                     ['label' => 'Contact Us', 'url' => '/contact']
                 ],
                 'socials' => [
-                    ['label' => 'Facebook', 'url' => 'https://facebook.com'],
-                    ['label' => 'Instagram', 'url' => 'https://instagram.com'],
-                    ['label' => 'YouTube', 'url' => 'https://youtube.com']
+                    ['label' => 'Facebook', 'url' => 'https://www.facebook.com/share/19QzghDCgM/'],
+                    ['label' => 'TikTok', 'url' => 'https://www.tiktok.com/@ksubzone_?_r=1&_t=ZS-99ccFoE843h']
                 ]
             ],
             'ai' => [
