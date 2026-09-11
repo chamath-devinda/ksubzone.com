@@ -413,9 +413,9 @@ export default function Navbar() {
               aria-label="Toggle mobile menu"
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation"
-              className="h-11 w-11 flex-shrink-0 rounded-xl lg:hidden text-slate-300 btn-glass-subtle transition flex items-center justify-center"
+              className="h-10 w-10 flex-shrink-0 rounded-xl lg:hidden text-slate-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition flex items-center justify-center"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>

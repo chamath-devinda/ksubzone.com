@@ -2090,8 +2090,8 @@ textarea {
 /* ── Hiru Resorts Filter / Action Subtle Pills & Chips ── */
 .btn-glass-subtle,
 .btn-glass-purple-tint {
-  display: inline-flex !important;
-  align-items: center !important;
+  display: inline-flex;
+  align-items: center;
   justify-content: center !important;
   position: relative !important;
   border-radius: 9999px !important;
