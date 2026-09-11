@@ -101,6 +101,11 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
         // Clean URL by removing query param and hash
         const cleanUrl = window.location.pathname;
         window.history.replaceState(null, '', cleanUrl);
+      } else {
+        // Detail pages should always open at their hero and subtitle-center
+        // header, rather than inheriting a scroll position from a previous
+        // catalog or a browser restoration entry.
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       }
     };
 
