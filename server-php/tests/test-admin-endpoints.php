@@ -20,6 +20,14 @@ namespace Utils {
         public static function get($key) { return self::$data[$key] ?? false; }
         public static function set($key, $value, $ttl) { self::$data[$key] = $value; }
     }
+    class Storage {
+        public static function getProvider() {
+            return new class {
+                public function isConfigured() { return false; }
+                public function getProviderName() { return 'local'; }
+            };
+        }
+    }
 }
 namespace Controllers {
     $testStatus = 200; $testBody = '{"items":[]}'; $calls = 0;

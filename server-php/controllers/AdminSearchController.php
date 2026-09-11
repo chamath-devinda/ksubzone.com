@@ -20,7 +20,8 @@ final class AdminSearchController {
         ];
         $results = [];
         $db = Database::getInstance();
-        foreach ($modules as [$table, $label, $field, $permission]) {
+        foreach ($modules as $module) {
+            list($table, $label, $field, $permission) = $module;
             if (!$super && !in_array($permission, $permissions, true)) continue;
             $filter = [$field => ['$regex' => preg_quote($query, '/'), '$options' => 'i']];
             foreach ($db->find($table, $filter, ['limit' => 5, 'sort' => ['createdAt' => -1]]) as $row) {

@@ -12,6 +12,7 @@ if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true })
 fs.mkdirSync(tempDir, { recursive: true });
 
 const excludeFiles = new Set([
+  '.env',
   '.env.local',
   '.env.production',
   'ksubzone.sqlite',

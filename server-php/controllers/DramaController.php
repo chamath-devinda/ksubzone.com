@@ -579,14 +579,20 @@ class DramaController {
         $finalDramaData['title'] = $submittedTitle;
         $inserted = $db->insertOne('dramas', $finalDramaData);
 
-        // Invalidate cache and trigger revalidation
-        \Utils\Cache::flush();
-        if ($inserted && !empty($inserted['_id'])) {
-            \Utils\Cache::delete("drama_detail_" . $inserted['_id']);
-        }
-        \Utils\Revalidate::path('/');
+        // Invalidate cache and trigger revalidation (best-effort, non-blocking)
+        try {
+            \Utils\Cache::flush();
+            if ($inserted && !empty($inserted['_id'])) {
+                \Utils\Cache::delete("drama_detail_" . $inserted['_id']);
+            }
+        } catch (\Exception $e) {}
+        try {
+            \Utils\Revalidate::path('/');
+        } catch (\Exception $e) {}
         if ($inserted && !empty($inserted['slug'])) {
-            \Utils\Revalidate::media('drama', $inserted['slug']);
+            try {
+                \Utils\Revalidate::media('drama', $inserted['slug']);
+            } catch (\Exception $e) {}
         }
 
         http_response_code(201);
@@ -646,15 +652,30 @@ class DramaController {
         $contentUpdatedAt = gmdate(DATE_ATOM);
         $updates['updatedAt'] = date('Y-m-d H:i:s');
         $updates['contentUpdatedAt'] = $contentUpdatedAt;
-        $db->updateOne('dramas', ['_id' => $id], $updates);
+
+        try {
+            $db->updateOne('dramas', ['_id' => $id], $updates);
+        } catch (\Exception $e) {
+            error_log('DramaController::updateDrama DB error for ID ' . $id . ': ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['message' => 'Database error while saving drama: ' . $e->getMessage()]);
+            return;
+        }
+
         $updatedDrama = $db->findOne('dramas', ['_id' => $id]);
 
-        // Invalidate cache and trigger revalidation
-        \Utils\Cache::flush();
-        \Utils\Cache::delete("drama_detail_" . $id);
-        \Utils\Revalidate::path('/');
+        // Invalidate cache and trigger revalidation (best-effort, non-blocking)
+        try {
+            \Utils\Cache::flush();
+            \Utils\Cache::delete("drama_detail_" . $id);
+        } catch (\Exception $e) {}
+        try {
+            \Utils\Revalidate::path('/');
+        } catch (\Exception $e) {}
         if ($updatedDrama && !empty($updatedDrama['slug'])) {
-            \Utils\Revalidate::media('drama', $updatedDrama['slug']);
+            try {
+                \Utils\Revalidate::media('drama', $updatedDrama['slug']);
+            } catch (\Exception $e) {}
         }
 
         header('Content-Type: application/json');
@@ -1165,7 +1186,7 @@ class DramaController {
             'mediaId' => ['$in' => array_merge($dramaIds, $episodeIds)],
             'approvalStatus' => 'Approved'
         ], [
-            'fields' => ['mediaId', 'language', 'seasonStatus', 'approvalStatus', 'uploaderRole', 'uploader']
+            'fields' => ['mediaId', 'language', 'seasonStatus', 'approvalStatus', 'uploaderRole', 'uploader', 'createdAt']
         ]);
         
         // Group subtitles by mediaId

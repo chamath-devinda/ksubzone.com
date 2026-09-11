@@ -581,6 +581,15 @@ class Database {
             return $this->driver === 'pgsql' ? "\"{$field}\"" : $field;
         }
 
+        if ($field === 'contentUpdatedAt') {
+            if ($this->driver === 'pgsql') {
+                return "COALESCE(\"data\"->>'contentUpdatedAt', \"createdAt\")";
+            } elseif ($this->driver === 'mysql') {
+                return "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.contentUpdatedAt')), createdAt)";
+            }
+            return "COALESCE(json_extract(data, '$.contentUpdatedAt'), createdAt)";
+        }
+
         $parts = explode('.', $field);
         $lastPart = end($parts);
         $numericFields = [
@@ -848,7 +857,12 @@ class Database {
                 $sortParts = [];
                 foreach ($options['sort'] as $field => $dir) {
                     $direction = ($dir === -1 || $dir === 'desc' || $dir === 'DESC') ? 'DESC' : 'ASC';
-                    $sortParts[] = $this->sqlField($field) . " {$direction}";
+                    if ($this->driver === 'pgsql') {
+                        $nullOrder = ($direction === 'DESC') ? ' NULLS LAST' : ' NULLS FIRST';
+                        $sortParts[] = $this->sqlField($field) . " {$direction}{$nullOrder}";
+                    } else {
+                        $sortParts[] = $this->sqlField($field) . " {$direction}";
+                    }
                 }
                 if (!empty($sortParts)) {
                     $sql .= " ORDER BY " . implode(", ", $sortParts);

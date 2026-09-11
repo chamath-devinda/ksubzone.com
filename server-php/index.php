@@ -1155,9 +1155,19 @@ foreach ($routes as $route) {
             http_response_code(500);
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             header('Content-Type: application/json');
-            echo json_encode([
+            $response = [
                 'message' => 'The request could not be completed. Please retry or contact an administrator.'
-            ]);
+            ];
+            try {
+                if (\Middleware\AuthMiddleware::isAdmin() || (getenv('APP_ENV') ?: '') !== 'production') {
+                    $response['debug'] = [
+                        'error' => $e->getMessage(),
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine()
+                    ];
+                }
+            } catch (\Exception $ignored) {}
+            echo json_encode($response);
         }
         exit;
     }

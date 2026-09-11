@@ -30,6 +30,7 @@ $filesToCopy = @(
     "bot-seo.php",
     "index.php",
     "config\Database.php",
+    "controllers\AdminSearchController.php",
     "controllers\AiController.php",
     "controllers\AiSeoController.php",
     "controllers\AnalyticsController.php",
@@ -39,6 +40,8 @@ $filesToCopy = @(
     "controllers\SeoController.php",
     "controllers\SubtitleController.php",
     "controllers\TmdbController.php",
+    "utils\AdminValidation.php",
+    "utils\AdsterraReport.php",
     "utils\AiService.php",
     "utils\Cache.php",
     "utils\SiteContentDefaults.php"

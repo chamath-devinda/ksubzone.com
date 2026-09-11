@@ -234,11 +234,11 @@ class MovieController {
         // Homepage sections have strict, intentionally small budgets. The
         // previous implementation loaded the whole drama catalog (up to 200)
         // just to sort it again in PHP.
-        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 10, 'fields' => $heroFields]);
+        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 20, 'fields' => $heroFields]);
         
         $latestDramas = $db->find('dramas', $statusFilter, [
             'sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1],
-            'limit' => 10,
+            'limit' => 20,
             'fields' => $heroFields
         ]);
         
@@ -357,6 +357,13 @@ class MovieController {
             $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
+
+        usort($latestMovies, function($a, $b) {
+            $aTime = strtotime($a['contentUpdatedAt'] ?? $a['createdAt'] ?? '') ?: 0;
+            $bTime = strtotime($b['contentUpdatedAt'] ?? $b['createdAt'] ?? '') ?: 0;
+            return $bTime <=> $aTime;
+        });
+        $latestMovies = array_slice($latestMovies, 0, 10);
         foreach ($historicalMovies as &$m) {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];

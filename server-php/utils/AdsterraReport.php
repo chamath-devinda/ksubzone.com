@@ -22,7 +22,9 @@ final class AdsterraReport {
             if (!$parsed || $parsed->format('Y-m-d') !== $date || $date < $start || $date > $finish) throw new \UnexpectedValueException('Invalid report date');
             $values = ['impressions' => $row['impressions'] ?? $row['impression'] ?? null,
                 'clicks' => $row['clicks'] ?? null, 'revenue' => $row['revenue'] ?? $row['profit'] ?? null];
-            $daily[$date] ??= ['date' => $date, 'impressions' => 0, 'clicks' => 0, 'revenue' => 0];
+            if (!isset($daily[$date])) {
+                $daily[$date] = ['date' => $date, 'impressions' => 0, 'clicks' => 0, 'revenue' => 0];
+            }
             foreach ($values as $key => $value) {
                 if (!is_numeric($value) || !is_finite((float)$value) || (float)$value < 0) throw new \UnexpectedValueException('Invalid report metric');
                 $daily[$date][$key] += (float)$value;
@@ -37,7 +39,7 @@ final class AdsterraReport {
         unset($row);
         return ['summary' => self::ratios($summary), 'daily' => array_values($daily)];
     }
-    private static function ratios(array $row): array {
+    private static function ratios(array $row) {
         $row['impressions'] = (int)round($row['impressions']);
         $row['clicks'] = (int)round($row['clicks']);
         $row['revenue'] = round($row['revenue'], 6);
