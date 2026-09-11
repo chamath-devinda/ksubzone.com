@@ -417,7 +417,8 @@ class SubtitleController {
         // function transfer. The client can opt into a server-side proxy when
         // a browser-side Cloudflare request is rejected with HTTP 403.
         if (($subtitle['storageProvider'] ?? '') === 'r2' && preg_match('#^https?://#i', $fileUrl)) {
-            $proxyRequested = isset($_GET['proxy']) && (string)$_GET['proxy'] === '1';
+            $proxyRequested = isset($_SERVER['HTTP_X_SUBTITLE_PROXY'])
+                && (string)$_SERVER['HTTP_X_SUBTITLE_PROXY'] === '1';
 
             if ($proxyRequested) {
                 $ch = curl_init();

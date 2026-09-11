@@ -50,14 +50,18 @@ async function createResponseError(response) {
   return error;
 }
 
-async function fetchWithRetry(url, maxAttempts, timeoutMs = 15000) {
+async function fetchWithRetry(url, maxAttempts, timeoutMs = 15000, extraHeaders = undefined) {
   let lastError;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      const response = await fetch(url, {
+        cache: 'no-store',
+        signal: controller.signal,
+        ...(extraHeaders ? { headers: extraHeaders } : {})
+      });
       if (response.ok) return response;
 
       lastError = await createResponseError(response);
@@ -119,8 +123,10 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
       // A Cloudflare edge can return 403 for a browser fetch while the PHP
       // origin can still retrieve the public object. Ask the backend to proxy
       // the bytes instead of redirecting back to the same edge URL.
-      const fallbackUrl = `/api/subtitles/${targetId}/download?proxy=1`;
-      const fallbackResponse = await fetchWithRetry(fallbackUrl, 2, 20000);
+      const fallbackUrl = `/api/subtitles/${targetId}/download`;
+      const fallbackResponse = await fetchWithRetry(fallbackUrl, 2, 20000, {
+        'X-Subtitle-Proxy': '1'
+      });
       const blob = await fallbackResponse.blob();
       if (!blob.size) throw new Error(DEFAULT_ERROR);
 

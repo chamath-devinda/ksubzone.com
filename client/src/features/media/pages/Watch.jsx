@@ -130,7 +130,9 @@ export default function Watch({ initialDramaData }) {
 
     try {
       const baseUrl = apiClient.defaults.baseURL === '/' ? '' : apiClient.defaults.baseURL;
-      const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download?name=${encodeURIComponent(customFileName)}`;
+      // Shared-hosting ModSecurity blocks download URLs with a `name` query
+      // parameter. Keep naming client-side instead.
+      const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download`;
 
       await downloadSubtitle({
         subtitle: subtitleObj || { _id: subId, fileUrl },

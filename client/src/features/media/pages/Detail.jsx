@@ -327,7 +327,11 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
     try {
       const baseUrl = apiClient.defaults.baseURL === '/' ? '' : apiClient.defaults.baseURL;
-      const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download?name=${encodeURIComponent(customFileName)}`;
+      // Keep the filename out of the query string. Some shared-hosting
+      // ModSecurity rules reject otherwise valid download requests containing
+      // a `name` parameter with HTTP 403. The browser applies this filename
+      // after receiving the file (see downloadSubtitle).
+      const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download`;
 
       await downloadSubtitle({
         subtitle: subtitleObj || { _id: subId, fileUrl },
