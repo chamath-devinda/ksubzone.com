@@ -479,8 +479,8 @@ class MovieController {
             'comments' => $comments
         ];
 
-        // Cache details payload for 1 hour (3600 seconds)
-        \Utils\Cache::set($cacheKey, $payload, 3600);
+        // Cache details payload for 30 seconds to absorb traffic spikes without delaying subtitle releases
+        \Utils\Cache::set($cacheKey, $payload, 30);
 
         header('Content-Type: application/json');
         echo json_encode($payload);

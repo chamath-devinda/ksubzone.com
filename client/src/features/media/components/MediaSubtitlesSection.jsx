@@ -136,7 +136,7 @@ export default function MediaSubtitlesSection({
                     (sub, index, arr) => sub && arr.findIndex((item) => item?._id === sub?._id) === index
                   )
                 );
-                const hasSubtitles = episodeFiles.length > 0 || (summary.totalSubtitles || 0) > 0;
+                const hasSubtitles = episodeFiles.length > 0 || (summary.totalSubtitles || 0) > 0 || (Number(ep?.subtitleCount) || 0) > 0;
                 const episodeUrl = `/drama/${mediaPermalink}/season-${selectedSeason}/episode-${ep.episodeNumber}`;
                 const formattedEpisode = `E${String(ep.episodeNumber).padStart(2, '0')}`;
 

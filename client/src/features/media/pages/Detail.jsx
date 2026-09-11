@@ -57,8 +57,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       return res.data;
     },
     initialData,
-    staleTime: 60_000,
-    refetchOnMount: false
+    staleTime: 10_000,
+    refetchOnMount: true
   });
 
   const media = type === 'Drama' ? data?.drama : data?.movie;
@@ -124,8 +124,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     },
     enabled: !topOnly && !!media?._id,
     initialData: data?.subtitles || [],
-    staleTime: 5 * 60_000,
-    refetchOnMount: false,
+    staleTime: 10_000,
+    refetchOnMount: true,
     refetchOnWindowFocus: false
   });
 
@@ -166,8 +166,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       });
       return grouped;
     },
-    staleTime: 5 * 60_000,
-    refetchOnMount: false,
+    staleTime: 10_000,
+    refetchOnMount: true,
     refetchOnWindowFocus: false
   });
 

@@ -1026,9 +1026,14 @@ class SubtitleController {
             $updatedAt = gmdate('Y-m-d H:i:s');
             
             \Utils\Cache::flush();
+            \Utils\Cache::delete("media_subtitles_v2_" . md5((string)$mediaId));
             if ($mediaTypeClean === 'episode') {
                 $episode = $db->findOne('episodes', ['_id' => $mediaId]);
                 if ($episode) {
+                    $dramaId = (string)($episode['dramaId'] ?? '');
+                    if ($dramaId !== '') {
+                        \Utils\Cache::delete("drama_detail_" . $dramaId);
+                    }
                     if ($recordActivity) {
                         $db->updateOne('dramas', ['_id' => $episode['dramaId']], [
                             'updatedAt' => $updatedAt,
@@ -1044,6 +1049,7 @@ class SubtitleController {
             } elseif ($mediaTypeClean === 'movie') {
                 $movie = $db->findOne('movies', ['_id' => $mediaId]);
                 if ($movie) {
+                    \Utils\Cache::delete("movie_detail_" . (string)$movie['_id']);
                     if ($recordActivity) {
                         $db->updateOne('movies', ['_id' => $mediaId], [
                             'updatedAt' => $updatedAt,
@@ -1055,6 +1061,7 @@ class SubtitleController {
                     }
                 }
             } else { // 'drama' or fallback
+                \Utils\Cache::delete("drama_detail_" . (string)$mediaId);
                 if ($recordActivity) {
                     $db->updateOne('dramas', ['_id' => $mediaId], [
                         'updatedAt' => $updatedAt,

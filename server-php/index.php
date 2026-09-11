@@ -93,44 +93,46 @@ if (in_array($uri, ['/api/clear-opcache-xyz', '/api/clear-cache-xyz', '/api/stat
 }
 
 // Public read endpoints are identical for every visitor and are safe to cache
-// at the CDN. Private/write endpoints remain strictly uncached.
+// at the CDN with very short TTLs. Dynamic detail endpoints and subtitles must NOT be frozen.
 if (strpos($uri, '/api/') === 0) {
     $publicCacheSeconds = 0;
     if ($method === 'GET') {
         if ($uri === '/api/site-content') {
-            $publicCacheSeconds = 1800; // 30 minutes
-        } elseif ($uri === '/api/media/home') {
-            $publicCacheSeconds = 1800; // 30 minutes
-        } elseif ($uri === '/api/media/sitemap-catalog') {
-            $publicCacheSeconds = 3600; // 1 hour
-        } elseif ($uri === '/api/subtitles/recent') {
             $publicCacheSeconds = 300; // 5 minutes
+        } elseif ($uri === '/api/media/home') {
+            $publicCacheSeconds = 60; // 1 minute
+        } elseif ($uri === '/api/media/sitemap-catalog') {
+            $publicCacheSeconds = 1800; // 30 minutes
+        } elseif ($uri === '/api/subtitles/recent') {
+            $publicCacheSeconds = 15; // 15 seconds
         } elseif (preg_match('#^/api/subtitles/media/[a-f0-9,]+$#', $uri)) {
-            $publicCacheSeconds = 1800; // 30 minutes
+            $publicCacheSeconds = 0; // Strictly uncached so new subtitles appear immediately
         } elseif ($uri === '/api/media/movies' || $uri === '/api/media/dramas') {
-            $publicCacheSeconds = 1800; // 30 minutes
+            $publicCacheSeconds = 30; // 30 seconds
         } elseif (preg_match('#^/api/media/movies/[^/]+$#', $uri) || preg_match('#^/api/media/dramas/[^/]+$#', $uri)) {
-            $publicCacheSeconds = 3600; // 1 hour
+            $publicCacheSeconds = 0; // Strictly uncached so drama/movie status and episodes stay fresh
         } elseif ($uri === '/api/articles') {
-            $publicCacheSeconds = 21600; // 6 hours
+            $publicCacheSeconds = 3600; // 1 hour
         } elseif (preg_match('#^/api/articles/[^/]+$#', $uri)) {
-            $publicCacheSeconds = 21600; // 6 hours
+            $publicCacheSeconds = 3600; // 1 hour
         } elseif (in_array($uri, [
             '/api/media/genres',
             '/api/media/recommendations',
             '/api/media/search-suggestions'
         ], true)) {
-            $publicCacheSeconds = ($uri === '/api/media/genres') ? 21600 : (($uri === '/api/media/recommendations') ? 3600 : 600);
+            $publicCacheSeconds = ($uri === '/api/media/genres') ? 7200 : (($uri === '/api/media/recommendations') ? 300 : 60);
         }
     }
 
     if ($publicCacheSeconds > 0) {
-        header("Cache-Control: public, max-age=60, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
-        header("CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
-        header("Vercel-CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
+        header("Cache-Control: public, max-age=10, s-maxage={$publicCacheSeconds}, stale-while-revalidate=60");
+        header("CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=60");
+        header("Vercel-CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=60");
     } else {
         header("Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0");
         header("Cache-Control: post-check=0, pre-check=0", false);
+        header("CDN-Cache-Control: no-store");
+        header("Vercel-CDN-Cache-Control: no-store");
         header("Pragma: no-cache");
     }
     header("Content-Type: application/json; charset=utf-8");
