@@ -111,20 +111,13 @@ $queryOptions = [
     'sort' => ['createdAt' => 1]
 ];
 
-// If not migrating all, limit query to a reasonable window
-if (!empty($targetId)) {
-    $queryOptions['limit'] = 1;
-} elseif (!$isAll && $batchLimit < 500) {
-    $queryOptions['limit'] = max(100, $batchLimit * 4);
-}
+$allSubtitles = $db->find('subtitles', $filter, $queryOptions);
 
-$candidates = $db->find('subtitles', $filter, $queryOptions);
-
-// Count how many are already migrated
+// Separate already migrated vs pending
 $alreadyR2Count = 0;
 $pendingCandidates = [];
-foreach ($candidates as $cand) {
-    $p = strtolower((string)($cand['storageProvider'] ?? 'supabase'));
+foreach ($allSubtitles as $cand) {
+    $p = strtolower((string)($cand['storageProvider'] ?? ''));
     $k = (string)($cand['storageObjectKey'] ?? '');
     if ($p === 'r2' && !empty($k)) {
         $alreadyR2Count++;
@@ -133,9 +126,12 @@ foreach ($candidates as $cand) {
     }
 }
 
-$totalToMigrate = min($batchLimit, count($pendingCandidates));
-echo "Scanned Subtitles: " . count($candidates) . "\n";
-echo "Already on R2:     {$alreadyR2Count} (Skipped)\n";
+// Select the candidates for this batch
+$candidates = $isAll ? $pendingCandidates : array_slice($pendingCandidates, 0, $batchLimit);
+$totalToMigrate = count($candidates);
+
+echo "Scanned Subtitles:  " . count($allSubtitles) . "\n";
+echo "Already on R2:      {$alreadyR2Count} (Skipped)\n";
 echo "Pending to Migrate: " . count($pendingCandidates) . "\n";
 echo "Targeting in batch: {$totalToMigrate}\n\n";
 
@@ -228,10 +224,15 @@ foreach ($candidates as $sub) {
     }
 
     // Candidates for downloading:
-    // 1. Direct record fileUrl
+    // 1. Direct record fileUrl (or resolved through api.ksubzone.com for relative paths)
     // 2. Configured SUPABASE_URL if different project host
     // 3. Local disk cache if available
-    $candidatesUrls = [$fileUrl];
+    $candidatesUrls = [];
+    if (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0) {
+        $candidatesUrls[] = $fileUrl;
+    } elseif (strpos($fileUrl, '/') === 0) {
+        $candidatesUrls[] = 'https://api.ksubzone.com' . $fileUrl;
+    }
     $configuredSupabase = rtrim((string)($_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: ''), '/');
     if (!empty($configuredSupabase) && preg_match('#https?://[^/]+(/storage/v1/object/public/.*)$#i', $fileUrl, $m)) {
         $candidateUrl = $configuredSupabase . $m[1];

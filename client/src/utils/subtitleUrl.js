@@ -50,12 +50,22 @@ export function resolveSubtitleDownloadUrl(subtitle) {
 
   // 3. Fallback to existing Supabase URL or local URL
   if (rawUrl) {
+    if (rawUrl.startsWith('/uploads/') || rawUrl.startsWith('/')) {
+      const apiBase = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_API_URL || process.env?.NEXT_PUBLIC_BACKEND_URL)) ||
+        (typeof window !== 'undefined' && (window.location.hostname === 'ksubzone.com' || window.location.hostname === 'www.ksubzone.com' || window.location.hostname.endsWith('.vercel.app')) ? 'https://api.ksubzone.com' : '');
+      return `${apiBase.replace(/\/+$/, '')}${rawUrl}`;
+    }
     return rawUrl;
   }
 
-  // 4. Default to same-origin download route if only ID is known
+  // 4. Default to download route if only ID is known
   const subId = subtitle._id || subtitle.id;
-  return subId ? `/api/subtitles/${subId}/download` : '';
+  if (subId) {
+    const apiBase = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_API_URL || process.env?.NEXT_PUBLIC_BACKEND_URL)) ||
+      (typeof window !== 'undefined' && (window.location.hostname === 'ksubzone.com' || window.location.hostname === 'www.ksubzone.com' || window.location.hostname.endsWith('.vercel.app')) ? 'https://api.ksubzone.com' : '');
+    return `${apiBase.replace(/\/+$/, '')}/api/subtitles/${subId}/download`;
+  }
+  return '';
 }
 
 /**

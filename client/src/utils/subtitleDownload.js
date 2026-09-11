@@ -18,7 +18,9 @@ async function trackDownloadSafely(subId) {
   recentTrackings.set(subId, now);
 
   try {
-    fetch(`/api/subtitles/${subId}/track-download`, {
+    const apiBase = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_API_URL || process.env?.NEXT_PUBLIC_BACKEND_URL)) ||
+      (typeof window !== 'undefined' && (window.location.hostname === 'ksubzone.com' || window.location.hostname === 'www.ksubzone.com' || window.location.hostname.endsWith('.vercel.app')) ? 'https://api.ksubzone.com' : '');
+    fetch(`${apiBase}/api/subtitles/${subId}/track-download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       keepalive: true
@@ -102,7 +104,10 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
       : null
   );
 
-  let targetUrl = directR2Url || downloadUrl || (targetId ? `/api/subtitles/${targetId}/download` : fileUrl);
+  const apiBase = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_API_URL || process.env?.NEXT_PUBLIC_BACKEND_URL)) ||
+    (typeof window !== 'undefined' && (window.location.hostname === 'ksubzone.com' || window.location.hostname === 'www.ksubzone.com' || window.location.hostname.endsWith('.vercel.app')) ? 'https://api.ksubzone.com' : '');
+
+  let targetUrl = directR2Url || downloadUrl || (targetId ? `${apiBase}/api/subtitles/${targetId}/download` : fileUrl);
 
   try {
     const response = await fetchWithRetry(targetUrl, 3, 20000);
@@ -123,7 +128,7 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
       // A Cloudflare edge can return 403 for a browser fetch while the PHP
       // origin can still retrieve the public object. Ask the backend to proxy
       // the bytes instead of redirecting back to the same edge URL.
-      const fallbackUrl = `/api/subtitles/${targetId}/download`;
+      const fallbackUrl = `${apiBase}/api/subtitles/${targetId}/download`;
       const fallbackResponse = await fetchWithRetry(fallbackUrl, 2, 20000, {
         'X-Subtitle-Proxy': '1'
       });

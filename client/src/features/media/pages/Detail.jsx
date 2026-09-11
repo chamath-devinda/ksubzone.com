@@ -326,7 +326,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     setDownloadAlert(null);
 
     try {
-      const baseUrl = apiClient.defaults.baseURL === '/' ? '' : apiClient.defaults.baseURL;
+      const baseUrl = (apiClient.defaults.baseURL && apiClient.defaults.baseURL !== '/') ? apiClient.defaults.baseURL : 'https://api.ksubzone.com';
       // Keep the filename out of the query string. Some shared-hosting
       // ModSecurity rules reject otherwise valid download requests containing
       // a `name` parameter with HTTP 403. The browser applies this filename

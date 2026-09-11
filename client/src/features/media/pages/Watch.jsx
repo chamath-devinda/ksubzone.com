@@ -129,7 +129,7 @@ export default function Watch({ initialDramaData }) {
     setDownloadAlert(null);
 
     try {
-      const baseUrl = apiClient.defaults.baseURL === '/' ? '' : apiClient.defaults.baseURL;
+      const baseUrl = (apiClient.defaults.baseURL && apiClient.defaults.baseURL !== '/') ? apiClient.defaults.baseURL : 'https://api.ksubzone.com';
       // Shared-hosting ModSecurity blocks download URLs with a `name` query
       // parameter. Keep naming client-side instead.
       const downloadUrl = `${baseUrl}/api/subtitles/${subId}/download`;
