@@ -62,26 +62,26 @@ export const adConfig = Object.freeze({
         },
         bannerDesktop: {
           key: '23a798c8294b23d3b5f73561f68cc621',
-          scriptUrl: 'https://www.highrevenueformat.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
           width: 728,
           height: 90,
         },
         bannerMobile: {
           key: 'cee89ddb1e1c5bd615b6d0a22ba3d9e8',
-          scriptUrl: 'https://www.highrevenueformat.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js',
           width: 320,
           height: 50,
         },
         square: {
           key: '586e1584081dab0775623a2b61895f68',
-          scriptUrl: 'https://www.highrevenueformat.com/586e1584081dab0775623a2b61895f68/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/586e1584081dab0775623a2b61895f68/invoke.js',
           width: 300,
           height: 250,
         },
         sidebar: {
           // Official publisher unit, isolated in an iframe for each sidebar placement.
           key: 'c13f5f2182fb9c307a05678f246a92d3',
-          scriptUrl: 'https://www.highrevenueformat.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
           width: 160,
           height: 600,
         },
