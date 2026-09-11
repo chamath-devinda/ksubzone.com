@@ -191,7 +191,7 @@ class SubtitleController {
         // Invalidate cache and trigger revalidation if immediately approved
         if ($approvalStatus === 'Approved') {
             \Utils\Cache::flush();
-            \Utils\Revalidate::path('/');
+            \Utils\Revalidate::catalog('all');
             self::revalidateMediaForSubtitle($mediaId, $mediaType, true);
         }
 
@@ -764,7 +764,7 @@ class SubtitleController {
         }
 
         \Utils\Cache::flush();
-        \Utils\Revalidate::path('/');
+        \Utils\Revalidate::catalog('all');
         self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
 
         $updated = $db->findOne('subtitles', ['_id' => $id]);
@@ -910,7 +910,7 @@ class SubtitleController {
         // Invalidate cache and trigger revalidation
         if ($status === 'Approved') {
             \Utils\Cache::flush();
-            \Utils\Revalidate::path('/');
+            \Utils\Revalidate::catalog('all');
             self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
         }
 
@@ -973,7 +973,7 @@ class SubtitleController {
 
             // Invalidate cache and trigger revalidation
             \Utils\Cache::flush();
-            \Utils\Revalidate::path('/');
+            \Utils\Revalidate::catalog('all');
             // An admin subtitle edit is public content activity. User views
             // and other generic writes must not affect this clock.
             $isPublicSubtitle = ($subtitle['approvalStatus'] ?? '') === 'Approved'
@@ -1006,7 +1006,7 @@ class SubtitleController {
 
         // Invalidate cache and trigger revalidation
         \Utils\Cache::flush();
-        \Utils\Revalidate::path('/');
+        \Utils\Revalidate::catalog('all');
         if ($subtitle && ($subtitle['approvalStatus'] ?? '') === 'Approved') {
             self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
         }

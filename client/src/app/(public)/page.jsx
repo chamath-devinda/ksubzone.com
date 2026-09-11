@@ -86,7 +86,9 @@ export default async function HomePage() {
   let initialHomeCatalog = {};
   let initialLibraryMovies = { movies: [], totalPages: 1 };
   let initialLibraryDramas = { dramas: [], totalPages: 1 };
-  const siteContent = await getSiteContent();
+  // Start independent requests together so the home page does not wait for
+  // site settings before it can start loading the catalog.
+  const siteContentPromise = getSiteContent();
   
   try {
     const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 1800, tags: ['home'] } }).then(r => r.ok ? r.json() : {});
@@ -106,6 +108,7 @@ export default async function HomePage() {
     console.error("Error fetching homepage initial data on server:", error);
   }
 
+  const siteContent = await siteContentPromise;
   const brand = siteContent?.brand || {};
   const seo = siteContent?.seo || {};
   const footer = siteContent?.footer || {};

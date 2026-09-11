@@ -45,8 +45,10 @@ export default function Home({
       return res.data;
     },
     initialData: hasInitialCatalog ? initialHomeCatalog : undefined,
+    // The server snapshot renders instantly; refresh it in the background so
+    // admin-published media appears even when an ISR webhook is unavailable.
     staleTime: 60_000,
-    refetchOnMount: hasInitialCatalog ? false : 'always',
+    refetchOnMount: hasInitialMovies ? false : 'always',
     retry: 2
   });
 
@@ -69,7 +71,7 @@ export default function Home({
     },
     initialData: (sortBy === 'popular' && country === '' && hasInitialMovies) ? initialLibraryMovies : undefined,
     staleTime: 60_000,
-    refetchOnMount: hasInitialMovies ? false : 'always',
+    refetchOnMount: hasInitialDramas ? false : 'always',
     retry: 2
   });
 
@@ -81,8 +83,8 @@ export default function Home({
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '' && hasInitialDramas) ? initialLibraryDramas : undefined,
-    staleTime: 60_000,
-    refetchOnMount: hasInitialDramas ? false : 'always',
+    staleTime: 15_000,
+    refetchOnMount: 'always',
     retry: 2
   });
 

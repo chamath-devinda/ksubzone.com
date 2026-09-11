@@ -95,4 +95,17 @@ class Revalidate {
         }
         return self::path("/{$cleanType}/{$slug}");
     }
+
+    /**
+     * Refresh every public listing that can contain newly published media.
+     * Revalidating only the home page leaves /movies and /dramas on their
+     * ISR cache even after an admin save.
+     */
+    public static function catalog($type = 'all') {
+        $type = strtolower((string)$type);
+        self::path('/');
+        if ($type === 'movie' || $type === 'all') self::path('/movies');
+        if ($type === 'drama' || $type === 'all') self::path('/dramas');
+        return true;
+    }
 }

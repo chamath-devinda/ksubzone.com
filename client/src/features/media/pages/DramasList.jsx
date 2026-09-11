@@ -22,8 +22,10 @@ export default function DramasList({ initialData }) {
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '' && page === 1 && hasInitialData) ? initialData : undefined,
-    staleTime: 60_000,
-    refetchOnMount: hasInitialData ? false : 'always',
+    // Retain the fast SSR snapshot, then silently reconcile catalog changes
+    // published through the admin panel.
+    staleTime: 15_000,
+    refetchOnMount: 'always',
     retry: 2
   });
 

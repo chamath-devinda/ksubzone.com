@@ -109,6 +109,18 @@ $traversalValidation = \Utils\Storage::validateSubtitleFile([
 assertTest($traversalValidation['valid'] === false, "Path traversal in filename (../../) must be rejected");
 @unlink($tmpTraversal);
 
+// 2.2b Repeated dots are common in release names and are not a path segment.
+$tmpDoubleDot = tempnam(sys_get_temp_dir(), 'test_dots_');
+file_put_contents($tmpDoubleDot, "1\n00:00:01,000 --> 00:00:04,000\nHello");
+$doubleDotValidation = \Utils\Storage::validateSubtitleFile([
+    'tmp_name' => $tmpDoubleDot,
+    'name' => 'The.Apartment.Job.S01E07.sinhala.sub..SI_WW.srt',
+    'size' => filesize($tmpDoubleDot),
+    'error' => UPLOAD_ERR_OK
+]);
+assertTest($doubleDotValidation['valid'] === true, "A safe filename with repeated dots must be accepted");
+@unlink($tmpDoubleDot);
+
 // 2.3 Unsupported executable file rejection
 $tmpExe = tempnam(sys_get_temp_dir(), 'test_exe_');
 file_put_contents($tmpExe, 'MZ9000000');

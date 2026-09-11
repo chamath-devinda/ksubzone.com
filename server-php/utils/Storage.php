@@ -117,9 +117,13 @@ class Storage {
             return ['valid' => false, 'error' => 'File size exceeds maximum limit of 10 MB.'];
         }
 
-        $originalName = (string)($file['name'] ?? '');
-        // Prevent path traversal and dangerous characters in raw filename
-        if (strpos($originalName, '..') !== false || strpos($originalName, '/') !== false || strpos($originalName, '\\') !== false) {
+        $originalName = trim((string)($file['name'] ?? ''));
+        // The browser normally provides a leaf filename, but some upload
+        // clients include a local path. Reject path components while allowing
+        // harmless repeated dots in a filename (e.g. "show..sinhala.srt").
+        // The stored object key is generated independently and never uses the
+        // original path, so this keeps the traversal protection intact.
+        if ($originalName === '' || preg_match('#(?:^|[\\\\/])\.\.(?:[\\\\/]|$)#', $originalName) || strpos($originalName, '/') !== false || strpos($originalName, '\\') !== false) {
             return ['valid' => false, 'error' => 'Invalid file name. Path traversal characters not allowed.'];
         }
 
