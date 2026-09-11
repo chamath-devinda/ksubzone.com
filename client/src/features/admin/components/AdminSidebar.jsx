@@ -67,7 +67,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
   const pathname = usePathname();
   const { content } = useSiteContent();
   const brand = content?.brand || {};
-  const logoUrl = resolveLogoUrl(brand.logoUrl);
+  const logoUrl = resolveLogoUrl(brand.adminLogoUrl) || '/ksubzone-icon.webp';
 
   const [desktopCollapsed, setCollapsed] = useState(false);
   const collapsed = desktopCollapsed && !mobileOpen;

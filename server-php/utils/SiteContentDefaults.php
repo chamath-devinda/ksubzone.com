@@ -9,8 +9,11 @@ class SiteContentDefaults {
                 'shortName' => 'KDV',
                 'tagline' => 'K-Drama & Movie Subtitles',
                 'logoText' => 'KSUBZONE',
-                'logoUrl' => '',
-                'faviconUrl' => '',
+                'logoUrl' => '/logo-ksub.webp',
+                'headerLogoUrl' => '/logo-ksub.webp',
+                'footerLogoUrl' => '/logo-ksubzone.webp',
+                'adminLogoUrl' => '/ksubzone-icon.webp',
+                'faviconUrl' => '/favicon.svg',
                 'primaryUrl' => 'https://www.ksubzone.com'
             ],
             'seo' => [

@@ -31,7 +31,10 @@ const textFields = {
     ['shortName', 'Short Name'],
     ['tagline', 'Tagline / Slogan'],
     ['logoText', 'Logo Brand Text'],
-    ['logoUrl', 'Logo Image URL'],
+    ['logoUrl', 'Primary Logo Image URL'],
+    ['headerLogoUrl', 'Header Logo Image URL (ksub)'],
+    ['footerLogoUrl', 'Footer Logo Image URL (ksubzone)'],
+    ['adminLogoUrl', 'Admin Logo Image URL (ksubzone emblem)'],
     ['faviconUrl', 'Favicon Shortcut URL'],
     ['primaryUrl', 'Primary Main Website URL']
   ],

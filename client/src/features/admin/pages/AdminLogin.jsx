@@ -32,7 +32,7 @@ export default function AdminLogin() {
   const router = useRouter();
   const { content } = useSiteContent();
   const brand = content?.brand || {};
-  const logoUrl = resolveLogoUrl(brand.logoUrl);
+  const logoUrl = resolveLogoUrl(brand.adminLogoUrl) || '/ksubzone-icon.webp';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code2fa, setCode2fa] = useState('');

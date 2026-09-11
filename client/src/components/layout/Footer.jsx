@@ -113,19 +113,13 @@ export default function Footer() {
           
           {/* Column 1: Brand & Identity */}
           <div className="space-y-4">
-            <Link href="/" className="inline-flex min-w-0 items-center gap-3 group">
-              {resolveLogoUrl(brand.logoUrl) ? (
-                <img
-                  src={resolveLogoUrl(brand.logoUrl)}
-                  alt={brand.siteName || 'Site logo'}
-                  className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                />
-              ) : (
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-primary/30 bg-brand-primary/10 shadow-glass-neon transition-transform duration-300 group-hover:scale-105">
-                  <Clapperboard className="h-6 w-6 text-brand-primary" />
-                </span>
-              )}
-              <span className="min-w-0 truncate text-xl sm:text-2xl font-black uppercase tracking-wider bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent font-milker">
+            <Link href="/" className="inline-flex min-w-0 items-center gap-3 group" aria-label={brand.siteName || 'KSubZone'}>
+              <img
+                src={resolveLogoUrl(brand.footerLogoUrl) || "/logo-ksubzone.webp"}
+                alt={brand.siteName || 'KSubZone'}
+                className="h-10 sm:h-12 w-auto max-w-[200px] object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="sr-only">
                 {brand.logoText || brand.siteName || 'KSUBZONE'}
               </span>
             </Link>

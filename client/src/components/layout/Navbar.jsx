@@ -186,13 +186,13 @@ export default function Navbar() {
           
           {/* BRAND LOGO */}
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4 z-10 lg:flex-initial">
-            <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 group">
+            <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 group" aria-label={brand.siteName || 'KSubZone'}>
               <img
-                src={resolveLogoUrl(brand.logoUrl) || "/main-logo.webp"}
+                src={resolveLogoUrl(brand.headerLogoUrl || brand.logoUrl) || "/logo-ksub.webp"}
                 alt={brand.siteName || 'KSubZone'}
-                className="h-7 sm:h-9 w-auto max-w-[32px] sm:max-w-none object-contain transform group-hover:scale-105 transition-transform duration-300 flex-shrink-0"
+                className="h-8 sm:h-9 w-auto max-w-[130px] sm:max-w-[160px] object-contain transform group-hover:scale-105 transition-transform duration-300 flex-shrink-0"
               />
-              <span className="min-w-0 max-w-[48vw] sm:max-w-[16rem] text-sm sm:text-xl font-black uppercase tracking-wide sm:tracking-wider truncate bg-gradient-to-r from-brand-primary via-purple-400 to-brand-secondary bg-clip-text text-transparent font-milker group-hover:brightness-125 transition">
+              <span className="sr-only">
                 {brand.logoText || brand.siteName || 'KSUBZONE'}
               </span>
             </Link>

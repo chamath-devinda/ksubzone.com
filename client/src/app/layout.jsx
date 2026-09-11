@@ -32,13 +32,14 @@ export const metadata = {
   description: 'Watch the latest Korean dramas and movies with synchronized Sinhala and English subtitles. Discover, review, and enjoy premium K-entertainment.',
   icons: {
     icon: [
-      { url: '/favicon.ico', type: 'image/x-icon', sizes: '48x48' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/favicon.svg',
+    shortcut: '/favicon.ico',
   },
   robots: {
     index: true,
