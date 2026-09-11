@@ -30,7 +30,9 @@ $allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
     'https://www.ksubzone.com',
-    'https://ksubzone.com'
+    'https://ksubzone.com',
+    // Production Vercel origin used when the custom domain is bypassed.
+    'https://ksubzone-com.vercel.app'
 ];
 
 // The deployed frontend URL can be changed without editing PHP code. Multiple

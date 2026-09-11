@@ -414,9 +414,64 @@ class SubtitleController {
 
         // R2 is a public immutable object store. Redirect instead of proxying
         // the file through PHP/Vercel, which avoids duplicate egress and
-        // function transfer. Existing Supabase/local records keep the legacy
-        // path below unchanged.
+        // function transfer. The client can opt into a server-side proxy when
+        // a browser-side Cloudflare request is rejected with HTTP 403.
         if (($subtitle['storageProvider'] ?? '') === 'r2' && preg_match('#^https?://#i', $fileUrl)) {
+            $proxyRequested = isset($_GET['proxy']) && (string)$_GET['proxy'] === '1';
+
+            if ($proxyRequested) {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $fileUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+                $fileContent = curl_exec($ch);
+                $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
+
+                if ($httpCode !== 200 || $fileContent === false || strlen($fileContent) === 0) {
+                    error_log('R2 subtitle proxy failed with HTTP ' . $httpCode . ': ' . ($curlError ?: $fileUrl));
+                    http_response_code(503);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode(['message' => 'මෙම උපසිරැසි ගොනුව දැන් බාගත කළ නොහැක. කරුණාකර සුළු මොහොතකින් නැවත උත්සාහ කරන්න.']);
+                    return;
+                }
+
+                try {
+                    if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
+                        $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
+                    }
+                } catch (\Throwable $e) {
+                    error_log('Subtitle download count update failed: ' . $e->getMessage());
+                }
+
+                $customName = $_GET['name'] ?? '';
+                $ext = strtolower((string)($subtitle['format'] ?? 'srt'));
+                if (empty($customName)) {
+                    $customName = 'subtitle-' . $id . '.' . $ext;
+                } else {
+                    $customName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $customName);
+                    if (pathinfo($customName, PATHINFO_EXTENSION) !== $ext) {
+                        $customName .= '.' . $ext;
+                    }
+                }
+
+                $contentTypes = [
+                    'srt' => 'application/x-subrip; charset=UTF-8',
+                    'vtt' => 'text/vtt; charset=UTF-8',
+                    'ass' => 'text/plain; charset=UTF-8'
+                ];
+                header('Content-Type: ' . ($contentTypes[$ext] ?? 'application/octet-stream'));
+                header('Content-Disposition: attachment; filename="' . $customName . '"');
+                header('Content-Length: ' . strlen($fileContent));
+                header('Cache-Control: private, no-store');
+                echo $fileContent;
+                exit;
+            }
+
             try {
                 if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
                     $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');

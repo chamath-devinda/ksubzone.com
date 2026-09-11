@@ -116,7 +116,10 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
   } catch (err) {
     // If direct R2 fetch fails due to any reason, fall back to backend proxy endpoint
     if (directR2Url && targetId) {
-      const fallbackUrl = `/api/subtitles/${targetId}/download`;
+      // A Cloudflare edge can return 403 for a browser fetch while the PHP
+      // origin can still retrieve the public object. Ask the backend to proxy
+      // the bytes instead of redirecting back to the same edge URL.
+      const fallbackUrl = `/api/subtitles/${targetId}/download?proxy=1`;
       const fallbackResponse = await fetchWithRetry(fallbackUrl, 2, 20000);
       const blob = await fallbackResponse.blob();
       if (!blob.size) throw new Error(DEFAULT_ERROR);
