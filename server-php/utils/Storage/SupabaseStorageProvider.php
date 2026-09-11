@@ -20,6 +20,10 @@ class SupabaseStorageProvider implements StorageProviderInterface {
         return 'supabase';
     }
 
+    public function getName(): string {
+        return $this->getProviderName();
+    }
+
     public function getPublicUrl(string $objectKey): string {
         if (empty($this->supabaseUrl)) return '';
         $cleanKey = ltrim($objectKey, '/');

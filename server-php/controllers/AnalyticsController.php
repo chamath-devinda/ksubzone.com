@@ -325,7 +325,7 @@ class AnalyticsController {
                 'rejected' => $rejectedSubtitles
             ],
             'storageStats'     => [
-                'activeProvider' => \Utils\Storage::getProvider()->getName(),
+                'activeProvider' => \Utils\Storage::getProvider()->getProviderName(),
                 'totalSubtitles' => $totalSubtitles,
                 'r2Count' => $db->count('subtitles', ['storageProvider' => 'r2']),
                 'supabaseCount' => max(0, $totalSubtitles - $db->count('subtitles', ['storageProvider' => 'r2'])),

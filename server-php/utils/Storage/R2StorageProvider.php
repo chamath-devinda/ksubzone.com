@@ -28,6 +28,10 @@ class R2StorageProvider implements StorageProviderInterface {
         return 'r2';
     }
 
+    public function getName(): string {
+        return $this->getProviderName();
+    }
+
     public function getPublicUrl(string $objectKey): string {
         $encodedPath = implode('/', array_map('rawurlencode', explode('/', ltrim($objectKey, '/'))));
         return $this->publicBaseUrl . '/' . $encodedPath;

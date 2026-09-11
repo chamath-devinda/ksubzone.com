@@ -15,6 +15,10 @@ class LocalStorageProvider implements StorageProviderInterface {
         return 'local';
     }
 
+    public function getName(): string {
+        return $this->getProviderName();
+    }
+
     public function getPublicUrl(string $objectKey): string {
         return '/uploads/' . ltrim($objectKey, '/');
     }
