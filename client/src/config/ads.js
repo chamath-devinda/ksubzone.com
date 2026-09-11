@@ -35,7 +35,9 @@ export const adConfig = Object.freeze({
     // Keep the reading and subtitle-download canvas distraction-free. Ads
     // belong in natural content breaks, not in persistent side rails.
     sidebar: false,
-    popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
+    // Keep monetization non-intrusive: display/native units only. Popunders
+    // and social bars interrupt subtitle downloads and hurt return visits.
+    popunder: false,
     socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, false),
     inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
   },
@@ -48,14 +50,14 @@ export const adConfig = Object.freeze({
       enabled: readBoolean(process.env.NEXT_PUBLIC_ADSTERRA_ENABLED, true),
       zones: {
         popunder: {
-          scriptUrl: 'https://pl31115434.profitableratecpmnetwork.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
         },
         socialBar: {
           // Official code supplied by the publisher. Disabled by default.
-          scriptUrl: 'https://pl31115638.profitableratecpmnetwork.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
         },
         native: {
-          scriptUrl: 'https://pl31115664.profitableratecpmnetwork.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
           containerId: 'container-90963118e211fbe13565d79b0d81a39d',
           reservedHeight: 320,
         },
