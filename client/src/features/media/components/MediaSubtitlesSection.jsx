@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Download, CheckCircle2, CalendarClock, ShieldCheck } from 'lucide-react';
+import AdSlot from '@/components/ads/AdSlot';
 
 export default function MediaSubtitlesSection({
   type,
@@ -123,7 +124,7 @@ export default function MediaSubtitlesSection({
                 No episodes added for this season yet.
               </p>
             ) : (
-              activeEpisodes.map((ep) => {
+              activeEpisodes.map((ep, index) => {
                 const summary = ep.subtitleSummary || {};
                 const directEpisodeFiles = episodeSubtitlesById[getId(ep._id)] || [];
                 const taggedTitleFiles = sortedSubtitles.filter(
@@ -141,8 +142,8 @@ export default function MediaSubtitlesSection({
                 const formattedEpisode = `E${String(ep.episodeNumber).padStart(2, '0')}`;
 
                 return (
+                  <React.Fragment key={ep._id}>
                   <div
-                    key={ep._id}
                     className="rounded-2xl sm:rounded-3xl border border-white/10 bg-luxury-900/60 p-4 sm:p-5 transition-all duration-200 hover:border-brand-primary/40 hover:bg-luxury-900/90 shadow-lg flex flex-col gap-3.5"
                   >
                     {/* Top Row: Episode Info & Direct Download */}
@@ -217,6 +218,12 @@ export default function MediaSubtitlesSection({
                       </div>
                     </div>
                   </div>
+                  {/* A content-break placement preserves every episode's
+                      direct-download action while using the long list space. */}
+                  {index === 3 && activeEpisodes.length > 4 && (
+                    <AdSlot slotId="subtitle_list_banner" className="my-2" />
+                  )}
+                  </React.Fragment>
                 );
               })
             )}

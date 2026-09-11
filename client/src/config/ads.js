@@ -32,10 +32,9 @@ export const adConfig = Object.freeze({
     mobileBanner: readBoolean(process.env.NEXT_PUBLIC_MOBILE_BANNER_ENABLED, true),
     square: readBoolean(process.env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
     native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
-    // Wide desktop rails are a high-viewability format. Keep this switch in
-    // sync with the documented production environment variable rather than
-    // permanently disabling every configured sidebar placement.
-    sidebar: readBoolean(process.env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
+    // Keep the reading and subtitle-download canvas distraction-free. Ads
+    // belong in natural content breaks, not in persistent side rails.
+    sidebar: false,
     popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
     socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, false),
     inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
@@ -98,11 +97,11 @@ export const adConfig = Object.freeze({
     },
   },
   routes: {
-    home: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    movie: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    drama: { enabled: true, banner: true, square: false, native: true, sidebar: true, intrusive: true },
-    episode: { enabled: true, banner: true, square: false, native: false, sidebar: true, intrusive: true },
-    article: { enabled: true, banner: false, square: true, native: true, sidebar: true, intrusive: true },
+    home: { enabled: true, banner: true, square: true, native: true, sidebar: false, intrusive: true },
+    movie: { enabled: true, banner: true, square: true, native: true, sidebar: false, intrusive: true },
+    drama: { enabled: true, banner: true, square: false, native: true, sidebar: false, intrusive: true },
+    episode: { enabled: true, banner: true, square: false, native: false, sidebar: false, intrusive: true },
+    article: { enabled: true, banner: false, square: true, native: true, sidebar: false, intrusive: true },
     search: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
     listing: { enabled: true, banner: true, square: false, native: false, sidebar: false, intrusive: true },
     static: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
@@ -142,6 +141,7 @@ export const adConfig = Object.freeze({
     media_below_hero: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     media_before_subtitles: { pages: ['movie', 'drama'], format: 'native', provider: 'adsterra', lazy: true },
+    subtitle_list_banner: { pages: ['drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     media_after_downloads: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     article_intro_square: { pages: ['article'], format: 'square', provider: 'adsterra', lazy: true },
     article_mid_native: { pages: ['article'], format: 'native', provider: 'adsterra', lazy: true },
