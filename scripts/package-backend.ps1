@@ -24,10 +24,21 @@ Copy-Item "server-php/scripts" -Destination (Join-Path $staging "scripts") -Recu
 Get-ChildItem -Path $staging -Filter ".db_initialized*" -Recurse -Force | Remove-Item -Force
 Get-ChildItem -Path $staging -Filter ".mysql_failed" -Recurse -Force | Remove-Item -Force
 
-Compress-Archive -Path "$staging\*" -DestinationPath $dest -Force
-Remove-Item $staging -Recurse -Force
+# Give file system and antivirus time to release locks
+Start-Sleep -Milliseconds 300
 
-$file = Get-Item $dest
-Write-Host "Created Zip Package Successfully:"
-Write-Host "Path: $($file.FullName)"
-Write-Host "Size: $([math]::Round($file.Length / 1KB, 2)) KB"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::CreateFromDirectory($staging, $dest, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+
+Start-Sleep -Milliseconds 300
+Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
+
+if (Test-Path $dest) {
+    $file = Get-Item $dest
+    Write-Host "Created Zip Package Successfully:"
+    Write-Host "Path: $($file.FullName)"
+    Write-Host "Size: $([math]::Round($file.Length / 1KB, 2)) KB"
+} else {
+    Write-Error "Failed to generate $dest"
+    exit 1
+}

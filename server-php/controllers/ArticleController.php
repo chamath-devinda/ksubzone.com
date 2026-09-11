@@ -177,6 +177,7 @@ class ArticleController {
 
     public static function createArticle() {
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($body)) return;
         if (empty($body['title']) || empty($body['content'])) {
             http_response_code(400);
             echo json_encode(['message' => 'Article title and content are required']);
@@ -206,6 +207,7 @@ class ArticleController {
 
     public static function updateArticle($id) {
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($body)) return;
         $db = Database::getInstance();
 
         $article = $db->findOne('articles', ['_id' => $id]);

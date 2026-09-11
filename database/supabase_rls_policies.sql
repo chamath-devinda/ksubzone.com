@@ -16,6 +16,11 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tmdb_imports ENABLE ROW LEVEL SECURITY;
 
 -- ==========================================
 -- 1. PUBLIC READ-ONLY POLICIES
@@ -54,47 +59,60 @@ CREATE POLICY "Allow public read access to comments" ON comments
 
 -- Subtitle uploads (authenticated users can insert, uploader can update/delete their own pending ones)
 CREATE POLICY "Allow authenticated users to upload subtitles" ON subtitles 
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) IS NOT NULL);
 
 CREATE POLICY "Allow uploaders to update own pending subtitles" ON subtitles 
-    FOR UPDATE USING (
-        auth.uid()::text = (data->>'uploader') AND 
+    FOR UPDATE TO authenticated USING (
+        (select auth.uid())::text = (data->>'uploader') AND
+        data->>'approvalStatus' = 'Pending'
+    ) WITH CHECK (
+        (select auth.uid())::text = (data->>'uploader') AND
+        data->>'approvalStatus' = 'Pending'
+    );
+
+CREATE POLICY "Allow uploaders to delete own pending subtitles" ON subtitles
+    FOR DELETE USING (
+        (select auth.uid())::text = (data->>'uploader') AND
         data->>'approvalStatus' = 'Pending'
     );
 
 -- Reviews (authenticated users can write reviews, owners can edit/delete their own)
 CREATE POLICY "Allow authenticated users to write reviews" ON reviews 
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) IS NOT NULL);
 
 CREATE POLICY "Allow owners to update own reviews" ON reviews 
-    FOR UPDATE USING (auth.uid()::text = (data->>'userId'));
+    FOR UPDATE TO authenticated USING ((select auth.uid())::text = (data->>'userId'))
+    WITH CHECK ((select auth.uid())::text = (data->>'userId'));
 
 CREATE POLICY "Allow owners to delete own reviews" ON reviews 
-    FOR DELETE USING (auth.uid()::text = (data->>'userId'));
+    FOR DELETE TO authenticated USING ((select auth.uid())::text = (data->>'userId'));
 
 -- Comments (authenticated users can write comments, owners can edit/delete their own)
 CREATE POLICY "Allow authenticated users to post comments" ON comments 
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) IS NOT NULL);
 
 CREATE POLICY "Allow owners to update own comments" ON comments 
-    FOR UPDATE USING (auth.uid()::text = (data->>'userId'));
+    FOR UPDATE TO authenticated USING ((select auth.uid())::text = (data->>'userId'))
+    WITH CHECK ((select auth.uid())::text = (data->>'userId'));
 
 CREATE POLICY "Allow owners to delete own comments" ON comments 
-    FOR DELETE USING (auth.uid()::text = (data->>'userId'));
+    FOR DELETE TO authenticated USING ((select auth.uid())::text = (data->>'userId'));
 
 -- User profiles (users can read and modify only their own data)
 CREATE POLICY "Allow users to read own profile" ON users 
-    FOR SELECT USING (auth.uid()::text = _id);
+    FOR SELECT TO authenticated USING ((select auth.uid())::text = _id);
 
 CREATE POLICY "Allow users to update own profile" ON users 
-    FOR UPDATE USING (auth.uid()::text = _id);
+    FOR UPDATE TO authenticated USING ((select auth.uid())::text = _id)
+    WITH CHECK ((select auth.uid())::text = _id);
 
 -- User notifications
 CREATE POLICY "Allow users to read own notifications" ON notifications 
-    FOR SELECT USING (auth.uid()::text = (data->>'recipient'));
+    FOR SELECT TO authenticated USING ((select auth.uid())::text = (data->>'recipient'));
 
 CREATE POLICY "Allow users to update own notifications" ON notifications 
-    FOR UPDATE USING (auth.uid()::text = (data->>'recipient'));
+    FOR UPDATE TO authenticated USING ((select auth.uid())::text = (data->>'recipient'))
+    WITH CHECK ((select auth.uid())::text = (data->>'recipient'));
 
 -- ==========================================
 -- 3. ADMINISTRATIVE POLICIES (Full bypass for admins)

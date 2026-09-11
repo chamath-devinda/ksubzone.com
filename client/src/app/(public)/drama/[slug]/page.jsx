@@ -16,7 +16,9 @@ import {
 const getDrama = cache(async (slug) => {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   try {
-    const res = await fetch(`${backendUrl}/api/media/dramas/${slug}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${backendUrl}/api/media/dramas/${slug}`, {
+      next: { revalidate: 3600, tags: ['dramas', `drama-${slug}`] }
+    });
     if (res.ok) {
       return res.json();
     }

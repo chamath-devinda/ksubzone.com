@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useId, useRef, useEffect } from 'react';
+import useDialogFocus from './useDialogFocus';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -13,17 +14,17 @@ export default function ModalDrawer({
   maxHeightClass = 'max-h-[92vh]',
   footer = null
 }) {
-  // Lock background scrolling when modal is open
+  const dirty = useRef(false);
+  const requestClose = () => { if (!dirty.current || window.confirm('Discard unsaved changes?')) onClose(); };
+  const dialogRef = useDialogFocus(isOpen, requestClose);
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    dirty.current = false;
+    if (!isOpen) return;
+    const warn = event => { if (dirty.current) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
   }, [isOpen]);
+  const titleId = useId();
 
   const sizeClasses = {
     sm: 'max-w-md',
@@ -44,12 +45,13 @@ export default function ModalDrawer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={requestClose}
             className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
           {/* Modal Container */}
           <motion.div
+            onChangeCapture={e => { if (e.target.closest("form")) dirty.current = true; }} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
             initial={{ 
               y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 15, 
               scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98,
@@ -80,12 +82,12 @@ export default function ModalDrawer({
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate mr-4">
+              <h3 id={titleId} className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate mr-4">
                 {title}
               </h3>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
                 className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition p-1.5 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] rounded-lg flex-shrink-0"
                 aria-label="Close dialog"
               >

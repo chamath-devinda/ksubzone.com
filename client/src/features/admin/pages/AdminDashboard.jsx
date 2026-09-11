@@ -10,7 +10,7 @@ import {
   Activity, ArrowUpRight, BarChart3, Globe, Database, Server, Clock,
   Shield, Download, Plus, RefreshCw, ExternalLink, Check, Search,
   Sparkles, ArrowRight, Filter, Zap, FileText, MessageSquare,
-  DollarSign, MousePointerClick, User, WandSparkles
+  DollarSign, MousePointerClick, User, WandSparkles, Cloud, ChevronRight
 } from 'lucide-react';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
@@ -315,6 +315,13 @@ export default function AdminDashboard() {
               />
             </div>
           </section>
+
+          {/* ── Storage & Egress Observability ── */}
+          {stats?.storageStats && (
+            <section aria-label="Storage Observability">
+              <StorageObservabilityPanel storageStats={stats.storageStats} />
+            </section>
+          )}
 
           {/* ── Adsterra Revenue Panel ── */}
           <section aria-label="Adsterra Revenue">
@@ -1007,6 +1014,75 @@ function RecentActivityTimeline({ latestDownloads }) {
             No recent activity recorded.
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── 5.5 Storage & Egress Observability Panel ────────────────────────────────
+function StorageObservabilityPanel({ storageStats }) {
+  if (!storageStats) return null;
+  const isR2 = storageStats.activeProvider === 'r2';
+  const progress = Number(storageStats.migrationProgressPercent || 0);
+
+  return (
+    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-white/[0.07]">
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${isR2 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600'}`}>
+            <Cloud className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Cloudflare R2 & Egress Optimization</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider ${isR2 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-600 border border-amber-500/30'}`}>
+                {isR2 ? 'R2 Active' : 'Supabase Fallback'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Zero egress costs: Subtitle files are delivered via Cloudflare R2 Standard without depleting Supabase bandwidth.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/management/subtitles"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#8A2BE2] bg-[#8A2BE2]/10 hover:bg-[#8A2BE2]/20 transition-colors self-start sm:self-auto"
+        >
+          Manage Subtitles <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">R2 Standard</p>
+          <p className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">{storageStats.r2Count ?? 0}</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Zero egress fees</p>
+        </div>
+        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Supabase Legacy</p>
+          <p className="text-xl font-black font-mono text-amber-600 dark:text-amber-400 mt-1">{storageStats.supabaseCount ?? 0}</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Legacy objects</p>
+        </div>
+        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Migration Status</p>
+          <p className="text-xl font-black font-mono text-[#8A2BE2] mt-1">{progress}%</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Offloaded to R2</p>
+        </div>
+        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Edge Cache</p>
+          <p className="text-xl font-black font-mono text-blue-600 dark:text-blue-400 mt-1">Active</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Vercel CDN</p>
+        </div>
+      </div>
+
+      <div className="pt-2">
+        <div className="flex items-center justify-between text-xs mb-1.5">
+          <span className="font-semibold text-slate-600 dark:text-slate-300">Subtitle Storage Migration</span>
+          <span className="font-mono text-slate-500">{storageStats.r2Count} of {storageStats.totalSubtitles} files</span>
+        </div>
+        <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-white/[0.07] overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-[#8A2BE2] to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+        </div>
       </div>
     </div>
   );

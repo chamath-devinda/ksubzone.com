@@ -74,39 +74,33 @@ export default function MovieManager() {
   const [saving, setSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
 
-  const MOVIE_CACHE_KEY = 'admin_movies_cache';
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [fetchError, setFetchError] = useState('');
 
   const fetchMovies = async (selectedStatus = filterStatus, silent = false) => {
     if (!silent) setLoading(true);
+    setFetchError('');
     try {
-      const res = await apiClient.get(`/api/admin/movies?status=${selectedStatus}&limit=100`);
+      const res = await apiClient.get(`/api/admin/movies?status=${selectedStatus}&limit=25&page=${page}&search=${encodeURIComponent(search)}`);
       const list = res.data.movies || res.data || [];
       const fetched = Array.isArray(list) ? list : [];
       setMovies(fetched);
-      try { sessionStorage.setItem(MOVIE_CACHE_KEY + '_' + selectedStatus, JSON.stringify(fetched)); } catch(_) {}
+      setTotalPages(res.data.totalPages || 1);
     } catch (err) {
-      toast.error('Failed to fetch movies catalog');
+      setFetchError('Movies could not be loaded. Please retry.');
     } finally {
       if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    try {
-      const cached = sessionStorage.getItem(MOVIE_CACHE_KEY + '_' + filterStatus);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMovies(parsed);
-          setLoading(false);
-          fetchMovies(filterStatus, true);
-          return;
-        }
-      }
-    } catch (_) {}
-    fetchMovies(filterStatus);
+    const timer = setTimeout(() => fetchMovies(filterStatus), 250);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus]);
+  }, [filterStatus, page, search]);
+  useEffect(() => { setSearch(new URLSearchParams(window.location.search).get('q') || ''); }, []);
 
   const handleOpenCreate = () => {
     setEditingMovie(null);
@@ -150,6 +144,7 @@ export default function MovieManager() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     setSaving(true);
 
     const payload = {
@@ -348,7 +343,7 @@ export default function MovieManager() {
               <button
                 key={s}
                 type="button"
-                onClick={() => setFilterStatus(s)}
+                onClick={() => { setFilterStatus(s); setPage(1); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   filterStatus === s
                     ? 'bg-violet-600 text-white shadow-sm'
@@ -360,15 +355,22 @@ export default function MovieManager() {
             ))}
           </div>
 
+          <label className="block text-sm" htmlFor="movie-search">Search all movies</label>
+          <input id="movie-search" className="w-full rounded-xl border p-3" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by title" />
+          {fetchError && <div role="alert" className="admin-error">{fetchError} <button onClick={() => fetchMovies()}>Retry</button></div>}
           {/* Reusable DataTable */}
           <DataTable
             columns={columns}
             data={movies}
             loading={loading}
             searchPlaceholder="Search movies by title or director..."
-            searchKey="title"
+            pageSize={25}
           />
-
+          <nav aria-label="Movie pages" className="flex items-center justify-between gap-3 text-sm">
+            <button disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)}>Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)}>Next</button>
+          </nav>
         </main>
       </div>
 

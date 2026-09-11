@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSiteContent } from '@/hooks/useSiteContent';
+import useDialogFocus from './useDialogFocus';
 import { resolveLogoUrl } from '@/utils/mediaImages';
 import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 import {
@@ -68,7 +69,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
   const brand = content?.brand || {};
   const logoUrl = resolveLogoUrl(brand.logoUrl);
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [desktopCollapsed, setCollapsed] = useState(false);
+  const collapsed = desktopCollapsed && !mobileOpen;
+  const dialogRef = useDialogFocus(mobileOpen, onCloseMobileNav);
 
   useEffect(() => {
     try {
@@ -104,8 +107,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
 
       {/* ── Fixed Frosted Glass Sidebar ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
-          collapsed ? 'lg:w-[84px]' : 'lg:w-[280px]'
+        ref={dialogRef} role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen || undefined} aria-label="Admin navigation" tabIndex={-1}
+        className={`admin-sidebar fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+          collapsed ? 'lg:w-[84px]' : 'lg:w-[248px]'
         } w-[280px] ${
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         } bg-white/85 dark:bg-[#0B0813]/85 backdrop-blur-2xl border-r border-slate-200/60 dark:border-white/[0.08]`}
@@ -192,6 +196,8 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                     key={item.to}
                     href={item.to}
                     title={collapsed ? item.label : undefined}
+                    aria-label={item.label}
+                    aria-current={isActive ? "page" : undefined}
                     onClick={() => {
                       if (mobileOpen) onCloseMobileNav();
                     }}

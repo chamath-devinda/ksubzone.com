@@ -14,10 +14,11 @@
     "start:server": "node server-php/run-server.js",
     "test": "node --test tests/r2-features.test.mjs",
     "test:php": "php server-php/tests/test-r2-features.php",
-    "test:all": "npm run test && npm run test:php",
+    "test:all": "npm run test && npm run test:php && npm run test:admin",
     "migrate:subtitles": "php server-php/scripts/migrate-subtitles-to-r2.php",
     "migrate:subtitles:node": "node scripts/migrate-subtitles-to-r2.mjs",
-    "package:backend": "powershell -ExecutionPolicy Bypass -File scripts/package-backend.ps1"
+    "package:backend": "powershell -ExecutionPolicy Bypass -File scripts/package-backend.ps1",
+    "test:admin": "node --test tests/admin-core.test.mjs && php server-php/tests/test-admin-core.php"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

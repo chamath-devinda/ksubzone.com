@@ -42,6 +42,7 @@ $parsedArgs = [
     'id' => '',
     'slug' => '',
     'limit' => 10,
+    'all' => false,
     'resume' => false,
     'help' => false
 ];
@@ -50,6 +51,7 @@ foreach ($argv as $arg) {
     if ($arg === '--dry-run') $parsedArgs['dry-run'] = true;
     elseif ($arg === '--live' || $arg === '--execute') $parsedArgs['live'] = true;
     elseif ($arg === '--resume') $parsedArgs['resume'] = true;
+    elseif ($arg === '--all') $parsedArgs['all'] = true;
     elseif ($arg === '--help' || $arg === '-h') $parsedArgs['help'] = true;
     elseif (preg_match('/^--id=(.+)$/', $arg, $m)) $parsedArgs['id'] = trim($m[1]);
     elseif (preg_match('/^--slug=(.+)$/', $arg, $m)) $parsedArgs['slug'] = trim($m[1]);
@@ -64,9 +66,10 @@ KSubZone Subtitle Migration Tool (Supabase -> Cloudflare R2)
 Options:
   --dry-run       Simulate migration without modifying files or database (Default mode)
   --live          Execute real migration (Upload to R2 and update DB)
+  --all           Migrate ALL remaining unmigrated subtitles in a continuous batch
   --id=ID         Migrate a single subtitle record by its ID
   --slug=SLUG     Migrate subtitles for a specific drama or movie slug
-  --limit=N       Maximum number of subtitles to process per batch (default: 10, max: 50)
+  --limit=N       Maximum number of subtitles to process per batch (default: 10)
   --resume        Resume migration, prioritizing unmigrated approved subtitles
   --help          Show this help message
 
@@ -76,7 +79,8 @@ HELP;
 
 // Dry-run is enforced by default unless --live or --execute is explicitly supplied
 $dryRun = !$parsedArgs['live'] || $parsedArgs['dry-run'];
-$batchLimit = max(1, min(50, (int)$parsedArgs['limit']));
+$isAll = $parsedArgs['all'];
+$batchLimit = $isAll ? PHP_INT_MAX : max(1, (int)$parsedArgs['limit']);
 $targetId = $parsedArgs['id'];
 $targetSlug = $parsedArgs['slug'];
 
@@ -85,7 +89,7 @@ echo " KSubZone Subtitle Migration: Supabase -> Cloudflare R2\n";
 echo " Mode: " . ($dryRun ? "DRY-RUN (Safe simulation, NO DB/R2 changes)" : "LIVE EXECUTION (Real upload & DB updates)") . "\n";
 if (!empty($targetId)) echo " Target ID: {$targetId}\n";
 if (!empty($targetSlug)) echo " Target Slug: {$targetSlug}\n";
-echo " Batch Limit: {$batchLimit}\n";
+echo " Batch Mode: " . ($isAll ? "ALL REMAINING SUBTITLES" : "Limit {$batchLimit}") . "\n";
 echo "======================================================\n\n";
 
 $db = \Config\Database::getInstance();
@@ -104,18 +108,43 @@ if (!empty($targetId)) {
 }
 
 $queryOptions = [
-    'sort' => ['createdAt' => 1],
-    'limit' => !empty($targetId) ? 1 : $batchLimit * 3 // Query extra in case of slug filtering
+    'sort' => ['createdAt' => 1]
 ];
 
+// If not migrating all, limit query to a reasonable window
+if (!empty($targetId)) {
+    $queryOptions['limit'] = 1;
+} elseif (!$isAll && $batchLimit < 500) {
+    $queryOptions['limit'] = max(100, $batchLimit * 4);
+}
+
 $candidates = $db->find('subtitles', $filter, $queryOptions);
+
+// Count how many are already migrated
+$alreadyR2Count = 0;
+$pendingCandidates = [];
+foreach ($candidates as $cand) {
+    $p = strtolower((string)($cand['storageProvider'] ?? 'supabase'));
+    $k = (string)($cand['storageObjectKey'] ?? '');
+    if ($p === 'r2' && !empty($k)) {
+        $alreadyR2Count++;
+    } else {
+        $pendingCandidates[] = $cand;
+    }
+}
+
+$totalToMigrate = min($batchLimit, count($pendingCandidates));
+echo "Scanned Subtitles: " . count($candidates) . "\n";
+echo "Already on R2:     {$alreadyR2Count} (Skipped)\n";
+echo "Pending to Migrate: " . count($pendingCandidates) . "\n";
+echo "Targeting in batch: {$totalToMigrate}\n\n";
 
 $report = [
     'dryRun' => $dryRun,
     'totalScanned' => count($candidates),
     'considered' => 0,
     'migrated' => 0,
-    'skipped' => 0,
+    'skipped' => $alreadyR2Count,
     'errors' => []
 ];
 
@@ -133,8 +162,6 @@ foreach ($candidates as $sub) {
 
     // Skip already migrated R2 records
     if ($provider === 'r2' && !empty($objectKey)) {
-        echo "[SKIP] Subtitle {$id} is already stored in Cloudflare R2 ({$objectKey})\n";
-        $report['skipped']++;
         continue;
     }
 
@@ -162,8 +189,9 @@ foreach ($candidates as $sub) {
     $report['considered']++;
     $processedCount++;
 
+    $pct = $totalToMigrate > 0 ? round(($processedCount / $totalToMigrate) * 100, 1) : 100;
     echo "\n------------------------------------------------------\n";
-    echo "Processing Subtitle ID: {$id}\n";
+    echo "[{$processedCount}/{$totalToMigrate}] ({$pct}%) Processing Subtitle ID: {$id}\n";
     echo "  Media: {$mediaTitle} ({$mediaSlug}) [{$mediaType}]\n";
     echo "  Season: " . ($sub['seasonNumber'] ?? 1) . ", Episode: " . ($sub['episodeNumber'] ?? 1) . "\n";
     echo "  Language: " . ($sub['language'] ?? 'Sinhala') . ", Version: " . ($sub['version'] ?? '1.0') . "\n";
@@ -358,6 +386,7 @@ foreach ($candidates as $sub) {
     }
 
     @unlink($tmp);
+    usleep(30000); // 30ms polite delay to avoid overwhelming Supabase egress
 }
 
 echo "\n======================================================\n";

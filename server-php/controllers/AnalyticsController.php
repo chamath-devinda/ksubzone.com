@@ -9,14 +9,8 @@ class AnalyticsController {
         $record = $db->findOne('analytics');
         if (!$record) {
             $record = [
-                'seoHealthScore' => 98,
-                'trafficLogs' => [
-                    ['date' => '2026-05-18', 'views' => 120, 'uniqueVisitors' => 80],
-                    ['date' => '2026-05-19', 'views' => 240, 'uniqueVisitors' => 150],
-                    ['date' => '2026-05-20', 'views' => 310, 'uniqueVisitors' => 190],
-                    ['date' => '2026-05-21', 'views' => 420, 'uniqueVisitors' => 280],
-                    ['date' => '2026-05-22', 'views' => 530, 'uniqueVisitors' => 360]
-                ],
+                'seoHealthScore' => null,
+                'trafficLogs' => [],
                 'trendingSearches' => []
             ];
             $record = $db->insertOne('analytics', $record);
@@ -113,7 +107,7 @@ class AnalyticsController {
     }
 
     public static function getDashboardStats() {
-        $cached = \Utils\Cache::get('admin_dashboard_v2');
+        $cached = \Utils\Cache::get('admin_dashboard_v3');
         if ($cached !== false) {
             header('Content-Type: application/json');
             echo json_encode($cached);
@@ -138,12 +132,14 @@ class AnalyticsController {
         $trafficViews = 0;
         if (isset($analyticsRecord['trafficLogs']) && is_array($analyticsRecord['trafficLogs'])) {
             foreach ($analyticsRecord['trafficLogs'] as $log) {
-                $trafficViews += ($log['views'] ?? 0);
+                if (($log['date'] ?? '') >= date('Y-m-d', strtotime('-29 days')) && ($log['date'] ?? '') <= date('Y-m-d')) {
+                    $trafficViews += max(0, (int)($log['views'] ?? 0));
+                }
             }
         }
 
-        // Total views = content views (movies + dramas) + site traffic views
-        $totalViews = $movieViews + $dramaViews + $trafficViews;
+        // Content views and deduplicated site visits are separate measurements.
+        $totalViews = $movieViews + $dramaViews;
 
         // Subtitle moderation stats
         $pendingSubtitles   = $db->count('subtitles', ['approvalStatus' => 'Pending']);
@@ -306,6 +302,7 @@ class AnalyticsController {
         $payload = [
             'counts' => [
                 'totalMovies'       => $totalMovies,
+                'totalArticles' => $db->count('articles'),
                 'totalDramas'       => $totalDramas,
                 'totalEpisodes'     => $totalEpisodes,
                 'totalUsers'        => $totalUsers,
@@ -315,7 +312,7 @@ class AnalyticsController {
                 'totalTrafficViews' => $trafficViews,
                 'totalDownloads'    => $totalDownloads
             ],
-            'seoHealthScore'   => $analyticsRecord['seoHealthScore'] ?? 98,
+            'seoHealthScore'   => null,
             'trafficLogs'      => $analyticsRecord['trafficLogs'] ?? [],
             'trendingSearches' => $analyticsRecord['trendingSearches'] ?? [],
             'topContent'       => $topContent,
@@ -327,10 +324,17 @@ class AnalyticsController {
                 'approved' => $approvedSubtitles,
                 'rejected' => $rejectedSubtitles
             ],
+            'storageStats'     => [
+                'activeProvider' => \Utils\Storage::getProvider()->getName(),
+                'totalSubtitles' => $totalSubtitles,
+                'r2Count' => $db->count('subtitles', ['storageProvider' => 'r2']),
+                'supabaseCount' => max(0, $totalSubtitles - $db->count('subtitles', ['storageProvider' => 'r2'])),
+                'migrationProgressPercent' => $totalSubtitles > 0 ? round(($db->count('subtitles', ['storageProvider' => 'r2']) / $totalSubtitles) * 100, 1) : 100
+            ],
             'systemHealth' => $systemHealth
         ];
 
-        \Utils\Cache::set('admin_dashboard_v2', $payload, 60);
+        \Utils\Cache::set('admin_dashboard_v3', $payload, 60);
         header('Content-Type: application/json');
         echo json_encode($payload);
     }

@@ -1,215 +1,78 @@
 <?php
 namespace Controllers;
-
 use Config\Database;
 use Utils\Cache;
+use Utils\AdsterraReport;
 
 class AdsterraController {
-    private const API_BASE = 'https://api3.adsterratools.com/publisher';
-
-    private static function getApiKey() {
-        $environmentKey = trim((string)($_ENV['ADSTERRA_API_KEY'] ?? getenv('ADSTERRA_API_KEY') ?: ''));
-        if ($environmentKey !== '') {
-            return $environmentKey;
-        }
-
-        $db = Database::getInstance();
-        $setting = $db->findOne('settings', [
-            'key' => ['$in' => ['ADSTERRA_API_KEY', 'adsterra_api_key', 'ADSTERRA_API_TOKEN', 'adsterra_api_token']]
-        ]);
-
-        return $setting && !empty($setting['value']) ? trim((string)$setting['value']) : '';
+    private static function getApiKey(): string {
+        // Saved replacements take precedence so Update key takes effect.
+        $setting = Database::getInstance()->findOne('settings', ['key' => 'ADSTERRA_API_KEY']);
+        if (!empty($setting['value'])) return trim((string)$setting['value']);
+        return trim((string)($_ENV['ADSTERRA_API_KEY'] ?? getenv('ADSTERRA_API_KEY') ?: ''));
     }
-
-    private static function request($path, $query, $apiKey) {
-        if (!function_exists('curl_init')) {
-            throw new \RuntimeException('The PHP cURL extension is required for Adsterra statistics.');
-        }
-
-        $url = self::API_BASE . $path . '?' . http_build_query($query);
-        $ch = curl_init($url);
-        $curlOptions = [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_CONNECTTIMEOUT => 8,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'X-API-Key: ' . $apiKey
-            ],
-            CURLOPT_USERAGENT => 'KSubZone-Adsterra-Analytics/1.0'
-        ];
-
-        $configuredCaBundle = trim((string)($_ENV['ADSTERRA_CA_BUNDLE'] ?? getenv('ADSTERRA_CA_BUNDLE') ?: ''));
-        if ($configuredCaBundle !== '' && is_file($configuredCaBundle)) {
-            $curlOptions[CURLOPT_CAINFO] = $configuredCaBundle;
-        } elseif (defined('CURLSSLOPT_NATIVE_CA')) {
-            // Use the operating system certificate store when PHP/cURL was
-            // installed without a configured CA bundle (common on Windows).
-            $curlOptions[CURLOPT_SSL_OPTIONS] = CURLSSLOPT_NATIVE_CA;
-        }
-
-        curl_setopt_array($ch, $curlOptions);
-
-        $response = curl_exec($ch);
-        $curlError = curl_error($ch);
-        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($response === false) {
-            throw new \RuntimeException('Adsterra request failed: ' . ($curlError ?: 'network error'));
-        }
-
-        $decoded = json_decode($response, true);
-        if (!is_array($decoded)) {
-            throw new \RuntimeException('Adsterra returned an invalid JSON response.');
-        }
-
-        if ($status < 200 || $status >= 300) {
-            $message = $decoded['message'] ?? $decoded['error'] ?? ('HTTP ' . $status);
-            if (is_array($message)) {
-                $message = json_encode($message);
+    private static function request(array $query, string $key): array {
+        if (!function_exists('curl_init')) throw new \RuntimeException('provider_unavailable');
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $ch = curl_init('https://api3.adsterratools.com/publisher/stats.json?' . http_build_query($query));
+            $options = [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 7,
+                CURLOPT_HTTPHEADER => ['Accept: application/json', 'X-API-Key: ' . $key]];
+            $ca = trim((string)($_ENV['ADSTERRA_CA_BUNDLE'] ?? getenv('ADSTERRA_CA_BUNDLE') ?: ''));
+            if ($ca !== '' && is_file($ca)) $options[CURLOPT_CAINFO] = $ca;
+            elseif (defined('CURLSSLOPT_NATIVE_CA')) $options[CURLOPT_SSL_OPTIONS] = CURLSSLOPT_NATIVE_CA;
+            curl_setopt_array($ch, $options);
+            $body = curl_exec($ch);
+            $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($status === 429) throw new \RuntimeException('rate_limited');
+            if ($status === 401 || $status === 403) throw new \RuntimeException('configuration_required');
+            if ($body === false || $status >= 500) {
+                if ($attempt === 0) { usleep(250000); continue; }
+                throw new \RuntimeException('provider_unavailable');
             }
-            throw new \RuntimeException('Adsterra request failed: ' . $message);
+            if ($status < 200 || $status >= 300) throw new \RuntimeException('request_failed');
+            $data = json_decode($body, true);
+            if (!is_array($data)) throw new \RuntimeException('request_failed');
+            return $data;
         }
-
-        return $decoded;
+        throw new \RuntimeException('provider_unavailable');
     }
-
-    private static function isList($value) {
-        if (!is_array($value)) return false;
-        if ($value === []) return true;
-        return array_keys($value) === range(0, count($value) - 1);
-    }
-
-    private static function extractRows($payload) {
-        if (self::isList($payload)) {
-            return $payload;
-        }
-
-        foreach (['items', 'data', 'result', 'results', 'stats', 'report'] as $key) {
-            if (isset($payload[$key]) && is_array($payload[$key])) {
-                if (self::isList($payload[$key])) {
-                    return $payload[$key];
-                }
-                foreach (['items', 'rows', 'data'] as $nestedKey) {
-                    if (isset($payload[$key][$nestedKey]) && self::isList($payload[$key][$nestedKey])) {
-                        return $payload[$key][$nestedKey];
-                    }
-                }
-            }
-        }
-
-        return [];
-    }
-
-    private static function number($value) {
-        if (is_string($value)) {
-            $value = str_replace([',', '$', '%'], '', $value);
-        }
-        return is_numeric($value) ? (float)$value : 0.0;
-    }
-
     public static function getStats() {
         header('Content-Type: application/json');
-
-        $apiKey = self::getApiKey();
-        if ($apiKey === '') {
-            http_response_code(503);
-            echo json_encode([
-                'configured' => false,
-                'message' => 'Adsterra API key is not configured.'
-            ]);
-            return;
-        }
-
-        $requestedRange = (int)($_GET['range'] ?? 30);
-        $range = in_array($requestedRange, [7, 30, 90], true) ? $requestedRange : 30;
-        $finishDate = date('Y-m-d');
-        $startDate = date('Y-m-d', strtotime('-' . ($range - 1) . ' days'));
-        $cacheKey = 'adsterra_stats_v2_' . $range . '_' . substr(hash('sha256', $apiKey), 0, 12);
-        $cached = Cache::get($cacheKey);
-        if ($cached !== false) {
-            echo json_encode($cached);
-            return;
-        }
-
+        header('Cache-Control: no-store');
+        $configured = false;
         try {
-            $payload = self::request('/stats.json', [
-                'start_date' => $startDate,
-                'finish_date' => $finishDate,
-                'group_by' => 'date'
-            ], $apiKey);
+            $key = self::getApiKey();
+            if ($key === '') throw new \RuntimeException('configuration_required');
+            $configured = true;
+            $range = (int)($_GET['range'] ?? 30);
+            if (!in_array($range, [7, 30, 90], true)) {
+                http_response_code(400);
+                echo json_encode(['state' => 'request_failed', 'message' => 'Select 7, 30 or 90 days.']);
+                return;
+            }
+            $finish = gmdate('Y-m-d');
+            $start = gmdate('Y-m-d', strtotime('-' . ($range - 1) . ' days'));
+            $cacheKey = 'adsterra_v3_' . $finish . '_' . $range . '_' . substr(hash('sha256', $key), 0, 12);
+            $cached = Cache::get($cacheKey);
+            if ($cached !== false && ($_GET['refresh'] ?? '') !== '1') { echo json_encode($cached); return; }
+            $payload = self::request(['start_date' => $start, 'finish_date' => $finish, 'group_by' => 'date'], $key);
+            $report = AdsterraReport::normalize($payload, $start, $finish);
+            $result = array_merge($report, ['configured' => true,
+                'state' => $report['summary']['impressions'] > 0 || $report['summary']['revenue'] > 0 ? 'connected' : 'no_activity',
+                'currency' => 'USD', 'range' => $range, 'period' => ['start' => $start, 'finish' => $finish], 'fetchedAt' => gmdate('c')]);
+            Cache::set($cacheKey, $result, 300);
+            echo json_encode($result);
         } catch (\Throwable $error) {
-            // Avoid a 502 here because some hosting/CDN layers replace its
-            // JSON body with a generic "Server Error" response.
-            http_response_code(424);
-            echo json_encode([
-                'configured' => true,
-                'message' => $error->getMessage()
-            ]);
-            return;
+            $messages = ['configuration_required' => 'Connect a valid Adsterra publisher API key.',
+                'rate_limited' => 'Adsterra is limiting requests. Please try again later.',
+                'provider_unavailable' => 'Adsterra is temporarily unavailable. Please retry shortly.',
+                'request_failed' => 'The earnings report could not be verified. Please retry.'];
+            $state = isset($messages[$error->getMessage()]) ? $error->getMessage() : 'request_failed';
+            // Normal integration-state envelopes avoid CDN replacement of 5xx bodies.
+            echo json_encode(['configured' => $configured, 'state' => $state, 'message' => $messages[$state]]);
+            error_log('Adsterra sync: ' . $state);
         }
-
-        $daily = [];
-        $totals = [
-            'impressions' => 0,
-            'clicks' => 0,
-            'ctr' => 0,
-            'cpm' => 0,
-            'revenue' => 0
-        ];
-
-        foreach (self::extractRows($payload) as $row) {
-            if (!is_array($row)) continue;
-
-            // The live Publisher API currently returns `impression` while
-            // older documentation and responses use `impressions`.
-            $impressions = self::number($row['impressions'] ?? ($row['impression'] ?? 0));
-            $clicks = self::number($row['clicks'] ?? 0);
-            $revenue = self::number($row['revenue'] ?? ($row['profit'] ?? 0));
-            $date = (string)($row['date'] ?? ($row['day'] ?? ''));
-
-            $daily[] = [
-                'date' => $date,
-                'impressions' => (int)round($impressions),
-                'clicks' => (int)round($clicks),
-                'ctr' => round(self::number($row['ctr'] ?? ($impressions > 0 ? ($clicks / $impressions) * 100 : 0)), 4),
-                'cpm' => round(self::number($row['cpm'] ?? ($impressions > 0 ? ($revenue / $impressions) * 1000 : 0)), 4),
-                'revenue' => round($revenue, 6)
-            ];
-
-            $totals['impressions'] += $impressions;
-            $totals['clicks'] += $clicks;
-            $totals['revenue'] += $revenue;
-        }
-
-        usort($daily, function($a, $b) {
-            return strcmp($a['date'], $b['date']);
-        });
-
-        $totals['impressions'] = (int)round($totals['impressions']);
-        $totals['clicks'] = (int)round($totals['clicks']);
-        $totals['revenue'] = round($totals['revenue'], 6);
-        $totals['ctr'] = $totals['impressions'] > 0
-            ? round(($totals['clicks'] / $totals['impressions']) * 100, 4)
-            : 0;
-        $totals['cpm'] = $totals['impressions'] > 0
-            ? round(($totals['revenue'] / $totals['impressions']) * 1000, 4)
-            : 0;
-
-        $result = [
-            'configured' => true,
-            'currency' => 'USD',
-            'range' => $range,
-            'period' => ['start' => $startDate, 'finish' => $finishDate],
-            'summary' => $totals,
-            'daily' => $daily,
-            'fetchedAt' => gmdate('c')
-        ];
-
-        Cache::set($cacheKey, $result, 300);
-        echo json_encode($result);
     }
-
 }

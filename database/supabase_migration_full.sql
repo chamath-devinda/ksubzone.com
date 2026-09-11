@@ -238,25 +238,21 @@ CREATE POLICY "Service Role Manage Subtitles" ON storage.objects FOR ALL TO serv
 
 ALTER TABLE IF EXISTS "users" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read users" ON "users";
-CREATE POLICY "Public read users" ON "users" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access users" ON "users";
 CREATE POLICY "Service role full access users" ON "users" FOR ALL TO service_role USING (true);
 
 ALTER TABLE IF EXISTS "admins" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read admins" ON "admins";
-CREATE POLICY "Public read admins" ON "admins" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access admins" ON "admins";
 CREATE POLICY "Service role full access admins" ON "admins" FOR ALL TO service_role USING (true);
 
 ALTER TABLE IF EXISTS "roles" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read roles" ON "roles";
-CREATE POLICY "Public read roles" ON "roles" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access roles" ON "roles";
 CREATE POLICY "Service role full access roles" ON "roles" FOR ALL TO service_role USING (true);
 
 ALTER TABLE IF EXISTS "permissions" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read permissions" ON "permissions";
-CREATE POLICY "Public read permissions" ON "permissions" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access permissions" ON "permissions";
 CREATE POLICY "Service role full access permissions" ON "permissions" FOR ALL TO service_role USING (true);
 
@@ -292,7 +288,8 @@ CREATE POLICY "Service role full access genres" ON "genres" FOR ALL TO service_r
 
 ALTER TABLE IF EXISTS "subtitles" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read subtitles" ON "subtitles";
-CREATE POLICY "Public read subtitles" ON "subtitles" FOR SELECT USING (true);
+CREATE POLICY "Public read approved subtitles" ON "subtitles" FOR SELECT
+    USING (data->>'approvalStatus' = 'Approved');
 DROP POLICY IF EXISTS "Service role full access subtitles" ON "subtitles";
 CREATE POLICY "Service role full access subtitles" ON "subtitles" FOR ALL TO service_role USING (true);
 
@@ -310,13 +307,11 @@ CREATE POLICY "Service role full access comments" ON "comments" FOR ALL TO servi
 
 ALTER TABLE IF EXISTS "analytics" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read analytics" ON "analytics";
-CREATE POLICY "Public read analytics" ON "analytics" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access analytics" ON "analytics";
 CREATE POLICY "Service role full access analytics" ON "analytics" FOR ALL TO service_role USING (true);
 
 ALTER TABLE IF EXISTS "settings" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read settings" ON "settings";
-CREATE POLICY "Public read settings" ON "settings" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access settings" ON "settings";
 CREATE POLICY "Service role full access settings" ON "settings" FOR ALL TO service_role USING (true);
 
@@ -328,13 +323,10 @@ CREATE POLICY "Service role full access articles" ON "articles" FOR ALL TO servi
 
 ALTER TABLE IF EXISTS "notifications" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read notifications" ON "notifications";
-CREATE POLICY "Public read notifications" ON "notifications" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access notifications" ON "notifications";
 CREATE POLICY "Service role full access notifications" ON "notifications" FOR ALL TO service_role USING (true);
 
 ALTER TABLE IF EXISTS "tmdb_imports" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read tmdb_imports" ON "tmdb_imports";
-CREATE POLICY "Public read tmdb_imports" ON "tmdb_imports" FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Service role full access tmdb_imports" ON "tmdb_imports";
 CREATE POLICY "Service role full access tmdb_imports" ON "tmdb_imports" FOR ALL TO service_role USING (true);
-

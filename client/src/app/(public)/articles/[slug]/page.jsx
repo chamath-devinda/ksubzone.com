@@ -7,7 +7,9 @@ import { serializeJsonLd, SITE_URL } from '@/utils/seo';
 const getArticle = cache(async (slug) => {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   try {
-    const res = await fetch(`${backendUrl}/api/articles/${slug}`, { next: { revalidate: 30 } });
+    const res = await fetch(`${backendUrl}/api/articles/${slug}`, {
+      next: { revalidate: 21600, tags: ['articles', `article-${slug}`] }
+    });
     if (res.ok) {
       return res.json();
     }

@@ -11,6 +11,8 @@ const backendUrl = (/^https?:\/\/(www\.)?ksubzone\.com(?:\/|$)/i.test(configured
 ).replace(/\/+$/, '');
 
 const nextConfig = {
+  // Isolate QA builds from an already-running local dev server.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,

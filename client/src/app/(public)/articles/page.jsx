@@ -14,7 +14,9 @@ export default async function ArticlesPage() {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
   let initialData = null;
   try {
-    const res = await fetch(`${backendUrl}/api/articles?limit=30`, { next: { revalidate: 30 } });
+    const res = await fetch(`${backendUrl}/api/articles?limit=30`, {
+      next: { revalidate: 21600, tags: ['articles'] }
+    });
     if (res.ok) {
       const data = await res.json();
       initialData = data.articles || [];

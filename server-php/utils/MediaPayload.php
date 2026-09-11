@@ -98,6 +98,15 @@ class MediaPayload {
         return $result;
     }
 
+    public static function cardProjectionFields($includeSynopsis = false) {
+        $fields = self::$catalogFields;
+        if ($includeSynopsis) {
+            $fields[] = 'synopsisRewrite';
+            $fields[] = 'description';
+        }
+        return array_values(array_unique($fields));
+    }
+
     public static function detailOnlyFields($includeSynopsis = false) {
         $fields = self::$detailOnlyFields;
         if (!$includeSynopsis) {

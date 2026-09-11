@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 import AdminNotifications from './AdminNotifications';
+import AdminSearch from './AdminSearch';
 import {
   Search,
   Plus,
@@ -69,17 +70,10 @@ export default function AdminTopBar({ onOpenMobileNav }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Ctrl+K or Cmd+K to focus search
   useEffect(() => {
-    function handleKeyDown(e) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        const searchInput = document.getElementById('dashstack-search');
-        if (searchInput) searchInput.focus();
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const close = e => { if (e.key === "Escape") { setProfileOpen(false); setQuickAddOpen(false); } };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
   }, []);
 
   const adminName = admin?.displayName || admin?.username || admin?.name || 'System Admin';
@@ -115,22 +109,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
         </div>
 
         {/* Global Catalog Search */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm hidden sm:block">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            id="dashstack-search"
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search movies, dramas, subtitles..."
-            className="h-10.5 w-full rounded-[16px] bg-slate-100/70 dark:bg-white/[0.05] border border-slate-200/60 dark:border-white/[0.08] pl-10 pr-14 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-[#7C3AED] focus:bg-white dark:focus:bg-[#120E1E] focus:outline-none focus:ring-4 focus:ring-[#7C3AED]/10 transition"
-          />
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-            <kbd className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#171226] px-1.5 py-0.5 text-[10px] font-mono text-slate-400 shadow-sm">
-              ⌘K
-            </kbd>
-          </div>
-        </form>
+        <AdminSearch />
       </div>
 
       {/* ── Right: Quick Actions, Theme, and Profile Pill Matching Reference Image ── */}
@@ -139,8 +118,9 @@ export default function AdminTopBar({ onOpenMobileNav }) {
         <div className="relative" ref={quickAddRef}>
           <button
             type="button"
+            aria-expanded={quickAddOpen}
             onClick={() => setQuickAddOpen(!quickAddOpen)}
-            className="hidden sm:flex h-9.5 items-center gap-2 rounded-full px-4 text-xs font-bold text-white btn-oio-pill"
+            className="hidden sm:flex h-11 items-center gap-2 rounded-full px-4 text-xs font-bold text-white btn-oio-pill"
           >
             <Plus className="h-4 w-4" />
             <span>Create</span>
@@ -191,7 +171,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
         {/* Public Site Link */}
         <Link
           href="/"
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           className="hidden md:flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.05] px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#8A2BE2] dark:hover:text-white transition shadow-sm"
         >
           <ExternalLink className="h-3.5 w-3.5 text-[#8A2BE2]" />
@@ -202,6 +182,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
         <div className="relative pl-1 sm:pl-2" ref={profileRef}>
           <button
             type="button"
+            aria-expanded={profileOpen}
             onClick={() => setProfileOpen(!profileOpen)}
             className="flex items-center gap-3 py-1.5 px-3 sm:px-4 rounded-full bg-white/90 dark:bg-white/[0.06] border border-slate-200/70 dark:border-white/[0.08] shadow-sm hover:border-[#8A2BE2]/40 transition group"
             aria-label="User profile menu"

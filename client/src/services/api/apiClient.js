@@ -11,13 +11,7 @@ const resolveBaseUrl = () => {
   if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL) {
     return process.env.NEXT_PUBLIC_BACKEND_URL.replace(/\/+$/, '');
   }
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'ksubzone.com' || host === 'www.ksubzone.com' || host.endsWith('.ksubzone.com') || host.endsWith('.vercel.app')) {
-      return 'https://api.ksubzone.com';
-    }
-  }
-  return '/';
+  return '';
 };
 
 const apiClient = axios.create({

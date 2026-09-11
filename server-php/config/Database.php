@@ -756,9 +756,18 @@ class Database {
         if ($this->driver === 'mongodb') {
             $filter = $this->convertIdToObjectId($filter);
             $mongoOptions = $options;
+            $includeFields = $mongoOptions['fields'] ?? $mongoOptions['selectFields'] ?? [];
             $excludeFields = $mongoOptions['excludeFields'] ?? [];
-            unset($mongoOptions['excludeFields']);
-            if (!empty($excludeFields)) {
+            unset($mongoOptions['fields'], $mongoOptions['selectFields'], $mongoOptions['excludeFields']);
+            if (!empty($includeFields)) {
+                $projection = ['_id' => 1, 'createdAt' => 1, 'updatedAt' => 1];
+                foreach ($includeFields as $field) {
+                    if (preg_match('/^[A-Za-z0-9_]+$/', $field)) {
+                        $projection[$field] = 1;
+                    }
+                }
+                $mongoOptions['projection'] = $projection;
+            } elseif (!empty($excludeFields)) {
                 $projection = $mongoOptions['projection'] ?? [];
                 foreach ($excludeFields as $field) {
                     if (preg_match('/^[A-Za-z0-9_]+$/', $field)) {
@@ -778,12 +787,46 @@ class Database {
             $params = [];
             $where = $this->buildWhere($filter, $params, $collection);
             $table = ($this->driver === 'pgsql') ? "\"{$collection}\"" : $collection;
-            $select = '*';
+            $select = ($this->driver === 'pgsql')
+                ? '"_id", "data", "createdAt", "updatedAt"'
+                : '_id, data, createdAt, updatedAt';
+            $includeFields = array_values(array_filter($options['fields'] ?? $options['selectFields'] ?? [], function($field) {
+                return is_string($field) && preg_match('/^[A-Za-z0-9_]+$/', $field);
+            }));
             $excludeFields = array_values(array_filter($options['excludeFields'] ?? [], function($field) {
                 return is_string($field) && preg_match('/^[A-Za-z0-9_]+$/', $field);
             }));
 
-            if (!empty($excludeFields)) {
+            if (!empty($includeFields)) {
+                if ($this->driver === 'pgsql') {
+                    $jsonBuildPairs = [];
+                    foreach ($includeFields as $field) {
+                        if (in_array($field, ['_id', 'createdAt', 'updatedAt'], true)) continue;
+                        $jsonBuildPairs[] = "'{$field}', \"data\"->'{$field}'";
+                    }
+                    $select = !empty($jsonBuildPairs)
+                        ? '"_id", jsonb_build_object(' . implode(', ', $jsonBuildPairs) . ') AS "data", "createdAt", "updatedAt"'
+                        : '"_id", "data", "createdAt", "updatedAt"';
+                } elseif ($this->driver === 'mysql') {
+                    $jsonBuildPairs = [];
+                    foreach ($includeFields as $field) {
+                        if (in_array($field, ['_id', 'createdAt', 'updatedAt'], true)) continue;
+                        $jsonBuildPairs[] = "'{$field}', JSON_EXTRACT(data, '$.{$field}')";
+                    }
+                    $select = !empty($jsonBuildPairs)
+                        ? '_id, JSON_OBJECT(' . implode(', ', $jsonBuildPairs) . ') AS data, createdAt, updatedAt'
+                        : '_id, data, createdAt, updatedAt';
+                } else {
+                    $jsonBuildPairs = [];
+                    foreach ($includeFields as $field) {
+                        if (in_array($field, ['_id', 'createdAt', 'updatedAt'], true)) continue;
+                        $jsonBuildPairs[] = "'{$field}', json_extract(data, '$.{$field}')";
+                    }
+                    $select = !empty($jsonBuildPairs)
+                        ? '_id, json_object(' . implode(', ', $jsonBuildPairs) . ') AS data, createdAt, updatedAt'
+                        : '_id, data, createdAt, updatedAt';
+                }
+            } elseif (!empty($excludeFields)) {
                 if ($this->driver === 'pgsql') {
                     $dataExpression = '"data"';
                     foreach ($excludeFields as $field) {

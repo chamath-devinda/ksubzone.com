@@ -374,6 +374,11 @@ class SubtitleController {
     }
 
     public static function trackDownload($id) {
+        if (\Utils\VisitorGuard::isBot()) {
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Bot download skipped']);
+            return;
+        }
         $db = Database::getInstance();
         try {
             $downloads = $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
@@ -412,6 +417,13 @@ class SubtitleController {
         // function transfer. Existing Supabase/local records keep the legacy
         // path below unchanged.
         if (($subtitle['storageProvider'] ?? '') === 'r2' && preg_match('#^https?://#i', $fileUrl)) {
+            try {
+                if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
+                    $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
+                }
+            } catch (\Throwable $e) {
+                // Ignore analytics write errors
+            }
             header('Cache-Control: public, max-age=31536000, immutable');
             header('Content-Disposition: attachment; filename="' . preg_replace('/[^a-zA-Z0-9._-]/', '_', 'subtitle-' . $id . '.' . ($subtitle['format'] ?? 'srt')) . '"');
             header('Location: ' . $fileUrl, true, 302);
@@ -556,13 +568,11 @@ class SubtitleController {
 
         // Count only downloads for which the file was actually resolved. A
         // missing local/remote file must not inflate the public counter.
-        $downloads = ($subtitle['downloads'] ?? 0) + 1;
         try {
-            $db->updateOne('subtitles', ['_id' => $id], [
-                'downloads' => $downloads,
-                'lastDownloadedAt' => date('Y-m-d H:i:s')
-            ]);
-        } catch (\Exception $e) {
+            if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
+                $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
+            }
+        } catch (\Throwable $e) {
             // A transient analytics write failure must never block the file.
             error_log('Subtitle download count update failed: ' . $e->getMessage());
         }

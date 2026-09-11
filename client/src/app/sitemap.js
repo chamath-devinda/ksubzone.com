@@ -26,40 +26,54 @@ export default async function sitemap() {
   let genreUrls = [];
   let categoryUrls = [];
 
-  // 1. Fetch TV Dramas (up to 1000 items)
+  // 1. Fetch TV Dramas & Movies via lightweight single sitemap-catalog endpoint
   try {
-    const dramasRes = await fetch(`${backendUrl}/api/media/dramas?limit=1000`, { 
-      next: { revalidate: 3600 } 
+    const catalogRes = await fetch(`${backendUrl}/api/media/sitemap-catalog`, {
+      next: { revalidate: 3600, tags: ['dramas', 'movies'] }
     });
-    if (dramasRes.ok) {
-      const data = await dramasRes.json();
+    if (catalogRes.ok) {
+      const data = await catalogRes.json();
       dramaUrls = (data.dramas || []).map((d) => ({
         url: `${baseUrl}/drama/${permalinkSlug(d)}`,
         lastModified: new Date(d.contentUpdatedAt || d.updatedAt || d.createdAt || Date.now()),
         changeFrequency: 'daily',
         priority: 0.85,
       }));
-    }
-  } catch (e) {
-    console.error('Sitemap dramas fetch failed:', e);
-  }
-
-  // 2. Fetch Movies (up to 1000 items)
-  try {
-    const moviesRes = await fetch(`${backendUrl}/api/media/movies?limit=1000`, { 
-      next: { revalidate: 3600 } 
-    });
-    if (moviesRes.ok) {
-      const data = await moviesRes.json();
       movieUrls = (data.movies || []).map((m) => ({
         url: `${baseUrl}/movie/${permalinkSlug(m)}`,
         lastModified: new Date(m.contentUpdatedAt || m.updatedAt || m.createdAt || Date.now()),
         changeFrequency: 'weekly',
         priority: 0.85,
       }));
+    } else {
+      throw new Error(`Catalog returned ${catalogRes.status}`);
     }
-  } catch (e) {
-    console.error('Sitemap movies fetch failed:', e);
+  } catch (catalogErr) {
+    console.warn('sitemap-catalog fallback:', catalogErr.message);
+    try {
+      const dramasRes = await fetch(`${backendUrl}/api/media/dramas?limit=200`, { next: { revalidate: 3600 } });
+      if (dramasRes.ok) {
+        const data = await dramasRes.json();
+        dramaUrls = (data.dramas || []).map((d) => ({
+          url: `${baseUrl}/drama/${permalinkSlug(d)}`,
+          lastModified: new Date(d.contentUpdatedAt || d.updatedAt || d.createdAt || Date.now()),
+          changeFrequency: 'daily',
+          priority: 0.85,
+        }));
+      }
+      const moviesRes = await fetch(`${backendUrl}/api/media/movies?limit=200`, { next: { revalidate: 3600 } });
+      if (moviesRes.ok) {
+        const data = await moviesRes.json();
+        movieUrls = (data.movies || []).map((m) => ({
+          url: `${baseUrl}/movie/${permalinkSlug(m)}`,
+          lastModified: new Date(m.contentUpdatedAt || m.updatedAt || m.createdAt || Date.now()),
+          changeFrequency: 'weekly',
+          priority: 0.85,
+        }));
+      }
+    } catch (e) {
+      console.error('Sitemap media fallback failed:', e);
+    }
   }
 
   // 3. Fetch Articles & Guides

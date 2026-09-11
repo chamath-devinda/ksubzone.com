@@ -28,6 +28,9 @@ export default function AdminNotifications() {
   const [open, setOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [readIds, setReadIds] = useState([]);
+  const unread = alerts.filter(alert => !readIds.includes(alert.id));
   const [toasts, setToasts] = useState([]);
   const [mounted, setMounted] = useState(false);
   const [coords, setCoords] = useState({ top: 80, left: 16 });
@@ -45,6 +48,7 @@ export default function AdminNotifications() {
 
   useEffect(() => {
     setMounted(true);
+    try { setReadIds(JSON.parse(sessionStorage.getItem('admin-alerts-read') || '[]')); } catch { setReadIds([]); }
   }, []);
 
   useIsomorphicLayoutEffect(() => {
@@ -64,6 +68,7 @@ export default function AdminNotifications() {
     if (cached) { setAlerts(cached); return; }
 
     setLoading(true);
+    setError('');
     try {
       const res = await apiClient.get('/api/admin/dramas/missing-subtitles?limit=50');
       const missing = Array.isArray(res.data?.alerts) ? res.data.alerts : [];
@@ -71,22 +76,9 @@ export default function AdminNotifications() {
       setAlerts(missing);
       setCache(missing);
 
-      // Show toast for first 2 new alerts
-      if (missing.length > 0) {
-        missing.slice(0, 2).forEach((alert, i) => {
-          setTimeout(() => {
-            setToasts(prev => {
-              if (prev.find(t => t.id === alert.id)) return prev;
-              return [...prev, alert];
-            });
-            setTimeout(() => {
-              setToasts(prev => prev.filter(t => t.id !== alert.id));
-            }, 7000);
-          }, i * 700);
-        });
-      }
     } catch (err) {
-      console.error('Notification fetch error', err);
+      setError('Subtitle alerts are unavailable. Please retry.');
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -106,8 +98,9 @@ export default function AdminNotifications() {
         btnRef.current && !btnRef.current.contains(e.target)
       ) setOpen(false);
     };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const escape = e => { if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus(); } };
+    if (open) { document.addEventListener('mousedown', handler); document.addEventListener('keydown', escape); }
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', escape); };
   }, [open]);
 
   return (
@@ -117,12 +110,12 @@ export default function AdminNotifications() {
         ref={btnRef}
         onClick={() => setOpen(o => !o)}
         className="admin-notification-button relative flex items-center justify-center w-9 h-9 rounded-xl transition text-slate-400 hover:text-white flex-shrink-0"
-        title="Subtitle Notifications"
+        title="Subtitle Notifications" aria-label={`Subtitle notifications, ${unread.length} unread`} aria-expanded={open}
       >
         <Bell className="w-4 h-4" />
-        {alerts.length > 0 && (
+        {unread.length > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-[9px] font-black text-white flex items-center justify-center leading-none shadow-lg">
-            {alerts.length > 99 ? '99+' : alerts.length}
+            {unread.length > 99 ? '99+' : unread.length}
           </span>
         )}
       </button>
@@ -131,7 +124,7 @@ export default function AdminNotifications() {
       {open && mounted && createPortal(
         <div
           ref={panelRef}
-          className="admin-notification-panel fixed z-[9999] w-[340px] max-h-[520px] backdrop-blur-xl border border-white/[0.09] rounded-[20px] flex flex-col overflow-hidden"
+          className="admin-notification-panel fixed z-[9999] w-[340px] max-w-[calc(100vw-24px)] max-h-[calc(100dvh-110px)] backdrop-blur-xl border border-white/[0.09] rounded-[20px] flex flex-col overflow-hidden"
           style={{
             top: coords.top,
             left: coords.left,
@@ -162,6 +155,7 @@ export default function AdminNotifications() {
               </button>
               <button
                 onClick={() => setOpen(false)}
+                aria-label="Close notifications"
                 className="p-1.5 rounded-lg hover:bg-white/[0.05] border border-transparent hover:border-white/5 text-slate-400 hover:text-white transition"
               >
                 <X className="w-3.5 h-3.5" />
@@ -169,6 +163,11 @@ export default function AdminNotifications() {
             </div>
           </div>
 
+          <button type="button" className="p-3 text-xs text-violet-400" onClick={() => {
+            const ids = alerts.map(alert => alert.id); setReadIds(ids);
+            try { sessionStorage.setItem('admin-alerts-read', JSON.stringify(ids)); } catch { /* Session-only state remains available. */ }
+          }}>Mark all as read on this device</button>
+          {error && <p role="alert" className="p-4 text-sm text-amber-400">{error}</p>}
           {/* List */}
           <div className="overflow-y-auto flex-grow">
             {loading && alerts.length === 0 ? (
@@ -179,7 +178,7 @@ export default function AdminNotifications() {
             ) : alerts.length === 0 ? (
               <div className="py-12 flex flex-col items-center gap-3">
                 <span className="text-3xl">✅</span>
-                <p className="text-xs text-slate-400 font-bold">All episodes have subtitles!</p>
+                <p className="text-xs text-slate-400 font-bold">{error ? 'Unable to check subtitle coverage.' : 'No missing subtitles in the checked episodes.'}</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">

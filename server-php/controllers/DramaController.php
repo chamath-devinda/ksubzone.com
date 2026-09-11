@@ -349,7 +349,7 @@ class DramaController {
             'sort' => $sortOptions,
             'limit' => $limit,
             'skip' => $skip,
-            'excludeFields' => MediaPayload::detailOnlyFields()
+            'fields' => MediaPayload::cardProjectionFields(false)
         ]);
 
         self::appendSubtitleSummariesToDramas($dramas);
@@ -391,27 +391,18 @@ class DramaController {
         $cacheKey = "drama_detail_" . $drama['_id'];
         $cached = \Utils\Cache::get($cacheKey);
         if ($cached !== false) {
-            // Background view increment — only count unique visitors once per day
-            try {
-                if (\Utils\VisitorGuard::shouldCount((string)$drama['_id'])) {
-                    $views = ($drama['viewCount'] ?? 0) + 1;
-                    $db->updateOne('dramas', ['_id' => $drama['_id']], ['viewCount' => $views]);
-                }
-            } catch (\Exception $e) {
-                // Ignore view count write-lock errors to keep page load stable
-            }
-
             header('Content-Type: application/json');
             echo json_encode($cached);
             return;
         }
 
-        // Increment views — only count unique visitors once per day
+        // Increment views — only count unique visitors once per day (atomic counter)
         try {
             if (\Utils\VisitorGuard::shouldCount((string)$drama['_id'])) {
-                $views = ($drama['viewCount'] ?? 0) + 1;
-                $db->updateOne('dramas', ['_id' => $drama['_id']], ['viewCount' => $views]);
-                $drama['viewCount'] = $views;
+                $nextViews = $db->incrementJsonCounter('dramas', $drama['_id'], 'viewCount');
+                if ($nextViews !== null) {
+                    $drama['viewCount'] = $nextViews;
+                }
             }
         } catch (\Exception $e) {
             // Ignore view count write-lock errors to keep page load stable
@@ -556,6 +547,7 @@ class DramaController {
 
     public static function createDrama() {
         $data = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($data)) return;
         if (empty($data['title'])) {
             http_response_code(400);
             echo json_encode(['message' => 'Drama Title is required']);
@@ -603,6 +595,7 @@ class DramaController {
 
     public static function updateDrama($id) {
         $updates = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($updates)) return;
         $db = Database::getInstance();
 
         // Preserve the exact title sent by the admin form. SEO generation is
@@ -809,6 +802,7 @@ class DramaController {
 
     public static function addEpisode() {
         $data = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($data)) return;
         $dramaId = $data['dramaId'] ?? null;
         $seasonId = $data['seasonId'] ?? null;
         $episodeNumber = $data['episodeNumber'] ?? null;
@@ -879,6 +873,7 @@ class DramaController {
 
     public static function editEpisode($id) {
         $updates = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($updates)) return;
         $db = Database::getInstance();
 
         $episode = $db->findOne('episodes', ['_id' => $id]);
@@ -1145,8 +1140,10 @@ class DramaController {
         $db = Database::getInstance();
         $dramaIds = array_map(function($d) { return $d['_id']; }, $dramas);
         
-        // 1. Get all episodes for all these dramas in a single query
-        $episodes = $db->find('episodes', ['dramaId' => ['$in' => $dramaIds]]);
+        // 1. Get all episodes for all these dramas in a single query with minimal projection
+        $episodes = $db->find('episodes', ['dramaId' => ['$in' => $dramaIds]], [
+            'fields' => ['dramaId', 'seasonId', 'episodeNumber']
+        ]);
         $episodesByDrama = [];
         $episodeIds = [];
         foreach ($episodes as $ep) {
@@ -1154,17 +1151,21 @@ class DramaController {
             $episodeIds[] = $ep['_id'];
         }
 
-        // Get all seasons for these dramas
-        $seasons = $db->find('seasons', ['dramaId' => ['$in' => $dramaIds]]);
+        // Get all seasons for these dramas with minimal projection
+        $seasons = $db->find('seasons', ['dramaId' => ['$in' => $dramaIds]], [
+            'fields' => ['dramaId', 'seasonNumber']
+        ]);
         $seasonsByDrama = [];
         foreach ($seasons as $s) {
             $seasonsByDrama[$s['dramaId']][] = $s;
         }
         
-        // 2. Get all approved subtitles for all these dramas in a single query
+        // 2. Get all approved subtitles for all these dramas in a single query with minimal projection
         $allSubtitles = $db->find('subtitles', [
             'mediaId' => ['$in' => array_merge($dramaIds, $episodeIds)],
             'approvalStatus' => 'Approved'
+        ], [
+            'fields' => ['mediaId', 'language', 'seasonStatus', 'approvalStatus', 'uploaderRole', 'uploader']
         ]);
         
         // Group subtitles by mediaId
@@ -1173,8 +1174,12 @@ class DramaController {
             $subtitlesByMedia[$sub['mediaId']][] = $sub;
         }
         
-        // Find latest 5 published dramas
-        $latestDramas = $db->find('dramas', ['status' => 'Published'], ['sort' => ['createdAt' => -1], 'limit' => 5]);
+        // Find latest 5 published dramas with minimal projection
+        $latestDramas = $db->find('dramas', ['status' => 'Published'], [
+            'sort' => ['createdAt' => -1],
+            'limit' => 5,
+            'fields' => ['slug', 'status']
+        ]);
         $latestIds = array_map(function($ld) { return (string)$ld['_id']; }, $latestDramas);
         
         // 3. For each drama, compute the summary using the pre-fetched data

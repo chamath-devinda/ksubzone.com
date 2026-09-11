@@ -8,7 +8,7 @@ use Middleware\AuthMiddleware;
 
 class AuthController {
     private static function generateToken($id, $role = 'user') {
-        $secret = $_ENV['JWT_SECRET'] ?? 'ksubzone_secret_key_2026';
+        $secret = JWT::secret();
         return JWT::sign(['id' => $id, 'role' => $role], $secret);
     }
 

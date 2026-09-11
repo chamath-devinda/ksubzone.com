@@ -66,6 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Reject cross-origin writes before authentication or side effects.
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD', 'OPTIONS'], true) && $origin !== '' && !in_array($origin, $allowedOrigins, true)) {
+    http_response_code(403); header('Content-Type: application/json');
+    echo json_encode(['message' => 'Request origin is not allowed.']); exit;
+}
 // Helmet-like security headers stack
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: SAMEORIGIN");
@@ -76,35 +81,53 @@ header("Referrer-Policy: no-referrer-when-downgrade");
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Legacy diagnostic endpoints are disabled in the request router. Operational
+// logs and connection details must remain server-side, even for administrators.
+if (in_array($uri, ['/api/clear-opcache-xyz', '/api/clear-cache-xyz', '/api/stats-info', '/api/check-postgres-xyz'], true)) {
+    http_response_code(404);
+    header('Content-Type: application/json');
+    echo json_encode(['message' => 'API route not found']);
+    exit;
+}
+
 // Public read endpoints are identical for every visitor and are safe to cache
 // at the CDN. Private/write endpoints remain strictly uncached.
 if (strpos($uri, '/api/') === 0) {
     $publicCacheSeconds = 0;
     if ($method === 'GET') {
         if ($uri === '/api/site-content') {
-            $publicCacheSeconds = 300;
+            $publicCacheSeconds = 1800; // 30 minutes
         } elseif ($uri === '/api/media/home') {
-            $publicCacheSeconds = 300;
+            $publicCacheSeconds = 1800; // 30 minutes
+        } elseif ($uri === '/api/media/sitemap-catalog') {
+            $publicCacheSeconds = 3600; // 1 hour
         } elseif ($uri === '/api/subtitles/recent') {
-            $publicCacheSeconds = 120;
+            $publicCacheSeconds = 300; // 5 minutes
+        } elseif (preg_match('#^/api/subtitles/media/[a-f0-9,]+$#', $uri)) {
+            $publicCacheSeconds = 1800; // 30 minutes
+        } elseif ($uri === '/api/media/movies' || $uri === '/api/media/dramas') {
+            $publicCacheSeconds = 1800; // 30 minutes
+        } elseif (preg_match('#^/api/media/movies/[^/]+$#', $uri) || preg_match('#^/api/media/dramas/[^/]+$#', $uri)) {
+            $publicCacheSeconds = 3600; // 1 hour
+        } elseif ($uri === '/api/articles') {
+            $publicCacheSeconds = 21600; // 6 hours
+        } elseif (preg_match('#^/api/articles/[^/]+$#', $uri)) {
+            $publicCacheSeconds = 21600; // 6 hours
         } elseif (in_array($uri, [
             '/api/media/genres',
             '/api/media/recommendations',
-            '/api/media/search-suggestions',
-            '/api/media/movies',
-            '/api/media/dramas',
-            '/api/articles'
+            '/api/media/search-suggestions'
         ], true)) {
-            $publicCacheSeconds = 300;
+            $publicCacheSeconds = ($uri === '/api/media/genres') ? 21600 : (($uri === '/api/media/recommendations') ? 3600 : 600);
         }
     }
 
     if ($publicCacheSeconds > 0) {
-        header("Cache-Control: public, max-age=30, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
+        header("Cache-Control: public, max-age=60, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
         header("CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
         header("Vercel-CDN-Cache-Control: public, s-maxage={$publicCacheSeconds}, stale-while-revalidate=86400");
     } else {
-        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0");
         header("Cache-Control: post-check=0, pre-check=0", false);
         header("Pragma: no-cache");
     }
@@ -281,15 +304,7 @@ $routes = [
             ]
         ]);
     }],
-    ['GET', '/api/debug-log.php', ['Middleware\AuthMiddleware::protectAdmin', function() {
-        require_once __DIR__ . '/debug-log.php';
-    }]],
-    ['GET', '/api/reveal-db-secret-x7v9w2', ['Middleware\AuthMiddleware::protectAdmin', function() {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'databaseUrl' => $_ENV['DATABASE_URL'] ?? getenv('DATABASE_URL') ?: 'Not set'
-        ]);
-    }]],
+    // Diagnostic and secret-reveal routes are intentionally not exposed by the API.
     ['GET', '/api/clear-opcache-xyz', ['Middleware\AuthMiddleware::protectAdmin', function() {
         header('Content-Type: text/plain');
         if (function_exists('opcache_reset')) {
@@ -310,27 +325,6 @@ $routes = [
         } catch (\Exception $e) {
             echo "Error flushing cache: " . $e->getMessage();
         }
-    }]],
-    ['GET', '/api/logs-xyz', ['Middleware\AuthMiddleware::protectAdmin', function() {
-        header('Content-Type: text/plain');
-        $logPaths = [
-            dirname(__FILE__) . '/error_log',
-            dirname(dirname(__FILE__)) . '/error_log',
-            dirname(dirname(__FILE__)) . '/api/error_log',
-            dirname(__FILE__) . '/../error_log',
-            dirname(__FILE__) . '/import_error.log',
-            dirname(__FILE__) . '/../import_error.log',
-        ];
-        foreach ($logPaths as $path) {
-            if (file_exists($path)) {
-                echo "=== LOG FILE: " . basename(dirname($path)) . "/" . basename($path) . " ===\n";
-                $lines = file($path);
-                $lastLines = array_slice($lines, -150);
-                echo implode("", $lastLines);
-                echo "\n\n";
-            }
-        }
-        echo "=== END OF LOGS ===\n";
     }]],
     ['GET', '/api/stats-info', ['Middleware\AuthMiddleware::protectAdmin', function() {
         header('Content-Type: text/plain');
@@ -505,6 +499,7 @@ $routes = [
     ['GET', '/api/media/search-suggestions', 'Controllers\MovieController::getSearchSuggestions'],
     ['GET', '/api/media/genres', 'Controllers\GenreController::getAllGenres'],
     ['GET', '/api/media/recommendations', 'Controllers\MovieController::getRecommendations'],
+    ['GET', '/api/media/sitemap-catalog', 'Controllers\MovieController::getSitemapCatalog'],
     ['GET', '/api/media/movies', 'Controllers\MovieController::getAllMovies'],
     ['GET', '/api/media/movies/([^/]+)', 'Controllers\MovieController::getMovieBySlug'],
     ['GET', '/api/media/dramas', 'Controllers\DramaController::getAllDramas'],
@@ -531,8 +526,9 @@ $routes = [
     ['GET', '/api/subtitles/recent', 'Controllers\SubtitleController::getRecentApprovedSubtitles'],
     ['GET', '/api/subtitles/media/([a-f0-9,]+)', 'Controllers\SubtitleController::getSubtitlesForMedia'],
     ['POST', '/api/subtitles/([a-f0-9]+)/rate', ['Middleware\AuthMiddleware::protectUser', 'Controllers\SubtitleController::rateSubtitle']],
-    ['POST', '/api/subtitles/([a-f0-9]+)/download', 'Controllers\SubtitleController::trackDownload'],
-    ['GET', '/api/subtitles/([a-f0-9]+)/download', 'Controllers\SubtitleController::downloadSubtitleFile'],
+    ['POST', '/api/subtitles/([a-f0-9]+)/download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::trackDownload']],
+    ['POST', '/api/subtitles/([a-f0-9]+)/track-download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::trackDownload']],
+    ['GET', '/api/subtitles/([a-f0-9]+)/download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::downloadSubtitleFile']],
     ['GET', '/api/subtitles/translator/([a-f0-9]+)', 'Controllers\SubtitleController::getUploaderHistory'],
 
     // Analytics Search Logging
@@ -557,6 +553,7 @@ $routes = [
     ['PUT', '/api/admin/profile', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AuthController::updateAdminProfile']],
     ['POST', '/api/admin/profile/avatar', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AuthController::uploadAdminAvatar']],
 
+    ['GET', '/api/admin/search', ['Middleware\AuthMiddleware::protectAdmin', 'Controllers\AdminSearchController::search']],
     // Admin Dashboard
     ['GET', '/api/admin/dashboard', [
         'Middleware\AuthMiddleware::protectAdmin',
@@ -578,7 +575,7 @@ $routes = [
                 echo json_encode(['message' => 'Application cache cleared successfully.']);
             } catch (\Throwable $e) {
                 http_response_code(500);
-                echo json_encode(['message' => 'Failed to clear application cache: ' . $e->getMessage()]);
+                echo json_encode(['message' => 'Failed to clear application cache. Please retry.']);
             }
         }
     ]],
@@ -619,7 +616,7 @@ $routes = [
     ['GET', '/api/admin/movies', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
-        'Controllers\MovieController::getAllMovies'
+        'Controllers\MovieController::getAdminMovies'
     ]],
     ['POST', '/api/admin/movies', [
         'Middleware\AuthMiddleware::protectAdmin',
@@ -901,6 +898,9 @@ $routes = [
                 echo json_encode(['message' => 'Key and Value are required']);
                 return;
             }
+            if (!is_string($key) || strlen($key) > 100 || ($key === 'ADSTERRA_API_KEY' && (!is_string($value) || !preg_match('/^[A-Za-z0-9_\-.:=+\/]{8,512}$/D', $value)))) {
+                http_response_code(422); echo json_encode(['message' => 'Invalid setting value.']); return;
+            }
             $db = \Config\Database::getInstance();
             $existing = $db->findOne('settings', ['key' => $key]);
             if ($existing) {
@@ -1029,8 +1029,8 @@ $routes = [
                 return;
             }
             
-            $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
-            $skip = isset($_GET['skip']) ? intval($_GET['skip']) : 0;
+            $limit = max(1, min(100, (int)($_GET['limit'] ?? 50)));
+            $skip = max(0, (int)($_GET['skip'] ?? 0));
             
             $docs = $db->find($collectionName, [], [
                 'limit' => $limit,
@@ -1046,7 +1046,7 @@ $routes = [
                 'total' => $total,
                 'limit' => $limit,
                 'skip' => $skip,
-                'documents' => $docs
+                'documents' => array_map(['\Utils\AdminValidation', 'redact'], $docs)
             ]);
         }
     ]],
@@ -1054,6 +1054,10 @@ $routes = [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_settings'); },
         function($collectionName, $id) {
+            $role = \Middleware\AuthMiddleware::$currentAdmin['role'] ?? [];
+            if (in_array($collectionName, ['users', 'admins', 'roles', 'permissions', 'settings'], true) && (!is_array($role) || ($role['name'] ?? '') !== 'SuperAdmin')) {
+                http_response_code(403); echo json_encode(['message' => 'Only SuperAdmin can modify security collections.']); return;
+            }
             $body = json_decode(file_get_contents('php://input'), true) ?: [];
             $db = \Config\Database::getInstance();
             
@@ -1148,8 +1152,7 @@ foreach ($routes as $route) {
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             header('Content-Type: application/json');
             echo json_encode([
-                'message' => 'Server Error',
-                'error' => $e->getMessage()
+                'message' => 'The request could not be completed. Please retry or contact an administrator.'
             ]);
         }
         exit;
@@ -1161,3 +1164,5 @@ if (!$matched) {
     header('Content-Type: application/json');
     echo json_encode(['message' => 'API route not found']);
 }
+
+

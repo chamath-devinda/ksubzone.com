@@ -1,5 +1,6 @@
 'use client';
 
+import { parseSRT, decodeSubtitle } from '@/utils/srt.mjs';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
@@ -35,42 +36,6 @@ const msToTime = (ms) => {
 
   const pad = (n, l = 2) => String(n).padStart(l, '0');
   return `${pad(hrs)}:${pad(mins)}:${pad(secs)},${pad(mss, 3)}`;
-};
-
-// Robust SRT Parser
-const parseSRT = (text) => {
-  const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const blocks = normalizedText.split('\n\n');
-  const subtitles = [];
-  let sequence = 1;
-
-  for (let block of blocks) {
-    block = block.trim();
-    if (!block) continue;
-    
-    const lines = block.split('\n');
-    if (lines.length >= 2) {
-      let timeIndex = 1;
-      if (!lines[timeIndex]?.includes('-->') && lines[0]?.includes('-->')) {
-        timeIndex = 0;
-      }
-
-      if (lines[timeIndex]?.includes('-->')) {
-        const times = lines[timeIndex].split('-->').map(t => t.trim());
-        const start = times[0];
-        const end = times[1];
-        const textLines = timeIndex === 1 ? lines.slice(2) : lines.slice(1);
-        const subtitleText = textLines.join('\n').trim();
-        subtitles.push({
-          id: sequence++,
-          start,
-          end,
-          text: subtitleText
-        });
-      }
-    }
-  }
-  return subtitles;
 };
 
 // SRT Stringifier
@@ -246,8 +211,8 @@ export default function SrtCleaner() {
     const newFiles = [];
     for (let i = 0; i < selectedFiles.length; i++) {
       const f = selectedFiles[i];
-      if (!f.name.endsWith('.srt')) {
-        toast.error(`${f.name} is not supported. Only .srt files are currently supported.`);
+      if (!f.name.toLowerCase().endsWith('.srt') || f.size > 10 * 1024 * 1024) {
+        toast.error(`${f.name} is not supported. Use an .srt file no larger than 10 MB.`);
         continue;
       }
       const fileId = Math.random().toString(36).substring(2, 9);
@@ -324,7 +289,7 @@ export default function SrtCleaner() {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const rawText = e.target.result;
+        const rawText = decodeSubtitle(e.target.result);
         let subs = parseSRT(rawText);
 
         // 1. Time Shift
@@ -721,7 +686,8 @@ export default function SrtCleaner() {
         } : f));
       }
     };
-    reader.readAsText(fileObj.file);
+    reader.onerror = () => setFiles(prev => prev.map(f => f.id === id ? { ...f, error: "The file could not be read.", isCleaning: false } : f));
+    reader.readAsArrayBuffer(fileObj.file);
   };
 
   const handleCleanSRT = () => {

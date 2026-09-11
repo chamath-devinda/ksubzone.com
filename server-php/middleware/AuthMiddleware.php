@@ -53,7 +53,7 @@ class AuthMiddleware {
             exit;
         }
 
-        $secret = $_ENV['JWT_SECRET'] ?? 'ksubzone_secret_key_2026';
+        $secret = JWT::secret();
         $decoded = JWT::verify($token, $secret);
         if (!$decoded) {
             http_response_code(401);
@@ -91,7 +91,7 @@ class AuthMiddleware {
             return null;
         }
 
-        $secret = $_ENV['JWT_SECRET'] ?? 'ksubzone_secret_key_2026';
+        $secret = JWT::secret();
         $decoded = JWT::verify($token, $secret);
         if (!$decoded || ($decoded['role'] ?? '') === 'admin' || empty($decoded['id'])) {
             return null;
@@ -122,7 +122,7 @@ class AuthMiddleware {
             exit;
         }
 
-        $secret = $_ENV['JWT_SECRET'] ?? 'ksubzone_secret_key_2026';
+        $secret = JWT::secret();
         $decoded = JWT::verify($token, $secret);
         if (!$decoded || ($decoded['role'] ?? '') !== 'admin') {
             http_response_code(403);
@@ -138,11 +138,17 @@ class AuthMiddleware {
             exit;
         }
 
+        if (($admin['status'] ?? '') === 'suspended') {
+            http_response_code(403);
+            echo json_encode(['message' => 'Your account is suspended']);
+            exit;
+        }
+
         // Populate role and permissions
         if (isset($admin['role'])) {
             $roleId = is_array($admin['role']) ? ($admin['role']['_id'] ?? '') : $admin['role'];
             $roleCacheKey = 'admin_role_v1_' . (string)$roleId;
-            $roleDoc = $roleId !== '' ? \Utils\Cache::get($roleCacheKey) : false;
+            $roleDoc = false; // Resolve current permissions so revocations apply immediately.
             if ($roleDoc === false && $roleId !== '') {
                 $roleDoc = $db->findOne('roles', ['_id' => $roleId]);
             }
@@ -183,7 +189,7 @@ class AuthMiddleware {
             return false;
         }
 
-        $secret = $_ENV['JWT_SECRET'] ?? 'ksubzone_secret_key_2026';
+        $secret = JWT::secret();
         $decoded = \Utils\JWT::verify($token, $secret);
         if (!$decoded || ($decoded['role'] ?? '') !== 'admin') {
             return false;
@@ -203,7 +209,7 @@ class AuthMiddleware {
         }
 
         $role = self::$currentAdmin['role'] ?? null;
-        $roleName = $role['name'] ?? '';
+        $roleName = is_array($role) ? ($role['name'] ?? '') : '';
 
         if ($roleName === 'SuperAdmin') {
             return true;

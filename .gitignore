@@ -54,3 +54,6 @@ backend-update.zip
 
 # Runtime temporary files (deduplication, DB query caches)
 server-php/temp/
+
+# Isolated admin QA builds
+client/.next-admin-qa/

@@ -6,6 +6,21 @@ use Utils\Slug;
 use Utils\MediaPayload;
 
 class MovieController {
+    public static function getAdminMovies() {
+        $db = Database::getInstance();
+        $limit = max(1, min((int)($_GET['limit'] ?? 25), 100));
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $filter = [];
+        $status = $_GET['status'] ?? 'All';
+        if ($status !== 'All') $filter['status'] = $status;
+        $query = trim((string)($_GET['search'] ?? ''));
+        if ($query !== '') $filter['title'] = ['$regex' => preg_quote(substr($query, 0, 100), '/'), '$options' => 'i'];
+        $total = $db->count('movies', $filter);
+        $movies = $db->find('movies', $filter, ['sort' => ['createdAt' => -1], 'limit' => $limit, 'skip' => ($page - 1) * $limit]);
+        self::appendMetadataToMovies($movies);
+        echo json_encode(['movies' => $movies, 'total' => $total, 'page' => $page, 'totalPages' => max(1, (int)ceil($total / $limit))]);
+    }
+
     public static function getSearchSuggestions() {
         $query = trim($_GET['q'] ?? '');
         $limit = max(1, min((int)($_GET['limit'] ?? 6), 10));
@@ -181,7 +196,7 @@ class MovieController {
             'sort' => $sortOptions,
             'limit' => $limit,
             'skip' => $skip,
-            'excludeFields' => MediaPayload::detailOnlyFields()
+            'fields' => MediaPayload::cardProjectionFields(false)
         ]);
 
         self::appendMetadataToMovies($movies);
@@ -213,41 +228,41 @@ class MovieController {
 
         $db = Database::getInstance();
         $statusFilter = ['status' => 'Published'];
-        $heroExcludes = MediaPayload::detailOnlyFields(true);
-        $cardExcludes = MediaPayload::detailOnlyFields();
+        $heroFields = MediaPayload::cardProjectionFields(true);
+        $cardFields = MediaPayload::cardProjectionFields(false);
 
         // Homepage sections have strict, intentionally small budgets. The
         // previous implementation loaded the whole drama catalog (up to 200)
         // just to sort it again in PHP.
-        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 10, 'excludeFields' => $heroExcludes]);
+        $latestMovies = $db->find('movies', $statusFilter, ['sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1], 'limit' => 10, 'fields' => $heroFields]);
         
         $latestDramas = $db->find('dramas', $statusFilter, [
             'sort' => ['contentUpdatedAt' => -1, 'createdAt' => -1],
             'limit' => 10,
-            'excludeFields' => $heroExcludes
+            'fields' => $heroFields
         ]);
         
-        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
+        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'fields' => $cardFields]);
         
-        // 4. Historical dramas (status: Published, isHistorical: true, sort: imdbRating DESC, limit 12)
-        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
+        // 4. Historical dramas (status: Published, isHistorical: true, sort: imdbRating DESC, limit 6)
+        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'fields' => $cardFields]);
         
-        // 5. Trending movies (status: Published, sort: viewCount DESC, limit 12)
-        $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'excludeFields' => $cardExcludes]);
+        // 5. Trending movies (status: Published, sort: viewCount DESC, limit 10)
+        $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
         
-        // 6. Trending dramas (status: Published, sort: viewCount DESC, limit 12)
-        $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'excludeFields' => $cardExcludes]);
+        // 6. Trending dramas (status: Published, sort: viewCount DESC, limit 10)
+        $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
         
         // Popular and trending use the same view-count ranking. Reuse these
         // records instead of issuing two duplicate remote database queries.
         $popularMovies = $trendingMovies;
         $popularDramas = $trendingDramas;
 
-        // 9. Upcoming movies (status: Upcoming, sort: releaseDate ASC, limit 12)
-        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
+        // 9. Upcoming movies (status: Upcoming, sort: releaseDate ASC, limit 6)
+        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 6, 'fields' => $cardFields]);
 
-        // 10. Upcoming dramas (status: Upcoming, sort: releaseDate ASC, limit 12)
-        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 6, 'excludeFields' => $cardExcludes]);
+        // 10. Upcoming dramas (status: Upcoming, sort: releaseDate ASC, limit 6)
+        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 6, 'fields' => $cardFields]);
 
         // Batch append subtitle summaries to all fetched drama lists
         $allDramas = [];
@@ -287,8 +302,8 @@ class MovieController {
             return $bTime <=> $aTime;
         });
 
-        // Slice to the requested limit of 12 for the homepage updates
-        $latestDramas = array_slice($latestDramas, 0, 12);
+        // Slice to the requested limit of 10 for the homepage updates
+        $latestDramas = array_slice($latestDramas, 0, 10);
         foreach ($historicalDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
@@ -417,27 +432,18 @@ class MovieController {
         $cacheKey = "movie_detail_" . $movie['_id'];
         $cached = \Utils\Cache::get($cacheKey);
         if ($cached !== false) {
-            // Background view increment — only count unique visitors once per day
-            try {
-                if (\Utils\VisitorGuard::shouldCount((string)$movie['_id'])) {
-                    $views = ($movie['viewCount'] ?? 0) + 1;
-                    $db->updateOne('movies', ['_id' => $movie['_id']], ['viewCount' => $views]);
-                }
-            } catch (\Exception $e) {
-                // Ignore view count write-lock errors to keep page load stable
-            }
-
             header('Content-Type: application/json');
             echo json_encode($cached);
             return;
         }
 
-        // Increment views — only count unique visitors once per day
+        // Increment views — only count unique visitors once per day (atomic counter)
         try {
             if (\Utils\VisitorGuard::shouldCount((string)$movie['_id'])) {
-                $views = ($movie['viewCount'] ?? 0) + 1;
-                $db->updateOne('movies', ['_id' => $movie['_id']], ['viewCount' => $views]);
-                $movie['viewCount'] = $views;
+                $nextViews = $db->incrementJsonCounter('movies', $movie['_id'], 'viewCount');
+                if ($nextViews !== null) {
+                    $movie['viewCount'] = $nextViews;
+                }
             }
         } catch (\Exception $e) {
             // Ignore view count write-lock errors to keep page load stable
@@ -482,6 +488,7 @@ class MovieController {
 
     public static function createMovie() {
         $data = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($data)) return;
         if (empty($data['title'])) {
             http_response_code(400);
             echo json_encode(['message' => 'Movie Title is required']);
@@ -523,6 +530,7 @@ class MovieController {
 
     public static function updateMovie($id) {
         $updates = json_decode(file_get_contents('php://input'), true) ?: [];
+        if (!\Utils\AdminValidation::accept($updates)) return;
         $db = Database::getInstance();
 
         $movie = $db->findOne('movies', ['_id' => $id]);
@@ -619,6 +627,8 @@ class MovieController {
         $subtitles = $db->find('subtitles', [
             'mediaId' => ['$in' => $movieIds],
             'approvalStatus' => 'Approved'
+        ], [
+            'fields' => ['mediaId', 'createdAt']
         ]);
         
         $subsCountByMediaId = [];
@@ -637,8 +647,12 @@ class MovieController {
              }
         }
         
-        // Find latest 5 published movies
-        $latestMovies = $db->find('movies', ['status' => 'Published'], ['sort' => ['createdAt' => -1], 'limit' => 5]);
+        // Find latest 5 published movies with minimal projection
+        $latestMovies = $db->find('movies', ['status' => 'Published'], [
+            'sort' => ['createdAt' => -1],
+            'limit' => 5,
+            'fields' => ['slug', 'status']
+        ]);
         $latestIds = array_map(function($lm) { return (string)$lm['_id']; }, $latestMovies);
         
         foreach ($movies as &$m) {
@@ -717,5 +731,55 @@ class MovieController {
 
         header('Content-Type: application/json');
         echo json_encode($recommendations);
+    }
+
+    public static function getSitemapCatalog() {
+        $cached = \Utils\Cache::get('sitemap_catalog_v1');
+        if ($cached !== false) {
+            header('Content-Type: application/json');
+            echo json_encode($cached);
+            return;
+        }
+
+        $db = Database::getInstance();
+        $statusFilter = ['status' => ['$in' => ['Published', 'Upcoming']]];
+        $fields = ['slug', 'title', 'contentUpdatedAt', 'status'];
+
+        $dramas = $db->find('dramas', $statusFilter, [
+            'sort' => ['createdAt' => -1],
+            'limit' => 1000,
+            'fields' => $fields
+        ]);
+
+        $movies = $db->find('movies', $statusFilter, [
+            'sort' => ['createdAt' => -1],
+            'limit' => 1000,
+            'fields' => $fields
+        ]);
+
+        $payload = [
+            'dramas' => array_map(function($d) {
+                return [
+                    'slug' => $d['slug'] ?? '',
+                    'title' => $d['title'] ?? '',
+                    'contentUpdatedAt' => $d['contentUpdatedAt'] ?? $d['createdAt'] ?? null,
+                    'createdAt' => $d['createdAt'] ?? null,
+                    'updatedAt' => $d['updatedAt'] ?? null
+                ];
+            }, $dramas),
+            'movies' => array_map(function($m) {
+                return [
+                    'slug' => $m['slug'] ?? '',
+                    'title' => $m['title'] ?? '',
+                    'contentUpdatedAt' => $m['contentUpdatedAt'] ?? $m['createdAt'] ?? null,
+                    'createdAt' => $m['createdAt'] ?? null,
+                    'updatedAt' => $m['updatedAt'] ?? null
+                ];
+            }, $movies)
+        ];
+
+        \Utils\Cache::set('sitemap_catalog_v1', $payload, 3600);
+        header('Content-Type: application/json');
+        echo json_encode($payload);
     }
 }

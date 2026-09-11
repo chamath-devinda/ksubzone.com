@@ -24,6 +24,8 @@ export default function DataTable({
   const [sortDir, setSortDir] = useState(initialSortDir);
   const safeData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
+  useEffect(() => { setSearchTerm(new URLSearchParams(window.location.search).get('q') || ''); }, []);
+
   // 1. Local Search Filtering
   const filteredData = useMemo(() => {
     if (!searchTerm.trim() || !searchKey) return safeData;
@@ -85,6 +87,7 @@ export default function DataTable({
               <input
                 type="text"
                 placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -123,6 +126,9 @@ export default function DataTable({
                       <th
                         key={col.key}
                         className={`px-4 py-3.5 ${col.sortable ? 'cursor-pointer hover:text-[#B85ADB] select-none' : ''} ${col.headerAlign || ''}`}
+                        tabIndex={col.sortable ? 0 : undefined}
+                        aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                        onKeyDown={e => { if (col.sortable && ["Enter", " "].includes(e.key)) { e.preventDefault(); handleSort(col.key); } }}
                         onClick={() => col.sortable && handleSort(col.key)}
                       >
                         <div className={`flex items-center gap-1.5 ${col.headerAlign === 'text-right' ? 'justify-end' : ''}`}>

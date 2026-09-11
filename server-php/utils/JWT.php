@@ -2,6 +2,12 @@
 namespace Utils;
 
 class JWT {
+    public static function secret() {
+        $secret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
+        if (strlen($secret) < 32) throw new \RuntimeException('Authentication is not configured.');
+        return $secret;
+    }
+
     private static function base64UrlEncode($data) {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
@@ -30,6 +36,7 @@ class JWT {
     }
 
     public static function verify($token, $secret) {
+        if (!is_string($token) || strlen($token) > 8192) return false;
         $parts = explode('.', $token);
         if (count($parts) !== 3) {
             return false;
@@ -45,11 +52,12 @@ class JWT {
         }
 
         $payload = json_decode(self::base64UrlDecode($base64UrlPayload), true);
-        if ($payload === null) {
+        $header = json_decode(self::base64UrlDecode($base64UrlHeader), true);
+        if (!is_array($payload) || ($header['alg'] ?? '') !== 'HS256' || empty($payload['id']) || !isset($payload['exp']) || !is_numeric($payload['exp'])) {
             return false;
         }
 
-        if (isset($payload['exp']) && $payload['exp'] < time()) {
+        if (isset($payload['exp']) && $payload['exp'] <= time()) {
             return false; // Token expired
         }
 

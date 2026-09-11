@@ -194,7 +194,7 @@ class TmdbController {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $fullUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
@@ -244,11 +244,14 @@ class TmdbController {
         if ($setting && !empty($setting['value'])) {
             return trim($setting['value']);
         }
-        return '';
+        throw new \RuntimeException('TMDB integration requires a configured API key.');
     }
 
     public static function searchTmdb() {
-        $query = $_GET['query'] ?? '';
+        $query = trim((string)($_GET['query'] ?? ''));
+        if (!in_array($_GET['type'] ?? 'movie', ['movie', 'tv'], true) || strlen($query) > 200) {
+            http_response_code(422); echo json_encode(['message' => 'Choose movie or TV and a query up to 200 characters.']); return;
+        }
         $type = $_GET['type'] ?? 'movie'; // movie or tv
 
         if (empty($query)) {
@@ -271,7 +274,7 @@ class TmdbController {
                 ]);
             } catch (\Throwable $e) {
                 http_response_code(502);
-                echo json_encode(['message' => $e->getMessage()]);
+                echo json_encode(['message' => 'TMDB is unavailable. Check configuration and retry.']);
                 return;
             }
 
@@ -333,7 +336,7 @@ class TmdbController {
             return;
         }
 
-        if (!is_numeric($id) || (int)$id <= 0) {
+        if (!preg_match('/^[1-9][0-9]{0,9}$/D', (string)$id)) {
             http_response_code(400);
             echo json_encode(['message' => 'TMDB ID is required']);
             return;
@@ -352,7 +355,7 @@ class TmdbController {
             http_response_code(500);
             header('Content-Type: application/json');
             echo json_encode([
-                'message' => 'Import execution failed: ' . $e->getMessage()
+                'message' => 'TMDB import failed. Check configuration and retry.'
             ]);
         }
     }
@@ -984,7 +987,7 @@ class TmdbController {
             $res = self::httpGet($url, $params);
         } catch (\Throwable $e) {
             http_response_code(502);
-            echo json_encode(['message' => $e->getMessage()]);
+            echo json_encode(['message' => 'TMDB is unavailable. Check configuration and retry.']);
             return;
         }
         $results = $res['results'] ?? [];

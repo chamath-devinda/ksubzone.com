@@ -1,9 +1,10 @@
 'use client';
 
+import '@/features/admin/admin.css';
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
-import { tokenService } from '@/services/api/tokenService';
 
 import { ToastProvider } from '@/features/admin/components/Toast';
 import { AdminThemeProvider } from '@/features/admin/context/AdminThemeContext';
@@ -23,10 +24,9 @@ export default function ManagementLayout({ children }) {
   // Redirect only when we're sure there's no valid session
   useEffect(() => {
     if (!hasMounted || loading || isLoginPage) return;
-    const hasAdminToken = !!tokenService.getAdminToken();
-    const isAuthorized = admin || (user && user.hasDashboardAccess);
-    if (!isAuthorized && !hasAdminToken) {
-      router.push('/management/login');
+    const isAuthorized = !!admin;
+    if (!isAuthorized) {
+      router.replace('/management/login');
     }
   }, [hasMounted, loading, admin, user, isLoginPage, router]);
 
@@ -39,11 +39,11 @@ export default function ManagementLayout({ children }) {
     );
   }
 
-  const isAuthorized = admin || (user && user.hasDashboardAccess);
+  const isAuthorized = !!admin;
 
   // Show full-screen spinner if the page is a protected management page and we do not have an authorized session.
   // If we have a cached session (isAuthorized is true), we can render the dashboard immediately while the API validates in the background.
-  if (!isLoginPage && !isAuthorized) {
+  if (!isLoginPage && (loading || !isAuthorized)) {
     return (
       <div className="h-screen w-screen bg-luxury-950 flex items-center justify-center">
         <div className="w-8 h-8 border-[3px] border-brand-primary border-t-transparent rounded-full animate-spin" />
