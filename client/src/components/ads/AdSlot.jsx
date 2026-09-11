@@ -69,7 +69,9 @@ export default function AdSlot({ slotId, className = '' }) {
         setNearViewport(true);
         observer.disconnect();
       }
-    }, { rootMargin: '1000px 0px' });
+    // Start bidding shortly before the slot enters view. A 1000px margin
+    // made nearly every homepage ad eager on first paint.
+    }, { rootMargin: '300px 0px' });
     observer.observe(hostRef.current);
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);

@@ -113,28 +113,30 @@ export const adConfig = Object.freeze({
   },
   placements: {
     home_below_hero: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
-    home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
+    // Keep the first banner eager; all other units wait until the visitor is
+    // close enough to see them so third-party ad work cannot delay the hero.
+    home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     // Home side rails (multi-slot for higher viewability & earnings)
-    home_sidebar_left_1: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
+    home_sidebar_left_1: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_sidebar_left_2: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_sidebar_left_3: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
-    home_sidebar_right_1: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
+    home_sidebar_right_1: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_sidebar_right_2: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_sidebar_right_3: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
 
     // Single / Detail / Watch / Article side rails (multi-slot)
-    single_sidebar_left_1: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
+    single_sidebar_left_1: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     single_sidebar_left_2: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     single_sidebar_left_3: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
-    single_sidebar_right_1: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
+    single_sidebar_right_1: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     single_sidebar_right_2: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     single_sidebar_right_3: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
 
     // Legacy backwards-compatible aliases
-    home_sidebar_left: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
-    home_sidebar_right: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
-    single_sidebar_left: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
-    single_sidebar_right: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: false, mediaQuery: '(min-width: 1280px)' },
+    home_sidebar_left: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
+    home_sidebar_right: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
+    single_sidebar_left: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
+    single_sidebar_right: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_content_square: { pages: ['home'], format: 'square', provider: 'adsterra', lazy: true },
     home_content_native: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
     media_below_hero: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
