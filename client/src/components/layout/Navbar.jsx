@@ -188,9 +188,9 @@ export default function Navbar() {
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4 z-10 lg:flex-initial">
             <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 group" aria-label={brand.siteName || 'KSubZone'}>
               <img
-                src={resolveLogoUrl(brand.headerLogoUrl || brand.logoUrl) || "/logo-ksub.webp"}
+                src={resolveLogoUrl(brand.headerLogoUrl || brand.logoUrl) || "/logo-ksubzone.webp"}
                 alt={brand.siteName || 'KSubZone'}
-                className="h-8 sm:h-9 w-auto max-w-[130px] sm:max-w-[160px] object-contain transform group-hover:scale-105 transition-transform duration-300 flex-shrink-0"
+                className="h-8 sm:h-9 md:h-10 w-auto max-w-[170px] sm:max-w-[220px] object-contain transform group-hover:scale-105 transition-transform duration-300 flex-shrink-0"
               />
               <span className="sr-only">
                 {brand.logoText || brand.siteName || 'KSUBZONE'}
