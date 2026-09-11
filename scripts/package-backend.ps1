@@ -9,7 +9,9 @@ if (Test-Path $staging) {
 }
 New-Item -ItemType Directory -Path $staging | Out-Null
 
-Copy-Item "server-php/.env" -Destination $staging
+# The production environment file contains secrets and is intentionally not
+# packaged. Extract this archive over the existing backend so its .env and
+# uploads directory remain untouched.
 Copy-Item "server-php/.htaccess" -Destination $staging
 Copy-Item "server-php/index.php" -Destination $staging
 Copy-Item "server-php/bot-seo.php" -Destination $staging
