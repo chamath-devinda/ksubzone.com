@@ -97,6 +97,10 @@ export default function AdSlot({ slotId, className = '' }) {
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
       onUnavailable={(reason) => {
+        // Do not reserve a blank rectangle forever when the provider returns
+        // no fill, is blocked, or its zone is unavailable. A future route
+        // mount can retry the zone normally.
+        setFailedZone(zone.scriptUrl);
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
       }}
     />
