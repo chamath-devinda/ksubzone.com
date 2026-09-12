@@ -5,7 +5,7 @@ import { useAds } from './AdProvider';
 import AdFrame from './AdFrame';
 
 function buildDisplayDocument(zone) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${zone.width},initial-scale=1"><style>html,body{margin:0;padding:0;width:${zone.width}px;height:${zone.height}px;overflow:hidden;background:transparent;color-scheme:dark}</style></head><body><script>atOptions={'key':'${zone.key}','format':'iframe','height':${zone.height},'width':${zone.width},'params':{}};</script><script src="${zone.scriptUrl}"></script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${zone.width},initial-scale=1"><style>html,body{margin:0;padding:0;width:${zone.width}px;height:${zone.height}px;overflow:hidden;background:transparent;color-scheme:dark}</style></head><body><script type="text/javascript">var atOptions={'key':'${zone.key}','format':'iframe','height':${zone.height},'width':${zone.width},'params':{}};</script><script type="text/javascript" src="${zone.scriptUrl}"></script></body></html>`;
 }
 
 function buildNativeDocument(zone) {
@@ -28,7 +28,7 @@ export default function AdSlot({ slotId, className = '' }) {
   const { config, pageType, resolvePlacement, emitAdEvent } = useAds();
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
-  const [failedZone, setFailedZone] = useState(null);
+  const [slotFailed, setSlotFailed] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
   const [nearViewport, setNearViewport] = useState(false);
   const { matches: isDesktop, ready: viewportReady } = useMediaQuery('(min-width: 768px)');
@@ -45,6 +45,7 @@ export default function AdSlot({ slotId, className = '' }) {
 
   useEffect(() => {
     setAdLoaded(false);
+    setSlotFailed(false);
   }, [slotId, zoneName]);
 
   useEffect(() => {
@@ -69,8 +70,6 @@ export default function AdSlot({ slotId, className = '' }) {
         setNearViewport(true);
         observer.disconnect();
       }
-    // Generous 1200px preloading margin so ad bidding and creative delivery
-    // completes well before the visitor scrolls the slot into view.
     }, { rootMargin: '1200px 0px' });
     observer.observe(hostRef.current);
     return () => observer.disconnect();
@@ -78,8 +77,7 @@ export default function AdSlot({ slotId, className = '' }) {
   const source = useMemo(() => zone
     ? (isNativePlacement ? buildNativeDocument(zone) : buildDisplayDocument(zone))
     : '', [isNativePlacement, zone]);
-  const failed = Boolean(zone && failedZone === zone.scriptUrl);
-  const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed && !failed
+  const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed && !slotFailed
     && (!placement.lazy || nearViewport)
     && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled));
   const eventDetail = {
@@ -88,7 +86,7 @@ export default function AdSlot({ slotId, className = '' }) {
   };
   const renderedAd = canRender ? (
     <AdFrame
-      key={zone.scriptUrl}
+      key={`${slotId}:${zone.scriptUrl}`}
       title={isNativePlacement ? 'Native advertisement' : placement.format === 'sidebar' ? 'Sidebar advertisement' : 'Advertisement'}
       source={source}
       width={zone.width}
@@ -99,14 +97,14 @@ export default function AdSlot({ slotId, className = '' }) {
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
       onUnavailable={(reason) => {
+        setSlotFailed(true);
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
       }}
     />
   ) : null;
 
-  if (!viewportAllowed) return null;
+  if (!viewportAllowed || slotFailed) return null;
   if (!placement && !config.showDevelopmentPlaceholders) return null;
-
   if (selectedResponsiveFormatDisabled && !config.showDevelopmentPlaceholders) return null;
 
   const isNative = slotDefinition?.format === 'native';
@@ -116,13 +114,6 @@ export default function AdSlot({ slotId, className = '' }) {
 
   if (!renderedAd && !isDevPlaceholder) return null;
 
-  const reservationClass = isNative
-    ? 'min-h-[340px]'
-    : isSidebar
-      ? 'min-h-[610px]'
-    : isSquare
-      ? 'min-h-[270px]'
-      : 'min-h-[70px] md:min-h-[110px]';
   const placeholderClass = isNative
     ? 'min-h-[320px]'
     : isSidebar
@@ -131,17 +122,45 @@ export default function AdSlot({ slotId, className = '' }) {
       ? 'min-h-[250px]'
       : 'min-h-[50px] md:min-h-[90px]';
 
+  // While creative is loading in background, keep it in DOM off-screen
+  // so no empty box or advertisement label is shown until it succeeds.
+  if (!adLoaded && !isDevPlaceholder) {
+    return (
+      <div
+        ref={hostRef}
+        aria-hidden="true"
+        data-ad-slot={slotId}
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+      >
+        {renderedAd}
+      </div>
+    );
+  }
+
   return (
     <aside
       ref={hostRef}
       aria-label="Advertisement"
       data-ad-slot={slotId}
-      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.015] px-2 py-3 transition-all duration-300 ${reservationClass} ${className}`}
+      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.015] px-2 py-3 transition-all duration-300 ${className}`}
     >
       <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
-      {renderedAd || (
+      {renderedAd}
+      {isDevPlaceholder && (
         <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
-          {isDevPlaceholder ? `${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}` : null}
+          {`${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}`}
         </div>
       )}
     </aside>

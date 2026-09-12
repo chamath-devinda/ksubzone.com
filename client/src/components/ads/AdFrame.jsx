@@ -94,7 +94,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       timeout = setTimeout(() => {
         if (hasCreative(doc)) finish(true);
         else finish(false, 'empty_or_timeout');
-      }, 15000);
+      }, 8000);
       observer = new MutationObserver(inspect);
       observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
       doc.addEventListener('load', inspect, true);
@@ -104,7 +104,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     timeout = setTimeout(() => {
       if (hasCreative(frame.contentDocument)) finish(true);
       else finish(false, 'network_timeout');
-    }, 15000);
+    }, 8000);
     frame.addEventListener('load', handleLoad);
     if (frame.contentDocument?.readyState === 'complete') handleLoad();
     return () => { finished = true; cleanup(); };
