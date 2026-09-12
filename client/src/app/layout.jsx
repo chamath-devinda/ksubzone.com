@@ -78,10 +78,8 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en-LK" className={`dark ${milker.variable}`}>
       <head>
-        <link rel="preconnect" href="https://alwingulla.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://alwingulla.com" />
-        <link rel="preconnect" href="https://a11ybar.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://a11ybar.com" />
+        <link rel="preconnect" href="https://nobleduringsurveillance.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://nobleduringsurveillance.com" />
       </head>
       <body className="bg-luxury-950 text-slate-100 font-sans selection:bg-brand-primary selection:text-white antialiased">
         <Script

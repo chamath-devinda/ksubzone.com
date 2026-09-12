@@ -16,8 +16,8 @@ const mode = Object.values(AD_MODES).includes(requestedMode) ? requestedMode : A
 const isProduction = process.env.NODE_ENV === 'production';
 
 export const adConfig = Object.freeze({
-  enabled: readBoolean(process.env.NEXT_PUBLIC_ADS_ENABLED, isProduction),
-  showDevelopmentPlaceholders: readBoolean(process.env.NEXT_PUBLIC_AD_PLACEHOLDERS, !isProduction),
+  enabled: readBoolean(process.env.NEXT_PUBLIC_ADS_ENABLED, true),
+  showDevelopmentPlaceholders: readBoolean(process.env.NEXT_PUBLIC_AD_PLACEHOLDERS, false),
   mode,
   consent: {
     required: false,
@@ -46,39 +46,39 @@ export const adConfig = Object.freeze({
       enabled: readBoolean(process.env.NEXT_PUBLIC_ADSTERRA_ENABLED, true),
       zones: {
         popunder: {
-          scriptUrl: 'https://alwingulla.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
         },
         socialBar: {
           // Official code supplied by the publisher. Disabled by default.
-          scriptUrl: 'https://alwingulla.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
         },
         native: {
-          scriptUrl: 'https://alwingulla.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
           containerId: 'container-90963118e211fbe13565d79b0d81a39d',
           reservedHeight: 320,
         },
         bannerDesktop: {
           key: '23a798c8294b23d3b5f73561f68cc621',
-          scriptUrl: 'https://alwingulla.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
           width: 728,
           height: 90,
         },
         bannerMobile: {
           key: 'cee89ddb1e1c5bd615b6d0a22ba3d9e8',
-          scriptUrl: 'https://alwingulla.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js',
           width: 320,
           height: 50,
         },
         square: {
           key: '586e1584081dab0775623a2b61895f68',
-          scriptUrl: 'https://alwingulla.com/586e1584081dab0775623a2b61895f68/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/586e1584081dab0775623a2b61895f68/invoke.js',
           width: 300,
           height: 250,
         },
         sidebar: {
           // Official publisher unit, isolated in an iframe for each sidebar placement.
           key: 'c13f5f2182fb9c307a05678f246a92d3',
-          scriptUrl: 'https://alwingulla.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
           width: 160,
           height: 600,
         },

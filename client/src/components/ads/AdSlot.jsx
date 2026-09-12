@@ -122,41 +122,28 @@ export default function AdSlot({ slotId, className = '' }) {
       ? 'min-h-[250px]'
       : 'min-h-[50px] md:min-h-[90px]';
 
-  // While creative is loading in background, keep it in DOM off-screen
-  // so no empty box or advertisement label is shown until it succeeds.
-  if (!adLoaded && !isDevPlaceholder) {
-    return (
-      <div
-        ref={hostRef}
-        aria-hidden="true"
-        data-ad-slot={slotId}
-        style={{
-          position: 'absolute',
-          width: '1px',
-          height: '1px',
-          padding: 0,
-          margin: '-1px',
-          overflow: 'hidden',
-          clip: 'rect(0, 0, 0, 0)',
-          whiteSpace: 'nowrap',
-          border: 0,
-          opacity: 0,
-          pointerEvents: 'none',
-        }}
-      >
-        {renderedAd}
-      </div>
-    );
-  }
+  const reservationClass = isNative
+    ? 'min-h-[320px]'
+    : isSidebar
+      ? 'min-h-[600px]'
+    : isSquare
+      ? 'min-h-[250px]'
+      : 'min-h-[66px] md:min-h-[106px]';
 
   return (
     <aside
       ref={hostRef}
       aria-label="Advertisement"
       data-ad-slot={slotId}
-      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.015] px-2 py-3 transition-all duration-300 ${className}`}
+      className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border transition-all duration-300 ${
+        adLoaded || isDevPlaceholder
+          ? 'border-white/[0.05] bg-white/[0.015] px-2 py-3'
+          : 'border-transparent bg-transparent p-0'
+      } ${reservationClass} ${className}`}
     >
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
+      {(adLoaded || isDevPlaceholder) && (
+        <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
+      )}
       {renderedAd}
       {isDevPlaceholder && (
         <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
