@@ -46,7 +46,11 @@ function copyRecursive(src, dst) {
 copyRecursive(srcDir, tempDir);
 
 execSync('tar.exe -a -c -f "' + zipFile + '" *', { cwd: tempDir });
-fs.rmSync(tempDir, { recursive: true, force: true });
+try {
+  fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
+} catch (e) {
+  // Ignore transient Windows file handle release delays
+}
 
 const stats = fs.statSync(zipFile);
 console.log('SUCCESS: backend-update.zip created!');
