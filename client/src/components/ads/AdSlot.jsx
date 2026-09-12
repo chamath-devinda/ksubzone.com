@@ -5,7 +5,7 @@ import { useAds } from './AdProvider';
 import AdFrame from './AdFrame';
 
 function buildDisplayDocument(zone) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${zone.width},initial-scale=1"><style>html,body{margin:0;padding:0;width:${zone.width}px;height:${zone.height}px;overflow:hidden;background:transparent;color-scheme:dark}</style></head><body><script type="text/javascript">var atOptions={'key':'${zone.key}','format':'iframe','height':${zone.height},'width':${zone.width},'params':{}};</script><script type="text/javascript" src="${zone.scriptUrl}"></script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${zone.width},initial-scale=1"><style>html,body{margin:0;padding:0;width:${zone.width}px;height:${zone.height}px;overflow:hidden;background:transparent;color-scheme:dark}</style></head><body><script type="text/javascript">window.atOptions={'key':'${zone.key}','format':'iframe','height':${zone.height},'width':${zone.width},'params':{}};atOptions=window.atOptions;</script><script type="text/javascript" src="${zone.scriptUrl}"></script></body></html>`;
 }
 
 function buildNativeDocument(zone) {
