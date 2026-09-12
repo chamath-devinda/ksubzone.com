@@ -7,6 +7,7 @@ import { Clapperboard, Facebook, Instagram, Mail, MapPin, Send, Youtube, Externa
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { resolveLogoUrl } from '@/utils/mediaImages';
 import AdSlot from '@/components/ads/AdSlot';
+import AdsterraReferralBanner from '@/components/ads/AdsterraReferralBanner';
 import { useAds } from '@/components/ads/AdProvider';
 
 function TikTokIcon({ className = 'h-4 w-4' }) {
@@ -233,6 +234,11 @@ export default function Footer() {
             </div>
           </div>
 
+        </div>
+
+        {/* Adsterra Publisher Referral Banner */}
+        <div className="mt-10 pt-8 border-t border-white/[0.06] flex justify-center">
+          <AdsterraReferralBanner />
         </div>
 
         {/* Bottom Bar: Copyright & Credits */}
