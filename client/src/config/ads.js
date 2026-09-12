@@ -32,17 +32,13 @@ export const adConfig = Object.freeze({
     mobileBanner: readBoolean(process.env.NEXT_PUBLIC_MOBILE_BANNER_ENABLED, true),
     square: readBoolean(process.env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
     native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
-    // Keep the reading and subtitle-download canvas distraction-free. Ads
-    // belong in natural content breaks, not in persistent side rails.
-    sidebar: false,
-    // Keep monetization non-intrusive: display/native units only. Popunders
-    // and social bars interrupt subtitle downloads and hurt return visits.
-    popunder: false,
+    sidebar: readBoolean(process.env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
+    popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
     socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, false),
     inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
   },
   intrusive: {
-    popunderCooldownMs: Math.max(60 * 60 * 1000, Number(process.env.NEXT_PUBLIC_POPUNDER_COOLDOWN_MS || 12 * 60 * 60 * 1000)),
+    popunderCooldownMs: Math.max(60 * 60 * 1000, Number(process.env.NEXT_PUBLIC_POPUNDER_COOLDOWN_MS || 2 * 60 * 60 * 1000)),
     storageKey: 'ksubzone_intrusive_ad_loaded_at',
   },
   providers: {
@@ -99,13 +95,13 @@ export const adConfig = Object.freeze({
     },
   },
   routes: {
-    home: { enabled: true, banner: true, square: true, native: true, sidebar: false, intrusive: true },
-    movie: { enabled: true, banner: true, square: true, native: true, sidebar: false, intrusive: true },
-    drama: { enabled: true, banner: true, square: false, native: true, sidebar: false, intrusive: true },
-    episode: { enabled: true, banner: true, square: false, native: false, sidebar: false, intrusive: true },
-    article: { enabled: true, banner: false, square: true, native: true, sidebar: false, intrusive: true },
+    home: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
+    movie: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
+    drama: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
+    episode: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
+    article: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
     search: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
-    listing: { enabled: true, banner: true, square: false, native: false, sidebar: false, intrusive: true },
+    listing: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
     static: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
     auth: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
     account: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
@@ -114,9 +110,10 @@ export const adConfig = Object.freeze({
   },
   placements: {
     home_below_hero: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
-    // Keep the first banner eager; all other units wait until the visitor is
-    // close enough to see them so third-party ad work cannot delay the hero.
-    home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    home_content_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
+    home_category_native_1: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
+    home_category_banner_2: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    home_catalog_banner: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     // Home side rails (multi-slot for higher viewability & earnings)
     home_sidebar_left_1: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_sidebar_left_2: { pages: ['home'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
@@ -141,14 +138,18 @@ export const adConfig = Object.freeze({
     home_content_square: { pages: ['home'], format: 'square', provider: 'adsterra', lazy: true },
     home_content_native: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
     media_below_hero: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
-    media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_before_subtitles: { pages: ['movie', 'drama'], format: 'native', provider: 'adsterra', lazy: true },
-    subtitle_list_banner: { pages: ['drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    subtitle_list_banner: { pages: ['drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_after_downloads: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
-    article_intro_square: { pages: ['article'], format: 'square', provider: 'adsterra', lazy: true },
+    article_intro_square: { pages: ['article'], format: 'square', provider: 'adsterra', lazy: false },
     article_mid_native: { pages: ['article'], format: 'native', provider: 'adsterra', lazy: true },
     episode_content_banner: { pages: ['episode'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
-    listing_content_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    listing_content_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
+    listing_mid_native: { pages: ['listing'], format: 'native', provider: 'adsterra', lazy: true },
+    listing_mid_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    listing_bottom_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    genres_mid_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     site_footer_banner: { pages: ['home', 'movie', 'drama', 'article', 'listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
   },
 });

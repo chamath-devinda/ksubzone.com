@@ -4,6 +4,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import { Tv } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
 import { serializeJsonLd } from '@/utils/seo';
+import AdSlot from '@/components/ads/AdSlot';
 
 async function getGenreData(genreSlug) {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
@@ -116,6 +117,8 @@ export default async function DramaGenrePage({ params }) {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <AdSlot slotId="listing_content_banner" className="mb-6" />
+
         {dramas.length === 0 ? (
           <div className="glass-panel p-16 rounded-3xl border border-white/5 text-center text-slate-400">
             <p className="text-sm font-bold">No dramas found in this genre yet.</p>
@@ -123,11 +126,20 @@ export default async function DramaGenrePage({ params }) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {dramas.map((item) => (
-              <GlassCard key={item._id} item={item} type="drama" />
+            {dramas.map((item, index) => (
+              <React.Fragment key={item._id}>
+                <GlassCard item={item} type="drama" />
+                {index === 5 && (
+                  <div className="col-span-full w-full my-3">
+                    <AdSlot slotId="listing_mid_banner" />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
+
+        <AdSlot slotId="listing_bottom_banner" className="mt-8" />
       </div>
     </div>
   );

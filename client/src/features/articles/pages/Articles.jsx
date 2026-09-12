@@ -172,6 +172,8 @@ export default function Articles({ initialData }) {
           ))}
         </section>
 
+        <AdSlot slotId="listing_bottom_banner" className="my-6" />
+
         <section className="rounded-3xl border border-white/10 bg-gradient-to-r from-brand-primary/15 via-white/[0.03] to-brand-secondary/10 p-6 sm:p-8 text-left flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div>
             <h2 className="text-2xl font-black text-white flex items-center gap-2">

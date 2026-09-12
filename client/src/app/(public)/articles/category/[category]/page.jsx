@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { BookOpen, CalendarDays, Clock3, Eye, ArrowRight } from 'lucide-react';
+import AdSlot from '@/components/ads/AdSlot';
 
 async function getCategoryData(categorySlug) {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
@@ -139,6 +140,8 @@ export default async function ArticleCategoryPage({ params }) {
           </div>
         </div>
 
+        <AdSlot slotId="listing_content_banner" className="my-6" />
+
         {articles.length === 0 ? (
           <div className="glass-panel p-16 rounded-3xl border border-white/5 text-center text-slate-400">
             <p className="text-sm font-bold">No articles found in this category yet.</p>
@@ -208,6 +211,8 @@ export default async function ArticleCategoryPage({ params }) {
             })}
           </div>
         )}
+
+        <AdSlot slotId="listing_bottom_banner" className="mt-8" />
       </div>
     </div>
   );

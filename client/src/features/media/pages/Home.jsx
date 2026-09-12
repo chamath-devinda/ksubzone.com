@@ -307,8 +307,10 @@ export default function Home({
                   )}
                 </div>
                 {sectionIndex === 0 && <AdSlot slotId="home_content_banner" />}
+                {sectionIndex === 1 && <AdSlot slotId="home_category_native_1" />}
                 {sectionIndex === 2 && <AdSlot slotId="home_content_square" />}
                 {sectionIndex === 3 && <AdSlot slotId="home_content_native" />}
+                {sectionIndex >= 4 && sectionIndex % 2 === 0 && <AdSlot slotId="home_category_banner_2" />}
                 </React.Fragment>
               );
             })
@@ -419,6 +421,8 @@ export default function Home({
             </div>
 
           </div>
+
+          <AdSlot slotId="home_catalog_banner" className="my-1" />
 
           {/* Library Media Grid */}
           <div className="relative min-h-[400px]">

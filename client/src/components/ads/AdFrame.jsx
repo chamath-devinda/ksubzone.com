@@ -6,8 +6,8 @@ import React, { useEffect, useRef, useState } from 'react';
 // a load only after the frame contains a visible creative or iframe.
 function hasCreative(doc) {
   if (!doc?.body) return false;
-  // If Adsterra injected an iframe, img, or link, creative is present
-  const elements = doc.body.querySelectorAll('iframe, img, video, object, embed, a[href]');
+  // If Adsterra injected an iframe, img, video, link, or native container content, creative is present
+  const elements = doc.body.querySelectorAll('iframe, img, video, object, embed, a[href], div[id^="container-"] > *, ins, [data-creative]');
   if (elements.length > 0) return true;
   // Also check if text content or child nodes were injected into body
   return Boolean(doc.body.childNodes?.length > 2);
@@ -76,7 +76,11 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       if (hasCreative(doc)) finish(true);
     }
     function handleError(event) {
-      if (event.target?.tagName === 'SCRIPT') finish(false, 'script_error');
+      // Non-fatal: auxiliary ad tracking/beacon pixels often fail or are blocked
+      // without affecting the visual banner creative. Only abort if main invoke fails.
+      if (event.target?.tagName === 'SCRIPT' && event.target?.src?.includes('invoke.js')) {
+        finish(false, 'script_error');
+      }
     }
     function handleLoad() {
       doc = frame.contentDocument;
@@ -90,7 +94,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       timeout = setTimeout(() => {
         if (hasCreative(doc)) finish(true);
         else finish(false, 'empty_or_timeout');
-      }, 12000);
+      }, 15000);
       observer = new MutationObserver(inspect);
       observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
       doc.addEventListener('load', inspect, true);
@@ -100,7 +104,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     timeout = setTimeout(() => {
       if (hasCreative(frame.contentDocument)) finish(true);
       else finish(false, 'network_timeout');
-    }, 12000);
+    }, 15000);
     frame.addEventListener('load', handleLoad);
     if (frame.contentDocument?.readyState === 'complete') handleLoad();
     return () => { finished = true; cleanup(); };

@@ -69,9 +69,9 @@ export default function AdSlot({ slotId, className = '' }) {
         setNearViewport(true);
         observer.disconnect();
       }
-    // Start bidding shortly before the slot enters view. A 1000px margin
-    // made nearly every homepage ad eager on first paint.
-    }, { rootMargin: '300px 0px' });
+    // Generous 1200px preloading margin so ad bidding and creative delivery
+    // completes well before the visitor scrolls the slot into view.
+    }, { rootMargin: '1200px 0px' });
     observer.observe(hostRef.current);
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);
@@ -99,10 +99,6 @@ export default function AdSlot({ slotId, className = '' }) {
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
       onUnavailable={(reason) => {
-        // Do not reserve a blank rectangle forever when the provider returns
-        // no fill, is blocked, or its zone is unavailable. A future route
-        // mount can retry the zone normally.
-        setFailedZone(zone.scriptUrl);
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
       }}
     />

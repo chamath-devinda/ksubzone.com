@@ -136,23 +136,31 @@ export default function DramasList({ initialData }) {
             className={mediaGridClass}
           >
             <AnimatePresence mode="popLayout">
-              {dramasMapped.map((item) => (
-                <motion.div
-                  key={item._id}
-                  layout
-                  className="min-w-0"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <GlassCard item={item} type="drama" />
-                </motion.div>
+              {dramasMapped.map((item, index) => (
+                <React.Fragment key={item._id}>
+                  <motion.div
+                    layout
+                    className="min-w-0"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <GlassCard item={item} type="drama" />
+                  </motion.div>
+                  {index === 5 && (
+                    <div className="col-span-full w-full my-4">
+                      <AdSlot slotId="listing_mid_banner" />
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </AnimatePresence>
           </motion.div>
         )}
       </div>
+
+      <AdSlot slotId="listing_bottom_banner" className="mt-4" />
 
       {/* Pagination */}
       {totalPages > 1 && (

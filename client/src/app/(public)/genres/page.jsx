@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Grid, Film, Tv, Sparkles } from 'lucide-react';
+import AdSlot from '@/components/ads/AdSlot';
 
 async function getGenresData() {
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
@@ -82,6 +83,8 @@ export default async function GenresPage() {
 
       {/* Main Grid Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+        <AdSlot slotId="listing_content_banner" className="mb-6" />
+
         {genres.length === 0 ? (
           <div className="glass-panel p-8 sm:p-20 rounded-2xl sm:rounded-3xl border border-white/5 text-center text-slate-400">
             <p className="text-sm font-bold">No genres found in the database.</p>
@@ -89,52 +92,60 @@ export default async function GenresPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            {genres.map((genre) => (
-              <article
-                key={genre._id || genre.slug}
-                className="glass-panel group relative isolate overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 hover:border-brand-primary/40 min-h-36 sm:min-h-44 flex flex-col items-center justify-end p-3 sm:p-5 text-center transition-all duration-500 hover:shadow-glass-neon hover:shadow-brand-primary/15"
-              >
-                {/* Dynamically Loaded Banner Backdrop from High-Rated Media */}
-                {genre.banner && (
-                  <>
-                    <img
-                      src={genre.banner}
-                      alt={genre.name}
-                      className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 group-hover:scale-110 transition-all duration-700 pointer-events-none"
-                      loading="lazy"
-                    />
-                    {/* Dark gradient overlay for text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/75 to-luxury-950/40 z-10 pointer-events-none" />
-                  </>
-                )}
+            {genres.map((genre, index) => (
+              <React.Fragment key={genre._id || genre.slug}>
+                <article
+                  className="glass-panel group relative isolate overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 hover:border-brand-primary/40 min-h-36 sm:min-h-44 flex flex-col items-center justify-end p-3 sm:p-5 text-center transition-all duration-500 hover:shadow-glass-neon hover:shadow-brand-primary/15"
+                >
+                  {/* Dynamically Loaded Banner Backdrop from High-Rated Media */}
+                  {genre.banner && (
+                    <>
+                      <img
+                        src={genre.banner}
+                        alt={genre.name}
+                        className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 group-hover:scale-110 transition-all duration-700 pointer-events-none"
+                        loading="lazy"
+                      />
+                      {/* Dark gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/75 to-luxury-950/40 z-10 pointer-events-none" />
+                    </>
+                  )}
 
-                {/* Card Content */}
-                <div className="relative z-20 flex flex-col items-center justify-center">
-                  <h2 className="text-sm sm:text-base font-black tracking-wider uppercase text-white group-hover:text-brand-primary transition-colors duration-300 font-display">
-                    {genre.name}
-                  </h2>
-                  <span className="mt-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-slate-300 group-hover:bg-brand-primary/20 group-hover:border-brand-primary/30 group-hover:text-brand-primary transition-all duration-300">
-                    {genre.totalCount || 0} {genre.totalCount === 1 ? 'Title' : 'Titles'}
-                  </span>
-                  <div className="mt-3 grid w-full grid-cols-2 gap-2">
-                    <Link
-                      href={`/drama/genre/${genre.slug}`}
-                      className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-brand-primary/30 bg-brand-primary/15 px-2 text-[9px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-brand-primary hover:text-white"
-                    >
-                      <Tv className="h-3 w-3" /> Dramas
-                    </Link>
-                    <Link
-                      href={`/movie/genre/${genre.slug}`}
-                      className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-wider text-slate-200 transition hover:border-brand-primary/40 hover:text-white"
-                    >
-                      <Film className="h-3 w-3" /> Movies
-                    </Link>
+                  {/* Card Content */}
+                  <div className="relative z-20 flex flex-col items-center justify-center">
+                    <h2 className="text-sm sm:text-base font-black tracking-wider uppercase text-white group-hover:text-brand-primary transition-colors duration-300 font-display">
+                      {genre.name}
+                    </h2>
+                    <span className="mt-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-slate-300 group-hover:bg-brand-primary/20 group-hover:border-brand-primary/30 group-hover:text-brand-primary transition-all duration-300">
+                      {genre.totalCount || 0} {genre.totalCount === 1 ? 'Title' : 'Titles'}
+                    </span>
+                    <div className="mt-3 grid w-full grid-cols-2 gap-2">
+                      <Link
+                        href={`/drama/genre/${genre.slug}`}
+                        className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-brand-primary/30 bg-brand-primary/15 px-2 text-[9px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-brand-primary hover:text-white"
+                      >
+                        <Tv className="h-3 w-3" /> Dramas
+                      </Link>
+                      <Link
+                        href={`/movie/genre/${genre.slug}`}
+                        className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-wider text-slate-200 transition hover:border-brand-primary/40 hover:text-white"
+                      >
+                        <Film className="h-3 w-3" /> Movies
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+                {index === 7 && (
+                  <div className="col-span-full w-full my-3">
+                    <AdSlot slotId="genres_mid_banner" />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
+
+        <AdSlot slotId="listing_bottom_banner" className="mt-8" />
       </div>
     </div>
   );
