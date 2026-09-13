@@ -194,7 +194,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:brightness-100 shadow-sm transition active:scale-95"
+                className="btn-oio-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed shadow-sm transition active:scale-95"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
@@ -207,7 +207,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:brightness-100 shadow-sm transition active:scale-95"
+                className="btn-oio-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed shadow-sm transition active:scale-95"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>

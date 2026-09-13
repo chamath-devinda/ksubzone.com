@@ -286,7 +286,7 @@ export default function MovieManager() {
               mediaType: 'Movie',
               label: movie.title
             })}
-            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
+            className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-full shadow-sm transition active:scale-95"
             title="Upload Subtitle"
           >
             <Languages className="w-3.5 h-3.5" />
@@ -294,7 +294,7 @@ export default function MovieManager() {
           <button
             type="button"
             onClick={() => handleOpenEdit(movie)}
-            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
+            className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-full shadow-sm transition active:scale-95"
             title="Edit Movie"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export default function MovieManager() {
           <button
             type="button"
             onClick={() => handleDelete(movie._id)}
-            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
+            className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-full shadow-sm transition active:scale-95"
             title="Delete Movie"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -346,7 +346,7 @@ export default function MovieManager() {
                 onClick={() => { setFilterStatus(s); setPage(1); }}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                   filterStatus === s
-                    ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-md'
+                    ? 'btn-oio-pill text-white shadow-md'
                     : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
                 }`}
               >
