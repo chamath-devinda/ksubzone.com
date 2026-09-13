@@ -470,11 +470,11 @@ export default function DramaManager() {
       key: 'actions',
       label: 'Actions',
       render: (_, drama) => (
-        <div className="flex justify-end gap-1.5">
+        <div className="flex justify-end gap-1.5 items-center">
           <button
             type="button"
             onClick={() => handleOpenExplorer(drama)}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#151821] hover:bg-violet-600/20 text-violet-400 rounded-lg border border-white/[0.06] transition text-[11px] font-semibold"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full transition text-[11px] font-bold shadow-sm active:scale-95"
             title="Explore Seasons & Episodes"
           >
             <Layers className="w-3.5 h-3.5" />
@@ -483,7 +483,7 @@ export default function DramaManager() {
           <button
             type="button"
             onClick={() => handleOpenEditDrama(drama)}
-            className="p-1.5 bg-[#151821] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 rounded-lg border border-white/[0.06] transition"
+            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
             title="Edit Series"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -491,7 +491,7 @@ export default function DramaManager() {
           <button
             type="button"
             onClick={() => handleDeleteDrama(drama._id)}
-            className="p-1.5 bg-[#151821] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg border border-white/[0.06] transition"
+            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
             title="Delete Series"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -527,16 +527,16 @@ export default function DramaManager() {
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
+          <div className="flex gap-1.5 bg-[#11131A] p-1 rounded-full border border-white/[0.06] w-fit">
             {['All', 'Published', 'Upcoming', 'Draft'].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setFilterStatus(s)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                   filterStatus === s
-                    ? 'bg-violet-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                    ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
                 }`}
               >
                 {s}
@@ -776,14 +776,14 @@ export default function DramaManager() {
             <button
               type="button"
               onClick={() => setShowDramaModal(false)}
-              className="px-4 py-2 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white transition"
+              className="px-4 py-2 rounded-full border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600/20 text-xs font-semibold text-violet-200 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={savingDrama}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 transition disabled:opacity-50"
+              className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50 active:scale-95"
             >
               {savingDrama ? 'Saving Series...' : 'Save Series'}
             </button>
@@ -807,7 +807,7 @@ export default function DramaManager() {
             <button 
               type="button"
               onClick={handleOpenAddSeason}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white font-semibold rounded-lg text-xs shadow-sm transition active:scale-95 self-start sm:self-auto"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white font-bold rounded-full text-xs shadow-md transition active:scale-95 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" /> Add Season
             </button>
@@ -825,7 +825,7 @@ export default function DramaManager() {
               <button
                 type="button"
                 onClick={refreshExplorer}
-                className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 font-semibold transition"
+                className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white font-bold text-xs shadow-sm transition active:scale-95"
               >
                 Try Again
               </button>
@@ -853,18 +853,18 @@ export default function DramaManager() {
                           {season.seasonDescription || 'Standard season sequence'}
                         </p>
                       </div>
-                      <div className="flex gap-1.5 flex-shrink-0">
+                      <div className="flex gap-1.5 flex-shrink-0 items-center">
                         <button 
                           type="button"
                           onClick={() => handleOpenAddEpisode(season._id)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-[#11131A] hover:bg-violet-600/20 border border-white/[0.06] text-violet-300 rounded-lg text-xs font-semibold transition"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full text-xs font-bold shadow-sm transition active:scale-95"
                         >
                           <Plus className="w-3.5 h-3.5" /> Add Ep
                         </button>
                         <button 
                           type="button"
                           onClick={() => handleOpenEditSeason(season)}
-                          className="p-1.5 bg-[#11131A] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 rounded-lg border border-white/[0.06] transition"
+                          className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
                           title="Edit Season"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -872,7 +872,7 @@ export default function DramaManager() {
                         <button 
                           type="button"
                           onClick={() => handleDeleteSeason(season._id)}
-                          className="p-1.5 bg-[#11131A] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg border border-white/[0.06] transition"
+                          className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
                           title="Delete Season"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -893,7 +893,7 @@ export default function DramaManager() {
                             className="flex flex-col sm:flex-row sm:items-center justify-between text-xs p-2.5 rounded-lg border border-white/[0.04] bg-[#11131A] hover:bg-[#13151D] transition gap-2.5"
                           >
                             <div className="flex items-center gap-2.5 overflow-hidden">
-                              <span className="font-mono text-[10px] font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded flex-shrink-0">
+                              <span className="font-mono text-[10px] font-bold text-violet-300 bg-violet-500/15 border border-violet-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
                                 EP {ep.episodeNumber}
                               </span>
                               <span className="text-slate-200 font-semibold truncate text-xs">
@@ -904,19 +904,19 @@ export default function DramaManager() {
                                 <button
                                   type="button"
                                   onClick={() => openSubtitleManage(ep._id, `S${season.seasonNumber} E${ep.episodeNumber}`)}
-                                  className="px-1.5 py-0.2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase transition cursor-pointer flex-shrink-0"
+                                  className="px-2 py-0.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold uppercase transition cursor-pointer flex-shrink-0"
                                 >
                                   {(ep.subtitleCount || ep.subtitles.length)} Sub{(ep.subtitleCount || ep.subtitles.length) !== 1 ? 's' : ''}
                                 </button>
                               ) : (
-                                <span className="px-1.5 py-0.2 rounded bg-white/[0.04] text-slate-500 text-[9px] font-mono flex-shrink-0">
+                                <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-slate-400 text-[10px] font-mono flex-shrink-0">
                                   No Sub
                                 </span>
                               )}
                             </div>
                             
-                            <div className="flex items-center gap-2 font-mono text-[11px] self-end sm:self-auto flex-shrink-0">
-                              <span className="text-slate-500 text-[10px]">{ep.runtime || 60}m</span>
+                            <div className="flex items-center gap-1.5 font-mono text-[11px] self-end sm:self-auto flex-shrink-0">
+                              <span className="text-slate-400 text-[10px] mr-1">{ep.runtime || 60}m</span>
                               
                               <button
                                 type="button"
@@ -928,7 +928,7 @@ export default function DramaManager() {
                                   episodeNumber: ep.episodeNumber,
                                   seasonStatus: 'Ongoing'
                                 })}
-                                className="px-2 py-1 bg-[#151821] hover:bg-violet-600/20 text-violet-300 hover:text-white rounded border border-white/[0.06] flex items-center gap-1 font-semibold transition"
+                                className="px-3 py-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full flex items-center gap-1 text-[11px] font-bold shadow-sm transition active:scale-95"
                                 title="Upload Subtitle"
                               >
                                 <UploadCloud className="w-3 h-3" />
@@ -937,14 +937,14 @@ export default function DramaManager() {
                               <button 
                                 type="button"
                                 onClick={() => handleOpenEditEpisode(ep)}
-                                className="px-2 py-1 bg-[#151821] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 rounded border border-white/[0.06] transition"
+                                className="px-3 py-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full text-[11px] font-bold shadow-sm transition active:scale-95"
                               >
                                 Edit
                               </button>
                               <button 
                                 type="button"
                                 onClick={() => handleDeleteEpisode(ep._id)}
-                                className="px-2 py-1 bg-[#151821] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded border border-white/[0.06] transition"
+                                className="px-3 py-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full text-[11px] font-bold shadow-sm transition active:scale-95"
                               >
                                 Delete
                               </button>
@@ -1002,14 +1002,14 @@ export default function DramaManager() {
             <button
               type="button"
               onClick={() => setShowSeasonModal(false)}
-              className="px-3.5 py-1.5 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white transition"
+              className="px-4 py-2 rounded-full border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600/20 text-xs font-semibold text-violet-200 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={savingSeason}
-              className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 transition disabled:opacity-50"
+              className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50 active:scale-95"
             >
               {savingSeason ? 'Saving...' : 'Save Season'}
             </button>
@@ -1115,14 +1115,14 @@ export default function DramaManager() {
             <button
               type="button"
               onClick={() => setShowEpisodeModal(false)}
-              className="px-4 py-2 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white transition"
+              className="px-4 py-2 rounded-full border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600/20 text-xs font-semibold text-violet-200 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={savingEpisode}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 transition disabled:opacity-50"
+              className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50 active:scale-95"
             >
               {savingEpisode ? 'Saving...' : 'Save Episode'}
             </button>

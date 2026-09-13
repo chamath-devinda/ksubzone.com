@@ -278,7 +278,7 @@ export default function MovieManager() {
       key: 'actions',
       label: 'Actions',
       render: (_, movie) => (
-        <div className="flex justify-end gap-1.5">
+        <div className="flex justify-end gap-1.5 items-center">
           <button
             type="button"
             onClick={() => openSubtitleUpload({
@@ -286,7 +286,7 @@ export default function MovieManager() {
               mediaType: 'Movie',
               label: movie.title
             })}
-            className="p-1.5 bg-[#151821] hover:bg-violet-600/20 text-slate-400 hover:text-violet-400 rounded-lg border border-white/[0.06] transition"
+            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
             title="Upload Subtitle"
           >
             <Languages className="w-3.5 h-3.5" />
@@ -294,7 +294,7 @@ export default function MovieManager() {
           <button
             type="button"
             onClick={() => handleOpenEdit(movie)}
-            className="p-1.5 bg-[#151821] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 rounded-lg border border-white/[0.06] transition"
+            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
             title="Edit Movie"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export default function MovieManager() {
           <button
             type="button"
             onClick={() => handleDelete(movie._id)}
-            className="p-1.5 bg-[#151821] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg border border-white/[0.06] transition"
+            className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95"
             title="Delete Movie"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -338,16 +338,16 @@ export default function MovieManager() {
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
+          <div className="flex gap-1.5 bg-[#11131A] p-1 rounded-full border border-white/[0.06] w-fit">
             {['All', 'Published', 'Upcoming', 'Draft'].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => { setFilterStatus(s); setPage(1); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                   filterStatus === s
-                    ? 'bg-violet-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                    ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
                 }`}
               >
                 {s}

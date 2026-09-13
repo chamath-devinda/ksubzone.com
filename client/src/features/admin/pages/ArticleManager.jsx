@@ -493,16 +493,16 @@ export default function ArticleManager() {
       label: 'Actions',
       headerAlign: 'text-right',
       render: (_, article) => (
-        <div className="flex justify-end gap-1.5">
+        <div className="flex justify-end gap-1.5 items-center">
           {article.status === 'Published' && (
-            <Link href={`/articles/${article.slug}`} target="_blank" className="p-1.5 bg-[#151821] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 rounded-lg border border-white/[0.06] transition" title="View Article">
+            <Link href={`/articles/${article.slug}`} target="_blank" className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95" title="View Article">
               <Eye className="w-3.5 h-3.5" />
             </Link>
           )}
-          <button onClick={() => openEdit(article)} className="p-1.5 bg-[#151821] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 rounded-lg border border-white/[0.06] transition" title="Edit Article">
+          <button onClick={() => openEdit(article)} className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95" title="Edit Article">
             <Edit3 className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => handleDelete(article)} className="p-1.5 bg-[#151821] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg border border-white/[0.06] transition" title="Delete Article">
+          <button onClick={() => handleDelete(article)} className="w-7 h-7 flex items-center justify-center bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white rounded-full shadow-sm transition active:scale-95" title="Delete Article">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

@@ -189,17 +189,17 @@ export default function DataTable({
               Showing <b className="text-[#202224] dark:text-slate-200">{startIdx}</b> to <b className="text-[#202224] dark:text-slate-200">{endIdx}</b> of <b className="text-[#202224] dark:text-slate-200">{sortedData.length}</b> records
             </span>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#EAEBF0] dark:border-[#313D4F] bg-white dark:bg-[#273142] text-xs font-semibold text-[#202224] dark:text-slate-200 hover:bg-[#F5F6FA] dark:hover:bg-[#313D4F] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:brightness-100 shadow-sm transition active:scale-95"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
               
-              <span className="px-2 text-xs font-mono font-semibold text-[#B85ADB]">
+              <span className="px-3 py-1 rounded-full bg-violet-500/15 border border-violet-500/30 text-xs font-mono font-bold text-violet-300">
                 {currentPage} / {totalPages}
               </span>
 
@@ -207,7 +207,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#EAEBF0] dark:border-[#313D4F] bg-white dark:bg-[#273142] text-xs font-semibold text-[#202224] dark:text-slate-200 hover:bg-[#F5F6FA] dark:hover:bg-[#313D4F] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:brightness-100 shadow-sm transition active:scale-95"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>

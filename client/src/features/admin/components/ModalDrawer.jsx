@@ -88,7 +88,7 @@ export default function ModalDrawer({
               <button
                 type="button"
                 onClick={requestClose}
-                className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition p-1.5 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] rounded-lg flex-shrink-0"
+                className="flex items-center justify-center w-8 h-8 rounded-full border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600 text-violet-300 hover:text-white transition shadow-sm active:scale-95 flex-shrink-0"
                 aria-label="Close dialog"
               >
                 <X className="w-4 h-4" />
