@@ -190,9 +190,10 @@ class SubtitleController {
 
         // Invalidate cache and trigger revalidation if immediately approved
         if ($approvalStatus === 'Approved') {
+            self::revalidateMediaForSubtitle($mediaId, $mediaType, true);
+            \Utils\Cache::delete('home_catalog_v7');
             \Utils\Cache::flush();
             \Utils\Revalidate::catalog('all');
-            self::revalidateMediaForSubtitle($mediaId, $mediaType, true);
         }
 
         http_response_code(201);
@@ -763,9 +764,10 @@ class SubtitleController {
             \Utils\Storage::deleteFile($oldUrl);
         }
 
+        self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
+        \Utils\Cache::delete('home_catalog_v7');
         \Utils\Cache::flush();
         \Utils\Revalidate::catalog('all');
-        self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
 
         $updated = $db->findOne('subtitles', ['_id' => $id]);
         header('Content-Type: application/json');
@@ -909,9 +911,10 @@ class SubtitleController {
 
         // Invalidate cache and trigger revalidation
         if ($status === 'Approved') {
+            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
+            \Utils\Cache::delete('home_catalog_v7');
             \Utils\Cache::flush();
             \Utils\Revalidate::catalog('all');
-            self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
         }
 
         // Notify uploader
@@ -971,9 +974,6 @@ class SubtitleController {
             $db->updateOne('subtitles', ['_id' => $id], $updates);
             $subtitle = $db->findOne('subtitles', ['_id' => $id]);
 
-            // Invalidate cache and trigger revalidation
-            \Utils\Cache::flush();
-            \Utils\Revalidate::catalog('all');
             // An admin subtitle edit is public content activity. User views
             // and other generic writes must not affect this clock.
             $isPublicSubtitle = ($subtitle['approvalStatus'] ?? '') === 'Approved'
@@ -983,6 +983,9 @@ class SubtitleController {
                 $subtitle['mediaType'],
                 $isPublicSubtitle
             );
+            \Utils\Cache::delete('home_catalog_v7');
+            \Utils\Cache::flush();
+            \Utils\Revalidate::catalog('all');
         }
 
         header('Content-Type: application/json');
@@ -1005,11 +1008,12 @@ class SubtitleController {
         $db->deleteOne('subtitles', ['_id' => $id]);
 
         // Invalidate cache and trigger revalidation
-        \Utils\Cache::flush();
-        \Utils\Revalidate::catalog('all');
         if ($subtitle && ($subtitle['approvalStatus'] ?? '') === 'Approved') {
             self::revalidateMediaForSubtitle($subtitle['mediaId'], $subtitle['mediaType'], true);
         }
+        \Utils\Cache::delete('home_catalog_v7');
+        \Utils\Cache::flush();
+        \Utils\Revalidate::catalog('all');
 
         header('Content-Type: application/json');
         echo json_encode(['message' => 'Subtitle deleted successfully']);

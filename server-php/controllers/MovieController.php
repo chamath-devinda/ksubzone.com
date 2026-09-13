@@ -410,7 +410,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v7', $catalogData, 1800);
+        \Utils\Cache::set('home_catalog_v7', $catalogData, 60);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);

@@ -91,7 +91,7 @@ export default async function HomePage() {
   const siteContentPromise = getSiteContent();
   
   try {
-    const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 1800, tags: ['home'] } }).then(r => r.ok ? r.json() : {});
+    const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 60, tags: ['home'] } }).then(r => r.ok ? r.json() : {});
     
     initialHomeCatalog = compactHomeCatalog(catalogRes);
     // Home already contains the same view-ranked records. Reuse them instead

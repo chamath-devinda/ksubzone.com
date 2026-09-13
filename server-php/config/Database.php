@@ -265,11 +265,18 @@ class Database {
         // Skip setup if database is already initialized and matches current schema version
         $schemaVersion = '2026_v3_imports';
         $flagFile = dirname(__FILE__) . '/.db_initialized_' . $this->driver;
+        $tempFlagFile = sys_get_temp_dir() . '/.ksubzone_db_initialized_' . $this->driver;
         
-        $tablesExist = true;
+        // Fast-path: If flag file exists and is current, skip all database queries completely
+        if ((file_exists($flagFile) && trim(@file_get_contents($flagFile)) === $schemaVersion) ||
+            (file_exists($tempFlagFile) && trim(@file_get_contents($tempFlagFile)) === $schemaVersion)) {
+            return;
+        }
+
+        $tablesExist = false;
         try {
             if ($this->driver === 'pgsql') {
-                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.tables WHERE table_name = 'movies' LIMIT 1");
+                $stmt = $this->pdo->query("SELECT 1 FROM pg_tables WHERE tablename = 'movies' LIMIT 1");
                 $tablesExist = $stmt->fetch() !== false;
             } elseif ($this->driver === 'sqlite') {
                 $stmt = $this->pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='movies' LIMIT 1");
@@ -282,7 +289,9 @@ class Database {
             $tablesExist = false;
         }
 
-        if (file_exists($flagFile) && trim(@file_get_contents($flagFile)) === $schemaVersion && $tablesExist) {
+        if ($tablesExist) {
+            @file_put_contents($flagFile, $schemaVersion);
+            @file_put_contents($tempFlagFile, $schemaVersion);
             return;
         }
 
@@ -330,6 +339,7 @@ class Database {
 
         // Write the flag file to mark successful setup
         @file_put_contents($flagFile, $schemaVersion);
+        @file_put_contents($tempFlagFile, $schemaVersion);
     }
 
     private function ensureIndexesExist() {

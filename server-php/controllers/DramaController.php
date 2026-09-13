@@ -127,7 +127,25 @@ class DramaController {
             'limit' => $limit
         ]);
 
-        self::appendSubtitleSummariesToDramas($dramas);
+        $dramaIds = array_map(function($d) { return (string)$d['_id']; }, $dramas);
+        $episodeCounts = [];
+        if (!empty($dramaIds)) {
+            $episodes = $db->find('episodes', ['dramaId' => ['$in' => $dramaIds]], [
+                'fields' => ['dramaId']
+            ]);
+            foreach ($episodes as $ep) {
+                $dId = (string)($ep['dramaId'] ?? '');
+                if ($dId !== '') {
+                    $episodeCounts[$dId] = ($episodeCounts[$dId] ?? 0) + 1;
+                }
+            }
+        }
+        foreach ($dramas as &$drama) {
+            $dId = (string)$drama['_id'];
+            $drama['episodeCount'] = $episodeCounts[$dId] ?? (int)($drama['episodeCount'] ?? 0);
+        }
+        unset($drama);
+
         $dramasArray = array_values($dramas);
 
         header('Content-Type: application/json');
@@ -879,11 +897,15 @@ class DramaController {
 
         $inserted = $db->insertOne('episodes', $episode);
 
-        // Invalidate cache and trigger revalidation
-        \Utils\Cache::flush();
-        \Utils\Cache::delete("drama_detail_" . $dramaId);
-        \Utils\Revalidate::catalog('drama');
+        // Update drama content clock BEFORE revalidation
         self::bumpDramaUpdatedAt($dramaId);
+
+        // Invalidate cache and trigger revalidation
+        \Utils\Cache::delete('home_catalog_v7');
+        \Utils\Cache::delete('home_catalog');
+        \Utils\Cache::delete("drama_detail_" . $dramaId);
+        \Utils\Cache::flush();
+        \Utils\Revalidate::catalog('drama');
         if ($drama && !empty($drama['slug'])) {
             \Utils\Revalidate::media('drama', $drama['slug']);
         }
@@ -907,18 +929,22 @@ class DramaController {
         $db->updateOne('episodes', ['_id' => $id], $updates);
         $updated = $db->findOne('episodes', ['_id' => $id]);
 
-        // Invalidate cache and trigger revalidation
-        \Utils\Cache::flush();
-        if ($episode && !empty($episode['dramaId'])) {
-            \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);
-        }
-        \Utils\Revalidate::catalog('drama');
+        $drama = null;
         if ($episode && !empty($episode['dramaId'])) {
             self::bumpDramaUpdatedAt($episode['dramaId']);
             $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
-            if ($drama && !empty($drama['slug'])) {
-                \Utils\Revalidate::media('drama', $drama['slug']);
-            }
+        }
+
+        // Invalidate cache and trigger revalidation
+        \Utils\Cache::delete('home_catalog_v7');
+        \Utils\Cache::delete('home_catalog');
+        if ($episode && !empty($episode['dramaId'])) {
+            \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);
+        }
+        \Utils\Cache::flush();
+        \Utils\Revalidate::catalog('drama');
+        if ($drama && !empty($drama['slug'])) {
+            \Utils\Revalidate::media('drama', $drama['slug']);
         }
 
         header('Content-Type: application/json');
@@ -941,18 +967,22 @@ class DramaController {
             return;
         }
 
-        // Invalidate cache and trigger revalidation
-        \Utils\Cache::flush();
-        if ($episode && !empty($episode['dramaId'])) {
-            \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);
-        }
-        \Utils\Revalidate::catalog('drama');
+        $drama = null;
         if ($episode && !empty($episode['dramaId'])) {
             self::bumpDramaUpdatedAt($episode['dramaId']);
             $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
-            if ($drama && !empty($drama['slug'])) {
-                \Utils\Revalidate::media('drama', $drama['slug']);
-            }
+        }
+
+        // Invalidate cache and trigger revalidation
+        \Utils\Cache::delete('home_catalog_v7');
+        \Utils\Cache::delete('home_catalog');
+        if ($episode && !empty($episode['dramaId'])) {
+            \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);
+        }
+        \Utils\Cache::flush();
+        \Utils\Revalidate::catalog('drama');
+        if ($drama && !empty($drama['slug'])) {
+            \Utils\Revalidate::media('drama', $drama['slug']);
         }
 
         header('Content-Type: application/json');
