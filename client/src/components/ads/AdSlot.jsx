@@ -4,12 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAds } from './AdProvider';
 import AdFrame from './AdFrame';
 
-function buildDisplayDocument(zone) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${zone.width},initial-scale=1"><style>html,body{margin:0;padding:0;width:${zone.width}px;height:${zone.height}px;overflow:hidden;background:transparent;color-scheme:dark}</style></head><body><script type="text/javascript">window.atOptions={'key':'${zone.key}','format':'iframe','height':${zone.height},'width':${zone.width},'params':{}};atOptions=window.atOptions;</script><script type="text/javascript" src="${zone.scriptUrl}"></script></body></html>`;
-}
-
-function buildNativeDocument(zone) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;min-height:${zone.reservedHeight}px;overflow:hidden;background:transparent;color-scheme:dark}#${zone.containerId}{width:100%;min-height:${zone.reservedHeight}px}</style></head><body><script async="async" data-cfasync="false" src="${zone.scriptUrl}"></script><div id="${zone.containerId}"></div></body></html>`;
+function buildAdFrameUrl(zoneName) {
+  // A real same-origin frame URL preserves the publisher page as the referrer.
+  // Ad networks reject `srcDoc` documents because they have an empty referrer.
+  return `/ad-frame.html?zone=${encodeURIComponent(zoneName)}`;
 }
 
 function useMediaQuery(query) {
@@ -80,9 +78,7 @@ export default function AdSlot({ slotId, className = '' }) {
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);
 
-  const source = useMemo(() => zone
-    ? (isNativePlacement ? buildNativeDocument(zone) : buildDisplayDocument(zone))
-    : '', [isNativePlacement, zone]);
+  const source = useMemo(() => zone ? buildAdFrameUrl(zoneName) : '', [zone, zoneName]);
 
   // Execute the official publisher Adsterra codes directly
   const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed && !slotFailed

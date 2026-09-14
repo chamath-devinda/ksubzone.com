@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:transparent;color-scheme:dark}</style>
+</head>
+<body>
+  <script>
+    (function () {
+      var host = 'https://nobleduringsurveillance.com';
+      var zones = {
+        bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
+        bannerTablet: { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
+        bannerMobile: { key: 'cee89ddb1e1c5bd615b6d0a22ba3d9e8', width: 320, height: 50 },
+        square: { key: '586e1584081dab0775623a2b61895f68', width: 300, height: 250 },
+        sidebar: { key: 'c13f5f2182fb9c307a05678f246a92d3', width: 160, height: 600 },
+        banner160x300: { key: '1a081bf3ee58c48ede1caf299a4f2e36', width: 160, height: 300 },
+        native: { key: '90963118e211fbe13565d79b0d81a39d', native: true }
+      };
+      var zone = zones[new URLSearchParams(location.search).get('zone')];
+      if (!zone) return;
+      if (zone.native) {
+        document.write('<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js"><\\/script><div id="container-' + zone.key + '"></div>');
+        return;
+      }
+      document.documentElement.style.width = zone.width + 'px';
+      document.documentElement.style.height = zone.height + 'px';
+      document.body.style.width = zone.width + 'px';
+      document.body.style.height = zone.height + 'px';
+      document.write('<script>window.atOptions={key:"' + zone.key + '",format:"iframe",height:' + zone.height + ',width:' + zone.width + ',params:{}};atOptions=window.atOptions;<\\/script><script src="' + host + '/' + zone.key + '/invoke.js"><\\/script>');
+    }());
+  </script>
+</body>
+</html>

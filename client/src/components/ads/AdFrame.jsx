@@ -122,12 +122,11 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       <iframe
         ref={frameRef}
         title={title}
-        srcDoc={source}
+        src={source}
         width={responsive ? '100%' : width}
         height={height}
         scrolling="no"
         loading="eager"
-        referrerPolicy="origin"
         data-ad-state={ready ? 'loaded' : 'loading'}
         className="block border-0 bg-transparent mx-auto"
         style={{
