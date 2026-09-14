@@ -17,7 +17,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 export const adConfig = Object.freeze({
   enabled: readBoolean(process.env.NEXT_PUBLIC_ADS_ENABLED, true),
-  showDevelopmentPlaceholders: readBoolean(process.env.NEXT_PUBLIC_AD_PLACEHOLDERS, false),
+  showDevelopmentPlaceholders: readBoolean(process.env.NEXT_PUBLIC_AD_PLACEHOLDERS, !isProduction),
   mode,
   consent: {
     required: false,
@@ -34,7 +34,7 @@ export const adConfig = Object.freeze({
     native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
     sidebar: false,
     popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
-    socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, false),
+    socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, true),
     inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
   },
   intrusive: {
@@ -49,7 +49,6 @@ export const adConfig = Object.freeze({
           scriptUrl: 'https://nobleduringsurveillance.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
         },
         socialBar: {
-          // Official code supplied by the publisher. Disabled by default.
           scriptUrl: 'https://nobleduringsurveillance.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
         },
         native: {
@@ -62,6 +61,12 @@ export const adConfig = Object.freeze({
           scriptUrl: 'https://nobleduringsurveillance.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
           width: 728,
           height: 90,
+        },
+        bannerTablet: {
+          key: '8658915090686e956a2289c72ba73b71',
+          scriptUrl: 'https://nobleduringsurveillance.com/8658915090686e956a2289c72ba73b71/invoke.js',
+          width: 468,
+          height: 60,
         },
         bannerMobile: {
           key: 'cee89ddb1e1c5bd615b6d0a22ba3d9e8',
@@ -76,11 +81,16 @@ export const adConfig = Object.freeze({
           height: 250,
         },
         sidebar: {
-          // Official publisher unit, isolated in an iframe for each sidebar placement.
           key: 'c13f5f2182fb9c307a05678f246a92d3',
           scriptUrl: 'https://nobleduringsurveillance.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
           width: 160,
           height: 600,
+        },
+        banner160x300: {
+          key: '1a081bf3ee58c48ede1caf299a4f2e36',
+          scriptUrl: 'https://nobleduringsurveillance.com/1a081bf3ee58c48ede1caf299a4f2e36/invoke.js',
+          width: 160,
+          height: 300,
         },
       },
     },
@@ -136,7 +146,11 @@ export const adConfig = Object.freeze({
     single_sidebar_left: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     single_sidebar_right: { pages: ['movie', 'drama', 'episode', 'article'], format: 'sidebar', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 1280px)' },
     home_content_square: { pages: ['home'], format: 'square', provider: 'adsterra', lazy: true },
+    home_content_square_2: { pages: ['home'], format: 'square', provider: 'adsterra', lazy: true, mediaQuery: '(min-width: 768px)' },
     home_content_native: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
+    home_catalog_bottom: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    home_catalog_bottom_native: { pages: ['home'], format: 'native', provider: 'adsterra', lazy: true },
+    home_sticky_anchor: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_below_hero: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_before_subtitles: { pages: ['movie', 'drama'], format: 'native', provider: 'adsterra', lazy: true },

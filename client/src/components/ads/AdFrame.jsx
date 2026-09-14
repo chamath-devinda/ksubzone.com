@@ -7,10 +7,13 @@ import React, { useEffect, useRef, useState } from 'react';
 function hasCreative(doc) {
   if (!doc?.body) return false;
   // If Adsterra injected an iframe, img, video, link, or native container content, creative is present
-  const elements = doc.body.querySelectorAll('iframe, img, video, object, embed, a[href], div[id^="container-"] > *, ins, [data-creative]');
-  if (elements.length > 0) return true;
-  // Also check if text content or child nodes were injected into body
-  return Boolean(doc.body.childNodes?.length > 2);
+  const elements = doc.body.querySelectorAll('iframe, img, video, object, embed, a[href], div[id^="container-"] > *:not(script), ins, [data-creative]');
+  for (const el of elements) {
+    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+      return true;
+    }
+  }
+  return false;
 }
 
 export default function AdFrame({ title, source, width, height, onLoad, onUnavailable, responsive = false }) {

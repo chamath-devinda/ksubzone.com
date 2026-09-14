@@ -31,7 +31,9 @@ export default function AdSlot({ slotId, className = '' }) {
   const [slotFailed, setSlotFailed] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
   const [nearViewport, setNearViewport] = useState(false);
-  const { matches: isDesktop, ready: viewportReady } = useMediaQuery('(min-width: 768px)');
+  const { matches: isDesktop, ready: desktopReady } = useMediaQuery('(min-width: 768px)');
+  const { matches: isTablet, ready: tabletReady } = useMediaQuery('(min-width: 480px)');
+  const viewportReady = desktopReady && tabletReady;
   const slotDefinition = placement || config.placements[slotId];
   const { matches: matchesPlacementViewport } = useMediaQuery(slotDefinition?.mediaQuery || '(min-width: 0px)');
   const viewportAllowed = !slotDefinition?.mediaQuery || matchesPlacementViewport;
@@ -39,8 +41,11 @@ export default function AdSlot({ slotId, className = '' }) {
   const isResponsiveBanner = placement?.format === 'responsiveBanner';
   const selectedResponsiveFormatDisabled = isResponsiveBanner && viewportReady
     && ((isDesktop && !config.formats.desktopBanner) || (!isDesktop && !config.formats.mobileBanner));
-  const zoneName = isResponsiveBanner ? (isDesktop ? 'bannerDesktop' : 'bannerMobile') : placement?.format;
-  const zone = config.providers.adsterra.zones[zoneName];
+
+  const zoneName = isResponsiveBanner
+    ? (isDesktop ? 'bannerDesktop' : (isTablet ? 'bannerTablet' : 'bannerMobile'))
+    : placement?.format;
+  const zone = config.providers.adsterra.zones[zoneName] || config.providers.adsterra.zones.bannerMobile;
   const isNativePlacement = placement?.format === 'native';
 
   useEffect(() => {
@@ -74,19 +79,24 @@ export default function AdSlot({ slotId, className = '' }) {
     observer.observe(hostRef.current);
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);
+
   const source = useMemo(() => zone
     ? (isNativePlacement ? buildNativeDocument(zone) : buildDisplayDocument(zone))
     : '', [isNativePlacement, zone]);
+
+  // Execute the official publisher Adsterra codes directly
   const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed && !slotFailed
     && (!placement.lazy || nearViewport)
     && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled));
+
   const eventDetail = {
     provider: placement?.provider, slot_id: slotId,
     format: isResponsiveBanner ? 'banner' : placement?.format, page_type: pageType,
   };
+
   const renderedAd = canRender ? (
     <AdFrame
-      key={`${slotId}:${zone.scriptUrl}`}
+      key={`${slotId}:${zone.scriptUrl}:${zoneName}`}
       title={isNativePlacement ? 'Native advertisement' : placement.format === 'sidebar' ? 'Sidebar advertisement' : 'Advertisement'}
       source={source}
       width={zone.width}
@@ -103,27 +113,19 @@ export default function AdSlot({ slotId, className = '' }) {
     />
   ) : null;
 
-  if (!viewportAllowed || slotFailed) return null;
-  if (!placement && !config.showDevelopmentPlaceholders) return null;
-  if (selectedResponsiveFormatDisabled && !config.showDevelopmentPlaceholders) return null;
+  if (!viewportAllowed) return null;
+  if (!placement) return null;
+  if (selectedResponsiveFormatDisabled) return null;
+  if (slotFailed) return null;
 
   const isNative = slotDefinition?.format === 'native';
   const isSquare = slotDefinition?.format === 'square';
   const isSidebar = slotDefinition?.format === 'sidebar';
-  const isDevPlaceholder = config.showDevelopmentPlaceholders && !renderedAd;
-
-  if (!renderedAd && !isDevPlaceholder) return null;
-
-  const placeholderClass = isNative
-    ? 'min-h-[320px]'
-    : isSidebar
-      ? 'min-h-[600px]'
-    : isSquare
-      ? 'min-h-[250px]'
-      : 'min-h-[50px] md:min-h-[90px]';
+  const isLazyWaiting = Boolean(placement?.lazy && !nearViewport);
+  if (!renderedAd && !isLazyWaiting) return null;
 
   const reservationClass = isNative
-    ? 'min-h-[320px]'
+    ? 'min-h-[280px]'
     : isSidebar
       ? 'min-h-[600px]'
     : isSquare
@@ -136,20 +138,15 @@ export default function AdSlot({ slotId, className = '' }) {
       aria-label="Advertisement"
       data-ad-slot={slotId}
       className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border transition-all duration-300 ${
-        adLoaded || isDevPlaceholder
+        adLoaded
           ? 'border-white/[0.05] bg-white/[0.015] px-2 py-3'
           : 'border-transparent bg-transparent p-0'
       } ${reservationClass} ${className}`}
     >
-      {(adLoaded || isDevPlaceholder) && (
+      {!slotId.includes('sticky') && adLoaded && (
         <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
       )}
       {renderedAd}
-      {isDevPlaceholder && (
-        <div className={`flex w-full items-center justify-center text-[10px] text-slate-700 ${placeholderClass}`}>
-          {`${isNative ? 'Native' : isSidebar ? '160×600' : isSquare ? '300×250' : 'Responsive'} advertisement — ${slotId}`}
-        </div>
-      )}
     </aside>
   );
 }

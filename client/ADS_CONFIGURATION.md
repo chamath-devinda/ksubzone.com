@@ -31,7 +31,9 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 | Placement | Routes | Rationale |
 | --- | --- | --- |
 | `home_below_hero` | Home | High viewability after the primary discovery experience, without covering hero actions. |
-| `home_content_banner`, `home_content_square`, `home_content_native` | Home | Separates complete catalog rows so ads never masquerade as poster cards. |
+| `home_content_banner`, `home_content_square`, `home_content_square_2`, `home_content_native` | Home | Separates complete catalog rows so ads never masquerade as poster cards. Includes desktop dual 300x250 square units. |
+| `home_catalog_banner`, `home_catalog_bottom` | Home | High-engagement placements positioned above and below the full library catalog grid. |
+| `home_sticky_anchor` | Home | Floating sticky bottom anchor banner (320x50 on mobile / 728x90 on desktop) with user dismiss button. |
 | `listing_content_banner` | Movies, dramas, genres, article categories | Sits after filters and before results; the catalog controls remain uninterrupted. |
 | `media_below_hero`, `media_after_description` | Movie and drama details | Uses natural content breaks after title metadata and synopsis. |
 | `media_before_subtitles`, `media_after_downloads` | Movie and drama details | The subtitle anchor lands on the download section after the first slot, and the direct download controls are never overlaid or wrapped by ads. |

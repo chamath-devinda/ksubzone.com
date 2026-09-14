@@ -9,6 +9,7 @@ import HeroSlider from '@/features/media/components/HeroSlider';
 import GlassCard from '@/components/ui/GlassCard';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import AdSlot from '@/components/ads/AdSlot';
+import StickyAnchorAd from '@/components/ads/StickyAnchorAd';
 import SideAdLayout from '@/components/ads/SideAdLayout';
 import { 
   Film, Tv, Send,
@@ -307,7 +308,12 @@ export default function Home({
                 </div>
                 {sectionIndex === 0 && <AdSlot slotId="home_content_banner" />}
                 {sectionIndex === 1 && <AdSlot slotId="home_category_native_1" />}
-                {sectionIndex === 2 && <AdSlot slotId="home_content_square" />}
+                {sectionIndex === 2 && (
+                  <div className="w-full flex flex-col md:flex-row items-center justify-center gap-4 my-1">
+                    <AdSlot slotId="home_content_square" className="!max-w-[340px]" />
+                    <AdSlot slotId="home_content_square_2" className="!max-w-[340px]" />
+                  </div>
+                )}
                 {sectionIndex === 3 && <AdSlot slotId="home_content_native" />}
                 {sectionIndex >= 4 && sectionIndex % 2 === 0 && <AdSlot slotId="home_category_banner_2" />}
                 </React.Fragment>
@@ -473,10 +479,18 @@ export default function Home({
             )}
           </div>
 
+          {/* Bottom of Catalog Ad Banner */}
+          <div className="w-full flex justify-center pt-6 sm:pt-8 border-t border-white/[0.04]">
+            <AdSlot slotId="home_catalog_bottom" />
+          </div>
+
         </section>
 
       </div>
       </SideAdLayout>
+
+      {/* High-viewability Floating Sticky Bottom Anchor Ad */}
+      <StickyAnchorAd slotId="home_sticky_anchor" />
     </div>
   );
 }
