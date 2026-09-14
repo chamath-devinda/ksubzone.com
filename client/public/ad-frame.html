@@ -4,10 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
@@ -49,7 +47,7 @@
       // Notify parent window when ad is rendered
       try {
         var obs = new MutationObserver(function () {
-          var hasEl = document.querySelector('iframe, img, div[id^="container-"] > *');
+          var hasEl = document.querySelector('iframe, img, a, div[id^="container-"] > *');
           if (hasEl) {
             window.parent.postMessage({ type: 'AD_LOADED', zone: zoneName }, '*');
           }
@@ -60,23 +58,23 @@
       if (zone.native) {
         document.write(
           '<div id="container-' + zone.key + '"></div>' +
-          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js"><\\/script>'
+          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js"><' + '/script>'
         );
         return;
       }
 
       document.write(
         '<script type="text/javascript">' +
-          'window.atOptions = {' +
+          'atOptions = {' +
             'key: "' + zone.key + '",' +
             'format: "iframe",' +
             'height: ' + zone.height + ',' +
             'width: ' + zone.width + ',' +
             'params: {}' +
           '};' +
-          'atOptions = window.atOptions;' +
-        '<\\/script>' +
-        '<script type="text/javascript" src="' + host + '/' + zone.key + '/invoke.js"><\\/script>'
+          'window.atOptions = atOptions;' +
+        '<' + '/script>' +
+        '<script type="text/javascript" src="' + host + '/' + zone.key + '/invoke.js"><' + '/script>'
       );
     }());
   </script>

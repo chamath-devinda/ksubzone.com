@@ -66,61 +66,63 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       window.removeEventListener('message', handleMessage);
       frame.removeEventListener('load', handleLoad);
       doc?.removeEventListener('load', inspect, true);
-      doc?.removeEventListener('error', handleError, true);
       for (const child of watched) child.removeEventListener('load', handleChildLoad);
     };
-    const finish = (loaded, reason) => {
+
+    const finish = (loaded) => {
       if (finished) return;
-      finished = true;
-      cleanup();
-      setReady(loaded);
-      if (loaded) callbacksRef.current.onLoad?.();
-      else callbacksRef.current.onUnavailable?.(reason);
+      if (loaded) {
+        finished = true;
+        cleanup();
+        setReady(true);
+        callbacksRef.current.onLoad?.();
+      }
     };
+
     function handleChildLoad(event) {
       event.target.dataset.creativeLoaded = 'true';
       inspect();
     }
+
     function inspect() {
       if (finished) return;
-      for (const child of doc?.querySelectorAll('iframe') || []) {
-        if (!watched.has(child)) {
-          watched.add(child);
-          child.addEventListener('load', handleChildLoad);
+      try {
+        const targetDoc = doc || frame.contentDocument;
+        for (const child of targetDoc?.querySelectorAll('iframe') || []) {
+          if (!watched.has(child)) {
+            watched.add(child);
+            child.addEventListener('load', handleChildLoad);
+          }
         }
-      }
-      if (hasCreative(doc)) finish(true);
-    }
-    function handleError(event) {
-      // Non-fatal: auxiliary ad tracking/beacon pixels often fail or are blocked
-      // without affecting the visual banner creative. Only abort if main invoke fails.
-      if (event.target?.tagName === 'SCRIPT' && event.target?.src?.includes('invoke.js')) {
-        finish(false, 'script_error');
+        if (hasCreative(targetDoc)) finish(true);
+      } catch (e) {
+        // Cross-origin access might be restricted on live redirect
       }
     }
+
     function handleLoad() {
-      doc = frame.contentDocument;
+      try {
+        doc = frame.contentDocument;
+      } catch (e) {
+        doc = null;
+      }
       if (!doc?.body) return;
       observer?.disconnect();
       for (const child of doc.querySelectorAll('iframe')) child.dataset.creativeLoaded = 'true';
       inspect();
       if (finished) return;
       clearTimeout(timeout);
-      // Give ad network reasonable time to bid and inject the ad
       timeout = setTimeout(() => {
-        if (hasCreative(doc)) finish(true);
-        else finish(false, 'empty_or_timeout');
-      }, 20000);
+        inspect();
+      }, 5000);
       observer = new MutationObserver(inspect);
       observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
       doc.addEventListener('load', inspect, true);
-      doc.addEventListener('error', handleError, true);
     }
 
     timeout = setTimeout(() => {
-      if (hasCreative(frame.contentDocument)) finish(true);
-      else finish(false, 'network_timeout');
-    }, 20000);
+      inspect();
+    }, 5000);
     frame.addEventListener('load', handleLoad);
     if (frame.contentDocument?.readyState === 'complete') handleLoad();
     return () => { finished = true; cleanup(); };
@@ -144,8 +146,9 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         className="block border-0 bg-transparent mx-auto"
         style={{
           colorScheme: 'dark',
-          transform: !responsive && scale < 1 ? `scale(${scale})` : undefined,
-          transformOrigin: 'top center'
+          maxWidth: '100%',
+          transformOrigin: 'top center',
+          transform: responsive ? 'none' : `scale(${scale})`,
         }}
       />
     </div>

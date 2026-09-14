@@ -26,50 +26,51 @@ export default function AdSlot({ slotId, className = '' }) {
   const { config, pageType, resolvePlacement, emitAdEvent } = useAds();
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
-  const [slotFailed, setSlotFailed] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
   const [nearViewport, setNearViewport] = useState(false);
   const { matches: isDesktop, ready: desktopReady } = useMediaQuery('(min-width: 768px)');
-  const { matches: isTablet, ready: tabletReady } = useMediaQuery('(min-width: 480px)');
+  const { matches: isTablet, ready: tabletReady } = useMediaQuery('(min-width: 640px) and (max-width: 767px)');
   const viewportReady = desktopReady && tabletReady;
-  const slotDefinition = placement || config.placements[slotId];
-  const { matches: matchesPlacementViewport } = useMediaQuery(slotDefinition?.mediaQuery || '(min-width: 0px)');
-  const viewportAllowed = !slotDefinition?.mediaQuery || matchesPlacementViewport;
 
-  const isResponsiveBanner = placement?.format === 'responsiveBanner';
-  const selectedResponsiveFormatDisabled = isResponsiveBanner && viewportReady
-    && ((isDesktop && !config.formats.desktopBanner) || (!isDesktop && !config.formats.mobileBanner));
+  const slotDefinition = config?.slots?.[slotId];
+  const isResponsiveBanner = slotDefinition?.format === 'banner';
+  const isNativePlacement = slotDefinition?.format === 'native';
 
-  const zoneName = isResponsiveBanner
-    ? (isDesktop ? 'bannerDesktop' : (isTablet ? 'bannerTablet' : 'bannerMobile'))
-    : placement?.format;
-  const zone = config.providers.adsterra.zones[zoneName] || config.providers.adsterra.zones.bannerMobile;
-  const isNativePlacement = placement?.format === 'native';
+  const zoneName = useMemo(() => {
+    if (!slotDefinition) return '';
+    if (!isResponsiveBanner) return slotDefinition.zone;
+    if (isDesktop) return slotDefinition.zones?.desktop || 'bannerDesktop';
+    if (isTablet) return slotDefinition.zones?.tablet || 'bannerTablet';
+    return slotDefinition.zones?.mobile || 'bannerMobile';
+  }, [isDesktop, isResponsiveBanner, isTablet, slotDefinition]);
+
+  const zone = config?.adsterra?.zones?.[zoneName];
+
+  const selectedResponsiveFormatDisabled = useMemo(() => {
+    if (!isResponsiveBanner) return false;
+    if (isDesktop) return config?.displayFormats?.bannerDesktop === false;
+    if (isTablet) return config?.displayFormats?.bannerTablet === false;
+    return config?.displayFormats?.bannerMobile === false;
+  }, [config?.displayFormats, isDesktop, isResponsiveBanner, isTablet]);
+
+  const viewportAllowed = useMemo(() => {
+    if (placement?.devices === 'desktop_only') return isDesktop;
+    if (placement?.devices === 'mobile_only') return !isDesktop;
+    return true;
+  }, [isDesktop, placement?.devices]);
 
   useEffect(() => {
     setAdLoaded(false);
-    setSlotFailed(false);
   }, [slotId, zoneName]);
 
   useEffect(() => {
-    if (!placement || !viewportAllowed) return;
-    emitAdEvent('provider_selected', {
-      provider: placement.provider,
-      slot_id: slotId,
-      format: placement.format,
-      page_type: pageType,
-    });
-  }, [emitAdEvent, pageType, placement, slotId, viewportAllowed]);
-
-  useEffect(() => {
-    if (!placement?.lazy || !viewportAllowed) return undefined;
-    if (nearViewport || !hostRef.current) return undefined;
-    if (typeof IntersectionObserver === 'undefined') {
+    if (!hostRef.current) return undefined;
+    if (!placement?.lazy) {
       setNearViewport(true);
       return undefined;
     }
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
+      if (entry?.isIntersecting) {
         setNearViewport(true);
         observer.disconnect();
       }
@@ -81,7 +82,7 @@ export default function AdSlot({ slotId, className = '' }) {
   const source = useMemo(() => zone ? buildAdFrameUrl(zoneName) : '', [zone, zoneName]);
 
   // Execute the official publisher Adsterra codes directly
-  const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed && !slotFailed
+  const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed
     && (!placement.lazy || nearViewport)
     && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled));
 
@@ -102,10 +103,6 @@ export default function AdSlot({ slotId, className = '' }) {
         setAdLoaded(true);
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
-      onUnavailable={(reason) => {
-        setSlotFailed(true);
-        emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
-      }}
     />
   ) : null;
 
@@ -116,8 +113,6 @@ export default function AdSlot({ slotId, className = '' }) {
   const isNative = slotDefinition?.format === 'native';
   const isSquare = slotDefinition?.format === 'square';
   const isSidebar = slotDefinition?.format === 'sidebar';
-  const isLazyWaiting = Boolean(placement?.lazy && !nearViewport);
-  if (!renderedAd && !isLazyWaiting) return null;
 
   const reservationClass = isNative
     ? 'min-h-[280px]'
