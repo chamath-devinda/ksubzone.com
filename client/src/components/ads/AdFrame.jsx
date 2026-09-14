@@ -6,12 +6,17 @@ import React, { useEffect, useRef, useState } from 'react';
 // a load only after the frame contains a visible creative or iframe.
 function hasCreative(doc) {
   if (!doc?.body) return false;
-  // If Adsterra injected an iframe, img, video, link, or native container content, creative is present
-  const elements = doc.body.querySelectorAll('iframe, img, video, object, embed, a[href], div[id^="container-"] > *:not(script), ins, [data-creative]');
+  // Detect Adsterra banner/video iframes, images, and native containers
+  const elements = doc.body.querySelectorAll(
+    'iframe, img[src]:not([src=""]), video, object, embed, ins, [data-creative], a[href] img'
+  );
   for (const el of elements) {
-    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
-      return true;
-    }
+    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') return true;
+  }
+  // Native ad container: Adsterra fills div#container-<key> with child nodes
+  const containers = doc.body.querySelectorAll('div[id^="container-"]');
+  for (const c of containers) {
+    if (c.children.length > 0) return true;
   }
   return false;
 }
@@ -97,7 +102,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       timeout = setTimeout(() => {
         if (hasCreative(doc)) finish(true);
         else finish(false, 'empty_or_timeout');
-      }, 15000);
+      }, 20000);
       observer = new MutationObserver(inspect);
       observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
       doc.addEventListener('load', inspect, true);
@@ -107,7 +112,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     timeout = setTimeout(() => {
       if (hasCreative(frame.contentDocument)) finish(true);
       else finish(false, 'network_timeout');
-    }, 15000);
+    }, 20000);
     frame.addEventListener('load', handleLoad);
     if (frame.contentDocument?.readyState === 'complete') handleLoad();
     return () => { finished = true; cleanup(); };

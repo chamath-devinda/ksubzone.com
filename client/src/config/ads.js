@@ -156,7 +156,7 @@ export const adConfig = Object.freeze({
     home_sticky_anchor: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_below_hero: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_after_description: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
-    media_before_subtitles: { pages: ['movie', 'drama'], format: 'native', provider: 'adsterra', lazy: true },
+    media_before_subtitles: { pages: ['movie', 'drama'], format: 'square', provider: 'adsterra', lazy: false },
     subtitle_list_banner: { pages: ['drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     media_after_downloads: { pages: ['movie', 'drama'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     article_intro_square: { pages: ['article'], format: 'square', provider: 'adsterra', lazy: false },

@@ -470,6 +470,14 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
         />
         <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/20 to-transparent" />
         <div className="absolute inset-0 bg-black/10" />
+        {/* Native ad embedded at bottom of backdrop for depth — only loads after media is ready */}
+        {!topOnly && (
+          <div className="absolute bottom-0 left-0 right-0 z-[5] flex items-end justify-center pb-2 pointer-events-none">
+            <div className="pointer-events-auto w-full max-w-2xl px-3">
+              <AdSlot slotId="media_before_subtitles" className="opacity-90" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Media Metadata Layout */}
@@ -633,29 +641,6 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               </div>
             </div>
 
-            {/* Prominent Subtitle Download Center (High Above the Fold) */}
-            {!topOnly && (
-              <MediaSubtitlesSection
-                type={type}
-                media={media}
-                seasons={seasons}
-                selectedSeason={selectedSeason}
-                setSelectedSeason={setSelectedSeason}
-                activeSeasonDoc={activeSeasonDoc}
-                activeEpisodes={activeEpisodes}
-                episodeSubtitlesById={episodeSubtitlesById}
-                sortedSubtitles={sortedSubtitles}
-                standaloneSubtitles={standaloneSubtitles}
-                sortSubtitleFiles={sortSubtitleFiles}
-                mediaPermalink={mediaPermalink}
-                displayTitle={displayTitle}
-                downloadAlert={downloadAlert}
-                downloadingId={downloadingId}
-                handleDownloadSubtitle={handleDownloadSubtitle}
-                getId={getId}
-              />
-            )}
-
             {!topOnly && <AdSlot slotId="media_below_hero" className="my-2" />}
 
             {/* AI SEO Unique Rewrite Block */}
@@ -788,6 +773,29 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   )}
                 </div>
               </div>
+            )}
+
+            {/* Prominent Subtitle Download Center (After Synopsis & Trailer) */}
+            {!topOnly && (
+              <MediaSubtitlesSection
+                type={type}
+                media={media}
+                seasons={seasons}
+                selectedSeason={selectedSeason}
+                setSelectedSeason={setSelectedSeason}
+                activeSeasonDoc={activeSeasonDoc}
+                activeEpisodes={activeEpisodes}
+                episodeSubtitlesById={episodeSubtitlesById}
+                sortedSubtitles={sortedSubtitles}
+                standaloneSubtitles={standaloneSubtitles}
+                sortSubtitleFiles={sortSubtitleFiles}
+                mediaPermalink={mediaPermalink}
+                displayTitle={displayTitle}
+                downloadAlert={downloadAlert}
+                downloadingId={downloadingId}
+                handleDownloadSubtitle={handleDownloadSubtitle}
+                getId={getId}
+              />
             )}
 
             {!topOnly && (
