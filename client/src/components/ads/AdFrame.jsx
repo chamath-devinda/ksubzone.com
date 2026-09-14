@@ -53,9 +53,17 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     const watched = new Set();
     setReady(false);
 
+    function handleMessage(event) {
+      if (event.data?.type === 'AD_LOADED') {
+        finish(true);
+      }
+    }
+    window.addEventListener('message', handleMessage);
+
     const cleanup = () => {
       clearTimeout(timeout);
       observer?.disconnect();
+      window.removeEventListener('message', handleMessage);
       frame.removeEventListener('load', handleLoad);
       doc?.removeEventListener('load', inspect, true);
       doc?.removeEventListener('error', handleError, true);

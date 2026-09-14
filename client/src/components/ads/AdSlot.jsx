@@ -112,7 +112,6 @@ export default function AdSlot({ slotId, className = '' }) {
   if (!viewportAllowed) return null;
   if (!placement) return null;
   if (selectedResponsiveFormatDisabled) return null;
-  if (slotFailed) return null;
 
   const isNative = slotDefinition?.format === 'native';
   const isSquare = slotDefinition?.format === 'square';
@@ -136,10 +135,10 @@ export default function AdSlot({ slotId, className = '' }) {
       className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border transition-all duration-300 ${
         adLoaded
           ? 'border-white/[0.05] bg-white/[0.015] px-2 py-3'
-          : 'border-transparent bg-transparent p-0'
+          : 'border-white/[0.03] bg-white/[0.008] px-2 py-3'
       } ${reservationClass} ${className}`}
     >
-      {!slotId.includes('sticky') && adLoaded && (
+      {!slotId.includes('sticky') && (
         <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
       )}
       {renderedAd}

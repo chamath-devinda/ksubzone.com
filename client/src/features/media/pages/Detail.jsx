@@ -470,14 +470,6 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
         />
         <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/20 to-transparent" />
         <div className="absolute inset-0 bg-black/10" />
-        {/* Native ad embedded at bottom of backdrop for depth — only loads after media is ready */}
-        {!topOnly && (
-          <div className="absolute bottom-0 left-0 right-0 z-[5] flex items-end justify-center pb-2 pointer-events-none">
-            <div className="pointer-events-auto w-full max-w-2xl px-3">
-              <AdSlot slotId="media_before_subtitles" className="opacity-90" />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Media Metadata Layout */}
@@ -774,6 +766,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 </div>
               </div>
             )}
+
+            {/* Ad Placement before Subtitles */}
+            {!topOnly && <AdSlot slotId="media_before_subtitles" className="my-2" />}
 
             {/* Prominent Subtitle Download Center (After Synopsis & Trailer) */}
             {!topOnly && (
