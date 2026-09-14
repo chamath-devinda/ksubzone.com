@@ -17,6 +17,7 @@ import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import StatCard from '@/features/admin/components/StatCard';
 import { Pulse, CardSkeleton } from '@/features/admin/components/Skeleton';
 import { useToast } from '@/features/admin/components/Toast';
+import { AD_REVENUE_LKR_PER_USD } from '@/config/ads';
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
 function formatNum(n) {
@@ -26,13 +27,23 @@ function formatNum(n) {
   return String(n);
 }
 
-function formatMoney(value) {
+function formatUsd(value) {
   const amount = Number(value || 0);
   return amount.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: amount < 1 ? 4 : 2,
+  });
+}
+
+function formatLkr(value) {
+  const amount = Number(value || 0) * AD_REVENUE_LKR_PER_USD;
+  return amount.toLocaleString('en-LK', {
+    style: 'currency',
+    currency: 'LKR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 }
 
@@ -527,10 +538,10 @@ function AdsterraRevenuePanel({
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Revenue', value: formatMoney(summary.revenue), icon: DollarSign, color: 'text-[#10B981]', bg: 'bg-[#10B981]/15' },
+              { label: 'Revenue (LKR)', value: formatLkr(summary.revenue), subvalue: formatUsd(summary.revenue), icon: DollarSign, color: 'text-[#10B981]', bg: 'bg-[#10B981]/15' },
               { label: 'Impressions', value: formatNum(summary.impressions), icon: Eye, color: 'text-[#7C3AED]', bg: 'bg-[#7C3AED]/15' },
               { label: 'Clicks', value: formatNum(summary.clicks), icon: MousePointerClick, color: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/15' },
-              { label: 'CPM / CTR', value: `${formatMoney(summary.cpm)} / ${Number(summary.ctr || 0).toFixed(2)}%`, icon: TrendingUp, color: 'text-[#F59E0B]', bg: 'bg-[#F59E0B]/15' },
+              { label: 'CPM / CTR', value: `${formatLkr(summary.cpm)} / ${Number(summary.ctr || 0).toFixed(2)}%`, subvalue: `${formatUsd(summary.cpm)} CPM`, icon: TrendingUp, color: 'text-[#F59E0B]', bg: 'bg-[#F59E0B]/15' },
             ].map(item => (
               <div key={item.label} className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-2">
@@ -540,6 +551,7 @@ function AdsterraRevenuePanel({
                   </div>
                 </div>
                 <p className="mt-2 text-[22px] font-black font-mono text-slate-900 dark:text-white leading-tight">{item.value}</p>
+                {item.subvalue && <p className="mt-1 text-[10px] font-medium text-slate-400">{item.subvalue}</p>}
               </div>
             ))}
           </div>
@@ -550,7 +562,7 @@ function AdsterraRevenuePanel({
                 <p className="text-xs font-bold text-slate-900 dark:text-slate-200">Daily Revenue Timeline</p>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500">{stats?.period?.start || '—'} to {stats?.period?.finish || '—'}</p>
               </div>
-              <span className="text-xs font-bold text-[#10B981] font-mono">USD</span>
+              <span className="text-xs font-bold text-[#10B981] font-mono">LKR · approx. Rs. {AD_REVENUE_LKR_PER_USD}/USD</span>
             </div>
 
             {daily.length > 0 ? (
@@ -562,7 +574,7 @@ function AdsterraRevenuePanel({
                       <div
                         className="w-full rounded-t-md bg-gradient-to-t from-[#10B981]/70 to-[#10B981] transition hover:brightness-125 cursor-pointer"
                         style={{ height: `${height}%` }}
-                        title={`${item.date}: ${formatMoney(item.revenue)} · ${formatNum(item.impressions)} impressions`}
+                        title={`${item.date}: ${formatLkr(item.revenue)} (${formatUsd(item.revenue)}) · ${formatNum(item.impressions)} impressions`}
                       />
                     </div>
                   );

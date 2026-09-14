@@ -14,6 +14,9 @@ export const AD_MODES = Object.freeze({
 const requestedMode = String(process.env.NEXT_PUBLIC_AD_MODE || AD_MODES.HYBRID).toUpperCase();
 const mode = Object.values(AD_MODES).includes(requestedMode) ? requestedMode : AD_MODES.HYBRID;
 const isProduction = process.env.NODE_ENV === 'production';
+// Adsterra reports earnings in USD. This display-only rate can be updated at
+// deploy time without ever changing the provider's source-of-truth figures.
+export const AD_REVENUE_LKR_PER_USD = Math.max(1, Number(process.env.NEXT_PUBLIC_AD_REVENUE_LKR_PER_USD || 330));
 
 export const adConfig = Object.freeze({
   enabled: readBoolean(process.env.NEXT_PUBLIC_ADS_ENABLED, true),
@@ -32,7 +35,7 @@ export const adConfig = Object.freeze({
     mobileBanner: readBoolean(process.env.NEXT_PUBLIC_MOBILE_BANNER_ENABLED, true),
     square: readBoolean(process.env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
     native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
-    sidebar: false,
+    sidebar: readBoolean(process.env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
     popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
     socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, true),
     inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),

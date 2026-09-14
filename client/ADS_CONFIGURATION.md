@@ -20,11 +20,12 @@ NEXT_PUBLIC_SOCIAL_BAR_ENABLED=false
 NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED=false
 NEXT_PUBLIC_ADSTERRA_TRAFFIC_PERCENTAGE=50
 NEXT_PUBLIC_POPUNDER_COOLDOWN_MS=43200000
+NEXT_PUBLIC_AD_REVENUE_LKR_PER_USD=330
 ```
 
 `NEXT_PUBLIC_AD_MODE` accepts `ADSTERRA_ONLY`, `MONETAG_ONLY`, `HYBRID`, `AB_TEST`, or `OFF`.
 
-The responsive primary slot loads only one approved unit: 320x50 below 768px and 728x90 from 768px upward. The 300x250 unit is a separate in-content format. The 160x600 unit is shown only in dedicated wide-desktop rails; it is never requested on mobile. A lazy footer banner is enabled on catalog, detail, article, and home routes. Set any corresponding environment switch to `false` to disable that unit, or set `NEXT_PUBLIC_ADS_ENABLED=false` / `NEXT_PUBLIC_AD_MODE=OFF` to disable all advertising.
+The responsive primary slot loads only one approved unit: 320x50 below 768px and 728x90 from 768px upward. The 300x250 unit is a separate in-content format. The 160x600 unit is shown only in dedicated wide-desktop rails; it is never requested on mobile. A lazy footer banner is enabled on catalog, detail, article, and home routes. Set any corresponding environment switch to `false` to disable that unit, or set `NEXT_PUBLIC_ADS_ENABLED=false` / `NEXT_PUBLIC_AD_MODE=OFF` to disable all advertising. Admin revenue is displayed in LKR using `NEXT_PUBLIC_AD_REVENUE_LKR_PER_USD`; Adsterra's USD values remain visible underneath as the source amount.
 
 ## Placement map
 
