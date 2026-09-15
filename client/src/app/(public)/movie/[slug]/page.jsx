@@ -13,33 +13,13 @@ import {
   serializeJsonLd,
   SITE_URL,
 } from '@/utils/seo';
-import { permalinkSlug } from '@/utils/slug';
-
 // ISR: pages regenerate in the background at most once per hour.
+// Pages are rendered and cached on first request instead of contacting the
+// entire production catalog during deployment.
 export const revalidate = 3600;
 
 // Allow slugs published after the last build to be served on-demand.
 export const dynamicParams = true;
-
-/**
- * Pre-build every published movie slug at deploy time.
- */
-export async function generateStaticParams() {
-  try {
-    const catalog = await fetchBackendJson('/api/media/sitemap-catalog', {
-      revalidate: 3600,
-      tags: ['movies', 'sitemap'],
-      attempts: 1,
-      timeoutMs: 5_000,
-    });
-    return (catalog?.movies || []).map((movie) => ({
-      slug: permalinkSlug(movie),
-    })).filter((p) => !!p.slug);
-  } catch (error) {
-    console.error('generateStaticParams (movie): backend unreachable, skipping pre-build:', error?.message);
-    return [];
-  }
-}
 
 const getMovie = cache(async (slug) => {
   return fetchBackendJson(`/api/media/movies/${encodeURIComponent(slug)}?trackView=0`, {

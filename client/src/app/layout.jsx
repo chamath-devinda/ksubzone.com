@@ -16,6 +16,7 @@ import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import '@/index.css';
 import { SITE_URL } from '@/utils/seo';
+import { getServerSiteContent } from '@/lib/server/siteContent';
 
 const ParticleBackground = dynamic(() => import('@/components/layout/ParticleBackground'), { ssr: false });
 
@@ -60,20 +61,7 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const backendUrl = process.env.BACKEND_URL || (
-    process.env.NODE_ENV === 'production'
-      ? 'https://api.ksubzone.com'
-      : 'http://127.0.0.1:5000'
-  );
-  let initialSiteContent = null;
-  try {
-    const res = await fetch(`${backendUrl}/api/site-content`, { next: { revalidate: 1800, tags: ['site-content'] } });
-    if (res.ok) {
-      initialSiteContent = await res.json();
-    }
-  } catch (error) {
-    console.error("Error fetching site content on root layout:", error);
-  }
+  const initialSiteContent = await getServerSiteContent();
 
   return (
     <html lang="en-LK" className={`dark ${milker.variable}`}>

@@ -13,40 +13,14 @@ import {
   serializeJsonLd,
   SITE_URL,
 } from '@/utils/seo';
-import { permalinkSlug } from '@/utils/slug';
-
 // ISR: pages regenerate in the background at most once per hour.
-// Googlebot will always hit a cached, fully-rendered HTML page.
+// Pages are rendered and cached on first request instead of contacting the
+// entire production catalog during deployment.
 export const revalidate = 3600;
 
 // Allow slugs published after the last build to be served on-demand
 // (they will be cached after the first request).
 export const dynamicParams = true;
-
-/**
- * Pre-build every published drama slug at deploy time.
- * Googlebot will never need to wait for a live backend call on these pages.
- */
-export async function generateStaticParams() {
-  try {
-    const catalog = await fetchBackendJson('/api/media/sitemap-catalog', {
-      revalidate: 3600,
-      tags: ['dramas', 'sitemap'],
-      // Low timeout + single attempt: if the backend is unreachable at build
-      // time (e.g. local dev) the fallback fires in ~5s instead of ~36s.
-      attempts: 1,
-      timeoutMs: 5_000,
-    });
-    return (catalog?.dramas || []).map((drama) => ({
-      slug: permalinkSlug(drama),
-    })).filter((p) => !!p.slug);
-  } catch (error) {
-    // If the backend is unreachable at build time, return an empty array.
-    // dynamicParams=true ensures pages still work via on-demand SSR.
-    console.error('generateStaticParams (drama): backend unreachable, skipping pre-build:', error?.message);
-    return [];
-  }
-}
 
 const getDrama = cache(async (slug) => {
   return fetchBackendJson(`/api/media/dramas/${encodeURIComponent(slug)}?trackView=0`, {

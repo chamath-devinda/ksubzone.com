@@ -1,5 +1,4 @@
 import React from 'react';
-import { cache } from 'react';
 import Home from '@/features/media/pages/Home';
 import { compactHomeCatalog } from '@/utils/mediaCatalog';
 import {
@@ -10,22 +9,7 @@ import {
   serializeJsonLd,
 } from '@/utils/seo';
 import { fetchBackendJson } from '@/lib/server/backend';
-
-const getBackendUrl = () => process.env.BACKEND_URL || (
-  process.env.NODE_ENV === 'production'
-    ? 'https://api.ksubzone.com'
-    : 'http://127.0.0.1:5000'
-);
-
-const getSiteContent = cache(async () => {
-  try {
-    const res = await fetch(`${getBackendUrl()}/api/site-content`, { next: { revalidate: 1800, tags: ['site-content'] } });
-    return res.ok ? res.json() : null;
-  } catch (error) {
-    console.error('Error fetching site content for homepage SEO:', error);
-    return null;
-  }
-});
+import { getServerSiteContent } from '@/lib/server/siteContent';
 
 const absoluteAssetUrl = (value, fallback) => {
   try {
@@ -37,7 +21,7 @@ const absoluteAssetUrl = (value, fallback) => {
 
 export async function generateMetadata() {
   try {
-    const data = await getSiteContent();
+    const data = await getServerSiteContent();
     if (data) {
       const seo = data.seo || {};
       const brand = data.brand || {};
@@ -87,7 +71,7 @@ export default async function HomePage() {
   let initialLibraryDramas = { dramas: [], totalPages: 1 };
   // Start independent requests together so the home page does not wait for
   // site settings before it can start loading the catalog.
-  const siteContentPromise = getSiteContent();
+  const siteContentPromise = getServerSiteContent();
   
   const catalogRes = await fetchBackendJson('/api/media/home', {
     revalidate: 300,
