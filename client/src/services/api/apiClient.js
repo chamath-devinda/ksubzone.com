@@ -5,17 +5,15 @@ import { tokenService } from './tokenService';
 // using the server-only BACKEND_URL.
 
 const resolveBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    // In browser, always use relative same-origin `/api` so Next.js rewrites proxy cleanly without CORS
+    return '';
+  }
   if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
   }
   if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL) {
     return process.env.NEXT_PUBLIC_BACKEND_URL.replace(/\/+$/, '');
-  }
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'ksubzone.com' || host === 'www.ksubzone.com' || host.endsWith('.vercel.app')) {
-      return 'https://api.ksubzone.com';
-    }
   }
   if (typeof process !== 'undefined' && process.env.BACKEND_URL) {
     return process.env.BACKEND_URL.replace(/\/+$/, '');

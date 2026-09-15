@@ -11,6 +11,7 @@ export default function ParticleBackground() {
 
   useEffect(() => {
     if (pathname?.startsWith('/management')) return;
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return;
 
     let mounted = true;
     Promise.all([
