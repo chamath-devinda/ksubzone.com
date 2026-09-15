@@ -496,7 +496,7 @@ $routes = [
     ['PUT', '/api/auth/profile', ['Middleware\AuthMiddleware::protectUser', 'Controllers\UserController::updateUserProfile']],
     ['POST', '/api/auth/2fa', ['Middleware\AuthMiddleware::protectUser', 'Controllers\AuthController::toggle2FA']],
     ['GET', '/api/auth/notifications', ['Middleware\AuthMiddleware::protectUser', 'Controllers\UserController::getUserNotifications']],
-    ['PUT', '/api/auth/notifications/([a-f0-9]+)/read', ['Middleware\AuthMiddleware::protectUser', 'Controllers\UserController::markNotificationRead']],
+    ['PUT', '/api/auth/notifications/([^/]+)/read', ['Middleware\AuthMiddleware::protectUser', 'Controllers\UserController::markNotificationRead']],
 
     // Public Catalog
     ['GET', '/api/media/home', 'Controllers\MovieController::getHomeCatalog'],
@@ -518,22 +518,22 @@ $routes = [
 
     // Reviews & Comments
     ['POST', '/api/media/reviews', ['Middleware\AuthMiddleware::protectUser', function() { \Middleware\RateLimitMiddleware::limit('reviews', 5, 60); }, 'Controllers\CommentController::addReview']],
-    ['GET', '/api/media/([a-f0-9]+)/reviews', 'Controllers\CommentController::getReviewsForMedia'],
-    ['POST', '/api/media/reviews/([a-f0-9]+)/like', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::likeReview']],
+    ['GET', '/api/media/([^/]+)/reviews', 'Controllers\CommentController::getReviewsForMedia'],
+    ['POST', '/api/media/reviews/([^/]+)/like', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::likeReview']],
     ['POST', '/api/media/comments', ['Middleware\AuthMiddleware::optionalUser', function() { \Middleware\RateLimitMiddleware::limit('comments', 10, 60); }, 'Controllers\CommentController::addComment']],
-    ['GET', '/api/media/comments/target/([a-f0-9]+)', 'Controllers\CommentController::getCommentsForTarget'],
-    ['POST', '/api/media/comments/([a-f0-9]+)/reply', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::addReply']],
-    ['POST', '/api/media/comments/([a-f0-9]+)/like', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::likeComment']],
+    ['GET', '/api/media/comments/target/([^/]+)', 'Controllers\CommentController::getCommentsForTarget'],
+    ['POST', '/api/media/comments/([^/]+)/reply', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::addReply']],
+    ['POST', '/api/media/comments/([^/]+)/like', ['Middleware\AuthMiddleware::protectUser', 'Controllers\CommentController::likeComment']],
 
     // Subtitles
     ['POST', '/api/subtitles/upload', ['Middleware\AuthMiddleware::protectUser', function() { \Middleware\RateLimitMiddleware::limit('subtitle_upload', 3, 60); }, 'Controllers\SubtitleController::uploadSubtitle']],
     ['GET', '/api/subtitles/recent', 'Controllers\SubtitleController::getRecentApprovedSubtitles'],
-    ['GET', '/api/subtitles/media/([a-f0-9,]+)', 'Controllers\SubtitleController::getSubtitlesForMedia'],
-    ['POST', '/api/subtitles/([a-f0-9]+)/rate', ['Middleware\AuthMiddleware::protectUser', 'Controllers\SubtitleController::rateSubtitle']],
-    ['POST', '/api/subtitles/([a-f0-9]+)/download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::trackDownload']],
-    ['POST', '/api/subtitles/([a-f0-9]+)/track-download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::trackDownload']],
-    ['GET', '/api/subtitles/([a-f0-9]+)/download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::downloadSubtitleFile']],
-    ['GET', '/api/subtitles/translator/([a-f0-9]+)', 'Controllers\SubtitleController::getUploaderHistory'],
+    ['GET', '/api/subtitles/media/([^/]+)', 'Controllers\SubtitleController::getSubtitlesForMedia'],
+    ['POST', '/api/subtitles/([^/]+)/rate', ['Middleware\AuthMiddleware::protectUser', 'Controllers\SubtitleController::rateSubtitle']],
+    ['POST', '/api/subtitles/([^/]+)/download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::trackDownload']],
+    ['POST', '/api/subtitles/([^/]+)/track-download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::trackDownload']],
+    ['GET', '/api/subtitles/([^/]+)/download', [function() { \Middleware\RateLimitMiddleware::limit('sub_dl', 30, 60); }, 'Controllers\SubtitleController::downloadSubtitleFile']],
+    ['GET', '/api/subtitles/translator/([^/]+)', 'Controllers\SubtitleController::getUploaderHistory'],
 
     // Analytics Search Logging
     ['POST', '/api/analytics/search', 'Controllers\AnalyticsController::logSearchQueryRequest'],
@@ -627,12 +627,12 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
         'Controllers\MovieController::createMovie'
     ]],
-    ['PUT', '/api/admin/movies/([a-f0-9]+)', [
+    ['PUT', '/api/admin/movies/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
         'Controllers\MovieController::updateMovie'
     ]],
-    ['DELETE', '/api/admin/movies/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/movies/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
         'Controllers\MovieController::deleteMovie'
@@ -643,7 +643,7 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::getMissingSubtitleAlerts'
     ]],
-    ['GET', '/api/admin/dramas/([a-f0-9]+)/structure', [
+    ['GET', '/api/admin/dramas/([^/]+)/structure', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::getDramaStructure'
@@ -659,12 +659,12 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::createDrama'
     ]],
-    ['PUT', '/api/admin/dramas/([a-f0-9]+)', [
+    ['PUT', '/api/admin/dramas/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::updateDrama'
     ]],
-    ['DELETE', '/api/admin/dramas/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/dramas/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::deleteDrama'
@@ -676,12 +676,12 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::addSeason'
     ]],
-    ['PUT', '/api/admin/seasons/([a-f0-9]+)', [
+    ['PUT', '/api/admin/seasons/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::editSeason'
     ]],
-    ['DELETE', '/api/admin/seasons/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/seasons/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::deleteSeason'
@@ -693,12 +693,12 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::addEpisode'
     ]],
-    ['PUT', '/api/admin/episodes/([a-f0-9]+)', [
+    ['PUT', '/api/admin/episodes/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::editEpisode'
     ]],
-    ['DELETE', '/api/admin/episodes/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/episodes/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::deleteEpisode'
@@ -715,22 +715,22 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
         'Controllers\SubtitleController::getModerationQueue'
     ]],
-    ['POST', '/api/admin/subtitles/([a-f0-9]+)/replace-file', [
+    ['POST', '/api/admin/subtitles/([^/]+)/replace-file', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
         'Controllers\SubtitleController::replaceSubtitleFile'
     ]],
-    ['PUT', '/api/admin/subtitles/([a-f0-9]+)/approve', [
+    ['PUT', '/api/admin/subtitles/([^/]+)/approve', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
         'Controllers\SubtitleController::updateApprovalStatus'
     ]],
-    ['PUT', '/api/admin/subtitles/([a-f0-9]+)', [
+    ['PUT', '/api/admin/subtitles/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
         'Controllers\SubtitleController::editSubtitle'
     ]],
-    ['DELETE', '/api/admin/subtitles/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/subtitles/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('approve_subtitles'); },
         'Controllers\SubtitleController::deleteSubtitle'
@@ -742,7 +742,7 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_comments'); },
         'Controllers\CommentController::adminGetAllReviews'
     ]],
-    ['DELETE', '/api/admin/reviews/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/reviews/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_comments'); },
         'Controllers\CommentController::adminDeleteReview'
@@ -752,7 +752,7 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_comments'); },
         'Controllers\CommentController::adminGetAllComments'
     ]],
-    ['DELETE', '/api/admin/comments/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/comments/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_comments'); },
         'Controllers\CommentController::adminDeleteComment'
@@ -769,12 +769,12 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_articles'); },
         'Controllers\ArticleController::createArticle'
     ]],
-    ['PUT', '/api/admin/articles/([a-f0-9]+)', [
+    ['PUT', '/api/admin/articles/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_articles'); },
         'Controllers\ArticleController::updateArticle'
     ]],
-    ['DELETE', '/api/admin/articles/([a-f0-9]+)', [
+    ['DELETE', '/api/admin/articles/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_articles'); },
         'Controllers\ArticleController::deleteArticle'
@@ -794,7 +794,7 @@ $routes = [
             echo json_encode($users);
         }
     ]],
-    ['PUT', '/api/admin/users/([a-f0-9]+)/status', [
+    ['PUT', '/api/admin/users/([^/]+)/status', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_users'); },
         function($id) {
@@ -819,7 +819,7 @@ $routes = [
             echo json_encode(['message' => "User status changed to {$status}", 'user' => $user]);
         }
     ]],
-    ['PUT', '/api/admin/users/([a-f0-9]+)/dashboard-access', [
+    ['PUT', '/api/admin/users/([^/]+)/dashboard-access', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_users'); },
         function($id) {

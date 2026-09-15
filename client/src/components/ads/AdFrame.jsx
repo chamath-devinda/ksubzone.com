@@ -6,17 +6,31 @@ import React, { useEffect, useRef, useState } from 'react';
 // a load only after the frame contains a visible creative or iframe.
 function hasCreative(doc) {
   if (!doc?.body) return false;
-  // Detect Adsterra banner/video iframes, images, and native containers
+  
+  const isVisible = (el) => {
+    if (!el) return false;
+    try {
+      const style = doc.defaultView?.getComputedStyle(el) || el.style;
+      if (style?.display === 'none' || style?.visibility === 'hidden' || style?.opacity === '0') return false;
+      const rect = el.getBoundingClientRect();
+      if (rect.left < -50 || rect.top < -50 || rect.width < 10 || rect.height < 10) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Detect Adsterra banner/video iframes, images, and native containers that are actually visible
   const elements = doc.body.querySelectorAll(
     'iframe, img[src]:not([src=""]), video, object, embed, ins, [data-creative], a[href] img'
   );
   for (const el of elements) {
-    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') return true;
+    if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE' && isVisible(el)) return true;
   }
   // Native ad container: Adsterra fills div#container-<key> with child nodes
   const containers = doc.body.querySelectorAll('div[id^="container-"]');
   for (const c of containers) {
-    if (c.children.length > 0) return true;
+    if (c.children.length > 0 && isVisible(c)) return true;
   }
   return false;
 }
