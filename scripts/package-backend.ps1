@@ -14,7 +14,6 @@ New-Item -ItemType Directory -Path $staging | Out-Null
 # uploads directory remain untouched.
 Copy-Item "server-php/.htaccess" -Destination $staging
 Copy-Item "server-php/index.php" -Destination $staging
-Copy-Item "server-php/bot-seo.php" -Destination $staging
 Copy-Item "server-php/check-db.php" -Destination $staging
 Copy-Item "server-php/config" -Destination (Join-Path $staging "config") -Recurse
 Copy-Item "server-php/controllers" -Destination (Join-Path $staging "controllers") -Recurse

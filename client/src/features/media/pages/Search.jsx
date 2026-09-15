@@ -5,7 +5,6 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api/apiClient';
 import GlassCard from '@/components/ui/GlassCard';
-import SeoTags from '@/components/seo/SeoTags';
 import { Search as SearchIcon, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteContent';
 
@@ -202,12 +201,6 @@ export default function Search() {
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-28 pb-8 text-left flex flex-col gap-7 sm:gap-8 min-h-screen">
       
-      <SeoTags
-        title="Advanced Search - KSubZone Catalog"
-        description="Search through hundreds of Korean dramas, movies, and subtitles. Filter by genre, rating, release year, or language."
-        keywords={['search kdramas', 'korean movies filter', 'ksubzone catalog']}
-      />
-
       {/* Header Banner */}
       <div>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight flex items-start sm:items-center gap-2 leading-tight">

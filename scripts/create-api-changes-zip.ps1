@@ -27,7 +27,6 @@ New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
 # List of files to copy (relative to server-php)
 $filesToCopy = @(
-    "bot-seo.php",
     "index.php",
     "config\Database.php",
     "controllers\AdminSearchController.php",

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight, Clock3, Download, Film, Globe2, Info, Star, Languages } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
@@ -14,7 +14,6 @@ const EMPTY_ITEMS = [];
 
 export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const router = useRouter();
 
   // Adjust state inline during render if items change
   const [prevItemsLength, setPrevItemsLength] = useState(items.length);
@@ -106,9 +105,6 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
   const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % items.length);
   const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-  const openDetails = () => router.push(`/${type}/${currentSlug}`);
-  const openDownloads = () => router.push(`/${type}/${currentSlug}?scrollTo=subtitles`);
-
   return (
     <section className="relative w-full min-h-[calc(100svh-3.5rem)] sm:min-h-[calc(100svh-4rem)] overflow-hidden group bg-luxury-950">
       {/* Background Cinematic Backdrop */}
@@ -260,22 +256,18 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
                 {/* Action CTA Buttons */}
                 <div className="mt-5 sm:mt-6 grid w-full max-w-md grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
-                  <button
-                    onClick={openDownloads}
-                    onMouseEnter={() => router.prefetch(`/${type}/${currentSlug}?scrollTo=subtitles`)}
-                    onTouchStart={() => router.prefetch(`/${type}/${currentSlug}?scrollTo=subtitles`)}
+                  <Link
+                    href={`/${type}/${currentSlug}?scrollTo=subtitles`}
                     className="min-h-12 px-4 sm:px-8 btn-oio-pill btn-kz-cta text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.06em] sm:tracking-[0.1em] rounded-full flex items-center justify-center gap-2.5 text-center cursor-pointer"
                   >
                     <Download className="w-4 h-4" /> Download Subtitles
-                  </button>
-                  <button
-                    onClick={openDetails}
-                    onMouseEnter={() => router.prefetch(`/${type}/${currentSlug}`)}
-                    onTouchStart={() => router.prefetch(`/${type}/${currentSlug}`)}
+                  </Link>
+                  <Link
+                    href={`/${type}/${currentSlug}`}
                     className="min-h-12 px-4 sm:px-7 btn-oio-glass text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.06em] sm:tracking-[0.1em] rounded-full flex items-center justify-center gap-2 text-center cursor-pointer"
                   >
                     <Info className="w-4 h-4 text-purple-200" /> Details
-                  </button>
+                  </Link>
                 </div>
               </motion.div>
             </AnimatePresence>

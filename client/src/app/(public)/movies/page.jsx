@@ -3,41 +3,51 @@ import MoviesList from '@/features/media/pages/MoviesList';
 import { compactCatalogItems } from '@/utils/mediaCatalog';
 import { permalinkSlug } from '@/utils/slug';
 import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
+import { fetchBackendJson } from '@/lib/server/backend';
 
-export const metadata = {
-  title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
-  description: 'Download synchronized Sinhala & English subtitles for popular Korean movies. Explore ratings, reviews, cast listings, and timing files.',
-  keywords: ['korean movies', 'sinhala subtitles', 'k-movie subtitles', 'ksubzone movies'],
-  alternates: {
-    canonical: 'https://www.ksubzone.com/movies',
-  },
-  openGraph: {
-    title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
-    description: 'Download synchronized Sinhala & English subtitles for popular Korean movies.',
-    url: 'https://www.ksubzone.com/movies',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
-    description: 'Download synchronized Sinhala & English subtitles for popular Korean movies.',
-  },
-};
+export const revalidate = 300;
 
-export default async function MoviesPage() {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  let initialData = null;
-  try {
-    const res = await fetch(`${backendUrl}/api/media/movies?sort=popular&page=1&limit=12`, { next: { revalidate: 60, tags: ['movies'] } });
-    if (res.ok) {
-      initialData = await res.json();
-      initialData.movies = compactCatalogItems(initialData.movies);
-    }
-  } catch (error) {
-    console.error("Error fetching movies catalog on server:", error);
-  }
+export function generateMetadata({ searchParams }) {
+  const page = Number(searchParams?.page) || 1;
+  const canonical = page === 1
+    ? `${SITE_URL}/movies`
+    : `${SITE_URL}/movies?page=${page}`;
+
+  return {
+    title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
+    description: 'Download synchronized Sinhala & English subtitles for popular Korean movies. Explore ratings, reviews, cast listings, and timing files.',
+    keywords: ['korean movies', 'sinhala subtitles', 'k-movie subtitles', 'ksubzone movies'],
+    alternates: {
+      canonical,
+    },
+    ...(page > 1 ? { robots: { index: false, follow: true } } : {}),
+    openGraph: {
+      title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
+      description: 'Download synchronized Sinhala & English subtitles for popular Korean movies.',
+      url: canonical,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
+      description: 'Download synchronized Sinhala & English subtitles for popular Korean movies.',
+    },
+  };
+}
+
+export default async function MoviesPage({ searchParams }) {
+  const page = Math.max(1, Number(searchParams?.page) || 1);
+  const limit = 12;
+
+  const initialData = await fetchBackendJson(
+    `/api/media/movies?status=Published&sort=popular&page=${page}&limit=${limit}`,
+    { revalidate: 300, tags: ['movies'] },
+  );
+  initialData.movies = compactCatalogItems(initialData.movies);
 
   const items = initialData?.movies || [];
+  const totalPages = initialData?.totalPages || 1;
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -45,7 +55,7 @@ export default async function MoviesPage() {
     numberOfItems: items.length,
     itemListElement: items.map((movie, index) => ({
       '@type': 'ListItem',
-      position: index + 1,
+      position: (page - 1) * limit + index + 1,
       name: cleanMediaTitle(movie.title) || movie.title,
       url: `${SITE_URL}/movie/${permalinkSlug(movie)}`,
     })),
@@ -59,7 +69,11 @@ export default async function MoviesPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
-      <MoviesList initialData={initialData} />
+      <MoviesList
+        initialData={initialData}
+        initialPage={page}
+        totalPages={totalPages}
+      />
     </>
   );
 }

@@ -14,6 +14,7 @@ const nextConfig = {
   // Isolate QA builds from an already-running local dev server.
   distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
+  trailingSlash: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -68,22 +69,6 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/robots.txt',
-        destination: `${backendUrl}/robots.txt`,
-      },
-      {
-        source: '/sitemap.xml',
-        destination: `${backendUrl}/sitemap.xml`,
-      },
-      {
-        source: '/sitemap-:type.xml',
-        destination: `${backendUrl}/sitemap-:type.xml`,
-      },
-      {
-        source: '/news-sitemap.xml',
-        destination: `${backendUrl}/news-sitemap.xml`,
-      },
-      {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
       },
@@ -91,6 +76,27 @@ const nextConfig = {
         source: '/uploads/:path*',
         destination: `${backendUrl}/uploads/:path*`,
       },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'ksubzone.com' }],
+        destination: 'https://www.ksubzone.com/:path*',
+        permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    const noIndexHeaders = [
+      { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+    ];
+    return [
+      { source: '/management/:path*', headers: noIndexHeaders },
+      { source: '/auth', headers: noIndexHeaders },
+      { source: '/profile', headers: noIndexHeaders },
+      { source: '/profile/:path*', headers: noIndexHeaders },
     ];
   },
   experimental: {

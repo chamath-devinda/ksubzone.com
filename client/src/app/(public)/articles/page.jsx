@@ -1,5 +1,6 @@
 import React from 'react';
 import Articles from '@/features/articles/pages/Articles';
+import { fetchBackendJson } from '@/lib/server/backend';
 
 export const metadata = {
   title: 'KSubZone Articles - K-Drama Guides, Reviews & Sinhala Subtitle Notes',
@@ -11,19 +12,11 @@ export const metadata = {
 };
 
 export default async function ArticlesPage() {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  let initialData = null;
-  try {
-    const res = await fetch(`${backendUrl}/api/articles?limit=30`, {
-      next: { revalidate: 21600, tags: ['articles'] }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      initialData = data.articles || [];
-    }
-  } catch (e) {
-    console.error('Error fetching articles for page:', e);
-  }
+  const data = await fetchBackendJson('/api/articles?status=Published&limit=30', {
+    revalidate: 3600,
+    tags: ['articles'],
+  });
+  const initialData = data?.articles || [];
 
   return <Articles initialData={initialData} />;
 }

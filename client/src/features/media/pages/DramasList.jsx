@@ -2,16 +2,20 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import apiClient from '@/services/api/apiClient';
 import GlassCard from '@/components/ui/GlassCard';
 import { Tv, Filter, Flame, Star, Calendar, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdSlot from '@/components/ads/AdSlot';
 
-export default function DramasList({ initialData }) {
+export default function DramasList({ initialData, initialPage = 1, totalPages: totalPagesProp = 1 }) {
   const [sortBy, setSortBy] = useState('popular');
   const [country, setCountry] = useState('');
-  const [page, setPage] = useState(1);
+  // Page state is URL-driven (crawlable). Client-side sort/filter changes reset
+  // to page 1, which is handled by updating the URL via the Link href.
+  const page = initialPage;
   const limit = 12;
   const hasInitialData = Array.isArray(initialData?.dramas) && initialData.dramas.length > 0;
 
@@ -30,7 +34,7 @@ export default function DramasList({ initialData }) {
   });
 
   const dramasMapped = (data?.dramas || []).map(d => ({ ...d, mediaType: 'drama' }));
-  const totalPages = data?.totalPages || 1;
+  const totalPages = data?.totalPages || totalPagesProp || 1;
 
   const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,180px))] justify-center gap-x-3 sm:gap-x-5 gap-y-6 sm:gap-y-8 items-start';
 
@@ -162,25 +166,39 @@ export default function DramasList({ initialData }) {
 
       <AdSlot slotId="listing_bottom_banner" className="mt-4" />
 
-      {/* Pagination */}
+      {/* Pagination — uses <Link href> so Googlebot can follow all catalog pages */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8 border-t border-white/5 pt-6">
-          <button
-            disabled={page === 1 || isLoading}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white transition"
-          >
-            Previous
-          </button>
-          <span className="text-[11px] sm:text-xs text-slate-400 font-semibold px-1 sm:px-2 whitespace-nowrap">Page {page} of {totalPages}</span>
-          <button
-            disabled={page === totalPages || isLoading}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white transition"
-          >
-            Next
-          </button>
-        </div>
+        <nav aria-label="Drama listing pagination" className="flex items-center justify-center gap-2 mt-8 border-t border-white/5 pt-6">
+          {page > 1 ? (
+            <Link
+              href={page - 1 === 1 ? '/dramas' : `/dramas?page=${page - 1}`}
+              className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white transition inline-flex items-center justify-center"
+              aria-label="Previous page"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white/30 inline-flex items-center justify-center cursor-default">
+              Previous
+            </span>
+          )}
+          <span className="text-[11px] sm:text-xs text-slate-400 font-semibold px-1 sm:px-2 whitespace-nowrap">
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={`/dramas?page=${page + 1}`}
+              className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white transition inline-flex items-center justify-center"
+              aria-label="Next page"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white/30 inline-flex items-center justify-center cursor-default">
+              Next
+            </span>
+          )}
+        </nav>
       )}
     </div>
   );

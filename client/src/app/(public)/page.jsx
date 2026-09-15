@@ -9,6 +9,7 @@ import {
   normalizeSiteUrl,
   serializeJsonLd,
 } from '@/utils/seo';
+import { fetchBackendJson } from '@/lib/server/backend';
 
 const getBackendUrl = () => process.env.BACKEND_URL || (
   process.env.NODE_ENV === 'production'
@@ -81,8 +82,6 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-  const backendUrl = getBackendUrl();
-  
   let initialHomeCatalog = {};
   let initialLibraryMovies = { movies: [], totalPages: 1 };
   let initialLibraryDramas = { dramas: [], totalPages: 1 };
@@ -90,23 +89,22 @@ export default async function HomePage() {
   // site settings before it can start loading the catalog.
   const siteContentPromise = getSiteContent();
   
-  try {
-    const catalogRes = await fetch(`${backendUrl}/api/media/home`, { next: { revalidate: 60, tags: ['home'] } }).then(r => r.ok ? r.json() : {});
-    
-    initialHomeCatalog = compactHomeCatalog(catalogRes);
-    // Home already contains the same view-ranked records. Reuse them instead
-    // of making two more server requests and embedding duplicate JSON.
-    initialLibraryMovies = {
-      movies: (initialHomeCatalog.popularMovies?.length ? initialHomeCatalog.popularMovies : initialHomeCatalog.trendingMovies || []).slice(0, 10),
-      totalPages: 1
-    };
-    initialLibraryDramas = {
-      dramas: (initialHomeCatalog.popularDramas?.length ? initialHomeCatalog.popularDramas : initialHomeCatalog.trendingDramas || []).slice(0, 10),
-      totalPages: 1
-    };
-  } catch (error) {
-    console.error("Error fetching homepage initial data on server:", error);
-  }
+  const catalogRes = await fetchBackendJson('/api/media/home', {
+    revalidate: 300,
+    tags: ['home', 'dramas', 'movies'],
+  });
+
+  initialHomeCatalog = compactHomeCatalog(catalogRes);
+  // Home already contains the same view-ranked records. Reuse them instead
+  // of making two more server requests and embedding duplicate JSON.
+  initialLibraryMovies = {
+    movies: (initialHomeCatalog.popularMovies?.length ? initialHomeCatalog.popularMovies : initialHomeCatalog.trendingMovies || []).slice(0, 10),
+    totalPages: 1
+  };
+  initialLibraryDramas = {
+    dramas: (initialHomeCatalog.popularDramas?.length ? initialHomeCatalog.popularDramas : initialHomeCatalog.trendingDramas || []).slice(0, 10),
+    totalPages: 1
+  };
 
   const siteContent = await siteContentPromise;
   const brand = siteContent?.brand || {};

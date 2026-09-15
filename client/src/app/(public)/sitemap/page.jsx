@@ -6,6 +6,11 @@ import {
 } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
 import { SITE_URL, buildBreadcrumbSchema, cleanMediaTitle } from '@/utils/seo';
+import { fetchBackendJson } from '@/lib/server/backend';
+
+// ISR: regenerate the HTML sitemap at most once per hour.
+// Googlebot will always get a 200 even when the backend is temporarily down.
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'KSubZone Complete HTML Sitemap - Korean Dramas, Movies & Sinhala Subtitles',
@@ -22,18 +27,20 @@ export const metadata = {
 };
 
 async function getSitemapCatalog() {
-  const backendUrl = process.env.BACKEND_URL || (
-    process.env.NODE_ENV === 'production'
-      ? 'https://api.ksubzone.com'
-      : 'http://127.0.0.1:5000'
-  );
-
   try {
-    const [dramasRes, moviesRes, genresRes, articlesRes] = await Promise.all([
-      fetch(`${backendUrl}/api/media/dramas?limit=100`, { next: { revalidate: 3600 } }).then(r => r.ok ? r.json() : { dramas: [] }),
-      fetch(`${backendUrl}/api/media/movies?limit=100`, { next: { revalidate: 3600 } }).then(r => r.ok ? r.json() : { movies: [] }),
-      fetch(`${backendUrl}/api/media/genres`, { next: { revalidate: 3600 } }).then(r => r.ok ? r.json() : []),
-      fetch(`${backendUrl}/api/articles?limit=50`, { next: { revalidate: 3600 } }).then(r => r.ok ? r.json() : { articles: [] }),
+    const [catalog, genresRes, articlesRes] = await Promise.all([
+      fetchBackendJson('/api/media/sitemap-catalog', {
+        revalidate: 3600,
+        tags: ['sitemap', 'dramas', 'movies', 'episodes'],
+      }),
+      fetchBackendJson('/api/media/genres', {
+        revalidate: 3600,
+        tags: ['sitemap', 'genres'],
+      }),
+      fetchBackendJson('/api/articles?status=Published&limit=500', {
+        revalidate: 3600,
+        tags: ['sitemap', 'articles'],
+      }),
     ]);
 
     const uniqueGenres = Array.from((genresRes || []).reduce((map, genre) => {
@@ -43,17 +50,17 @@ async function getSitemapCatalog() {
         map.set(genre.slug, genre);
       }
       return map;
-    }, new Map()).values());
+    }, new Map()).values()).filter((genre) => Number(genre.totalCount || 0) > 0);
 
     return {
-      dramas: dramasRes.dramas || [],
-      movies: moviesRes.movies || [],
+      dramas: catalog?.dramas || [],
+      movies: catalog?.movies || [],
       genres: uniqueGenres,
       articles: articlesRes.articles || [],
     };
   } catch (error) {
     console.error('Error loading sitemap catalog:', error);
-    return { dramas: [], movies: [], genres: [], articles: [] };
+    throw error;
   }
 }
 
@@ -258,13 +265,17 @@ export default async function HtmlSitemapPage() {
                 <div key={g.slug || g.name} className="flex flex-col gap-1 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                   <span className="text-xs font-black text-white truncate">{g.name}</span>
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
-                    <Link href={`/drama/genre/${g.slug}`} className="hover:text-brand-primary transition">
-                      Dramas
-                    </Link>
-                    <span>•</span>
-                    <Link href={`/movie/genre/${g.slug}`} className="hover:text-brand-secondary transition">
-                      Movies
-                    </Link>
+                    {Number(g.dramaCount || 0) > 0 && (
+                      <Link href={`/drama/genre/${g.slug}`} className="hover:text-brand-primary transition">
+                        Dramas
+                      </Link>
+                    )}
+                    {Number(g.dramaCount || 0) > 0 && Number(g.movieCount || 0) > 0 && <span>•</span>}
+                    {Number(g.movieCount || 0) > 0 && (
+                      <Link href={`/movie/genre/${g.slug}`} className="hover:text-brand-secondary transition">
+                        Movies
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}

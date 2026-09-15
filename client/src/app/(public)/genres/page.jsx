@@ -2,17 +2,13 @@ import React from 'react';
 import Link from 'next/link';
 import { Grid, Film, Tv, Sparkles } from 'lucide-react';
 import AdSlot from '@/components/ads/AdSlot';
+import { fetchBackendJson } from '@/lib/server/backend';
 
 async function getGenresData() {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    const res = await fetch(`${backendUrl}/api/media/genres`, { next: { revalidate: 3600 } });
-    if (!res.ok) throw new Error('Failed to fetch genres');
-    return await res.json();
-  } catch (error) {
-    console.error('Error fetching genres list:', error);
-    return [];
-  }
+  return fetchBackendJson('/api/media/genres', {
+    revalidate: 3600,
+    tags: ['genres'],
+  });
 }
 
 export const metadata = {
@@ -33,7 +29,7 @@ export default async function GenresPage() {
       }
       return map;
     }, new Map()).values()
-  );
+  ).filter((genre) => Number(genre.totalCount || 0) > 0);
 
   // JSON-LD Breadcrumbs for SEO
   const breadcrumbs = {
@@ -120,18 +116,22 @@ export default async function GenresPage() {
                       {genre.totalCount || 0} {genre.totalCount === 1 ? 'Title' : 'Titles'}
                     </span>
                     <div className="mt-3 grid w-full grid-cols-2 gap-2">
-                      <Link
-                        href={`/drama/genre/${genre.slug}`}
-                        className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-brand-primary/30 bg-brand-primary/15 px-2 text-[9px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-brand-primary hover:text-white"
-                      >
-                        <Tv className="h-3 w-3" /> Dramas
-                      </Link>
-                      <Link
-                        href={`/movie/genre/${genre.slug}`}
-                        className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-wider text-slate-200 transition hover:border-brand-primary/40 hover:text-white"
-                      >
-                        <Film className="h-3 w-3" /> Movies
-                      </Link>
+                      {Number(genre.dramaCount || 0) > 0 && (
+                        <Link
+                          href={`/drama/genre/${genre.slug}`}
+                          className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-brand-primary/30 bg-brand-primary/15 px-2 text-[9px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-brand-primary hover:text-white"
+                        >
+                          <Tv className="h-3 w-3" /> Dramas
+                        </Link>
+                      )}
+                      {Number(genre.movieCount || 0) > 0 && (
+                        <Link
+                          href={`/movie/genre/${genre.slug}`}
+                          className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-wider text-slate-200 transition hover:border-brand-primary/40 hover:text-white"
+                        >
+                          <Film className="h-3 w-3" /> Movies
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </article>

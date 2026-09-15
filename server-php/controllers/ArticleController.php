@@ -117,9 +117,10 @@ class ArticleController {
             }
         }
 
-        // Increment views (wrapped in try-catch to prevent DB locking crashes)
+        // Keep server rendering and crawler fetches read-only. A hydrated
+        // browser request may still record the public view.
         try {
-            if ($db->getDriver() !== 'sqlite') {
+            if (($_GET['trackView'] ?? '1') !== '0' && $db->getDriver() !== 'sqlite') {
                 $views = ($article['viewCount'] ?? 0) + 1;
                 $db->updateOne('articles', ['_id' => $article['_id']], ['viewCount' => $views]);
                 $article['viewCount'] = $views;

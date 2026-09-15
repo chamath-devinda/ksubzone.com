@@ -2,6 +2,7 @@ import React from 'react';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import Detail from '@/features/media/pages/Detail';
+import { fetchBackendJson } from '@/lib/server/backend';
 import {
   buildMediaMetaTitle,
   buildMediaMetaDescription,
@@ -12,20 +13,46 @@ import {
   serializeJsonLd,
   SITE_URL,
 } from '@/utils/seo';
+import { permalinkSlug } from '@/utils/slug';
+
+// ISR: pages regenerate in the background at most once per hour.
+// Googlebot will always hit a cached, fully-rendered HTML page.
+export const revalidate = 3600;
+
+// Allow slugs published after the last build to be served on-demand
+// (they will be cached after the first request).
+export const dynamicParams = true;
+
+/**
+ * Pre-build every published drama slug at deploy time.
+ * Googlebot will never need to wait for a live backend call on these pages.
+ */
+export async function generateStaticParams() {
+  try {
+    const catalog = await fetchBackendJson('/api/media/sitemap-catalog', {
+      revalidate: 3600,
+      tags: ['dramas', 'sitemap'],
+      // Low timeout + single attempt: if the backend is unreachable at build
+      // time (e.g. local dev) the fallback fires in ~5s instead of ~36s.
+      attempts: 1,
+      timeoutMs: 5_000,
+    });
+    return (catalog?.dramas || []).map((drama) => ({
+      slug: permalinkSlug(drama),
+    })).filter((p) => !!p.slug);
+  } catch (error) {
+    // If the backend is unreachable at build time, return an empty array.
+    // dynamicParams=true ensures pages still work via on-demand SSR.
+    console.error('generateStaticParams (drama): backend unreachable, skipping pre-build:', error?.message);
+    return [];
+  }
+}
 
 const getDrama = cache(async (slug) => {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    const res = await fetch(`${backendUrl}/api/media/dramas/${slug}`, {
-      next: { revalidate: 30, tags: ['dramas', `drama-${slug}`] }
-    });
-    if (res.ok) {
-      return res.json();
-    }
-  } catch (e) {
-    console.error('Error fetching drama details for cache:', e);
-  }
-  return null;
+  return fetchBackendJson(`/api/media/dramas/${encodeURIComponent(slug)}?trackView=0`, {
+    revalidate: 300,
+    tags: ['dramas', `drama-${slug}`],
+  });
 });
 
 export async function generateMetadata({ params }) {
@@ -68,6 +95,7 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     console.error('Error generating drama metadata:', e);
+    throw e;
   }
   return {
     title: 'Korean TV Drama Sinhala Subtitles | KSubZone',

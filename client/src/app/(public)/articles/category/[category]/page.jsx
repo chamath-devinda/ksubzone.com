@@ -1,43 +1,32 @@
 import React from 'react';
+import { cache } from 'react';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { BookOpen, CalendarDays, Clock3, Eye, ArrowRight } from 'lucide-react';
 import AdSlot from '@/components/ads/AdSlot';
+import Breadcrumbs from '@/components/seo/Breadcrumbs';
+import { fetchBackendJson } from '@/lib/server/backend';
+import { serializeJsonLd } from '@/utils/seo';
 
-async function getCategoryData(categorySlug) {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    // 1. Fetch articles matching category slug
-    const res = await fetch(`${backendUrl}/api/articles?category=${encodeURIComponent(categorySlug)}&limit=100`, { next: { revalidate: 3600 } });
-    const data = res.ok ? await res.json() : { articles: [] };
-    const articles = data.articles || [];
-
-    // Resolve category name (proper casing) from any returned article, or fall back to slug
-    let categoryName = categorySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    if (articles.length > 0) {
-      const match = articles.find(a => a.category && a.category.toLowerCase().replace(/[^a-z0-9]+/g, '-') === categorySlug);
-      if (match) {
-        categoryName = match.category;
-      } else if (articles[0].category) {
-        categoryName = articles[0].category;
-      }
-    }
-    
-    return {
-      categoryName,
-      articles
-    };
-  } catch (e) {
-    console.error('Error fetching category article page data:', e);
-    return {
-      categoryName: categorySlug,
-      articles: []
-    };
-  }
-}
+const getCategoryData = cache(async (categorySlug) => {
+  const data = await fetchBackendJson(
+    `/api/articles?status=Published&category=${encodeURIComponent(categorySlug)}&limit=100`,
+    { revalidate: 3600, tags: ['articles', `article-category-${categorySlug}`] },
+  );
+  const articles = data?.articles || [];
+  const match = articles.find((article) => (
+    article.category && article.category.toLowerCase().replace(/[^a-z0-9]+/g, '-') === categorySlug
+  ));
+  return {
+    categoryName: match?.category || articles[0]?.category || categorySlug.replace(/-/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase()),
+    articles,
+  };
+});
 
 export async function generateMetadata({ params }) {
   const { category } = params;
-  const { categoryName } = await getCategoryData(category);
+  const { categoryName, articles } = await getCategoryData(category);
+  if (articles.length === 0) notFound();
   return {
     title: `${categoryName} Articles & Guides (K-Drama & Movie) | KSubZone`,
     description: `Read the latest ${categoryName} articles, reviews, guides, character analysis, and Sinhala subtitle notes on KSubZone.`,
@@ -50,31 +39,13 @@ export async function generateMetadata({ params }) {
 export default async function ArticleCategoryPage({ params }) {
   const { category } = params;
   const { categoryName, articles } = await getCategoryData(category);
+  if (articles.length === 0) notFound();
 
-  const breadcrumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "KSubZone",
-        "item": "https://www.ksubzone.com"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Articles",
-        "item": "https://www.ksubzone.com/articles"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": categoryName,
-        "item": `https://www.ksubzone.com/articles/category/${category}`
-      }
-    ]
-  };
+  const breadcrumbItems = [
+    { name: 'Home', url: '/' },
+    { name: 'Articles', url: '/articles' },
+    { name: categoryName, url: `/articles/category/${category}` },
+  ];
 
   const itemList = {
     "@context": "https://schema.org",
@@ -92,16 +63,13 @@ export default async function ArticleCategoryPage({ params }) {
     <div className="min-h-screen bg-transparent pb-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemList) }}
       />
 
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(124,58,237,0.18),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(236,72,153,0.08),transparent_40%)]" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 lg:pt-32 pb-12">
+          <Breadcrumbs items={breadcrumbItems} className="mb-5" />
           <div className="max-w-3xl text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-brand-primary">
               <BookOpen className="w-3.5 h-3.5" /> Article Category

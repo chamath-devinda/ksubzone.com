@@ -2,6 +2,7 @@ import React from 'react';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import Watch from '@/features/media/pages/Watch';
+import { fetchBackendJson } from '@/lib/server/backend';
 import { cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 const getId = (value) => {
@@ -11,16 +12,10 @@ const getId = (value) => {
 };
 
 const getDrama = cache(async (slug) => {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    const res = await fetch(`${backendUrl}/api/media/dramas/${slug}`, { next: { revalidate: 30 } });
-    if (res.ok) {
-      return res.json();
-    }
-  } catch (e) {
-    console.error('Error fetching drama details for cache:', e);
-  }
-  return null;
+  return fetchBackendJson(`/api/media/dramas/${encodeURIComponent(slug)}?trackView=0`, {
+    revalidate: 300,
+    tags: ['dramas', `drama-${slug}`],
+  });
 });
 
 export async function generateMetadata({ params }) {
@@ -60,6 +55,7 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     console.error('Error generating episode watch metadata:', e);
+    throw e;
   }
 
   return {

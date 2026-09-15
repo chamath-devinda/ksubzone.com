@@ -1,39 +1,28 @@
 import React from 'react';
-import Link from 'next/link';
+import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import GlassCard from '@/components/ui/GlassCard';
 import { Tv } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
 import { serializeJsonLd } from '@/utils/seo';
 import AdSlot from '@/components/ads/AdSlot';
+import Breadcrumbs from '@/components/seo/Breadcrumbs';
+import { fetchBackendJson } from '@/lib/server/backend';
 
-async function getGenreData(genreSlug) {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    // 1. Resolve genre slug by fetching all genres and matching
-    const genresRes = await fetch(`${backendUrl}/api/media/genres`, { next: { revalidate: 86400 } });
-    let genreName = genreSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    if (genresRes.ok) {
-      const genres = await genresRes.json();
-      const matched = genres.find(g => g.slug === genreSlug);
-      if (matched) genreName = matched.name;
-    }
-
-    // 2. Fetch dramas in this genre
-    const dramasRes = await fetch(`${backendUrl}/api/media/dramas?genre=${encodeURIComponent(genreSlug)}&limit=100`, { next: { revalidate: 3600 } });
-    const dramasData = dramasRes.ok ? await dramasRes.json() : { dramas: [] };
-    
-    return {
-      genreName,
-      dramas: dramasData.dramas || []
-    };
-  } catch (e) {
-    console.error('Error fetching genre drama page data:', e);
-    return {
-      genreName: genreSlug,
-      dramas: []
-    };
-  }
-}
+const getGenreData = cache(async (genreSlug) => {
+  const [genres, dramasData] = await Promise.all([
+    fetchBackendJson('/api/media/genres', { revalidate: 3600, tags: ['genres'] }),
+    fetchBackendJson(`/api/media/dramas?genre=${encodeURIComponent(genreSlug)}&limit=100`, {
+      revalidate: 3600,
+      tags: ['dramas', `drama-genre-${genreSlug}`],
+    }),
+  ]);
+  const matched = (genres || []).find((genre) => genre.slug === genreSlug);
+  return {
+    genreName: matched?.name || genreSlug.replace(/-/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase()),
+    dramas: dramasData?.dramas || [],
+  };
+});
 
 export async function generateMetadata({ params }) {
   const { genre } = params;
@@ -50,31 +39,13 @@ export async function generateMetadata({ params }) {
 export default async function DramaGenrePage({ params }) {
   const { genre } = params;
   const { genreName, dramas } = await getGenreData(genre);
+  if (dramas.length === 0) notFound();
 
-  const breadcrumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "KSubZone",
-        "item": "https://www.ksubzone.com"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Dramas",
-        "item": "https://www.ksubzone.com/dramas"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": genreName,
-        "item": `https://www.ksubzone.com/drama/genre/${genre}`
-      }
-    ]
-  };
+  const breadcrumbItems = [
+    { name: 'Home', url: '/' },
+    { name: 'Dramas', url: '/dramas' },
+    { name: genreName, url: `/drama/genre/${genre}` },
+  ];
 
   const itemList = {
     "@context": "https://schema.org",
@@ -92,16 +63,13 @@ export default async function DramaGenrePage({ params }) {
     <div className="min-h-screen bg-transparent pb-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemList) }}
       />
 
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(124,58,237,0.18),transparent_40%)]" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 lg:pt-32 pb-12">
+          <Breadcrumbs items={breadcrumbItems} className="mb-5" />
           <div className="max-w-3xl text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-brand-primary">
               <Tv className="w-3.5 h-3.5" /> Genre Catalog

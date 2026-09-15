@@ -2,16 +2,17 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import apiClient from '@/services/api/apiClient';
 import GlassCard from '@/components/ui/GlassCard';
 import { Film, Filter, Flame, Star, Calendar, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdSlot from '@/components/ads/AdSlot';
 
-export default function MoviesList({ initialData }) {
+export default function MoviesList({ initialData, initialPage = 1, totalPages: totalPagesProp = 1 }) {
   const [sortBy, setSortBy] = useState('popular');
   const [country, setCountry] = useState('');
-  const [page, setPage] = useState(1);
+  const page = initialPage;
   const limit = 12;
   const hasInitialData = Array.isArray(initialData?.movies) && initialData.movies.length > 0;
 
@@ -30,7 +31,7 @@ export default function MoviesList({ initialData }) {
   });
 
   const movies = (data?.movies || []).map(m => ({ ...m, mediaType: 'movie' }));
-  const totalPages = data?.totalPages || 1;
+  const totalPages = data?.totalPages || totalPagesProp || 1;
 
   const mediaGridClass = 'grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,180px))] justify-center gap-x-3 sm:gap-x-5 gap-y-6 sm:gap-y-8 items-start';
 
@@ -63,7 +64,7 @@ export default function MoviesList({ initialData }) {
             return (
               <button
                 key={pill.id}
-                onClick={() => { setSortBy(pill.id); setPage(1); }}
+                onClick={() => { setSortBy(pill.id); }}
                 className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 flex items-center gap-1.5 ${
                   active 
                     ? 'btn-glass-purple text-white shadow-md' 
@@ -88,7 +89,7 @@ export default function MoviesList({ initialData }) {
             ].map((c) => (
               <button
                 key={c.id}
-                onClick={() => { setCountry(c.id); setPage(1); }}
+                onClick={() => { setCountry(c.id); }}
                 className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all duration-150 ${
                   country === c.id 
                     ? 'bg-white/10 text-white' 
@@ -162,25 +163,39 @@ export default function MoviesList({ initialData }) {
 
       <AdSlot slotId="listing_bottom_banner" className="mt-4" />
 
-      {/* Pagination */}
+      {/* Pagination — uses <Link href> so Googlebot can follow all catalog pages */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8 border-t border-white/5 pt-6">
-          <button
-            disabled={page === 1 || isLoading}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white transition"
-          >
-            Previous
-          </button>
-          <span className="text-[11px] sm:text-xs text-slate-400 font-semibold px-1 sm:px-2 whitespace-nowrap">Page {page} of {totalPages}</span>
-          <button
-            disabled={page === totalPages || isLoading}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white transition"
-          >
-            Next
-          </button>
-        </div>
+        <nav aria-label="Movie listing pagination" className="flex items-center justify-center gap-2 mt-8 border-t border-white/5 pt-6">
+          {page > 1 ? (
+            <Link
+              href={page - 1 === 1 ? '/movies' : `/movies?page=${page - 1}`}
+              className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white transition inline-flex items-center justify-center"
+              aria-label="Previous page"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white/30 inline-flex items-center justify-center cursor-default">
+              Previous
+            </span>
+          )}
+          <span className="text-[11px] sm:text-xs text-slate-400 font-semibold px-1 sm:px-2 whitespace-nowrap">
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={`/movies?page=${page + 1}`}
+              className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white transition inline-flex items-center justify-center"
+              aria-label="Next page"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="px-3 sm:px-4 h-10 flex-1 max-w-28 btn-glass-subtle rounded-xl text-xs font-bold text-white/30 inline-flex items-center justify-center cursor-default">
+              Next
+            </span>
+          )}
+        </nav>
       )}
     </div>
   );

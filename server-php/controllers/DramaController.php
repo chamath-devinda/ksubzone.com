@@ -414,9 +414,11 @@ class DramaController {
             return;
         }
 
-        // Increment views — only count unique visitors once per day (atomic counter)
+        // Server rendering and crawler fetches must be read-only. The browser
+        // performs the normal detail request after hydration and records the
+        // unique daily view through VisitorGuard.
         try {
-            if (\Utils\VisitorGuard::shouldCount((string)$drama['_id'])) {
+            if (($_GET['trackView'] ?? '1') !== '0' && \Utils\VisitorGuard::shouldCount((string)$drama['_id'])) {
                 $nextViews = $db->incrementJsonCounter('dramas', $drama['_id'], 'viewCount');
                 if ($nextViews !== null) {
                     $drama['viewCount'] = $nextViews;

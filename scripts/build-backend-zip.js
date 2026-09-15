@@ -62,4 +62,4 @@ console.log('Total entries in zip:', entries.length);
 console.log('Any .env files?:', entries.filter(e => e.includes('.env')));
 console.log('Any sqlite files?:', entries.filter(e => e.includes('.sqlite')));
 console.log('Any test/debug scripts?:', entries.filter(e => /debug|check-db|test-|run-server|install_mongo/i.test(e)));
-console.log('Core files included:', entries.filter(e => e === 'index.php' || e === '.htaccess' || e === 'bot-seo.php'));
+console.log('Core files included:', entries.filter(e => e === 'index.php' || e === '.htaccess'));

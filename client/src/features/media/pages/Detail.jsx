@@ -8,7 +8,6 @@ import apiClient from '@/services/api/apiClient';
 import { motion } from 'framer-motion';
 import { Star, Plus, Check, Heart, Upload, Download, Film, Tv, Flame, Languages, ShieldCheck, Clock, CheckCircle2, MessageSquare, ThumbsUp, PlayCircle, Eye, CalendarClock, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import SeoTags from '@/components/seo/SeoTags';
 
 import GlassCard from '@/components/ui/GlassCard';
 import { permalinkSlug } from '@/utils/slug';
@@ -446,18 +445,6 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     <SideAdLayout enabled={!topOnly}>
     <div className="w-full flex flex-col gap-12 bg-transparent text-left pb-16">
       
-      {/* Dynamic AI SEO Optimization tags */}
-      {!topOnly && (
-        <SeoTags
-          title={media.metaTitle || `${displayTitle} Sinhala & English Subtitles | KSubZone`}
-          description={media.metaDescription || `${synopsis || displayTitle} Sinhala and English subtitle downloads.`}
-          keywords={media.seoKeywords || (displayTitle ? [displayTitle.toLowerCase()] : [])}
-          canonical={`https://www.ksubzone.com/${type.toLowerCase()}/${mediaPermalink}`}
-          image={media.poster}
-          schemaMarkup={media.schemaMarkup}
-        />
-      )}
-
       {/* Cinematic Banner Backdrop Header */}
       <div className="relative w-full h-[42vh] min-h-[300px] sm:h-[70vh] lg:h-[85vh] overflow-hidden">
         <img

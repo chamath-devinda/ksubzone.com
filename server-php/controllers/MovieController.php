@@ -444,9 +444,11 @@ class MovieController {
             return;
         }
 
-        // Increment views — only count unique visitors once per day (atomic counter)
+        // Server rendering and crawler fetches must be read-only. The browser
+        // performs the normal detail request after hydration and records the
+        // unique daily view through VisitorGuard.
         try {
-            if (\Utils\VisitorGuard::shouldCount((string)$movie['_id'])) {
+            if (($_GET['trackView'] ?? '1') !== '0' && \Utils\VisitorGuard::shouldCount((string)$movie['_id'])) {
                 $nextViews = $db->incrementJsonCounter('movies', $movie['_id'], 'viewCount');
                 if ($nextViews !== null) {
                     $movie['viewCount'] = $nextViews;
@@ -741,7 +743,7 @@ class MovieController {
     }
 
     public static function getSitemapCatalog() {
-        $cached = \Utils\Cache::get('sitemap_catalog_v1');
+        $cached = \Utils\Cache::get('sitemap_catalog_v2');
         if ($cached !== false) {
             header('Content-Type: application/json');
             echo json_encode($cached);
@@ -749,8 +751,9 @@ class MovieController {
         }
 
         $db = Database::getInstance();
-        $statusFilter = ['status' => ['$in' => ['Published', 'Upcoming']]];
-        $fields = ['slug', 'title', 'contentUpdatedAt', 'status'];
+        // Sitemaps must contain only canonical, indexable, content-complete URLs.
+        $statusFilter = ['status' => 'Published'];
+        $fields = ['_id', 'slug', 'title', 'contentUpdatedAt', 'updatedAt', 'createdAt', 'status'];
 
         $dramas = $db->find('dramas', $statusFilter, [
             'sort' => ['createdAt' => -1],
@@ -763,6 +766,44 @@ class MovieController {
             'limit' => 1000,
             'fields' => $fields
         ]);
+
+        $allSeasons = $db->find('seasons', [], [
+            'fields' => ['_id', 'dramaId', 'seasonNumber']
+        ]);
+        $allEpisodes = $db->find('episodes', [], [
+            'fields' => ['_id', 'dramaId', 'seasonId', 'episodeNumber', 'updatedAt', 'createdAt']
+        ]);
+
+        $dramaMap = [];
+        foreach ($dramas as $drama) {
+            $dramaMap[(string)($drama['_id'] ?? '')] = $drama;
+        }
+        $seasonMap = [];
+        foreach ($allSeasons as $season) {
+            $seasonMap[(string)($season['_id'] ?? '')] = $season;
+        }
+
+        $episodeUrls = [];
+        $seenEpisodeUrls = [];
+        foreach ($allEpisodes as $episode) {
+            $drama = $dramaMap[(string)($episode['dramaId'] ?? '')] ?? null;
+            $season = $seasonMap[(string)($episode['seasonId'] ?? '')] ?? null;
+            if (!$drama || !$season) continue;
+
+            $slug = Slug::normalizePermalinkSlug($drama['slug'] ?? '');
+            if (!$slug) $slug = Slug::slugify($drama['title'] ?? '');
+            $seasonNumber = (int)($season['seasonNumber'] ?? 0);
+            $episodeNumber = (int)($episode['episodeNumber'] ?? 0);
+            if (!$slug || $seasonNumber < 1 || $episodeNumber < 1) continue;
+
+            $path = "/drama/{$slug}/season-{$seasonNumber}/episode-{$episodeNumber}";
+            if (isset($seenEpisodeUrls[$path])) continue;
+            $seenEpisodeUrls[$path] = true;
+            $episodeUrls[] = [
+                'path' => $path,
+                'updatedAt' => $episode['updatedAt'] ?? $episode['createdAt'] ?? null
+            ];
+        }
 
         $payload = [
             'dramas' => array_map(function($d) {
@@ -782,10 +823,11 @@ class MovieController {
                     'createdAt' => $m['createdAt'] ?? null,
                     'updatedAt' => $m['updatedAt'] ?? null
                 ];
-            }, $movies)
+            }, $movies),
+            'episodes' => $episodeUrls
         ];
 
-        \Utils\Cache::set('sitemap_catalog_v1', $payload, 3600);
+        \Utils\Cache::set('sitemap_catalog_v2', $payload, 3600);
         header('Content-Type: application/json');
         echo json_encode($payload);
     }

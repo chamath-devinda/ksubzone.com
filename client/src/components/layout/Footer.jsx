@@ -9,6 +9,7 @@ import { resolveLogoUrl } from '@/utils/mediaImages';
 import AdSlot from '@/components/ads/AdSlot';
 import AdsterraReferralBanner from '@/components/ads/AdsterraReferralBanner';
 import { useAds } from '@/components/ads/AdProvider';
+import InternalLinksFooter from '@/components/seo/InternalLinksFooter';
 
 function TikTokIcon({ className = 'h-4 w-4' }) {
   return (
@@ -59,12 +60,14 @@ export default function Footer() {
     { label: 'Movies', url: '/movies' },
     { label: 'TV Series', url: '/dramas' },
     { label: 'Genre Directory', url: '/genres' },
+    { label: 'Articles & Guides', url: '/articles' },
+    { label: 'HTML Sitemap', url: '/sitemap' },
     { label: 'About Us', url: '/about' },
     { label: 'Contact Us', url: '/contact' },
   ];
 
   const customFooterLinks = (footer.links || []).filter(
-    (link) => link.label && link.url && link.url !== '/articles' && link.url !== '/sitemap' && link.label !== 'Articles & Guides' && link.label !== 'HTML Sitemap'
+    (link) => link.label && link.url
   );
 
   const footerLinks = [
@@ -241,8 +244,11 @@ export default function Footer() {
           <AdsterraReferralBanner />
         </div>
 
+        {/* Internal navigation links — crawlable by Googlebot, visible on every page */}
+        <InternalLinksFooter />
+
         {/* Bottom Bar: Copyright & Credits */}
-        <div className="mt-12 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+        <div className="mt-6 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <p className="text-xs sm:text-sm font-medium text-slate-400" suppressHydrationWarning>
             © {new Date().getFullYear()} {brand.siteName || 'ksubzone'}. All Rights Reserved.
           </p>
@@ -258,4 +264,3 @@ export default function Footer() {
     </footer>
   );
 }
-

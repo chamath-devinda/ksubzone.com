@@ -3,41 +3,57 @@ import DramasList from '@/features/media/pages/DramasList';
 import { compactCatalogItems } from '@/utils/mediaCatalog';
 import { permalinkSlug } from '@/utils/slug';
 import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
+import { fetchBackendJson } from '@/lib/server/backend';
 
-export const metadata = {
-  title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
-  description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas. Explore episode guides, cast listings, and SRT downloads.',
-  keywords: ['korean dramas', 'sinhala subtitles', 'kdrama subtitles', 'ksubzone dramas'],
-  alternates: {
-    canonical: 'https://www.ksubzone.com/dramas',
-  },
-  openGraph: {
-    title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
-    description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas.',
-    url: 'https://www.ksubzone.com/dramas',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
-    description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas.',
-  },
-};
+// ISR: catalog listing refreshes hourly in the background.
+export const revalidate = 300;
 
-export default async function DramasPage() {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  let initialData = null;
-  try {
-    const res = await fetch(`${backendUrl}/api/media/dramas?sort=popular&page=1&limit=12`, { next: { revalidate: 60, tags: ['dramas'] } });
-    if (res.ok) {
-      initialData = await res.json();
-      initialData.dramas = compactCatalogItems(initialData.dramas);
-    }
-  } catch (error) {
-    console.error("Error fetching dramas catalog on server:", error);
-  }
+export function generateMetadata({ searchParams }) {
+  // Pages beyond page 1 get a noindex signal to prevent duplicate-content
+  // dilution, while still being crawlable so Google can follow links.
+  const page = Number(searchParams?.page) || 1;
+  const canonical = page === 1
+    ? `${SITE_URL}/dramas`
+    : `${SITE_URL}/dramas?page=${page}`;
+
+  return {
+    title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
+    description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas. Explore episode guides, cast listings, and SRT downloads.',
+    keywords: ['korean dramas', 'sinhala subtitles', 'kdrama subtitles', 'ksubzone dramas'],
+    alternates: {
+      canonical,
+    },
+    // Pages 2+ are crawlable so Google follows links, but we tell it
+    // the first page is the canonical representative.
+    ...(page > 1 ? { robots: { index: false, follow: true } } : {}),
+    openGraph: {
+      title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
+      description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas.',
+      url: canonical,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
+      description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas.',
+    },
+  };
+}
+
+export default async function DramasPage({ searchParams }) {
+  // Read the page number from the URL query string — crawlable by Googlebot.
+  const page = Math.max(1, Number(searchParams?.page) || 1);
+  const limit = 12;
+
+  const initialData = await fetchBackendJson(
+    `/api/media/dramas?status=Published&sort=popular&page=${page}&limit=${limit}`,
+    { revalidate: 300, tags: ['dramas'] },
+  );
+  initialData.dramas = compactCatalogItems(initialData.dramas);
 
   const items = initialData?.dramas || [];
+  const totalPages = initialData?.totalPages || 1;
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -45,7 +61,7 @@ export default async function DramasPage() {
     numberOfItems: items.length,
     itemListElement: items.map((drama, index) => ({
       '@type': 'ListItem',
-      position: index + 1,
+      position: (page - 1) * limit + index + 1,
       name: cleanMediaTitle(drama.title) || drama.title,
       url: `${SITE_URL}/drama/${permalinkSlug(drama)}`,
     })),
@@ -59,7 +75,11 @@ export default async function DramasPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbs) }} />
-      <DramasList initialData={initialData} />
+      <DramasList
+        initialData={initialData}
+        initialPage={page}
+        totalPages={totalPages}
+      />
     </>
   );
 }

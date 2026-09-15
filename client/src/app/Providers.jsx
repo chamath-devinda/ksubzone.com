@@ -20,12 +20,6 @@ const queryClient = new QueryClient({
 });
 
 export default function Providers({ children, initialSiteContent }) {
-  React.useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hostname === 'ksubzone.com') {
-      window.location.replace('https://www.ksubzone.com' + window.location.pathname + window.location.search + window.location.hash);
-    }
-  }, []);
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

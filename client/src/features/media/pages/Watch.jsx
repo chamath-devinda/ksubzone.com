@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api/apiClient';
@@ -9,7 +9,6 @@ import {
   Download, ShieldCheck, CheckCircle2, BadgeCheck, Send,
   MessageSquare, ExternalLink, Tv, ChevronLeft, ChevronRight, AlertCircle
 } from 'lucide-react';
-import SeoTags from '@/components/seo/SeoTags';
 import GlassCard from '@/components/ui/GlassCard';
 import { permalinkSlug } from '@/utils/slug';
 import { downloadSubtitle } from '@/utils/subtitleDownload';
@@ -20,7 +19,6 @@ import SideAdLayout from '@/components/ads/SideAdLayout';
 
 export default function Watch({ initialDramaData }) {
   const { slug, seasonPart, episodePart } = useParams();
-  const router = useRouter();
   const { user, admin } = useAuth();
 
   const seasonNumber = Number(String(seasonPart || '').replace('season-', ''));
@@ -207,7 +205,6 @@ export default function Watch({ initialDramaData }) {
 
   const formattedSeason = `S${String(seasonNumber).padStart(2, '0')}`;
   const formattedEpisode = `E${String(episodeNumber).padStart(2, '0')}`;
-  const year = drama.releaseDate ? new Date(drama.releaseDate).getFullYear() : '2026';
   const totalDownloads = subtitles.reduce((acc, s) => acc + (s.downloads || 0), 0) || 128;
 
   // Primary Uploader Info
@@ -219,13 +216,6 @@ export default function Watch({ initialDramaData }) {
     <SideAdLayout>
     <div className="w-full bg-transparent text-slate-200 min-h-screen pb-20 selection:bg-rose-600 selection:text-white relative">
       
-      {/* SEO & Meta Tags */}
-      <SeoTags
-        title={`${drama.title} ${year} [${formattedSeason} : ${formattedEpisode}] Sinhala Subtitles | ${activeEpisodeDoc.episodeTitle || 'සිංහල උපසිරසි'} | KSubZone`}
-        description={activeEpisodeDoc.episodeDescription || `Download Sinhala and English subtitles for ${drama.title} ${formattedSeason}${formattedEpisode}.`}
-        canonical={`https://www.ksubzone.com/drama/${dramaPermalink}/season-${seasonNumber}/episode-${episodeNumber}`}
-      />
-
       {/* Keep the complete drama presentation above the episode download area. */}
       <Detail type="Drama" initialData={dramaData} topOnly />
 
@@ -348,13 +338,13 @@ export default function Watch({ initialDramaData }) {
         {/* ─── 3-PILL EPISODE NAVIGATION (HIRU LUXURY CAPSULES) ─── */}
         <div className="w-full max-w-xl mx-auto grid grid-cols-3 items-stretch gap-2 p-1.5 rounded-full bg-luxury-900/80 border border-white/10 backdrop-blur-xl shadow-lg mt-2">
           {prevEp ? (
-            <button
-              onClick={() => router.push(`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${prevEp.episodeNumber}`)}
+            <Link
+              href={`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${prevEp.episodeNumber}`}
               className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-200 btn-oio-glass flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4 text-purple-300" />
               <span className="truncate">කලින් කොටස</span>
-            </button>
+            </Link>
           ) : (
             <div className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed">
               <ChevronLeft className="w-4 h-4" />
@@ -370,13 +360,13 @@ export default function Watch({ initialDramaData }) {
           </Link>
 
           {nextEp ? (
-            <button
-              onClick={() => router.push(`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${nextEp.episodeNumber}`)}
+            <Link
+              href={`/drama/${dramaPermalink}/season-${seasonNumber}/episode-${nextEp.episodeNumber}`}
               className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-200 btn-oio-glass flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span className="truncate">ඊළඟ කොටස</span>
               <ChevronRight className="w-4 h-4 text-purple-300" />
-            </button>
+            </Link>
           ) : (
             <div className="min-w-0 py-2.5 px-2 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed">
               <span className="truncate">ඊළඟ කොටස</span>

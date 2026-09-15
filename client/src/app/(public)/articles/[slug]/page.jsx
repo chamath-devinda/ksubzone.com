@@ -2,21 +2,14 @@ import React from 'react';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import ArticleDetail from '@/features/articles/pages/ArticleDetail';
+import { fetchBackendJson } from '@/lib/server/backend';
 import { serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 const getArticle = cache(async (slug) => {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    const res = await fetch(`${backendUrl}/api/articles/${slug}`, {
-      next: { revalidate: 21600, tags: ['articles', `article-${slug}`] }
-    });
-    if (res.ok) {
-      return res.json();
-    }
-  } catch (e) {
-    console.error('Error fetching article details for cache:', e);
-  }
-  return null;
+  return fetchBackendJson(`/api/articles/${encodeURIComponent(slug)}?trackView=0`, {
+    revalidate: 3600,
+    tags: ['articles', `article-${slug}`],
+  });
 });
 
 export async function generateMetadata({ params }) {
@@ -49,6 +42,7 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     console.error('Error generating article metadata:', e);
+    throw e;
   }
   return {
     title: 'KSubZone Article Details',

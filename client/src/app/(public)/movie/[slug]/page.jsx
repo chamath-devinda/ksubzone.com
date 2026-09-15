@@ -2,6 +2,7 @@ import React from 'react';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import Detail from '@/features/media/pages/Detail';
+import { fetchBackendJson } from '@/lib/server/backend';
 import {
   buildMediaMetaTitle,
   buildMediaMetaDescription,
@@ -12,20 +13,39 @@ import {
   serializeJsonLd,
   SITE_URL,
 } from '@/utils/seo';
+import { permalinkSlug } from '@/utils/slug';
+
+// ISR: pages regenerate in the background at most once per hour.
+export const revalidate = 3600;
+
+// Allow slugs published after the last build to be served on-demand.
+export const dynamicParams = true;
+
+/**
+ * Pre-build every published movie slug at deploy time.
+ */
+export async function generateStaticParams() {
+  try {
+    const catalog = await fetchBackendJson('/api/media/sitemap-catalog', {
+      revalidate: 3600,
+      tags: ['movies', 'sitemap'],
+      attempts: 1,
+      timeoutMs: 5_000,
+    });
+    return (catalog?.movies || []).map((movie) => ({
+      slug: permalinkSlug(movie),
+    })).filter((p) => !!p.slug);
+  } catch (error) {
+    console.error('generateStaticParams (movie): backend unreachable, skipping pre-build:', error?.message);
+    return [];
+  }
+}
 
 const getMovie = cache(async (slug) => {
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
-  try {
-    const res = await fetch(`${backendUrl}/api/media/movies/${slug}`, {
-      next: { revalidate: 30, tags: ['movies', `movie-${slug}`] }
-    });
-    if (res.ok) {
-      return res.json();
-    }
-  } catch (e) {
-    console.error('Error fetching movie details for cache:', e);
-  }
-  return null;
+  return fetchBackendJson(`/api/media/movies/${encodeURIComponent(slug)}?trackView=0`, {
+    revalidate: 300,
+    tags: ['movies', `movie-${slug}`],
+  });
 });
 
 export async function generateMetadata({ params }) {
@@ -68,6 +88,7 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     console.error('Error generating movie metadata:', e);
+    throw e;
   }
   return {
     title: 'Korean Movie Sinhala Subtitles | KSubZone',

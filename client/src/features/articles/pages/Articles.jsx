@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api/apiClient';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpenText, CalendarDays, Clock3, Flame, Loader2, Search, Sparkles, Star, Eye } from 'lucide-react';
-import SeoTags from '@/components/seo/SeoTags';
 import AdSlot from '@/components/ads/AdSlot';
 
 const categories = ['All', 'Guide', 'Character Study', 'Subtitles', 'Movies', 'Romance', 'Watchlist'];
@@ -51,14 +50,6 @@ export default function Articles({ initialData }) {
 
   return (
     <div className="min-h-screen bg-transparent pb-16">
-      <SeoTags
-        title="KSubZone Articles - K-Drama Guides, Reviews & Sinhala Subtitle Notes"
-        description="Read Korean drama articles, watch guides, character analysis, Sinhala subtitle notes, and movie recommendations on KSubZone."
-        keywords={['kdrama articles', 'korean drama guides', 'sinhala subtitles', 'ksubzone articles']}
-        canonical="https://www.ksubzone.com/articles"
-        image={featuredArticle?.image}
-      />
-
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(124,58,237,0.22),transparent_34%),radial-gradient(circle_at_82%_10%,rgba(236,72,153,0.14),transparent_32%)]" />
         <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-20">
