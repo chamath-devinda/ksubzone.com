@@ -65,10 +65,13 @@ export default function AdminLogin() {
         router.push('/management/dashboard');
       }
     } catch (err) {
+      const msg = err.response?.data?.message || err.message;
       if (!err.response) {
-        setError(err.message || 'Cannot connect to the server. Please try again in a moment.');
+        setError(msg || 'Cannot connect to the server. Please try again in a moment.');
+      } else if (err.status === 403 || err.response?.status === 403) {
+        setError(msg && !msg.includes('status code 403') ? msg : 'Access denied (403). Please verify your administrator credentials.');
       } else {
-        setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
+        setError(msg || 'Login failed. Please check your credentials.');
       }
       setLoading(false);
     }

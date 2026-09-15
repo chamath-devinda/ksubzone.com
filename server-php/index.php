@@ -51,11 +51,15 @@ foreach ($configuredOrigins as $configuredOriginList) {
     }
 }
 
-$allowedOrigins = array_values(array_unique($allowedOrigins));
+$allowedOrigins = array_values(array_unique(array_map(function($o) {
+    return strtolower(rtrim(trim($o), '/'));
+}, $allowedOrigins)));
 
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
-    header("Access-Control-Allow-Origin: " . $origin);
+$rawOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$normalizedOrigin = strtolower(rtrim(trim($rawOrigin), '/'));
+
+if ($rawOrigin !== '' && in_array($normalizedOrigin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: " . $rawOrigin);
     header("Access-Control-Allow-Credentials: true");
 }
 header('Vary: Origin', false);
@@ -69,9 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Reject cross-origin writes before authentication or side effects.
-if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD', 'OPTIONS'], true) && $origin !== '' && !in_array($origin, $allowedOrigins, true)) {
-    http_response_code(403); header('Content-Type: application/json');
-    echo json_encode(['message' => 'Request origin is not allowed.']); exit;
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD', 'OPTIONS'], true) && $rawOrigin !== '' && !in_array($normalizedOrigin, $allowedOrigins, true)) {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['message' => 'Request origin is not allowed.']);
+    exit;
 }
 // Helmet-like security headers stack
 header("X-Content-Type-Options: nosniff");

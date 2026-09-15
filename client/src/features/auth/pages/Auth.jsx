@@ -63,10 +63,11 @@ export default function Auth() {
         router.push('/');
       }
     } catch (err) {
+      const msg = err.response?.data?.message || err.message;
       if (!err.response) {
-        setError('Cannot connect to server. Please check if the backend is running.');
+        setError(msg || 'Cannot connect to server. Please check if the backend is running.');
       } else {
-        setError(err.response?.data?.message || 'Login failed. Please verify credentials.');
+        setError(msg || 'Login failed. Please verify credentials.');
       }
     } finally {
       setLoading(false);

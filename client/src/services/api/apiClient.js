@@ -133,9 +133,24 @@ apiClient.interceptors.response.use(
       }
     }
     
-    // Normalize error shape
+    // Normalize error shape with safe message extraction
+    let responseMessage = error.response?.data?.message;
+    if (!responseMessage && typeof error.response?.data === 'string' && error.response.data.trim()) {
+      if (error.response.data.includes('<html') || error.response.data.includes('<body')) {
+        responseMessage = status === 403
+          ? 'Server rejected the request (HTTP 403). Please check your connection or permissions.'
+          : `Server request failed (HTTP ${status || 'Error'}).`;
+      } else {
+        responseMessage = error.response.data.slice(0, 200);
+      }
+    }
+
+    const fallbackMessage = status === 403
+      ? 'Access denied (403). Please verify your credentials or permissions.'
+      : (error.message || 'An unexpected error occurred.');
+
     const customError = {
-      message: error.response?.data?.message || error.message || 'An unexpected error occurred.',
+      message: responseMessage || fallbackMessage,
       status,
       response: error.response,
       originalError: error
