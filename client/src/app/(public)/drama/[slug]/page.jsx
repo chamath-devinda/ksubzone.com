@@ -140,7 +140,7 @@ export default async function DramaDetailPage({ params }) {
   if (media.cast && media.cast.length > 0) {
     tvSchema.actor = media.cast.map(c => ({
       "@type": "Person",
-      "name": c.name
+      "name": typeof c === 'string' ? c : (c?.name || 'Cast Member')
     }));
   }
   const aggregateRating = buildAggregateRating(media);
@@ -153,10 +153,10 @@ export default async function DramaDetailPage({ params }) {
     "@type": "FAQPage",
     "mainEntity": media.faq.map(item => ({
       "@type": "Question",
-      "name": cleanMediaText(item.question, media.title, cleanTitle),
+      "name": cleanMediaText(item?.question || '', media.title, cleanTitle),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": cleanMediaText(item.answer, media.title, cleanTitle)
+        "text": cleanMediaText(item?.answer || '', media.title, cleanTitle)
       }
     }))
   } : null;

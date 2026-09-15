@@ -390,10 +390,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
   };
 
   const imdbRating = media.imdbRating || media.tmdbRating || 0;
-  const displayTitle = cleanMediaTitle(media.title) || media.title;
-  const releaseYear = media.releaseDate ? new Date(media.releaseDate).getFullYear() : null;
-  const synopsis = cleanMediaText(media.synopsisRewrite || media.description, media.title, displayTitle);
-  const storyOverview = cleanMediaText(media.storyOverview, media.title, displayTitle);
+  const displayTitle = cleanMediaTitle(media.title) || media.title || '';
+  const releaseYear = media.releaseDate && !isNaN(new Date(media.releaseDate).getTime()) ? new Date(media.releaseDate).getFullYear() : null;
+  const synopsis = cleanMediaText(media.synopsisRewrite || media.description || '', media.title, displayTitle);
+  const storyOverview = cleanMediaText(media.storyOverview || '', media.title, displayTitle);
   const mediaPermalink = permalinkSlug(media);
   const posterImage = getMediaImage(media, 'poster');
   const backdropImage = getMediaImage(media, 'backdrop');
@@ -528,11 +528,15 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     {media.tmdbRating.toFixed(1)} TMDB
                   </span>
                 )}
-                {subtitleLanguages.map((language) => (
-                  <span key={language} className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
-                    <Languages className="w-2.5 h-2.5" /> {language}
-                  </span>
-                ))}
+                {subtitleLanguages.map((language, idx) => {
+                  const langStr = typeof language === 'string' ? language : (language?.name || language?.label || String(language || ''));
+                  if (!langStr) return null;
+                  return (
+                    <span key={idx} className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
+                      <Languages className="w-2.5 h-2.5" /> {langStr}
+                    </span>
+                  );
+                })}
                 {mediaSubtitleSummary.latestUploaderRole && (
                   <span className="px-2.5 py-0.5 bg-sky-500/10 border border-sky-500/25 text-sky-300 text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
                     <ShieldCheck className="w-2.5 h-2.5" /> {mediaSubtitleSummary.latestUploaderRole}
@@ -557,7 +561,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               {media.keywords && media.keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-4">
                   {media.keywords.map((kw, idx) => {
-                    const slug = (kw || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/, '');
+                    const kwStr = typeof kw === 'string' ? kw : (kw?.name || String(kw || ''));
+                    if (!kwStr) return null;
+                    const slug = kwStr.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/, '');
                     const path = type.toLowerCase() === 'drama' ? `/drama/genre/${slug}` : `/movie/genre/${slug}`;
                     return (
                       <Link
@@ -565,7 +571,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                         href={path}
                         className="inline-flex items-center px-3 py-1 bg-white/[0.03] hover:bg-brand-primary/15 border border-white/10 hover:border-brand-primary/30 rounded-full text-xs text-slate-300 hover:text-white font-bold transition duration-200"
                       >
-                        {kw}
+                        {kwStr}
                       </Link>
                     );
                   })}
@@ -695,24 +701,29 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               <div className="flex flex-col gap-4 text-left">
                 <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Starring Cast</h2>
                 <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-white/10 select-none">
-                  {media.cast.map((member, idx) => (
-                    <div key={idx} className="flex items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-2xl min-w-[200px] flex-shrink-0">
-                      <img
-                        src={member?.profilePath || `https://placehold.co/100x100/111/fff?text=${encodeURIComponent((member?.name || 'Cast').split(' ').map(n=>n[0]).join(''))}`}
-                        alt={member?.name || 'Cast Member'}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-10 h-10 rounded-full object-cover border border-white/10"
-                        onError={(e) => {
-                          e.target.src = `https://placehold.co/100x100/111/fff?text=${encodeURIComponent((member?.name || 'Cast').split(' ').map(n=>n[0]).join(''))}`;
-                        }}
-                      />
-                      <div className="min-w-0 flex flex-col">
-                        <span className="text-xs font-bold text-white truncate">{member?.name || 'Unknown'}</span>
-                        <span className="text-[10px] text-slate-400 truncate mt-0.5">{member?.character || 'Actor'}</span>
+                  {media.cast.map((member, idx) => {
+                    const name = typeof member === 'string' ? member : (member?.name || 'Unknown');
+                    const character = typeof member === 'object' && member !== null ? (member?.character || 'Actor') : 'Actor';
+                    const profilePath = typeof member === 'object' && member !== null ? member?.profilePath : null;
+                    return (
+                      <div key={idx} className="flex items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-2xl min-w-[200px] flex-shrink-0">
+                        <img
+                          src={profilePath || `https://placehold.co/100x100/111/fff?text=${encodeURIComponent(name.split(' ').map(n=>n[0]).join(''))}`}
+                          alt={name}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-10 h-10 rounded-full object-cover border border-white/10"
+                          onError={(e) => {
+                            e.target.src = `https://placehold.co/100x100/111/fff?text=${encodeURIComponent(name.split(' ').map(n=>n[0]).join(''))}`;
+                          }}
+                        />
+                        <div className="min-w-0 flex flex-col">
+                          <span className="text-xs font-bold text-white truncate">{name}</span>
+                          <span className="text-[10px] text-slate-400 truncate mt-0.5">{character}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

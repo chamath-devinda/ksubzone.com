@@ -122,16 +122,18 @@ export function generateMediaKeywords(media = {}) {
 
 export function cleanMediaText(value = '', rawTitle = '', cleanTitle = cleanMediaTitle(rawTitle)) {
   let text = String(value || '');
-  if (!text || !rawTitle) return normalizeBrandText(text);
+  if (!text) return '';
+  if (!rawTitle) return normalizeBrandText(text);
 
-  text = text.split(rawTitle).join(cleanTitle);
-  if (cleanTitle && cleanTitle !== rawTitle) {
-    const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const safeCleanTitle = cleanTitle || rawTitle;
+  text = text.split(rawTitle).join(safeCleanTitle);
+  if (safeCleanTitle && safeCleanTitle !== rawTitle) {
+    const escapedTitle = safeCleanTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const pollutedTitlePattern = new RegExp(
       `${escapedTitle}(?:\\s*\\(\\d{4}\\))?\\s+(?:Sinhala\\s+and\\s+English|Sinhala\\s+Subtit(?:iles|les)|සිංහල\\s+උපසිරැසි)`,
       'giu'
     );
-    text = text.replace(pollutedTitlePattern, cleanTitle);
+    text = text.replace(pollutedTitlePattern, safeCleanTitle);
   }
 
   return normalizeBrandText(text);
