@@ -27,41 +27,46 @@ export default function AdSlot({ slotId, className = '' }) {
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
   const [adLoaded, setAdLoaded] = useState(false);
+  const [slotFailed, setSlotFailed] = useState(false);
   const [nearViewport, setNearViewport] = useState(false);
+
   const { matches: isDesktop, ready: desktopReady } = useMediaQuery('(min-width: 768px)');
-  const { matches: isTablet, ready: tabletReady } = useMediaQuery('(min-width: 640px) and (max-width: 767px)');
+  const { matches: isTablet, ready: tabletReady } = useMediaQuery('(min-width: 480px) and (max-width: 767px)');
   const viewportReady = desktopReady && tabletReady;
 
-  const slotDefinition = config?.slots?.[slotId];
-  const isResponsiveBanner = slotDefinition?.format === 'banner';
-  const isNativePlacement = slotDefinition?.format === 'native';
+  const { matches: matchesPlacementViewport } = useMediaQuery(
+    placement?.mediaQuery || '(min-width: 0px)'
+  );
+  const viewportAllowed = !placement?.mediaQuery || matchesPlacementViewport;
+
+  const isResponsiveBanner = placement?.format === 'responsiveBanner';
+  const isNativePlacement = placement?.format === 'native';
+  const isSquare = placement?.format === 'square';
+  const isSidebar = placement?.format === 'sidebar';
 
   const zoneName = useMemo(() => {
-    if (!slotDefinition) return '';
-    if (!isResponsiveBanner) return slotDefinition.zone;
-    if (isDesktop) return slotDefinition.zones?.desktop || 'bannerDesktop';
-    if (isTablet) return slotDefinition.zones?.tablet || 'bannerTablet';
-    return slotDefinition.zones?.mobile || 'bannerMobile';
-  }, [isDesktop, isResponsiveBanner, isTablet, slotDefinition]);
+    if (!placement) return '';
+    if (isResponsiveBanner) {
+      if (isDesktop) return 'bannerDesktop';
+      if (isTablet) return 'bannerTablet';
+      return 'bannerMobile';
+    }
+    return placement.format;
+  }, [isDesktop, isResponsiveBanner, isTablet, placement]);
 
-  const zone = config?.adsterra?.zones?.[zoneName];
+  const zone = config?.providers?.adsterra?.zones?.[zoneName];
 
   const selectedResponsiveFormatDisabled = useMemo(() => {
     if (!isResponsiveBanner) return false;
-    if (isDesktop) return config?.displayFormats?.bannerDesktop === false;
-    if (isTablet) return config?.displayFormats?.bannerTablet === false;
-    return config?.displayFormats?.bannerMobile === false;
-  }, [config?.displayFormats, isDesktop, isResponsiveBanner, isTablet]);
-
-  const viewportAllowed = useMemo(() => {
-    if (placement?.devices === 'desktop_only') return isDesktop;
-    if (placement?.devices === 'mobile_only') return !isDesktop;
-    return true;
-  }, [isDesktop, placement?.devices]);
+    if (isDesktop) return config?.formats?.desktopBanner === false;
+    if (isTablet) return config?.formats?.bannerTablet === false;
+    return config?.formats?.mobileBanner === false;
+  }, [config?.formats, isDesktop, isResponsiveBanner, isTablet]);
 
   useEffect(() => {
     setAdLoaded(false);
-  }, [slotId, zoneName]);
+    setSlotFailed(false);
+  }, [slotId, zoneName, pageType]);
 
   useEffect(() => {
     if (!hostRef.current) return undefined;
@@ -79,29 +84,40 @@ export default function AdSlot({ slotId, className = '' }) {
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);
 
-  const source = useMemo(() => zone ? buildAdFrameUrl(zoneName) : '', [zone, zoneName]);
+  const source = useMemo(() => (zone && zoneName ? buildAdFrameUrl(zoneName) : ''), [zone, zoneName]);
 
   // Execute the official publisher Adsterra codes directly
-  const canRender = placement?.provider === 'adsterra' && zone && viewportAllowed
+  const canRender = Boolean(
+    placement?.provider === 'adsterra'
+    && zone
+    && viewportAllowed
+    && !slotFailed
     && (!placement.lazy || nearViewport)
-    && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled));
+    && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled))
+  );
 
   const eventDetail = {
-    provider: placement?.provider, slot_id: slotId,
-    format: isResponsiveBanner ? 'banner' : placement?.format, page_type: pageType,
+    provider: placement?.provider,
+    slot_id: slotId,
+    format: isResponsiveBanner ? 'banner' : placement?.format,
+    page_type: pageType,
   };
 
   const renderedAd = canRender ? (
     <AdFrame
-      key={`${slotId}:${zone.scriptUrl}:${zoneName}`}
-      title={isNativePlacement ? 'Native advertisement' : placement.format === 'sidebar' ? 'Sidebar advertisement' : 'Advertisement'}
+      key={`${slotId}:${zoneName}`}
+      title={isNativePlacement ? 'Native advertisement' : isSidebar ? 'Sidebar advertisement' : 'Advertisement'}
       source={source}
       width={zone.width}
-      height={isNativePlacement ? zone.reservedHeight : zone.height}
+      height={isNativePlacement ? (zone.reservedHeight || 320) : zone.height}
       responsive={isNativePlacement}
       onLoad={() => {
         setAdLoaded(true);
         emitAdEvent('ad_slot_loaded', eventDetail);
+      }}
+      onUnavailable={(reason) => {
+        setSlotFailed(true);
+        emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
       }}
     />
   ) : null;
@@ -109,18 +125,15 @@ export default function AdSlot({ slotId, className = '' }) {
   if (!viewportAllowed) return null;
   if (!placement) return null;
   if (selectedResponsiveFormatDisabled) return null;
+  if (slotFailed) return null;
 
-  const isNative = slotDefinition?.format === 'native';
-  const isSquare = slotDefinition?.format === 'square';
-  const isSidebar = slotDefinition?.format === 'sidebar';
-
-  const reservationClass = isNative
+  const reservationClass = isNativePlacement
     ? 'min-h-[280px]'
     : isSidebar
       ? 'min-h-[600px]'
-    : isSquare
-      ? 'min-h-[250px]'
-      : 'min-h-[66px] md:min-h-[106px]';
+      : isSquare
+        ? 'min-h-[250px]'
+        : 'min-h-[66px] md:min-h-[106px]';
 
   return (
     <aside
@@ -130,10 +143,10 @@ export default function AdSlot({ slotId, className = '' }) {
       className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border transition-all duration-300 ${
         adLoaded
           ? 'border-white/[0.05] bg-white/[0.015] px-2 py-3'
-          : 'border-white/[0.03] bg-white/[0.008] px-2 py-3'
+          : 'border-transparent bg-transparent p-0'
       } ${reservationClass} ${className}`}
     >
-      {!slotId.includes('sticky') && (
+      {!slotId.includes('sticky') && adLoaded && (
         <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Advertisement</span>
       )}
       {renderedAd}

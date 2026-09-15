@@ -120,12 +120,30 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       doc.addEventListener('load', inspect, true);
     }
 
+    const noFillTimeout = setTimeout(() => {
+      if (finished) return;
+      try {
+        const targetDoc = doc || frame.contentDocument;
+        if (!hasCreative(targetDoc)) {
+          finished = true;
+          cleanup();
+          callbacksRef.current.onUnavailable?.('no_fill');
+        }
+      } catch {
+        // Cross-origin redirection may indicate ad network navigation
+      }
+    }, 9000);
+
     timeout = setTimeout(() => {
       inspect();
     }, 5000);
     frame.addEventListener('load', handleLoad);
     if (frame.contentDocument?.readyState === 'complete') handleLoad();
-    return () => { finished = true; cleanup(); };
+    return () => {
+      finished = true;
+      clearTimeout(noFillTimeout);
+      cleanup();
+    };
   }, [source]);
 
   return (
