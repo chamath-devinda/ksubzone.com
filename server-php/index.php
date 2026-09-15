@@ -73,10 +73,11 @@ $rawOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $normalizedOrigin = strtolower(rtrim(trim($rawOrigin), '/'));
 $originHost = !empty($rawOrigin) ? strtolower(parse_url($rawOrigin, PHP_URL_HOST) ?? '') : '';
 
-// Valid origin if: empty (same-origin/server-side fetch), or matching host/allowedOrigins list
+// Valid origin if: empty (same-origin/server-side fetch), or matching host/allowedOrigins list/domain pattern
 $isAllowedOrigin = empty($rawOrigin)
     || in_array($originHost, $allowedHosts, true)
-    || in_array($normalizedOrigin, $allowedOrigins, true);
+    || in_array($normalizedOrigin, $allowedOrigins, true)
+    || (bool)preg_match('/(?:^|\.)(?:ksubzone\.com|vercel\.app)$/i', $originHost);
 
 if (!empty($rawOrigin) && $isAllowedOrigin) {
     header("Access-Control-Allow-Origin: " . $rawOrigin);
@@ -316,6 +317,7 @@ $routes = [
         header('Content-Type: application/json');
         echo json_encode([
             'status' => $dbError ? 'error' : 'ok',
+            'apiVersion' => '2026.09.15-v2',
             'serverTime' => date('Y-m-d H:i:s'),
             'databaseDriver' => $db ? $db->getDriver() : ($_ENV['DB_DRIVER'] ?? getenv('DB_DRIVER') ?: 'unknown'),
             'fallbackWarning' => $db ? $db->getFallbackWarning() : null,
