@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSRT, decodeSubtitle } from '../client/src/utils/srt.mjs';
+import fs from 'node:fs';
 
 test('SRT preserves Sinhala text, timestamps and multiline content', () => {
   const text = '1\r\n00:00:01,000 --> 00:00:02,500\r\nආයුබෝවන්\r\nලෝකය';
@@ -16,4 +17,16 @@ test('UTF-8 and BOM UTF-16 preserve Sinhala; invalid bytes fail explicitly', () 
   const utf16 = Buffer.concat([Buffer.from([255,254]), Buffer.from('සිංහල', 'utf16le')]);
   assert.equal(decodeSubtitle(utf16), 'සිංහල');
   assert.throws(() => decodeSubtitle(new Uint8Array([0xff, 0xff])), /encoding/);
+});
+
+test('admin login has a ModSecurity-safe 403 fallback route', () => {
+  const context = fs.readFileSync(new URL('../client/src/features/auth/context/AuthContext.jsx', import.meta.url), 'utf8');
+  const controller = fs.readFileSync(new URL('../server-php/controllers/AuthController.php', import.meta.url), 'utf8');
+  const router = fs.readFileSync(new URL('../server-php/index.php', import.meta.url), 'utf8');
+
+  assert.match(context, /error\?\.status !== 403/);
+  assert.match(context, /\/api\/admin\/session/);
+  assert.match(context, /base64url-reverse/);
+  assert.match(controller, /base64url-reverse/);
+  assert.match(router, /'\/api\/admin\/session'/);
 });

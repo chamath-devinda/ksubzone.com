@@ -68,7 +68,8 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     console.error('Error generating movie metadata:', e);
-    throw e;
+    // Metadata is an enhancement. A short backend/WAF outage must not turn a
+    // valid detail URL into a Server Components error page.
   }
   return {
     title: 'Korean Movie Sinhala Subtitles | KSubZone',
@@ -78,7 +79,13 @@ export async function generateMetadata({ params }) {
 
 export default async function MovieDetailPage({ params }) {
   const { slug } = params;
-  const initialData = await getMovie(slug);
+  let initialData;
+  try {
+    initialData = await getMovie(slug);
+  } catch (error) {
+    console.error('Movie detail prefetch failed; handing off to client retry:', error);
+    return <Detail type="Movie" />;
+  }
   const media = initialData?.movie;
   if (!media) notFound();
 
@@ -116,7 +123,7 @@ export default async function MovieDetailPage({ params }) {
   };
 
   const movieSchema = {
-    ...(media.schemaMarkup || {}),
+    ...(media.schemaMarkup && typeof media.schemaMarkup === 'object' && !Array.isArray(media.schemaMarkup) ? media.schemaMarkup : {}),
     "@context": "https://schema.org",
     "@type": "Movie",
     "@id": `${canonicalUrl}#movie`,
@@ -136,7 +143,7 @@ export default async function MovieDetailPage({ params }) {
   if (media.poster) {
     movieSchema.image = media.poster;
   }
-  if (media.cast && media.cast.length > 0) {
+  if (Array.isArray(media.cast) && media.cast.length > 0) {
     movieSchema.actor = media.cast.map(c => ({
       "@type": "Person",
       "name": typeof c === 'string' ? c : (c?.name || 'Cast Member')
@@ -147,7 +154,7 @@ export default async function MovieDetailPage({ params }) {
   else delete movieSchema.aggregateRating;
 
 
-  const faqSchema = media?.faq && media.faq.length > 0 ? {
+  const faqSchema = Array.isArray(media?.faq) && media.faq.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": media.faq.map(item => ({

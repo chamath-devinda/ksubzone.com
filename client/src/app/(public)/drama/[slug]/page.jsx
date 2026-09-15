@@ -69,7 +69,8 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     console.error('Error generating drama metadata:', e);
-    throw e;
+    // Metadata is an enhancement. A short backend/WAF outage must not turn a
+    // valid detail URL into a Server Components error page.
   }
   return {
     title: 'Korean TV Drama Sinhala Subtitles | KSubZone',
@@ -79,7 +80,15 @@ export async function generateMetadata({ params }) {
 
 export default async function DramaDetailPage({ params }) {
   const { slug } = params;
-  const initialData = await getDrama(slug);
+  let initialData;
+  try {
+    initialData = await getDrama(slug);
+  } catch (error) {
+    console.error('Drama detail prefetch failed; handing off to client retry:', error);
+    // Let the client query retry the public endpoint. This keeps a transient
+    // origin/CDN failure from replacing the whole portal with the root error UI.
+    return <Detail type="Drama" />;
+  }
   const media = initialData?.drama;
   if (!media) notFound();
 
@@ -117,7 +126,7 @@ export default async function DramaDetailPage({ params }) {
   };
 
   const tvSchema = {
-    ...(media.schemaMarkup || {}),
+    ...(media.schemaMarkup && typeof media.schemaMarkup === 'object' && !Array.isArray(media.schemaMarkup) ? media.schemaMarkup : {}),
     "@context": "https://schema.org",
     "@type": "TVSeries",
     "@id": `${canonicalUrl}#tvseries`,
@@ -137,7 +146,7 @@ export default async function DramaDetailPage({ params }) {
   if (media.poster) {
     tvSchema.image = media.poster;
   }
-  if (media.cast && media.cast.length > 0) {
+  if (Array.isArray(media.cast) && media.cast.length > 0) {
     tvSchema.actor = media.cast.map(c => ({
       "@type": "Person",
       "name": typeof c === 'string' ? c : (c?.name || 'Cast Member')
@@ -148,7 +157,7 @@ export default async function DramaDetailPage({ params }) {
   else delete tvSchema.aggregateRating;
 
 
-  const faqSchema = media?.faq && media.faq.length > 0 ? {
+  const faqSchema = Array.isArray(media?.faq) && media.faq.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": media.faq.map(item => ({

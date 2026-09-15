@@ -18,6 +18,19 @@ import SideAdLayout from '@/components/ads/SideAdLayout';
 import { cleanMediaText, cleanMediaTitle } from '@/utils/seo';
 import MediaSubtitlesSection from '../components/MediaSubtitlesSection';
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+const asText = (value, fallback = '') => {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (value && typeof value === 'object') {
+    return String(value.name || value.label || value.value || fallback);
+  }
+  return fallback;
+};
+const asNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
 export default function Detail({ type = 'Movie', initialData, topOnly = false }) {
   const { slug } = useParams();
   const router = useRouter();
@@ -49,21 +62,22 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
   // Fetch Media Details
   const endpoint = type === 'Drama' ? `/api/media/dramas/${slug}` : `/api/media/movies/${slug}`;
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch: refetchMedia } = useQuery({
     queryKey: ['mediaDetails', slug, type],
     queryFn: async () => {
-      const res = await apiClient.get(endpoint);
+      const res = await apiClient.get(endpoint, { timeout: 8_000 });
       return res.data;
     },
     initialData,
-    staleTime: 10_000,
-    refetchOnMount: true
+    staleTime: 60_000,
+    refetchOnMount: false,
+    retry: 2
   });
 
-  const media = type === 'Drama' ? data?.drama : data?.movie;
-  const seasons = data?.seasons || [];
-  const episodes = data?.episodes || [];
-  const related = data?.related || [];
+  const rawMedia = type === 'Drama' ? data?.drama : data?.movie;
+  const media = rawMedia && typeof rawMedia === 'object' && !Array.isArray(rawMedia) ? rawMedia : null;
+  const seasons = asArray(data?.seasons);
+  const episodes = asArray(data?.episodes);
 
   const getId = (value) => {
     if (!value) return '';
@@ -127,9 +141,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       return res.data;
     },
     enabled: !topOnly && !!media?._id,
-    initialData: data?.subtitles || [],
+    initialData: asArray(data?.subtitles),
     staleTime: 10_000,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false
   });
 
@@ -139,7 +153,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       const episodeIds = activeEpisodes.map(ep => ep._id).filter(Boolean).join(',');
       if (!episodeIds) return {};
       const res = await apiClient.get(`/api/subtitles/media/${episodeIds}`);
-      const subs = res.data || [];
+      const subs = asArray(res.data);
       const grouped = {};
       activeEpisodes.forEach(ep => {
         grouped[getId(ep._id)] = [];
@@ -162,7 +176,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       activeEpisodes.forEach(ep => {
         grouped[getId(ep._id)] = [];
       });
-      data.episodeSubtitles.forEach(sub => {
+      asArray(data.episodeSubtitles).forEach(sub => {
         const subtitleMediaId = getId(sub.mediaId);
         if (subtitleMediaId && grouped[subtitleMediaId] !== undefined) {
           grouped[subtitleMediaId].push(sub);
@@ -171,12 +185,12 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
       return grouped;
     },
     staleTime: 10_000,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false
   });
 
   // Fetch Comments
-  const { data: comments = [], refetch: refetchComments } = useQuery({
+  const { data: rawComments = [], refetch: refetchComments } = useQuery({
     queryKey: ['mediaComments', media?._id],
     queryFn: async () => {
       const res = await apiClient.get(`/api/media/comments/target/${media._id}`);
@@ -186,15 +200,16 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     initialData: data?.comments || [],
     staleTime: 1000 * 60 // 1 minute
   });
+  const comments = asArray(rawComments);
 
   const { data: recommendationRows = [], isLoading: recommendationsLoading } = useQuery({
     queryKey: ['detailRecommendations', media?._id, type],
     queryFn: async () => {
       const res = await apiClient.get('/api/media/recommendations');
-      const recs = res.data || {};
+      const recs = res.data && typeof res.data === 'object' ? res.data : {};
 
       const currentId = media?._id;
-      const withType = (items, mediaType) => (items || [])
+      const withType = (items, mediaType) => asArray(items)
         .filter(item => item._id !== currentId)
         .map(item => ({ ...item, mediaType }));
 
@@ -241,8 +256,8 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
   });
 
   // Check Watchlist / Favorites states
-  const inWatchlist = user?.watchlist?.some(w => w.mediaId === media?._id);
-  const inFavorites = user?.favorites?.some(f => f.mediaId === media?._id);
+  const inWatchlist = asArray(user?.watchlist).some(w => w.mediaId === media?._id);
+  const inFavorites = asArray(user?.favorites).some(f => f.mediaId === media?._id);
 
   // Mutations
   const toggleWatchlistMutation = useMutation({
@@ -310,7 +325,10 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     return (
       <div className="h-screen w-full bg-transparent flex flex-col items-center justify-center gap-3">
         <p className="text-brand-secondary text-sm">Failed to retrieve media entry.</p>
-        <button onClick={() => router.push('/')} className="px-4 py-2 bg-brand-primary text-white text-xs font-bold rounded-xl">Go Home</button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => refetchMedia()} className="px-4 py-2 bg-brand-primary text-white text-xs font-bold rounded-xl">Try Again</button>
+          <button onClick={() => router.push('/')} className="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-xl">Go Home</button>
+        </div>
       </div>
     );
   }
@@ -389,29 +407,34 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
     });
   };
 
-  const imdbRating = media.imdbRating || media.tmdbRating || 0;
-  const displayTitle = cleanMediaTitle(media.title) || media.title || '';
+  const imdbRating = asNumber(media.imdbRating || media.tmdbRating);
+  const tmdbRating = asNumber(media.tmdbRating);
+  const displayTitle = cleanMediaTitle(asText(media.title)) || asText(media.title);
   const releaseYear = media.releaseDate && !isNaN(new Date(media.releaseDate).getTime()) ? new Date(media.releaseDate).getFullYear() : null;
-  const synopsis = cleanMediaText(media.synopsisRewrite || media.description || '', media.title, displayTitle);
-  const storyOverview = cleanMediaText(media.storyOverview || '', media.title, displayTitle);
+  const mediaTitleText = asText(media.title);
+  const synopsis = cleanMediaText(asText(media.synopsisRewrite || media.description), mediaTitleText, displayTitle);
+  const storyOverview = cleanMediaText(asText(media.storyOverview), mediaTitleText, displayTitle);
   const mediaPermalink = permalinkSlug(media);
   const posterImage = getMediaImage(media, 'poster');
   const backdropImage = getMediaImage(media, 'backdrop');
-  const sortedSubtitles = [...(subtitles || [])].sort((a, b) => {
-    const aSinhala = a?.language?.toLowerCase() === 'sinhala' ? 0 : 1;
-    const bSinhala = b?.language?.toLowerCase() === 'sinhala' ? 0 : 1;
+  const subtitleLanguage = (subtitle) => asText(subtitle?.language).toLowerCase();
+  const sortedSubtitles = asArray(subtitles).slice().sort((a, b) => {
+    const aSinhala = subtitleLanguage(a) === 'sinhala' ? 0 : 1;
+    const bSinhala = subtitleLanguage(b) === 'sinhala' ? 0 : 1;
     return aSinhala - bSinhala;
   });
   const titleLevelSubtitles = sortedSubtitles.filter(sub => !sub?.seasonNumber && !sub?.episodeNumber);
   const standaloneSubtitles = type === 'Drama' ? titleLevelSubtitles : sortedSubtitles;
-  const sortSubtitleFiles = (items = []) => [...items].sort((a, b) => {
-    const aSinhala = a?.language?.toLowerCase() === 'sinhala' ? 0 : 1;
-    const bSinhala = b?.language?.toLowerCase() === 'sinhala' ? 0 : 1;
+  const sortSubtitleFiles = (items = []) => asArray(items).slice().sort((a, b) => {
+    const aSinhala = subtitleLanguage(a) === 'sinhala' ? 0 : 1;
+    const bSinhala = subtitleLanguage(b) === 'sinhala' ? 0 : 1;
     if (aSinhala !== bSinhala) return aSinhala - bSinhala;
     return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
   });
-  const mediaSubtitleSummary = media.subtitleSummary || {};
-  const subtitleLanguages = mediaSubtitleSummary.languages || [];
+  const mediaSubtitleSummary = media.subtitleSummary && typeof media.subtitleSummary === 'object'
+    ? media.subtitleSummary
+    : {};
+  const subtitleLanguages = asArray(mediaSubtitleSummary.languages);
 
   const getUploaderLabel = (sub) => {
     if (sub.uploaderRole === 'Admin') {
@@ -517,15 +540,15 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                       ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 text-glow-rose'
                       : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 text-glow-emerald'
                   }`}>
-                    {mediaSubtitleSummary.progressLabel}
+                  {asText(mediaSubtitleSummary.progressLabel)}
                   </span>
                 )}
                 <span className="px-2.5 py-0.5 bg-brand-accent/20 border border-brand-accent/50 text-brand-accent text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
                   <Star className="w-2.5 h-2.5 fill-current" /> {imdbRating > 0 ? imdbRating.toFixed(1) : 'NR'} IMDb Rating
                 </span>
-                {media.tmdbRating > 0 && (
+                {tmdbRating > 0 && (
                   <span className="px-2.5 py-0.5 bg-white/5 border border-white/10 text-slate-300 text-[10px] font-extrabold uppercase tracking-widest rounded-full">
-                    {media.tmdbRating.toFixed(1)} TMDB
+                    {tmdbRating.toFixed(1)} TMDB
                   </span>
                 )}
                 {subtitleLanguages.map((language, idx) => {
@@ -543,7 +566,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                   </span>
                 )}
                 <span className="px-2.5 py-0.5 bg-brand-primary/10 border border-brand-primary/25 text-brand-primary text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
-                  <Eye className="w-2.5 h-2.5" /> {media.viewCount || 0} Views
+                  <Eye className="w-2.5 h-2.5" /> {asNumber(media.viewCount)} Views
                 </span>
               </div>
 
@@ -552,16 +575,16 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
               </h1>
               <p className="text-sm sm:text-base font-bold text-brand-primary/90 mt-1.5 flex items-center gap-2 flex-wrap">
                 <span>{displayTitle} සිංහල උපසිරැසි (SRT / VTT / ASS)</span>
-                {media.originalTitle && media.originalTitle !== displayTitle && (
-                  <span className="text-slate-400 font-normal">({media.originalTitle})</span>
+                {asText(media.originalTitle) && asText(media.originalTitle) !== displayTitle && (
+                  <span className="text-slate-400 font-normal">({asText(media.originalTitle)})</span>
                 )}
               </p>
 
               {/* Clickable Genre Badges */}
-              {media.keywords && media.keywords.length > 0 && (
+              {asArray(media.keywords).length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {media.keywords.map((kw, idx) => {
-                    const kwStr = typeof kw === 'string' ? kw : (kw?.name || String(kw || ''));
+                  {asArray(media.keywords).map((kw, idx) => {
+                    const kwStr = asText(kw);
                     if (!kwStr) return null;
                     const slug = kwStr.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/, '');
                     const path = type.toLowerCase() === 'drama' ? `/drama/genre/${slug}` : `/movie/genre/${slug}`;
@@ -592,11 +615,11 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                         : 'Feature Film')}
                 </span>
                 <span>•</span>
-                <span className="uppercase">{media.country}</span>
+                <span className="uppercase">{asText(media.country, 'KR')}</span>
                 <span>•</span>
-                <span className="uppercase">{media.language}</span>
+                <span className="uppercase">{asText(media.language, 'KO')}</span>
                 <span>•</span>
-                <span>{media.viewCount || 0} Views</span>
+                <span>{asNumber(media.viewCount)} Views</span>
               </div>
 
               {/* PROMINENT HERO DOWNLOAD ACTION BAR */}
@@ -655,7 +678,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider">Director</td>
-                      <td className="px-4 py-3 text-white font-semibold">{media.director || 'Unknown'}</td>
+                      <td className="px-4 py-3 text-white font-semibold">{asText(media.director, 'Unknown')}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider">Release Date</td>
@@ -669,7 +692,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider">Country</td>
-                      <td className="px-4 py-3 text-white font-semibold uppercase">{media.country || 'South Korea'}</td>
+                      <td className="px-4 py-3 text-white font-semibold uppercase">{asText(media.country, 'South Korea')}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wider">Languages Available</td>
@@ -688,22 +711,22 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="glass-panel p-4 rounded-2xl border border-white/5">
                 <p className="text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">Director</p>
-                <p className="text-white font-bold">{media.director || 'Unknown'}</p>
+                <p className="text-white font-bold">{asText(media.director, 'Unknown')}</p>
               </div>
               <div className="glass-panel p-4 rounded-2xl border border-white/5">
                 <p className="text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">Production Company</p>
-                <p className="text-white font-bold">{media.studio || 'N/A'}</p>
+                <p className="text-white font-bold">{asText(media.studio, 'N/A')}</p>
               </div>
             </div>
 
             {/* Cast details Section */}
-            {media.cast && media.cast.length > 0 && (
+            {asArray(media.cast).length > 0 && (
               <div className="flex flex-col gap-4 text-left">
                 <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Starring Cast</h2>
                 <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-white/10 select-none">
-                  {media.cast.map((member, idx) => {
-                    const name = typeof member === 'string' ? member : (member?.name || 'Unknown');
-                    const character = typeof member === 'object' && member !== null ? (member?.character || 'Actor') : 'Actor';
+                  {asArray(media.cast).map((member, idx) => {
+                    const name = asText(member?.name || member, 'Unknown');
+                    const character = asText(member?.character, 'Actor');
                     const profilePath = typeof member === 'object' && member !== null ? member?.profilePath : null;
                     return (
                       <div key={idx} className="flex items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-2xl min-w-[200px] flex-shrink-0">
@@ -797,20 +820,20 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
             {!topOnly && <AdSlot slotId="media_after_downloads" className="my-6" />}
 
             {/* Visual FAQ Section (AEO / GEO optimized) */}
-            {media.faq && media.faq.length > 0 && (
+            {asArray(media.faq).length > 0 && (
               <div className="flex flex-col gap-6 text-left speakable-faq-section">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">Knowledge Center</p>
                   <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Frequently Asked Questions</h2>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {media.faq.map((item, idx) => (
+                  {asArray(media.faq).map((item, idx) => (
                     <details
                       key={idx}
                       className="group rounded-2xl border border-white/5 bg-white/[0.01] p-4 [&_summary::-webkit-details-marker]:hidden cursor-pointer hover:border-brand-primary/20 transition-all duration-300"
                     >
                       <summary className="flex items-center justify-between gap-1.5 text-slate-200">
-                        <h3 className="text-sm font-bold text-white leading-snug">{cleanMediaText(item.question, media.title, displayTitle)}</h3>
+                        <h3 className="text-sm font-bold text-white leading-snug">{cleanMediaText(asText(item?.question), asText(media.title), displayTitle)}</h3>
                         <span className="shrink-0 rounded-full bg-white/5 p-1.5 text-slate-400 group-open:rotate-180 transition duration-300">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -825,7 +848,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                         </span>
                       </summary>
                       <div className="mt-4 leading-relaxed text-xs sm:text-sm text-slate-300 border-t border-white/5 pt-3">
-                        <p>{cleanMediaText(item.answer, media.title, displayTitle)}</p>
+                        <p>{cleanMediaText(asText(item?.answer), asText(media.title), displayTitle)}</p>
                       </div>
                     </details>
                   ))}

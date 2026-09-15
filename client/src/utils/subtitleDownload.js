@@ -8,6 +8,16 @@ const wait = (milliseconds) => new Promise(resolve => setTimeout(resolve, millis
 // In-memory cache to prevent crawler/double-click duplicate tracking
 const recentTrackings = new Map();
 
+function triggerNativeDownload(url, fileName) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 async function trackDownloadSafely(subId) {
   if (!subId) return;
   const now = Date.now();
@@ -107,6 +117,15 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
   const apiBase = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_API_URL || process.env?.NEXT_PUBLIC_BACKEND_URL)) ||
     (typeof window !== 'undefined' && (window.location.hostname === 'ksubzone.com' || window.location.hostname === 'www.ksubzone.com' || window.location.hostname.endsWith('.vercel.app')) ? 'https://api.ksubzone.com' : '');
 
+  // R2's public custom domain serves the file with Content-Disposition but
+  // does not currently expose a browser CORS header. A normal navigation is
+  // allowed cross-origin and lets the browser download the file directly;
+  // fetching it as a Blob is blocked by CORS before JavaScript can read it.
+  if (directR2Url) {
+    triggerNativeDownload(directR2Url, safeName);
+    return;
+  }
+
   let targetUrl = directR2Url || downloadUrl || (targetId ? `${apiBase}/api/subtitles/${targetId}/download` : fileUrl);
 
   try {
@@ -123,28 +142,6 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
     link.remove();
     window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
   } catch (err) {
-    // If direct R2 fetch fails due to any reason, fall back to backend proxy endpoint
-    if (directR2Url && targetId) {
-      // A Cloudflare edge can return 403 for a browser fetch while the PHP
-      // origin can still retrieve the public object. Ask the backend to proxy
-      // the bytes instead of redirecting back to the same edge URL.
-      const fallbackUrl = `${apiBase}/api/subtitles/${targetId}/download`;
-      const fallbackResponse = await fetchWithRetry(fallbackUrl, 2, 20000, {
-        'X-Subtitle-Proxy': '1'
-      });
-      const blob = await fallbackResponse.blob();
-      if (!blob.size) throw new Error(DEFAULT_ERROR);
-
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = safeName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-      return;
-    }
     throw err;
   }
 }

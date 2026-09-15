@@ -92,16 +92,24 @@ function SocialBarLoader({ pageType, provider }) {
 
     if (!canLoad || window.__ksubzoneSocialBarLoaded) return undefined;
 
-    const script = document.createElement('script');
-    script.src = scriptUrl;
-    script.async = true;
-    script.dataset.ksubzoneAd = 'adsterra-social-bar';
-    script.onload = () => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', format: 'social_bar', page_type: pageType });
-    window.__ksubzoneSocialBarLoaded = true;
-    document.body.appendChild(script);
+    let script = null;
+    const activate = () => {
+      if (window.__ksubzoneSocialBarLoaded || document.querySelector('script[data-ksubzone-ad="adsterra-social-bar"]')) return;
+      script = document.createElement('script');
+      script.src = scriptUrl;
+      script.async = true;
+      script.dataset.ksubzoneAd = 'adsterra-social-bar';
+      script.onload = () => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', format: 'social_bar', page_type: pageType });
+      window.__ksubzoneSocialBarLoaded = true;
+      document.body.appendChild(script);
+    };
+
+    // Intrusive third-party code should never compete with the first paint.
+    window.addEventListener('pointerdown', activate, { once: true, passive: true });
 
     return () => {
-      if (script.parentNode) script.parentNode.removeChild(script);
+      window.removeEventListener('pointerdown', activate);
+      if (script?.parentNode) script.parentNode.removeChild(script);
     };
   }, [pageType, provider]);
 

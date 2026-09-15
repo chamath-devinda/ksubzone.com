@@ -49,6 +49,58 @@ test('URL Resolver: correctly resolves R2 and Supabase URLs', async () => {
   assert.equal(legacyNullUrl, 'https://ejvczjiueysbiewzsuin.supabase.co/storage/v1/object/public/Ksubzone/subtitles/old.srt');
 });
 
+test('R2 download uses native navigation instead of a CORS-blocked Blob fetch', async () => {
+  const { downloadSubtitle } = await import('../client/src/utils/subtitleDownload.js');
+  const appended = [];
+  const fetchUrls = [];
+  const originalDocument = globalThis.document;
+  const originalWindow = globalThis.window;
+  const originalFetch = globalThis.fetch;
+
+  globalThis.window = {
+    location: { hostname: 'www.ksubzone.com' },
+    setTimeout,
+    clearTimeout,
+    URL
+  };
+  globalThis.document = {
+    createElement: () => ({
+      href: '',
+      download: '',
+      rel: '',
+      click() { this.clicked = true; },
+      remove() {}
+    }),
+    body: {
+      appendChild(link) { appended.push(link); }
+    }
+  };
+  globalThis.fetch = (url) => {
+    fetchUrls.push(String(url));
+    return Promise.resolve({ ok: true });
+  };
+
+  try {
+    await downloadSubtitle({
+      subtitle: {
+        _id: 'sub-r2',
+        storageProvider: 'r2',
+        storageObjectKey: 'subtitles/show/episode-1/sinhala/v1/file.srt',
+        format: 'srt'
+      }
+    });
+
+    assert.equal(appended.length, 1);
+    assert.equal(appended[0].href, 'https://files.ksubzone.com/subtitles/show/episode-1/sinhala/v1/file.srt');
+    assert.equal(appended[0].clicked, true);
+    assert.ok(!fetchUrls.some((url) => url.startsWith('https://files.ksubzone.com/')));
+  } finally {
+    globalThis.document = originalDocument;
+    globalThis.window = originalWindow;
+    globalThis.fetch = originalFetch;
+  }
+});
+
 // 2. Test Security: Verify R2 secrets are NEVER prefixed with NEXT_PUBLIC_
 test('Security: Ensure no R2 secrets use NEXT_PUBLIC_ prefix', () => {
   const envExamplePath = path.join(rootDir, '.env.example');

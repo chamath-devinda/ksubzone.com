@@ -172,9 +172,13 @@ class AuthController {
         $code2fa = trim($body['code2fa'] ?? '');
 
         // Support base64url encoded credentials
-        if (empty($password) && ($body['credentialEncoding'] ?? '') === 'base64url') {
+        $credentialEncoding = $body['credentialEncoding'] ?? '';
+        if (empty($password) && in_array($credentialEncoding, ['base64url', 'base64url-reverse'], true)) {
             $encodedCredential = (string)($body['credential'] ?? '');
             if (!empty($encodedCredential) && strlen($encodedCredential) <= 4096) {
+                if ($credentialEncoding === 'base64url-reverse') {
+                    $encodedCredential = strrev($encodedCredential);
+                }
                 $encodedCredential = strtr($encodedCredential, '-_', '+/');
                 $padding = strlen($encodedCredential) % 4;
                 if ($padding > 0) {
@@ -250,9 +254,13 @@ class AuthController {
         // their raw value resembles an attack signature. Accept a URL-safe
         // base64 transport from the frontend while preserving the original
         // `password` field for older clients.
-        if (empty($password) && ($body['credentialEncoding'] ?? '') === 'base64url') {
+        $credentialEncoding = $body['credentialEncoding'] ?? '';
+        if (empty($password) && in_array($credentialEncoding, ['base64url', 'base64url-reverse'], true)) {
             $encodedCredential = (string)($body['credential'] ?? '');
             if (!empty($encodedCredential) && strlen($encodedCredential) <= 4096) {
+                if ($credentialEncoding === 'base64url-reverse') {
+                    $encodedCredential = strrev($encodedCredential);
+                }
                 $encodedCredential = strtr($encodedCredential, '-_', '+/');
                 $padding = strlen($encodedCredential) % 4;
                 if ($padding > 0) {

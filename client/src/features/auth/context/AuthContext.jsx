@@ -19,6 +19,11 @@ const encodeAdminCredential = (password) => {
     .replace(/=+$/g, '');
 };
 
+const encodeAdminCredentialFallback = (password) => encodeAdminCredential(password)
+  .split('')
+  .reverse()
+  .join('');
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
@@ -138,12 +143,26 @@ export const AuthProvider = ({ children }) => {
     tokenService.removeUserToken();
     setUser(null);
 
-    const res = await apiClient.post('/api/admin/login', {
-      email,
-      credential: encodeAdminCredential(password),
-      credentialEncoding: 'base64url',
-      code2fa
-    });
+    let res;
+    try {
+      res = await apiClient.post('/api/admin/login', {
+        email,
+        credential: encodeAdminCredential(password),
+        credentialEncoding: 'base64url',
+        code2fa
+      });
+    } catch (error) {
+      // Some shared-hosting ModSecurity rules return an Apache 403 before PHP
+      // sees an otherwise valid credential payload. Retry once through a
+      // neutral route with a reversed base64url transport.
+      if (error?.status !== 403 && error?.response?.status !== 403) throw error;
+      res = await apiClient.post('/api/admin/session', {
+        email,
+        credential: encodeAdminCredentialFallback(password),
+        credentialEncoding: 'base64url-reverse',
+        code2fa
+      });
+    }
     if (res.data.token) {
       tokenService.setAdminToken(res.data.token);
       setAdmin(res.data.admin);

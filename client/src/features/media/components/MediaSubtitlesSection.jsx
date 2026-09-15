@@ -5,6 +5,13 @@ import Link from 'next/link';
 import { Download, CheckCircle2, CalendarClock, ShieldCheck } from 'lucide-react';
 import AdSlot from '@/components/ads/AdSlot';
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+const asText = (value, fallback = '') => {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (value && typeof value === 'object') return String(value.name || value.label || value.value || fallback);
+  return fallback;
+};
+
 export default function MediaSubtitlesSection({
   type,
   media,
@@ -24,10 +31,17 @@ export default function MediaSubtitlesSection({
   handleDownloadSubtitle,
   getId
 }) {
+  const seasonList = asArray(seasons);
+  const episodeList = asArray(activeEpisodes);
+  const subtitleMap = episodeSubtitlesById && typeof episodeSubtitlesById === 'object'
+    ? episodeSubtitlesById
+    : {};
+  const standaloneFiles = asArray(standaloneSubtitles);
+
   return (
     <div id="subtitles" className="flex flex-col gap-6 w-full">
       {/* Drama Episode Subtitle Center */}
-      {type === 'Drama' && seasons.length > 0 && (
+      {type === 'Drama' && seasonList.length > 0 && (
         <div className="flex flex-col gap-4 text-left">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
@@ -38,7 +52,7 @@ export default function MediaSubtitlesSection({
 
           {/* Season selection pills */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {seasons.map((s) => (
+            {seasonList.map((s) => (
               <button
                 key={s._id}
                 onClick={() => setSelectedSeason(s.seasonNumber)}
@@ -57,29 +71,29 @@ export default function MediaSubtitlesSection({
           {activeSeasonDoc && (
             <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
               <p className="text-xs text-slate-400 leading-relaxed">
-                {activeSeasonDoc.seasonDescription ||
+                {asText(activeSeasonDoc.seasonDescription) ||
                   `Season ${selectedSeason} subtitle files are organized episode by episode below.`}
               </p>
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
                 <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-emerald-300">
-                  {activeEpisodes.reduce(
-                    (count, ep) => count + ((episodeSubtitlesById[ep._id] || []).length > 0 ? 1 : 0),
+                  {episodeList.reduce(
+                    (count, ep) => count + (asArray(subtitleMap[ep._id]).length > 0 ? 1 : 0),
                     0
                   )}{' '}
                   Ready
                 </span>
                 <span className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1">
-                  {activeEpisodes.length} Episodes
+                  {episodeList.length} Episodes
                 </span>
               </div>
             </div>
           )}
 
           {/* Next Episode Release Banner (Ongoing dramas) */}
-          {activeEpisodes.length > 0 &&
+          {episodeList.length > 0 &&
             (() => {
               const now = new Date();
-              const futureEp = activeEpisodes.find((ep) => ep.airDate && new Date(ep.airDate) > now);
+              const futureEp = episodeList.find((ep) => ep.airDate && new Date(ep.airDate) > now);
               if (!futureEp) return null;
               const nextDate = new Date(futureEp.airDate);
               const formattedDate = nextDate.toLocaleDateString('en-US', {
@@ -102,9 +116,9 @@ export default function MediaSubtitlesSection({
                     </p>
                     <p className="text-sm font-bold text-white">
                       Episode {futureEp.episodeNumber}
-                      {futureEp.episodeTitle &&
-                        futureEp.episodeTitle.toLowerCase() !== `episode ${futureEp.episodeNumber}`.toLowerCase() &&
-                        ` — ${futureEp.episodeTitle}`}
+                      {asText(futureEp.episodeTitle) &&
+                        asText(futureEp.episodeTitle).toLowerCase() !== `episode ${futureEp.episodeNumber}`.toLowerCase() &&
+                        ` — ${asText(futureEp.episodeTitle)}`}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">{formattedDate}</p>
                   </div>
@@ -119,14 +133,14 @@ export default function MediaSubtitlesSection({
 
           {/* Episode listing blocks */}
           <div className="flex flex-col gap-3.5">
-            {activeEpisodes.length === 0 ? (
+            {episodeList.length === 0 ? (
               <p className="text-xs text-slate-500 py-6 text-center border border-dashed border-white/10 rounded-2xl">
                 No episodes added for this season yet.
               </p>
             ) : (
-              activeEpisodes.map((ep, index) => {
+              episodeList.map((ep, index) => {
                 const summary = ep.subtitleSummary || {};
-                const directEpisodeFiles = episodeSubtitlesById[getId(ep._id)] || [];
+                const directEpisodeFiles = asArray(subtitleMap[getId(ep._id)]);
                 const taggedTitleFiles = sortedSubtitles.filter(
                   (sub) =>
                     Number(sub?.seasonNumber || selectedSeason) === Number(selectedSeason) &&
@@ -220,7 +234,7 @@ export default function MediaSubtitlesSection({
                   </div>
                   {/* A content-break placement preserves every episode's
                       direct-download action while using the long list space. */}
-                  {index === 3 && activeEpisodes.length > 4 && (
+                  {index === 3 && episodeList.length > 4 && (
                     <AdSlot slotId="subtitle_list_banner" className="my-2" />
                   )}
                   </React.Fragment>
@@ -232,7 +246,7 @@ export default function MediaSubtitlesSection({
       )}
 
       {/* Subtitle Downloads list (Movie & Full Title Subtitles) */}
-      {!(type === 'Drama' && standaloneSubtitles.length === 0) && (
+      {!(type === 'Drama' && standaloneFiles.length === 0) && (
         <div className="flex flex-col gap-5 text-left pt-2">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div>
@@ -241,20 +255,20 @@ export default function MediaSubtitlesSection({
                 {type === 'Drama' ? 'Full Title Subtitles' : 'Download Sinhala Subtitles'}
               </h2>
             </div>
-            {standaloneSubtitles.length > 0 && (
+            {standaloneFiles.length > 0 && (
               <span className="px-3 py-1 rounded-full bg-brand-primary/20 border border-brand-primary/40 text-brand-primary text-[10px] font-black uppercase">
-                {standaloneSubtitles.length} Subtitles Ready
+                {standaloneFiles.length} Subtitles Ready
               </span>
             )}
           </div>
 
-          {standaloneSubtitles.length === 0 ? (
+          {standaloneFiles.length === 0 ? (
             <div className="p-8 bg-white/[0.02] border border-white/10 rounded-3xl text-center text-xs text-slate-400">
               No Sinhala subtitles uploaded for this title yet.
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {standaloneSubtitles.map((sub) => {
+              {standaloneFiles.map((sub) => {
                 const downloadTitle = (displayTitle || 'Subtitle')
                   .trim()
                   .replace(/[^a-zA-Z0-9]+/g, '_')

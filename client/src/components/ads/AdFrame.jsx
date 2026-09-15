@@ -144,9 +144,13 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
           callbacksRef.current.onUnavailable?.('no_fill');
         }
       } catch {
-        // Cross-origin redirection may indicate ad network navigation
+        // Cross-origin redirection is still a terminal state for this slot.
+        // Remove it instead of holding an empty reserved block indefinitely.
+        finished = true;
+        cleanup();
+        callbacksRef.current.onUnavailable?.('unavailable');
       }
-    }, 9000);
+    }, 6000);
 
     timeout = setTimeout(() => {
       inspect();
@@ -173,7 +177,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         width={responsive ? '100%' : width}
         height={height}
         scrolling="no"
-        loading="eager"
+        loading="lazy"
         data-ad-state={ready ? 'loaded' : 'loading'}
         className="block border-0 bg-transparent mx-auto"
         style={{
