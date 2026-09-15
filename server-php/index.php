@@ -55,10 +55,30 @@ $allowedOrigins = array_values(array_unique(array_map(function($o) {
     return strtolower(rtrim(trim($o), '/'));
 }, $allowedOrigins)));
 
+// Build list of allowed domains/hosts for proxy & scheme-insensitive matching
+$allowedHosts = ['ksubzone.com', 'www.ksubzone.com', 'ksubzone-com.vercel.app', 'localhost', '127.0.0.1'];
+$currentHost = strtolower(explode(':', $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '')[0]);
+if (!empty($currentHost)) {
+    $allowedHosts[] = $currentHost;
+}
+foreach ($allowedOrigins as $ao) {
+    $h = parse_url($ao, PHP_URL_HOST);
+    if (!empty($h)) {
+        $allowedHosts[] = strtolower($h);
+    }
+}
+$allowedHosts = array_values(array_unique(array_filter($allowedHosts)));
+
 $rawOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $normalizedOrigin = strtolower(rtrim(trim($rawOrigin), '/'));
+$originHost = !empty($rawOrigin) ? strtolower(parse_url($rawOrigin, PHP_URL_HOST) ?? '') : '';
 
-if ($rawOrigin !== '' && in_array($normalizedOrigin, $allowedOrigins, true)) {
+// Valid origin if: empty (same-origin/server-side fetch), or matching host/allowedOrigins list
+$isAllowedOrigin = empty($rawOrigin)
+    || in_array($originHost, $allowedHosts, true)
+    || in_array($normalizedOrigin, $allowedOrigins, true);
+
+if (!empty($rawOrigin) && $isAllowedOrigin) {
     header("Access-Control-Allow-Origin: " . $rawOrigin);
     header("Access-Control-Allow-Credentials: true");
 }
@@ -72,8 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Reject cross-origin writes before authentication or side effects.
-if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD', 'OPTIONS'], true) && $rawOrigin !== '' && !in_array($normalizedOrigin, $allowedOrigins, true)) {
+// Reject cross-origin writes from unauthorized third-party domains
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD', 'OPTIONS'], true) && !$isAllowedOrigin) {
     http_response_code(403);
     header('Content-Type: application/json');
     echo json_encode(['message' => 'Request origin is not allowed.']);
