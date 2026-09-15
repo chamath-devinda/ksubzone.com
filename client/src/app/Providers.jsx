@@ -4,6 +4,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/features/auth/context/AuthContext';
 import { SiteContentProvider } from '@/contexts/SiteContentContext';
+import { AdProvider } from '@/components/ads/AdProvider';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 const queryClient = new QueryClient({
@@ -25,7 +26,9 @@ export default function Providers({ children, initialSiteContent }) {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SiteContentProvider initialContent={initialSiteContent}>
-            {children}
+            <AdProvider>
+              {children}
+            </AdProvider>
           </SiteContentProvider>
         </AuthProvider>
       </QueryClientProvider>

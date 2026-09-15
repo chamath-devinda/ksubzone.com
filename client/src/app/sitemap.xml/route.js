@@ -2,13 +2,10 @@ import { fetchBackendJson } from '@/lib/server/backend';
 import { permalinkSlug } from '@/utils/slug';
 import { SITE_URL } from '@/utils/seo';
 
-// ISR: regenerate at most once per hour.
-// Next.js will serve the last-good sitemap from cache if the backend is
-// temporarily down — Googlebot will never see a 503 from this route again.
+// Dynamic route handler with edge caching: never blocks static build generation.
+// Edge CDNs cache the response for 1 hour.
+export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
-
-// All fetch() calls inside this route must honour the ISR boundary.
-export const fetchCache = 'force-cache';
 
 const xmlEscape = (value) => String(value)
   .replace(/&/g, '&amp;')

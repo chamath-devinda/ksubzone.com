@@ -15,6 +15,7 @@ export default async function ArticlesPage() {
   const data = await fetchBackendJson('/api/articles?status=Published&limit=30', {
     revalidate: 3600,
     tags: ['articles'],
+    fallback: { articles: [] },
   });
   const initialData = data?.articles || [];
 

@@ -6,7 +6,6 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import MaintenanceMode from '@/components/layout/MaintenanceMode';
 import { usePathname } from 'next/navigation';
 import apiClient from '@/services/api/apiClient';
-import { AdProvider } from '@/components/ads/AdProvider';
 import ScrollToTop from '@/components/ui/ScrollToTop';
 import TopProgressBar from '@/components/ui/TopProgressBar';
 
@@ -16,7 +15,6 @@ import TopProgressBar from '@/components/ui/TopProgressBar';
  * Responsibilities:
  *  - Maintenance mode gate (auth-aware, client-only check)
  *  - Analytics visit logger (fires on route change)
- *  - Ad provider context
  *  - UI chrome (progress bar, scroll-to-top)
  *
  * By keeping these concerns here — and making the parent layout a Server
@@ -51,10 +49,10 @@ export default function PublicLayoutClient({ children }) {
   }
 
   return (
-    <AdProvider>
+    <>
       <TopProgressBar />
       <ScrollToTop />
       {children}
-    </AdProvider>
+    </>
   );
 }

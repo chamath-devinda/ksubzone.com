@@ -92,6 +92,7 @@ export default async function HomePage() {
   const catalogRes = await fetchBackendJson('/api/media/home', {
     revalidate: 300,
     tags: ['home', 'dramas', 'movies'],
+    fallback: {},
   });
 
   initialHomeCatalog = compactHomeCatalog(catalogRes);

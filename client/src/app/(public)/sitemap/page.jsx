@@ -56,11 +56,16 @@ async function getSitemapCatalog() {
       dramas: catalog?.dramas || [],
       movies: catalog?.movies || [],
       genres: uniqueGenres,
-      articles: articlesRes.articles || [],
+      articles: articlesRes?.articles || [],
     };
   } catch (error) {
-    console.error('Error loading sitemap catalog:', error);
-    throw error;
+    console.warn('Backend unavailable during sitemap generation, serving static fallback shell:', error.message);
+    return {
+      dramas: [],
+      movies: [],
+      genres: [],
+      articles: [],
+    };
   }
 }
 

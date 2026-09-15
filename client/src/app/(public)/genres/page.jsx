@@ -8,6 +8,7 @@ async function getGenresData() {
   return fetchBackendJson('/api/media/genres', {
     revalidate: 3600,
     tags: ['genres'],
+    fallback: [],
   });
 }
 

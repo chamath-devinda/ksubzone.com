@@ -33,9 +33,10 @@ export async function fetchBackendJson(
   {
     revalidate = 60,
     tags = [],
-    attempts = DEFAULT_ATTEMPTS,
-    timeoutMs = DEFAULT_TIMEOUT_MS,
+    attempts = 2,
+    timeoutMs = 4_000,
     notFoundStatuses = [404],
+    fallback = undefined,
   } = {},
 ) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -85,6 +86,11 @@ export async function fetchBackendJson(
         await wait(150 * 2 ** (attempt - 1));
       }
     }
+  }
+
+  if (fallback !== undefined) {
+    console.warn(`[backend] ${normalizedPath} failed after ${attempts} attempts, using fallback value.`);
+    return fallback;
   }
 
   throw lastError;

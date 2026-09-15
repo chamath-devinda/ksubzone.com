@@ -215,8 +215,16 @@ export function AdProvider({ children }) {
   );
 }
 
+const defaultAdContext = Object.freeze({
+  config: adConfig,
+  pageType: 'home',
+  pathname: '/',
+  variant: 'A',
+  resolvePlacement: (slotId) => adConfig.placements[slotId] || null,
+  emitAdEvent: () => {},
+});
+
 export function useAds() {
   const context = useContext(AdContext);
-  if (!context) throw new Error('useAds must be used inside AdProvider');
-  return context;
+  return context || defaultAdContext;
 }

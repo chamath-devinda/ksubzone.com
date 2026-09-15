@@ -58,7 +58,7 @@
       if (zone.native) {
         document.write(
           '<div id="container-' + zone.key + '"></div>' +
-          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js"><' + '/script>'
+          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" onerror="this.onerror=null;this.src=\'https://nobleduringsurveillance.com/' + zone.key + '/invoke.js\';"><' + '/script>'
         );
         return;
       }
@@ -74,7 +74,7 @@
           '};' +
           'window.atOptions = atOptions;' +
         '<' + '/script>' +
-        '<script type="text/javascript" src="' + host + '/' + zone.key + '/invoke.js"><' + '/script>'
+        '<script type="text/javascript" src="' + host + '/' + zone.key + '/invoke.js" onerror="this.onerror=null;this.src=\'https://nobleduringsurveillance.com/' + zone.key + '/invoke.js\';"><' + '/script>'
       );
     }());
   </script>

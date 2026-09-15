@@ -1,0 +1,76 @@
+Social Bar - <script src="https://nobleduringsurveillance.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js"></script>
+
+Banner 160x300 - <script>
+  atOptions = {
+    'key' : '1a081bf3ee58c48ede1caf299a4f2e36',
+    'format' : 'iframe',
+    'height' : 300,
+    'width' : 160,
+    'params' : {}
+  };
+</script>
+<script src="https://nobleduringsurveillance.com/1a081bf3ee58c48ede1caf299a4f2e36/invoke.js"></script>
+
+Banner 320x50 - <script>
+  atOptions = {
+    'key' : 'cee89ddb1e1c5bd615b6d0a22ba3d9e8',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://nobleduringsurveillance.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js"></script>
+
+Banner 160x600 - <script>
+  atOptions = {
+    'key' : 'c13f5f2182fb9c307a05678f246a92d3',
+    'format' : 'iframe',
+    'height' : 600,
+    'width' : 160,
+    'params' : {}
+  };
+</script>
+<script src="https://nobleduringsurveillance.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js"></script>
+
+Banner 728x90 - <script>
+  atOptions = {
+    'key' : '23a798c8294b23d3b5f73561f68cc621',
+    'format' : 'iframe',
+    'height' : 90,
+    'width' : 728,
+    'params' : {}
+  };
+</script>
+<script src="https://nobleduringsurveillance.com/23a798c8294b23d3b5f73561f68cc621/invoke.js"></script>
+
+Popunder - <script src="https://nobleduringsurveillance.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js"></script>
+
+Banner 468x60 - <script>
+  atOptions = {
+    'key' : '8658915090686e956a2289c72ba73b71',
+    'format' : 'iframe',
+    'height' : 60,
+    'width' : 468,
+    'params' : {}
+  };
+</script>
+<script src="https://nobleduringsurveillance.com/8658915090686e956a2289c72ba73b71/invoke.js"></script>
+
+Banner 300x250 - <script>
+  atOptions = {
+    'key' : '586e1584081dab0775623a2b61895f68',
+    'format' : 'iframe',
+    'height' : 250,
+    'width' : 300,
+    'params' : {}
+  };
+</script>
+<script src="https://nobleduringsurveillance.com/586e1584081dab0775623a2b61895f68/invoke.js"></script>
+
+Native Banner - <script async="async" data-cfasync="false" src="https://nobleduringsurveillance.com/90963118e211fbe13565d79b0d81a39d/invoke.js"></script>
+<div id="container-90963118e211fbe13565d79b0d81a39d"></div>
+ 
+Native Banner - <script async="async" data-cfasync="false" src="https://nobleduringsurveillance.com/90963118e211fbe13565d79b0d81a39d/invoke.js"></script>
+<div id="container-90963118e211fbe13565d79b0d81a39d"></div>
+
