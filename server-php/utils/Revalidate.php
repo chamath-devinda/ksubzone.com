@@ -2,6 +2,9 @@
 namespace Utils;
 
 class Revalidate {
+    private static $pending = [];
+    private static $shutdownRegistered = false;
+
     /**
      * Trigger static revalidation for a given path and tags on Next.js frontend.
      * 
@@ -18,8 +21,6 @@ class Revalidate {
             return false;
         }
         
-        $url = rtrim($nextUrl, '/') . '/api/revalidate';
-        
         $tagArray = [];
         if (!empty($tags)) {
             $tagArray = is_array($tags) ? array_values(array_filter($tags)) : [trim((string)$tags)];
@@ -30,38 +31,84 @@ class Revalidate {
             'tags' => $tagArray
         ];
 
-        $postData = json_encode($payload);
+        // Revalidation is post-response maintenance. Running several remote
+        // requests inline made successful admin writes exceed the browser's
+        // 20-second timeout and appear to fail. Queue and deduplicate them;
+        // the shutdown handler flushes the HTTP response before dispatching.
+        $key = $path . '|' . implode(',', $tagArray);
+        self::$pending[$key] = [
+            'url' => rtrim($nextUrl, '/') . '/api/revalidate',
+            'token' => $token,
+            'payload' => $payload
+        ];
 
-        // Use reliable cURL to ensure TLS handshake completes and Next.js revalidates
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'X-Revalidate-Secret: ' . $token
-        ]);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-        
-        $res = curl_exec($ch);
-        if ($res === false) {
-            error_log("Revalidation failed for path {$path} via URL {$url}. cURL Error: " . curl_error($ch));
-            curl_close($ch);
-            return false;
-        }
-
-        $info = curl_getinfo($ch);
-        curl_close($ch);
-
-        if ($info['http_code'] !== 200) {
-            error_log("Revalidation failed for path {$path} via URL {$url}. HTTP Status: " . $info['http_code'] . ", Response: " . $res);
-            return false;
+        if (!self::$shutdownRegistered) {
+            self::$shutdownRegistered = true;
+            register_shutdown_function([self::class, 'flushPending']);
         }
 
         return true;
+    }
+
+    /**
+     * Dispatch queued revalidation requests concurrently after the response.
+     */
+    public static function flushPending() {
+        if (empty(self::$pending)) {
+            return;
+        }
+
+        $requests = array_values(self::$pending);
+        self::$pending = [];
+
+        // On PHP-FPM this sends the completed JSON response to the browser
+        // while the best-effort cache refresh continues in the background.
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+        $multi = curl_multi_init();
+        $handles = [];
+
+        foreach ($requests as $request) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $request['url']);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($request['payload']));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'X-Revalidate-Secret: ' . $request['token']
+            ]);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+            curl_multi_add_handle($multi, $ch);
+            $handles[] = [$ch, $request];
+        }
+
+        do {
+            $status = curl_multi_exec($multi, $running);
+            if ($running) {
+                curl_multi_select($multi, 0.5);
+            }
+        } while ($running && $status === CURLM_OK);
+
+        foreach ($handles as [$ch, $request]) {
+            $body = curl_multi_getcontent($ch);
+            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            if ($error !== '' || $httpCode !== 200) {
+                error_log(
+                    'Revalidation failed for path ' . $request['payload']['path'] .
+                    ($error !== '' ? '. cURL Error: ' . $error : '. HTTP Status: ' . $httpCode . ', Response: ' . $body)
+                );
+            }
+            curl_multi_remove_handle($multi, $ch);
+            curl_close($ch);
+        }
+
+        curl_multi_close($multi);
     }
 
     /**

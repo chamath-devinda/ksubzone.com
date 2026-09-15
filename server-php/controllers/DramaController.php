@@ -647,10 +647,17 @@ class DramaController {
             $updates['slug'] = $newSlug;
         }
 
-        // Re-generate SEO package if title or description changes
-        if (!empty($updates['title']) || !empty($updates['description'])) {
-            $title = $updates['title'] ?? $drama['title'];
-            $desc = $updates['description'] ?? $drama['description'] ?? '';
+        // Re-generate SEO only when the relevant content actually changed.
+        // The edit form always submits title and description, so checking only
+        // for non-empty values rebuilt a large SEO payload on every save.
+        $incomingTitle = $updates['title'] ?? '';
+        $incomingDesc = $updates['description'] ?? '';
+        $titleChanged = $incomingTitle !== '' && $incomingTitle !== ($drama['title'] ?? '');
+        $descChanged = $incomingDesc !== '' && $incomingDesc !== ($drama['description'] ?? '');
+
+        if ($titleChanged || $descChanged) {
+            $title = $incomingTitle ?: $drama['title'];
+            $desc = $incomingDesc ?: ($drama['description'] ?? '');
             $seoContent = AiSeoController::generateSeoForTitle($title, $desc, 'Drama', [
                 'genres' => $updates['keywords'] ?? $drama['keywords'] ?? [],
                 'releaseDate' => $updates['releaseDate'] ?? $drama['releaseDate'] ?? null,
