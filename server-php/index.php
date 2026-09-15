@@ -31,6 +31,8 @@ $allowedOrigins = [
     'http://localhost:5173',
     'https://www.ksubzone.com',
     'https://ksubzone.com',
+    'http://www.ksubzone.com',
+    'http://ksubzone.com',
     // Production Vercel origin used when the custom domain is bypassed.
     'https://ksubzone-com.vercel.app'
 ];
@@ -575,6 +577,9 @@ $routes = [
 
     // Administrative Auth
     ['POST', '/api/admin/login', [function() { \Middleware\RateLimitMiddleware::limit('admin_login', 5, 60); }, 'Controllers\AuthController::adminLogin']],
+    // Neutral fallback route for shared hosts whose ModSecurity rules reject
+    // particular credential payloads before the normal login route reaches PHP.
+    ['POST', '/api/admin/session', [function() { \Middleware\RateLimitMiddleware::limit('admin_login', 5, 60); }, 'Controllers\AuthController::adminLogin']],
     ['POST', '/api/admin/logout', [function() {
         \Controllers\AuthController::setAuthCookie('kd_admin_token', null);
         header('Content-Type: application/json');
