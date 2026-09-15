@@ -6,7 +6,21 @@ import { tokenService } from './tokenService';
 
 const resolveBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    // In browser, always use relative same-origin `/api` so Next.js rewrites proxy cleanly without CORS
+    // Production API calls must bypass the Vercel/Next rewrite. That proxy can
+    // hold requests open while the PHP origin is healthy, which makes login
+    // and catalogue requests look like client-side timeouts. The API already
+    // exposes a strict CORS policy for the public frontend domains.
+    const configuredApi = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL)
+      || (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL)
+      || '';
+    if (configuredApi) return configuredApi.replace(/\/+$/, '');
+
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname === 'ksubzone.com' || hostname === 'www.ksubzone.com' || hostname.endsWith('.vercel.app')) {
+      return 'https://api.ksubzone.com';
+    }
+
+    // Keep local development on the local Next rewrite/backend.
     return '';
   }
   if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {

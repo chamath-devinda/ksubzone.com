@@ -49,7 +49,7 @@ test('URL Resolver: correctly resolves R2 and Supabase URLs', async () => {
   assert.equal(legacyNullUrl, 'https://ejvczjiueysbiewzsuin.supabase.co/storage/v1/object/public/Ksubzone/subtitles/old.srt');
 });
 
-test('R2 download uses native navigation instead of a CORS-blocked Blob fetch', async () => {
+test('R2 download uses native API-proxy navigation instead of a CORS-blocked Blob fetch', async () => {
   const { downloadSubtitle } = await import('../client/src/utils/subtitleDownload.js');
   const appended = [];
   const fetchUrls = [];
@@ -91,7 +91,7 @@ test('R2 download uses native navigation instead of a CORS-blocked Blob fetch', 
     });
 
     assert.equal(appended.length, 1);
-    assert.equal(appended[0].href, 'https://files.ksubzone.com/subtitles/show/episode-1/sinhala/v1/file.srt');
+    assert.equal(appended[0].href, 'https://api.ksubzone.com/api/subtitles/sub-r2/download?proxy=1');
     assert.equal(appended[0].clicked, true);
     assert.ok(!fetchUrls.some((url) => url.startsWith('https://files.ksubzone.com/')));
   } finally {

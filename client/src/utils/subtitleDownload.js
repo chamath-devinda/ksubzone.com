@@ -1,4 +1,4 @@
-import { resolveSubtitleDownloadUrl, isR2Subtitle, getSafeSubtitleFilename } from './subtitleUrl';
+import { resolveSubtitleDownloadUrl, isR2Subtitle, getSafeSubtitleFilename } from './subtitleUrl.js';
 
 const DEFAULT_ERROR = 'මෙම උපසිරැසි ගොනුව දැන් බාගත කළ නොහැක. කරුණාකර නැවත උත්සාහ කරන්න.';
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -102,11 +102,6 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
   const targetId = subId || subtitle?._id || subtitle?.id;
   const safeName = getSafeSubtitleFilename(subtitle, fileName);
 
-  // Trigger lightweight background tracking without proxying file bytes
-  if (targetId) {
-    trackDownloadSafely(targetId);
-  }
-
   // Check if we can download directly from Cloudflare R2
   const directR2Url = isR2Subtitle(subtitle) ? resolveSubtitleDownloadUrl(subtitle) : (
     (fileUrl && (fileUrl.startsWith('https://files.ksubzone.com') || fileUrl.includes('.r2.cloudflarestorage.com')))
@@ -117,12 +112,16 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
   const apiBase = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_API_URL || process.env?.NEXT_PUBLIC_BACKEND_URL)) ||
     (typeof window !== 'undefined' && (window.location.hostname === 'ksubzone.com' || window.location.hostname === 'www.ksubzone.com' || window.location.hostname.endsWith('.vercel.app')) ? 'https://api.ksubzone.com' : '');
 
-  // R2's public custom domain serves the file with Content-Disposition but
-  // does not currently expose a browser CORS header. A normal navigation is
-  // allowed cross-origin and lets the browser download the file directly;
-  // fetching it as a Blob is blocked by CORS before JavaScript can read it.
+  // Route R2 downloads through the API's server-side proxy. The public files
+  // hostname can be slow/unreachable from some networks and does not expose
+  // browser CORS headers, while the API can fetch the object and return it as
+  // a normal native download response.
   if (directR2Url) {
-    triggerNativeDownload(directR2Url, safeName);
+    if (targetId && apiBase) {
+      triggerNativeDownload(`${apiBase}/api/subtitles/${encodeURIComponent(targetId)}/download?proxy=1`, safeName);
+    } else {
+      triggerNativeDownload(directR2Url, safeName);
+    }
     return;
   }
 
