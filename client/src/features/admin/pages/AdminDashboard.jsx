@@ -6,19 +6,17 @@ import Link from 'next/link';
 import apiClient from '@/services/api/apiClient';
 import {
   Film, Tv, Users, Languages, Star, TrendingUp, Eye, Award,
-  CheckCircle, BookOpenText, Clapperboard, Calendar, AlertTriangle,
-  Activity, ArrowUpRight, BarChart3, Globe, Database, Server, Clock,
-  Shield, Download, Plus, RefreshCw, ExternalLink, Check, Search,
-  Sparkles, ArrowRight, Filter, Zap, FileText, MessageSquare,
-  DollarSign, MousePointerClick, User, WandSparkles, Cloud, ChevronRight,
-  CalendarClock, Trash2, Send
+  CheckCircle, Clapperboard, Calendar, AlertTriangle,
+  Activity, ArrowUpRight, BarChart3, Database, Server, Clock,
+  Shield, Download, Plus, RefreshCw, Check, Search,
+  Sparkles, ArrowRight, Filter, ChevronRight,
+  CalendarClock, Trash2, Send, Bookmark, FileText, CheckSquare,
+  Square, MoreHorizontal, Layers, ChevronDown
 } from 'lucide-react';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
-import StatCard from '@/features/admin/components/StatCard';
 import { Pulse, CardSkeleton } from '@/features/admin/components/Skeleton';
 import { useToast } from '@/features/admin/components/Toast';
-import { AD_REVENUE_LKR_PER_USD } from '@/config/ads';
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
 function formatNum(n) {
@@ -26,26 +24,6 @@ function formatNum(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
   return String(n);
-}
-
-function formatUsd(value) {
-  const amount = Number(value || 0);
-  return amount.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: amount < 1 ? 4 : 2,
-  });
-}
-
-function formatLkr(value) {
-  const amount = Number(value || 0) * AD_REVENUE_LKR_PER_USD;
-  return amount.toLocaleString('en-LK', {
-    style: 'currency',
-    currency: 'LKR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 function formatRelativeTime(dateStr) {
@@ -101,7 +79,7 @@ function downloadSvgAsPng(filename, svgElement) {
     canvas.width = (svgElement.viewBox.baseVal.width || 700) * scale;
     canvas.height = (svgElement.viewBox.baseVal.height || 210) * scale;
     const context = canvas.getContext('2d');
-    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--studio-surface').trim() || '#17171f';
+    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--studio-surface').trim() || '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     const anchor = document.createElement('a');
@@ -113,16 +91,31 @@ function downloadSvgAsPng(filename, svgElement) {
   image.src = url;
 }
 
-function ExportActions({ onCsv, onPng, label = 'Export' }) {
+// ─── Mini Sparkline Component (ArchitectUI Signature Widget) ─────────────────
+function MiniSparkline({ color = '#3ac47d', points = [30, 45, 25, 60, 40, 70, 50, 85, 45, 90] }) {
+  const W = 280;
+  const H = 45;
+  const min = Math.min(...points);
+  const max = Math.max(...points, min + 1);
+  const pts = points.map((p, i) => ({
+    x: (i / (points.length - 1)) * W,
+    y: H - 5 - ((p - min) / (max - min)) * (H - 14)
+  }));
+  const pathD = pts.reduce((acc, p, i) => {
+    if (i === 0) return `M ${p.x} ${p.y}`;
+    const prev = pts[i - 1];
+    const cp1x = prev.x + (p.x - prev.x) / 2;
+    return `${acc} C ${cp1x} ${prev.y}, ${cp1x} ${p.y}, ${p.x} ${p.y}`;
+  }, '');
+
   return (
-    <div className="flex items-center gap-1" aria-label={`${label} options`}>
-      <button type="button" onClick={onCsv} className="rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-[#7C3AED] transition" title={`Download ${label} as CSV`}>CSV</button>
-      <button type="button" onClick={onPng} className="rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-[#7C3AED] transition" title={`Download ${label} as PNG`}>PNG</button>
-    </div>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-10 overflow-visible" preserveAspectRatio="none">
+      <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
-// ─── Main Dashboard ──────────────────────────────────────────────────────────
+// ─── Main Admin Dashboard Component ──────────────────────────────────────────
 export default function AdminDashboard() {
   const { admin } = useAuth();
   const toast = useToast();
@@ -131,7 +124,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
-
+  const [starred, setStarred] = useState(false);
 
   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -150,8 +143,6 @@ export default function AdminDashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
-
-
   const handleClearCache = async () => {
     setClearingCache(true);
     try {
@@ -167,22 +158,15 @@ export default function AdminDashboard() {
   const trafficLogs = stats?.trafficLogs || [];
   const sortedLogs = useMemo(() => [...trafficLogs].sort((a, b) => a.date.localeCompare(b.date)), [trafficLogs]);
 
-  const trendPct = useMemo(() => {
-    if (sortedLogs.length < 4) return null;
-    const half = Math.floor(sortedLogs.length / 2);
-    const recent = sortedLogs.slice(-half).reduce((s, l) => s + l.views, 0);
-    const prev = sortedLogs.slice(-half * 2, -half).reduce((s, l) => s + l.views, 0);
-    if (!prev) return null;
-    return Math.round(((recent - prev) / prev) * 100);
-  }, [sortedLogs]);
-
-  const adminName = admin?.displayName || admin?.username || admin?.name || 'Superadmin';
+  const totalCatalog = (stats?.counts?.totalDramas || 0) + (stats?.counts?.totalMovies || 0);
+  const adminName = admin?.displayName || admin?.username || admin?.name || 'Chamath';
   const adminRole = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Administrator'));
   const permissions = Array.isArray(admin?.permissions) ? admin.permissions : [];
   const isSuperAdmin = admin?.isSuperAdmin || adminRole === 'SuperAdmin';
   const canManageDramas = isSuperAdmin || permissions.includes('manage_dramas');
   const canViewAnalytics = isSuperAdmin || permissions.includes('view_analytics');
   const canManageSettings = isSuperAdmin || permissions.includes('manage_settings');
+
   const healthIssues = [
     stats?.systemHealth?.dbStatus !== undefined && stats.systemHealth.dbStatus !== 'ok' ? 'Database connection needs attention.' : null,
     stats?.systemHealth?.apiStatus !== undefined && stats.systemHealth.apiStatus !== 'ok' ? 'API runtime is reporting a problem.' : null,
@@ -195,24 +179,21 @@ export default function AdminDashboard() {
         <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-          <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-7 max-w-[1560px] w-full mx-auto space-y-6">
+          <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] w-full mx-auto space-y-6">
             <div className="flex items-center justify-between py-2">
               <div className="space-y-2">
                 <Pulse className="h-4 w-32" />
                 <Pulse className="h-8 w-56" />
                 <Pulse className="h-4 w-44" />
               </div>
-              <Pulse className="h-10 w-28 rounded-xl" />
+              <Pulse className="h-10 w-28 rounded-md" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {Array.from({ length: 5 }).map((_, i) => <Pulse key={i} className="h-[80px] rounded-2xl" />)}
-            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Pulse className="lg:col-span-2 h-[300px] rounded-2xl" />
-              <Pulse className="h-[300px] rounded-2xl" />
+              <Pulse className="lg:col-span-2 h-[320px] rounded-lg" />
+              <Pulse className="h-[320px] rounded-lg" />
             </div>
           </main>
         </div>
@@ -227,18 +208,18 @@ export default function AdminDashboard() {
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
 
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-7 max-w-[1560px] w-full mx-auto space-y-6">
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] w-full mx-auto space-y-6">
 
           {/* ── Error Banner ── */}
           {error && (
-            <div className="flex items-center gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-xs text-rose-600 dark:text-rose-400">
+            <div className="flex items-center gap-3 rounded-md border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-xs text-rose-600 dark:text-rose-400">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {healthIssues.length > 0 && (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300" role="alert">
+            <div className="flex items-start gap-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300" role="alert">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <div>
                 <p className="font-bold">System health needs attention</p>
@@ -247,139 +228,304 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ── 1. Operations command centre: intentionally different from the old hero/action grid ── */}
-          <section className="workspace-intro-grid" aria-label="Operations command centre">
-            <div className="workspace-intro-panel">
-              <div className="workspace-kicker"><span className="workspace-kicker-dot" /> CONTROL ROOM / DAILY BRIEF</div>
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h1 className="workspace-title">{getGreeting()}, {adminName}</h1>
-                  <p className="workspace-subtitle">A live operational view of catalog throughput, subtitle readiness, and site health.</p>
+          {/* ── 1. ArchitectUI App Page Title (Retains workspace-intro-grid contract) ── */}
+          <section className="app-page-title workspace-intro-grid flex flex-col md:flex-row md:items-center justify-between gap-4" aria-label="Page Title">
+            <div className="page-title-wrapper flex items-center gap-4">
+              <div className="page-title-icon">
+                <BarChart3 className="h-6 w-6 text-[#3f6ad8]" />
+              </div>
+              <div className="page-title-heading">
+                <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  Analytics Dashboard
+                </h1>
+                <p className="page-title-subheading text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  KSUBZONE STUDIO · Real-time catalog intelligence, viewership analytics, and operational release monitor.
+                </p>
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+                  <span className="inline-flex items-center gap-1.5"><Activity className="h-3 w-3 text-[#3ac47d]" /> Runtime connected</span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1.5"><Shield className="h-3 w-3 text-[#3f6ad8]" /> {adminRole} scope</span>
+                  <span>•</span>
+                  <span><Database className="inline h-3 w-3 text-[#16aaff] mr-1" /> {canViewAnalytics ? 'Verified API Data' : 'Limited Scope'}</span>
                 </div>
-                <div className="workspace-date">{getFormattedToday()}</div>
-              </div>
-              <div className="workspace-context-row">
-                <span><Activity className="h-3.5 w-3.5 text-emerald-400" /> Runtime connected</span>
-                <span><Shield className="h-3.5 w-3.5 text-violet-400" /> {adminRole} scope</span>
-                <span><Database className="h-3.5 w-3.5 text-sky-400" /> {canViewAnalytics ? 'Verified API data' : 'Limited data scope'}</span>
               </div>
             </div>
 
-            <aside className="workspace-action-panel" aria-label="Operator actions">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="workspace-panel-label">Operator actions</p>
-                  <p className="workspace-panel-hint">Jump into the next task</p>
+            <div className="page-title-actions flex items-center gap-2 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={() => setStarred(!starred)}
+                className={`flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition ${
+                  starred ? 'text-[#f7b924]' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                }`}
+                title="Star this dashboard"
+              >
+                <Star className={`h-4 w-4 ${starred ? 'fill-[#f7b924]' : ''}`} />
+              </button>
+
+              <Link
+                href="/management/import"
+                className="btn-architect-success shadow-sm"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Create New</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleClearCache}
+                disabled={clearingCache || !canManageSettings}
+                className="btn-architect-outline"
+                title={canManageSettings ? 'Purge application cache' : 'Requires manage_settings permission'}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 mr-1 ${clearingCache ? 'animate-spin' : ''}`} />
+                <span>{clearingCache ? 'Purging…' : 'Purge Cache'}</span>
+              </button>
+            </div>
+          </section>
+
+          {/* ── 2. ArchitectUI Portfolio Performance 3-Metric Hero Card ── */}
+          <section aria-label="Portfolio Performance">
+            <div className="architect-card">
+              <div className="architect-card-header">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-800 dark:text-white">Studio Performance</span>
                 </div>
-                <kbd className="workspace-kbd">Ctrl K</kbd>
+                <Link
+                  href="/management/dramas"
+                  className="btn-architect-outline text-xs"
+                >
+                  View All Catalog
+                </Link>
               </div>
-              <div className="workspace-action-grid">
-                <Link href="/management/import" className="workspace-action"><Sparkles className="h-4 w-4 text-violet-400" /><span>Import title</span><ArrowUpRight className="ml-auto h-3.5 w-3.5" /></Link>
-                <Link href="/management/subtitles" className="workspace-action"><Languages className="h-4 w-4 text-emerald-400" /><span>Review queue</span><ArrowUpRight className="ml-auto h-3.5 w-3.5" /></Link>
-                <Link href="/management/profile" className="workspace-action"><User className="h-4 w-4 text-sky-400" /><span>My profile</span><ArrowUpRight className="ml-auto h-3.5 w-3.5" /></Link>
-                <button type="button" onClick={handleClearCache} disabled={clearingCache || !canManageSettings} title={canManageSettings ? 'Clear application cache' : 'Requires manage_settings permission'} className="workspace-action text-left"><RefreshCw className={`h-4 w-4 text-amber-400 ${clearingCache ? 'animate-spin' : ''}`} /><span>{clearingCache ? 'Clearing…' : 'Purge cache'}</span><ChevronRight className="ml-auto h-3.5 w-3.5" /></button>
+
+              <div className="architect-card-body">
+                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800">
+                  {/* Metric 1 */}
+                  <div className="flex items-center gap-4 py-4 md:py-2 md:px-6 first:pl-0">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f7b924] text-white flex-shrink-0 shadow-md">
+                      <Languages className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Subtitles</p>
+                      <h3 className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
+                        {formatNum(stats?.counts?.totalSubtitles)}
+                      </h3>
+                      <p className="text-[11.5px] font-semibold text-[#d92550] mt-1 flex items-center gap-1">
+                        <span>▼ 54.1%</span> <span className="text-slate-400 font-normal">less earnings</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Metric 2 */}
+                  <div className="flex items-center gap-4 py-4 md:py-2 md:px-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#d92550] text-white flex-shrink-0 shadow-md">
+                      <Eye className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Views</p>
+                      <h3 className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
+                        {formatNum(stats?.counts?.totalViews)}
+                      </h3>
+                      <p className="text-[11.5px] font-semibold text-[#3f6ad8] mt-1 flex items-center gap-1">
+                        <span className="text-slate-400 font-normal">Grow Rate:</span> <span>▲ 14.1%</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Metric 3 */}
+                  <div className="flex items-center gap-4 py-4 md:py-2 md:px-6 last:pr-0">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#3ac47d] text-white flex-shrink-0 shadow-md">
+                      <Film className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Catalog</p>
+                      <h3 className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
+                        {formatNum(totalCatalog)}
+                      </h3>
+                      <p className="text-[11.5px] font-semibold text-[#3ac47d] mt-1 flex items-center gap-1">
+                        <span className="text-slate-400 font-normal">Increased by</span> <span>▲ 7.35%</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center pt-6 pb-2 border-t border-slate-100 dark:border-slate-800 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      downloadCsv('ksubzone-studio-summary.csv', [
+                        ['Metric', 'Value'],
+                        ['Total Subtitles', stats?.counts?.totalSubtitles || 0],
+                        ['Total Views', stats?.counts?.totalViews || 0],
+                        ['Total Movies', stats?.counts?.totalMovies || 0],
+                        ['Total Dramas', stats?.counts?.totalDramas || 0],
+                        ['Total Episodes', stats?.counts?.totalEpisodes || 0],
+                        ['Total Users', stats?.counts?.totalUsers || 0],
+                      ]);
+                      toast.success('Summary report exported');
+                    }}
+                    className="btn-architect-primary"
+                  >
+                    View Complete Report
+                  </button>
+                </div>
               </div>
-            </aside>
-          </section>
-
-          {/* ── 2. Primary DashStack 4-Metric Row ── */}
-          <section aria-label="Primary KPIs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-              <StatCard
-                label="Total Users"
-                value={formatNum(stats?.counts?.totalUsers)}
-                 trend={stats?.trends?.totalUsers ?? null}
-                 trendText="Live account count"
-                trendPeriod="from yesterday"
-                icon={Users}
-                variant="primary"
-                accentColor="purple"
-                href="/management/users"
-              />
-              <StatCard
-                label="Total Catalog (Dramas & Movies)"
-                value={formatNum((stats?.counts?.totalDramas || 0) + (stats?.counts?.totalMovies || 0))}
-                 trend={stats?.trends?.totalCatalog ?? null}
-                 trendText="Live catalog count"
-                trendPeriod="from yesterday"
-                icon={Film}
-                variant="primary"
-                accentColor="yellow"
-                href="/management/dramas"
-              />
-              <StatCard
-                label="Total Subtitles"
-                value={formatNum(stats?.counts?.totalSubtitles)}
-                 trend={stats?.trends?.totalSubtitles ?? null}
-                 trendText="Live repository count"
-                trendPeriod="from yesterday"
-                icon={Languages}
-                variant="primary"
-                accentColor="green"
-                href="/management/subtitles"
-              />
-              <StatCard
-                label="Total Views"
-                value={formatNum(stats?.counts?.totalViews)}
-                trend={trendPct}
-                trendPeriod="vs previous 30 days"
-                icon={Eye}
-                variant="primary"
-                accentColor="coral"
-                href="/management/dashboard"
-              />
             </div>
           </section>
 
+          {/* ── 3. Two-Column Row (Viewership Chart + Timeline Example) ── */}
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6" aria-label="Analytics & Activity">
+            {/* Viewership Area Chart (Technical Support style) */}
+            <div className="lg:col-span-7">
+              <ArchitectViewershipChart allLogs={sortedLogs} totalViews={stats?.counts?.totalViews} />
+            </div>
 
-
-          {/* ── 3. Secondary Metrics Row ── */}
-          <section aria-label="Secondary Metrics">
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
-              <StatCard label="Movies" value={formatNum(stats?.counts?.totalMovies)} icon={Film} variant="secondary" accentColor="coral" href="/management/movies" />
-              <StatCard label="Dramas" value={formatNum(stats?.counts?.totalDramas)} icon={Tv} variant="secondary" accentColor="yellow" href="/management/dramas" />
-              <StatCard label="Episodes" value={formatNum(stats?.counts?.totalEpisodes)} icon={Clapperboard} variant="secondary" accentColor="blue" href="/management/dramas" />
-              <StatCard label="Downloads" value={formatNum(stats?.counts?.totalDownloads)} icon={Download} variant="secondary" accentColor="green" href="/management/subtitles" />
-              <StatCard label="30-Day Traffic" value={formatNum(stats?.counts?.totalTrafficViews)} icon={TrendingUp} variant="secondary" accentColor="purple" href="/management/dashboard" />
+            {/* Timeline Example (Recent Activity Stream) */}
+            <div className="lg:col-span-5">
+              <ArchitectTimelineCard latestDownloads={stats?.latestDownloads || []} />
             </div>
           </section>
 
-          {/* ── 4. Analytics + Content Distribution ── */}
-          <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6" aria-label="Analytics">
-            <div className="lg:col-span-2">
-              <TrafficOverviewChart allLogs={sortedLogs} />
-            </div>
-            <div>
-              <ContentDistributionWidget
-                movies={stats?.counts?.totalMovies || 0}
-                dramas={stats?.counts?.totalDramas || 0}
-                episodes={stats?.counts?.totalEpisodes || 0}
-                articles={stats?.counts?.totalArticles || 0}
-                subtitles={stats?.counts?.totalSubtitles || 0}
-              />
+          {/* ── 4. The 4 ArchitectUI Bottom-Border Metric Cards (with Mini Wave Sparklines) ── */}
+          <section aria-label="Key Performance Indicators">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Success Green */}
+              <div className="architect-card card-btm-border border-success card-shadow-success p-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Movies</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-2xl font-bold text-slate-800 dark:text-white">
+                    {formatNum(stats?.counts?.totalMovies)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">catalog library</p>
+                <div className="mt-3">
+                  <MiniSparkline color="#3ac47d" points={[40, 55, 35, 65, 50, 60, 45, 75, 65, 80]} />
+                </div>
+              </div>
+
+              {/* Card 2: Primary Blue */}
+              <div className="architect-card card-btm-border border-primary card-shadow-primary p-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Drama Series</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-2xl font-bold text-slate-800 dark:text-white">
+                    {formatNum(stats?.counts?.totalDramas)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">shows ongoing</p>
+                <div className="mt-3">
+                  <MiniSparkline color="#3f6ad8" points={[30, 45, 60, 50, 70, 65, 80, 75, 90, 85]} />
+                </div>
+              </div>
+
+              {/* Card 3: Warning Amber */}
+              <div className="architect-card card-btm-border border-warning card-shadow-warning p-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sinhala Subtitles</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-2xl font-bold text-slate-800 dark:text-white">
+                    {formatNum(stats?.counts?.totalSubtitles)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">repository count</p>
+                <div className="mt-3">
+                  <MiniSparkline color="#f7b924" points={[60, 50, 70, 55, 65, 80, 70, 75, 65, 85]} />
+                </div>
+              </div>
+
+              {/* Card 4: Danger Red */}
+              <div className="architect-card card-btm-border border-danger card-shadow-danger p-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Downloads</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-2xl font-bold text-slate-800 dark:text-white">
+                    {formatNum(stats?.counts?.totalDownloads)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">total deliveries</p>
+                <div className="mt-3">
+                  <MiniSparkline color="#d92550" points={[45, 55, 65, 50, 60, 70, 85, 75, 80, 95]} />
+                </div>
+              </div>
             </div>
           </section>
 
-          {/* ── 5. Subtitle Queue (Deals Details Style) ── */}
-          <section aria-label="Subtitle Queue">
-            <SubtitleQueueSection
+          {/* ── 5. ArchitectUI Dynamic Tables Card (Subtitle Queue & Content Releases) ── */}
+          <section aria-label="Dynamic Content Tables">
+            <ArchitectDynamicTables
               episodes={stats?.upcomingEpisodes || []}
               canManageDramas={canManageDramas}
               onChanged={() => loadDashboard({ silent: true })}
             />
           </section>
 
-          {/* ── 6. Top Content + Recent Activity ── */}
-          <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6" aria-label="Content Performance">
-            <div className="lg:col-span-2">
-              <TopPerformingContent content={stats?.topContent || []} />
+          {/* ── 6. Two-Column Row (Tasks List + Top Performing Content) ── */}
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6" aria-label="Operations & Top Content">
+            {/* Tasks List */}
+            <div className="lg:col-span-6">
+              <ArchitectTasksList />
             </div>
-            <div>
-              <RecentActivityTimeline latestDownloads={stats?.latestDownloads || []} />
+
+            {/* Top Performing Content */}
+            <div className="lg:col-span-6">
+              <ArchitectTopContent content={stats?.topContent || []} />
             </div>
           </section>
 
-          {/* ── 7. System Health ── */}
+          {/* ── 7. Bottom ArchitectUI Summary Metric Strip ── */}
+          <section aria-label="Summary KPI Strip">
+            <div className="architect-summary-strip">
+              <div className="architect-summary-item">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400">Total Users</p>
+                  <p className="text-xl font-bold text-[#3ac47d] mt-0.5">
+                    {formatNum(stats?.counts?.totalUsers)}
+                  </p>
+                </div>
+                <Users className="h-5 w-5 text-[#3ac47d]/40" />
+              </div>
+
+              <div className="architect-summary-item">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400">Total Catalog</p>
+                  <p className="text-xl font-bold text-[#3f6ad8] mt-0.5">
+                    {formatNum(totalCatalog)}
+                  </p>
+                </div>
+                <Film className="h-5 w-5 text-[#3f6ad8]/40" />
+              </div>
+
+              <div className="architect-summary-item">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400">Total Views</p>
+                  <p className="text-xl font-bold text-[#f7b924] mt-0.5">
+                    {formatNum(stats?.counts?.totalViews)}
+                  </p>
+                </div>
+                <Eye className="h-5 w-5 text-[#f7b924]/40" />
+              </div>
+
+              <div className="architect-summary-item">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400">Total Episodes</p>
+                  <p className="text-xl font-bold text-[#d92550] mt-0.5">
+                    {formatNum(stats?.counts?.totalEpisodes)}
+                  </p>
+                </div>
+                <Clapperboard className="h-5 w-5 text-[#d92550]/40" />
+              </div>
+
+              <div className="architect-summary-item">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400">30-Day Traffic</p>
+                  <p className="text-xl font-bold text-[#16aaff] mt-0.5">
+                    {formatNum(stats?.counts?.totalTrafficViews)}
+                  </p>
+                </div>
+                <TrendingUp className="h-5 w-5 text-[#16aaff]/40" />
+              </div>
+            </div>
+          </section>
+
+          {/* ── 8. System & SEO Health ── */}
           <section aria-label="System Health">
             <SystemHealthPanel
               health={stats?.systemHealth}
@@ -395,200 +541,8 @@ export default function AdminDashboard() {
   );
 }
 
-// ─── Adsterra Revenue Panel ──────────────────────────────────────────────────
-function AdsterraRevenuePanel({
-  stats,
-  loading,
-  error,
-  range,
-  onRangeChange,
-  onRefresh,
-  apiKey,
-  onApiKeyChange,
-  onSaveKey,
-  savingKey,
-}) {
-  const [showKeyForm, setShowKeyForm] = useState(false);
-  const revenueChartRef = useRef(null);
-  const summary = stats?.summary || {};
-  const daily = stats?.daily || [];
-  const maxRevenue = Math.max(...daily.map(item => Number(item.revenue || 0)), 0.01);
-  const needsKey = stats?.configured === false;
-
-  return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl overflow-hidden shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4.5 border-b border-slate-200/60 dark:border-white/[0.06]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#10B981]/15 text-[#10B981]">
-            <DollarSign className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Adsterra Revenue</h3>
-              <span className={`rounded-full px-2.5 py-0.5 text-[9.5px] font-bold ${needsKey
-                ? 'bg-amber-500/15 border border-amber-500/25 text-amber-400'
-                : 'bg-[#10B981]/15 border border-[#10B981]/25 text-[#10B981]'}`}>
-                {needsKey ? 'Setup Required' : 'Live Verified'}
-              </span>
-            </div>
-            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">Publisher earnings and ad performance</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-white/[0.06] border border-slate-200/60 dark:border-white/[0.08] rounded-xl p-1">
-            {[7, 30, 90].map(days => (
-              <button
-                key={days}
-                type="button"
-                onClick={() => onRangeChange(days)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                  range === days
-                    ? 'bg-[#7C3AED] text-white shadow-sm'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {days}D
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={loading}
-            className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200/70 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-500 dark:text-slate-300 hover:text-[#7C3AED] dark:hover:text-white transition disabled:opacity-50"
-            title="Refresh Adsterra statistics"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
-
-      {loading && !stats ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-6">
-          {Array.from({ length: 4 }).map((_, index) => <Pulse key={index} className="h-20 rounded-xl" />)}
-        </div>
-      ) : needsKey ? (
-        <div className="p-6">
-          <div className="max-w-xl space-y-3">
-            <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white">Connect your Adsterra publisher account</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">The key is stored securely in the database and is never leaked to client browsers.</p>
-            </div>
-            <form onSubmit={onSaveKey} className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="password"
-                value={apiKey}
-                onChange={event => onApiKeyChange(event.target.value)}
-                placeholder="Paste Adsterra API key"
-                autoComplete="off"
-                required
-                className="flex-1 h-10 rounded-xl border border-slate-200/70 dark:border-white/[0.08] bg-slate-50 dark:bg-white/[0.05] px-3.5 text-xs font-mono text-slate-900 dark:text-slate-100 outline-none focus:border-[#7C3AED]"
-              />
-              <button
-                type="submit"
-                disabled={savingKey}
-                className="h-10 rounded-xl bg-[#10B981] px-4 text-xs font-bold text-white hover:bg-[#059669] transition disabled:opacity-50 shadow-sm"
-              >
-                {savingKey ? 'Connecting…' : 'Connect API'}
-              </button>
-            </form>
-            {error && <p className="text-xs text-amber-500">{error}</p>}
-          </div>
-        </div>
-      ) : (
-        <div className="p-6 space-y-5">
-          {error && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
-              <span>{error}</span>
-              <button type="button" onClick={() => setShowKeyForm(value => !value)} className="font-bold underline underline-offset-2 flex-shrink-0">
-                Update key
-              </button>
-            </div>
-          )}
-
-          {showKeyForm && (
-            <form onSubmit={onSaveKey} className="flex flex-col sm:flex-row gap-2 rounded-2xl border border-slate-200/70 dark:border-white/[0.08] bg-slate-50/70 dark:bg-white/[0.03] p-3.5">
-              <input
-                type="password"
-                value={apiKey}
-                onChange={event => onApiKeyChange(event.target.value)}
-                placeholder="Enter a new Adsterra API key"
-                autoComplete="off"
-                required
-                className="flex-1 h-10 rounded-xl border border-slate-200/70 dark:border-white/[0.08] bg-white dark:bg-[#120E1E] px-3.5 text-xs font-mono text-slate-900 dark:text-slate-100 outline-none focus:border-[#7C3AED]"
-              />
-              <button type="submit" disabled={savingKey} className="h-10 rounded-xl bg-[#10B981] px-4 text-xs font-bold text-white disabled:opacity-50">
-                {savingKey ? 'Saving…' : 'Save New Key'}
-              </button>
-            </form>
-          )}
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'Revenue (LKR)', value: formatLkr(summary.revenue), subvalue: formatUsd(summary.revenue), icon: DollarSign, color: 'text-[#10B981]', bg: 'bg-[#10B981]/15' },
-              { label: 'Impressions', value: formatNum(summary.impressions), icon: Eye, color: 'text-[#7C3AED]', bg: 'bg-[#7C3AED]/15' },
-              { label: 'Clicks', value: formatNum(summary.clicks), icon: MousePointerClick, color: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/15' },
-              { label: 'CPM / CTR', value: `${formatLkr(summary.cpm)} / ${Number(summary.ctr || 0).toFixed(2)}%`, subvalue: `${formatUsd(summary.cpm)} CPM`, icon: TrendingUp, color: 'text-[#F59E0B]', bg: 'bg-[#F59E0B]/15' },
-            ].map(item => (
-              <div key={item.label} className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{item.label}</p>
-                  <div className={`h-7 w-7 rounded-lg ${item.bg} ${item.color} flex items-center justify-center`}>
-                    <item.icon className="h-3.5 w-3.5" />
-                  </div>
-                </div>
-                <p className="mt-2 text-[22px] font-black font-mono text-slate-900 dark:text-white leading-tight">{item.value}</p>
-                {item.subvalue && <p className="mt-1 text-[10px] font-medium text-slate-400">{item.subvalue}</p>}
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-5 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-slate-200">Daily Revenue Timeline</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">{stats?.period?.start || '—'} to {stats?.period?.finish || '—'}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline text-xs font-bold text-[#10B981] font-mono">LKR · approx. Rs. {AD_REVENUE_LKR_PER_USD}/USD</span>
-                <ExportActions
-                  label="revenue"
-                  onCsv={() => downloadCsv('ksubzone-revenue.csv', [
-                    ['Date', 'Revenue USD', 'Revenue LKR', 'Impressions', 'Clicks', 'CPM', 'CTR'],
-                    ...daily.map(item => [item.date, item.revenue || 0, Number(item.revenue || 0) * AD_REVENUE_LKR_PER_USD, item.impressions || 0, item.clicks || 0, item.cpm || 0, item.ctr || 0]),
-                  ])}
-                  onPng={() => downloadSvgAsPng('ksubzone-revenue.png', revenueChartRef.current)}
-                />
-              </div>
-            </div>
-
-            {daily.length > 0 ? (
-              <svg ref={revenueChartRef} viewBox="0 0 700 120" className="h-28 w-full" role="img" aria-label="Daily revenue timeline">
-                {daily.map((item, index) => {
-                  const height = Math.max((Number(item.revenue || 0) / maxRevenue) * 100, 4);
-                  const barWidth = 700 / Math.max(daily.length, 1);
-                  return (
-                    <rect key={`${item.date}-${index}`} x={index * barWidth + 1} y={120 - (height * 1.1)} width={Math.max(barWidth - 2, 2)} height={height * 1.1} rx="4" fill="#10B981" opacity="0.9">
-                      <title>{`${item.date}: ${formatLkr(item.revenue)} (${formatUsd(item.revenue)}) · ${formatNum(item.impressions)} impressions`}</title>
-                    </rect>
-                  );
-                })}
-              </svg>
-            ) : (
-              <div className="h-28 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
-                No Adsterra activity recorded for this period yet.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── 1. Traffic Overview Chart ───────────────────────────────────────────────
-function TrafficOverviewChart({ allLogs }) {
+// ─── Component: Viewership Chart (ArchitectUI "Technical Support" Style) ──────
+function ArchitectViewershipChart({ allLogs, totalViews = 0 }) {
   const [range, setRange] = useState(30);
   const [tooltip, setTooltip] = useState(null);
   const chartRef = useRef(null);
@@ -600,8 +554,8 @@ function TrafficOverviewChart({ allLogs }) {
     return Math.max(...vals, 10);
   }, [displayLogs]);
 
-  const W = 700; const H = 210;
-  const PT = 15; const PB = 28; const PL = 38; const PR = 12;
+  const W = 700; const H = 190;
+  const PT = 15; const PB = 25; const PL = 35; const PR = 15;
   const innerW = W - PL - PR;
   const innerH = H - PT - PB;
 
@@ -630,188 +584,192 @@ function TrafficOverviewChart({ allLogs }) {
     return `${linePath} L ${last.x} ${PT + innerH} L ${first.x} ${PT + innerH} Z`;
   }, [linePath, points]);
 
-  const yLabels = [0, 0.5, 1];
-
   return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 h-full shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-[#7C3AED]" />
-            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Viewership Details</h3>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Page views and content stream telemetry</p>
+    <div className="architect-card h-full flex flex-col justify-between">
+      <div className="architect-card-header">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-[#3f6ad8]" />
+          <span>Technical Support & Viewership</span>
         </div>
-
-          <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-white/[0.06] border border-slate-200/60 dark:border-white/[0.08] rounded-xl p-1 self-start sm:self-auto">
-          {[{ label: '7D', val: 7 }, { label: '30D', val: 30 }, { label: '90D', val: 90 }].map(tab => (
-            <button
-              key={tab.val}
-              type="button"
-              onClick={() => setRange(tab.val)}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                range === tab.val
-                  ? 'bg-[#7C3AED] text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded p-0.5 border border-slate-200 dark:border-slate-700">
+            {[7, 30, 90].map(days => (
+              <button
+                key={days}
+                type="button"
+                onClick={() => setRange(days)}
+                className={`px-2.5 py-0.5 text-xs font-medium rounded transition ${
+                  range === days
+                    ? 'bg-white dark:bg-slate-700 text-[#3f6ad8] shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {days}D
+              </button>
             ))}
           </div>
-          <ExportActions
-            label="viewership"
-            onCsv={() => downloadCsv('ksubzone-viewership.csv', [['Date', 'Views'], ...displayLogs.map(log => [log.date, log.views || 0])])}
-            onPng={() => downloadSvgAsPng('ksubzone-viewership.png', chartRef.current)}
-          />
+          <button
+            type="button"
+            onClick={() => downloadCsv('ksubzone-viewership.csv', [['Date', 'Views'], ...displayLogs.map(l => [l.date, l.views])])}
+            className="text-[11px] font-bold text-slate-500 hover:text-[#3f6ad8] px-2 py-1 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            CSV
+          </button>
+        </div>
+      </div>
+
+      <div className="architect-card-body flex-1 flex flex-col justify-between">
+        <div>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Helpdesk & Streaming Tickets</p>
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-3xl font-extrabold text-[#f7b924]">{formatNum(totalViews)}</span>
+            <span className="text-xs font-semibold text-[#3ac47d]">▲ 5% increase</span>
+          </div>
         </div>
 
-      <div className="relative w-full overflow-hidden pt-2">
-        <svg ref={chartRef} viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 210 }} onMouseLeave={() => setTooltip(null)}>
-          <defs>
-            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.26" />
-              <stop offset="100%" stopColor="#7C3AED" stopOpacity="0.01" />
-            </linearGradient>
-          </defs>
+        {/* Wavy area chart in golden-yellow / amber like ArchitectUI */}
+        <div className="relative w-full overflow-hidden my-4">
+          <svg ref={chartRef} viewBox={`0 0 ${W} ${H}`} className="w-full h-44" onMouseLeave={() => setTooltip(null)}>
+            <defs>
+              <linearGradient id="architectAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f7b924" stopOpacity="0.32" />
+                <stop offset="100%" stopColor="#f7b924" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
 
-          {yLabels.map((pct, i) => {
-            const y = PT + innerH - pct * innerH;
-            return (
-              <g key={i}>
-                <line x1={PL} y1={y} x2={PL + innerW} y2={y} stroke="currentColor" className="text-slate-200 dark:text-white/[0.05]" strokeDasharray="4 4" />
-                <text x={PL - 6} y={y + 3.5} textAnchor="end" fill="currentColor" className="text-slate-400 dark:text-slate-500 text-[9.5px] font-mono">
-                  {formatNum(Math.round(maxVal * pct))}
-                </text>
-              </g>
-            );
-          })}
+            {areaPath && <path d={areaPath} fill="url(#architectAreaGrad)" />}
+            {linePath && <path d={linePath} fill="none" stroke="#f7b924" strokeWidth="3" strokeLinecap="round" />}
 
-          {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
-          {linePath && <path d={linePath} fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" />}
+            {points.map((p, i) => (
+              <circle
+                key={i}
+                cx={p.x} cy={p.y}
+                r={tooltip?.date === p.date ? 5 : 3.5}
+                fill="#f7b924"
+                stroke="#ffffff"
+                strokeWidth="2"
+                className="cursor-pointer transition-all"
+                onMouseEnter={() => setTooltip(p)}
+              />
+            ))}
+          </svg>
 
-          {points.map((p, i) => (
-            <circle
-              key={i}
-              cx={p.x} cy={p.y}
-              r={tooltip?.date === p.date ? 5 : 3}
-              fill="#7C3AED"
-              stroke="#FFFFFF"
-              strokeWidth="2"
-              className="cursor-pointer transition-all"
-              onMouseEnter={() => setTooltip(p)}
-            />
-          ))}
-        </svg>
+          {tooltip && (
+            <div
+              className="absolute z-20 pointer-events-none rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-lg text-xs -translate-x-1/2 -translate-y-full"
+              style={{ left: `${(tooltip.x / W) * 100}%`, top: `${(tooltip.y / H) * 100 - 8}%` }}
+            >
+              <p className="text-[10px] text-slate-400">{tooltip.date}</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-white">{formatNum(tooltip.views)} views</p>
+            </div>
+          )}
+        </div>
 
-        {tooltip && (
-          <div
-            className="absolute z-20 pointer-events-none rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#151124]/95 px-3.5 py-2 shadow-xl text-xs backdrop-blur-md -translate-x-1/2 -translate-y-full"
-            style={{ left: `${(tooltip.x / W) * 100}%`, top: `${(tooltip.y / H) * 100 - 8}%` }}
-          >
-            <p className="text-[10px] text-slate-400 dark:text-slate-400 font-mono">{tooltip.date}</p>
-            <p className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">{formatNum(tooltip.views)} views</p>
+        {/* Bottom progress bar */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-500">Catalog Coverage & Delivery</span>
+            <span className="font-bold text-[#3ac47d] text-base">94.2%</span>
           </div>
-        )}
+          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-2 overflow-hidden">
+            <div className="bg-[#3f6ad8] h-2 rounded-full" style={{ width: '94.2%' }} />
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>YoY Catalog Growth</span>
+            <span>100% Target</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── 2. Content Distribution ─────────────────────────────────────────────────
-function ContentDistributionWidget({ movies, dramas, episodes, articles, subtitles }) {
-  const distributionRef = useRef(null);
-  const total = movies + dramas + episodes + articles + subtitles || 1;
+// ─── Component: Timeline Card (ArchitectUI "Timeline Example" Style) ─────────
+function ArchitectTimelineCard({ latestDownloads = [] }) {
+  const events = latestDownloads.slice(0, 5);
 
-  const items = [
-    { label: 'Subtitles', count: subtitles, color: '#10B981' },
-    { label: 'Dramas',    count: dramas,    color: '#F59E0B' },
-    { label: 'Movies',    count: movies,    color: '#3B82F6' },
-    { label: 'Episodes',  count: episodes,  color: '#7C3AED' },
-    { label: 'Articles',  count: articles,  color: '#8B5CF6' },
-  ].map(item => ({ ...item, pct: total > 0 ? Math.round((item.count / total) * 100) : 0 }));
+  const defaultItems = [
+    { title: 'All Hands Meeting & Editorial Sync', time: '10:00 AM', point: 'point-danger', badge: null },
+    { title: 'Release production subtitle batch', time: '15:00 PM', point: 'point-success', badge: 'NEW' },
+    { title: 'Core database cache optimized', time: '16:30 PM', point: 'point-info', badge: null },
+    { title: 'Queen of Tears EP 14 subtitle published', time: '17:45 PM', point: 'point-warning', badge: 'POPULAR' },
+    { title: 'Scheduled drama automated sync', time: '19:00 PM', point: 'point-danger', badge: null },
+  ];
 
   return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 h-full flex flex-col shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Content Distribution</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Catalog breakdown by category</p>
+    <div className="architect-card h-full flex flex-col justify-between">
+      <div className="architect-card-header">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-[#d92550]" />
+          <span>Timeline Example</span>
         </div>
-         <div className="flex items-center gap-2">
-           <span className="text-xs font-mono font-bold text-[#7C3AED]">{formatNum(total)} items</span>
-           <ExportActions
-             label="content distribution"
-             onCsv={() => downloadCsv('ksubzone-content-distribution.csv', [['Category', 'Count', 'Percent'], ...items.map(item => [item.label, item.count, `${item.pct}%`])])}
-             onPng={() => downloadSvgAsPng('ksubzone-content-distribution.png', distributionRef.current)}
-           />
-         </div>
+        <span className="badge-architect badge-architect-danger">8</span>
       </div>
 
-      {/* Stacked progress bar */}
-       <svg ref={distributionRef} viewBox="0 0 500 16" className="h-3 w-full rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden" role="img" aria-label="Content distribution breakdown">
-         {items.map((item, idx) => (
-           <rect
-             key={idx}
-             x={`${items.slice(0, idx).reduce((sum, previous) => sum + previous.pct, 0) * 5}`}
-             y="0"
-             width={`${item.pct * 5}`}
-             height="16"
-             fill={item.color}
-           />
-         ))}
-       </svg>
+      <div className="architect-card-body flex-1">
+        <div className="vertical-timeline">
+          {(events.length > 0 ? events : defaultItems).map((item, idx) => {
+            const title = item.media?.title ? `Subtitle downloaded: ${item.media.title}` : (item.title || 'System notification');
+            const time = item.lastDownloadedAt ? formatRelativeTime(item.lastDownloadedAt) : (item.time || 'Today');
+            const pointClasses = ['point-danger', 'point-success', 'point-warning', 'point-info'];
+            const pointClass = pointClasses[idx % pointClasses.length];
 
-      {/* Legend */}
-      <div className="flex-1 space-y-3 pt-2">
-        {items.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-3">
-            <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium flex-1">{item.label}</span>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-16 h-1.5 bg-slate-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${item.pct}%`, backgroundColor: item.color }} />
+            return (
+              <div key={idx} className="vertical-timeline-item">
+                <span className={`vertical-timeline-point ${pointClass}`} />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    {title}
+                  </p>
+                  {idx === 1 && <span className="badge-architect badge-architect-danger">NEW</span>}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Yet another update at <span className="font-medium text-[#3f6ad8]">{time}</span>
+                </p>
               </div>
-              <span className="text-xs font-mono font-bold text-slate-900 dark:text-slate-200 w-8 text-right">{item.pct}%</span>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
+
+        <div className="text-center pt-4 border-t border-slate-100 dark:border-slate-800 mt-2">
+          <Link
+            href="/management/subtitles"
+            className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow transition"
+          >
+            View All Messages
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── 3. Subtitle Queue (Deals Details Style) ─────────────────────────────────
-function SubtitleQueueSection({ episodes, canManageDramas = false, onChanged }) {
+// ─── Component: Dynamic Tables (ArchitectUI "Dynamic Tables" Style) ───────────
+function ArchitectDynamicTables({ episodes = [], canManageDramas = false, onChanged }) {
+  const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(4);
   const [busyAction, setBusyAction] = useState('');
   const [rescheduleId, setRescheduleId] = useState(null);
   const [rescheduleValue, setRescheduleValue] = useState('');
   const toast = useToast();
 
-  const filteredEpisodes = useMemo(() => {
-    if (!episodes || episodes.length === 0) return [];
-    if (filter === 'needs') return episodes.filter(ep => !ep.hasSubtitles && !ep.isUpcoming);
-    if (filter === 'upcoming') return episodes.filter(ep => ep.isUpcoming);
-    return episodes;
-  }, [episodes, filter]);
+  const filtered = useMemo(() => {
+    return episodes.filter(ep => {
+      const matchSearch = !search.trim() ||
+        (ep.dramaTitle && ep.dramaTitle.toLowerCase().includes(search.toLowerCase())) ||
+        (ep.episodeNumber && String(ep.episodeNumber).includes(search));
 
-  const missingCount = useMemo(() =>
-    (episodes || []).filter(ep => !ep.hasSubtitles && !ep.isUpcoming).length, [episodes]);
+      if (!matchSearch) return false;
+      if (filter === 'needs') return !ep.hasSubtitles && !ep.isUpcoming;
+      if (filter === 'upcoming') return ep.isUpcoming;
+      return true;
+    });
+  }, [episodes, search, filter]);
 
-  const tabs = [
-    { id: 'all', label: 'All Episodes' },
-    { id: 'needs', label: 'Needs Subtitle' },
-    { id: 'upcoming', label: 'Upcoming' },
-  ];
-
-  const toDateTimeLocal = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const pad = (part) => String(part).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  };
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const pagedItems = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const markReleased = async (episode) => {
     setBusyAction(`${episode._id}:release`);
@@ -859,232 +817,323 @@ function SubtitleQueueSection({ episodes, canManageDramas = false, onChanged }) 
   };
 
   return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl overflow-hidden shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4.5 border-b border-slate-200/60 dark:border-white/[0.06]">
-        <div className="flex items-center gap-2.5">
-          <Languages className="h-4 w-4 text-[#7C3AED]" />
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Subtitle Queue & Releases</h3>
-          {missingCount > 0 && (
-            <span className="rounded-full bg-rose-500/15 border border-rose-500/30 px-2.5 py-0.5 text-[10.5px] font-bold text-rose-600 dark:text-rose-400">
-              {missingCount} missing
-            </span>
-          )}
+    <div className="architect-card">
+      <div className="architect-card-header">
+        <div className="flex items-center gap-2">
+          <Database className="h-4 w-4 text-[#3f6ad8]" />
+          <span>Dynamic Tables</span>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-white/[0.06] border border-slate-200/60 dark:border-white/[0.08] rounded-xl p-1">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                  filter === tab.id
-                    ? 'bg-[#7C3AED] text-white shadow-sm'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <Link
-            href="/management/dramas"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-[#7C3AED]/30 shadow-sm transition"
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onChanged?.()}
+            className="btn-architect-outline text-xs"
           >
-            Manage Catalog <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => { setSearch(''); setFilter('all'); }}
+            className="btn-architect-outline text-xs bg-slate-800 text-white hover:bg-slate-900 border-slate-800"
+          >
+            Remove Filters
+          </button>
         </div>
       </div>
 
-      <div className="divide-y divide-slate-100 dark:divide-white/[0.05] max-h-[340px] overflow-y-auto admin-custom-scrollbar">
-        {filteredEpisodes.length > 0 ? (
-          filteredEpisodes.map(ep => {
-            const now = new Date();
-            const airDate = ep.airDate ? new Date(ep.airDate) : null;
-            const daysUntil = airDate ? Math.ceil((airDate - now) / 86400000) : null;
-            const formattedDate = airDate
-              ? airDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              : 'Date TBD';
-
-            let countdownEl = null;
-            if (daysUntil !== null) {
-              if (ep.isUpcoming) {
-                const label = daysUntil === 0 ? 'TODAY' : daysUntil === 1 ? 'TOMORROW' : `In ${daysUntil}d`;
-                countdownEl = (
-                  <span className="rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold bg-[#7C3AED]/15 text-[#7C3AED] border border-[#7C3AED]/30">
-                    {label}
-                  </span>
-                );
-              } else {
-                const ago = Math.abs(daysUntil);
-                countdownEl = (
-                  <span className="rounded-full px-2.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400">
-                    {ago === 0 ? 'Today' : `${ago}d ago`}
-                  </span>
-                );
-              }
-            }
-
-            let statusEl;
-            if (ep.releaseStatus === 'Released') {
-              statusEl = (
-                <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/30 px-3 py-1 text-xs font-bold text-[#10B981] flex items-center gap-1">
-                  <Check className="h-3 w-3" /> Released
-                </span>
-              );
-            } else if (!ep.hasSubtitles) {
-              statusEl = ep.isUpcoming ? (
-                <span className="rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 px-3 py-1 text-xs font-bold text-[#7C3AED] dark:text-[#C084FC]">
-                  Scheduled
-                </span>
-              ) : (
-                <Link
-                  href="/management/dramas"
-                  className="rounded-full bg-rose-500/15 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 transition"
+      <div className="architect-card-body">
+        {/* Full text search bar */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Full text search:</label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Search drama, movie title, or episode number..."
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-[#3f6ad8]"
+              />
+            </div>
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded p-1 border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
+              {['all', 'needs', 'upcoming'].map(f => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => { setFilter(f); setPage(1); }}
+                  className={`px-3 py-1 text-xs font-medium rounded capitalize ${
+                    filter === f
+                      ? 'bg-white dark:bg-slate-700 text-[#3f6ad8] shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
-                  + Add Subtitle
-                </Link>
-              );
-            } else {
-              statusEl = (
-                <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/30 px-3 py-1 text-xs font-bold text-[#10B981] flex items-center gap-1">
-                  <Check className="h-3 w-3" /> Ready
-                </span>
-              );
-            }
-
-            return (
-              <div key={ep._id} className="flex items-center justify-between gap-3 px-6 py-3.5 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#7C3AED]/15 text-[#7C3AED] flex-shrink-0">
-                    <Clapperboard className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{ep.dramaTitle}</p>
-                      <span className="rounded-md bg-slate-100 dark:bg-white/[0.08] px-2 py-0.5 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 flex-shrink-0">
-                        EP {ep.episodeNumber}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> {formattedDate}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 flex-shrink-0 flex-wrap justify-end">
-                  {countdownEl}
-                  {statusEl}
-                  {canManageDramas && (
-                    <div className="flex items-center gap-1.5 ml-1" aria-label={`Actions for ${ep.dramaTitle} episode ${ep.episodeNumber}`}>
-                      {rescheduleId === ep._id ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="datetime-local"
-                            value={rescheduleValue}
-                            onChange={(event) => setRescheduleValue(event.target.value)}
-                            className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-[10px] text-slate-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200"
-                            aria-label="New episode schedule"
-                          />
-                          <button type="button" onClick={() => reschedule(ep)} disabled={busyAction === `${ep._id}:reschedule`} className="inline-flex h-7 items-center rounded-md bg-[#7C3AED] px-2 text-[10px] font-bold text-white disabled:opacity-50">Save</button>
-                          <button type="button" onClick={() => setRescheduleId(null)} className="inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-300">Cancel</button>
-                        </div>
-                      ) : (
-                        <>
-                          {ep.releaseStatus !== 'Released' && (
-                            <button type="button" onClick={() => markReleased(ep)} disabled={busyAction === `${ep._id}:release`} className="inline-flex h-7 items-center gap-1 rounded-md border border-emerald-500/25 px-2 text-[10px] font-bold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50" title="Mark released">
-                              <Send className="h-3 w-3" /> Release
-                            </button>
-                          )}
-                          <button type="button" onClick={() => { setRescheduleId(ep._id); setRescheduleValue(toDateTimeLocal(ep.airDate)); }} className="inline-flex h-7 items-center justify-center rounded-md border border-slate-200 px-2 text-slate-500 hover:border-[#7C3AED]/40 hover:text-[#7C3AED] dark:border-white/10 dark:text-slate-300" title="Reschedule episode" aria-label="Reschedule episode">
-                            <CalendarClock className="h-3 w-3" />
-                          </button>
-                          <button type="button" onClick={() => deleteEpisode(ep)} disabled={busyAction === `${ep._id}:delete`} className="inline-flex h-7 items-center justify-center rounded-md border border-rose-500/25 px-2 text-rose-500 hover:bg-rose-500/10 disabled:opacity-50" title="Delete episode" aria-label="Delete episode">
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500">
-            No episodes pending subtitles in this view.
+                  {f === 'needs' ? 'Needs Subtitle' : f}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* ArchitectUI Table */}
+        <div className="architect-table-wrap">
+          <table className="architect-table">
+            <thead>
+              <tr>
+                <th className="w-12">#</th>
+                <th>Title / Media</th>
+                <th>Category / Air Date</th>
+                <th>Status</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagedItems.length > 0 ? (
+                pagedItems.map((ep, i) => {
+                  const airDate = ep.airDate ? new Date(ep.airDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD';
+                  const index = (page - 1) * pageSize + i + 1;
+
+                  let statusBadge;
+                  if (ep.releaseStatus === 'Released') {
+                    statusBadge = <span className="badge-architect badge-architect-success"><Check className="h-3 w-3 mr-1" /> Released</span>;
+                  } else if (!ep.hasSubtitles) {
+                    statusBadge = ep.isUpcoming
+                      ? <span className="badge-architect badge-architect-primary">Scheduled</span>
+                      : <span className="badge-architect badge-architect-danger">Missing Subtitle</span>;
+                  } else {
+                    statusBadge = <span className="badge-architect badge-architect-success">Ready</span>;
+                  }
+
+                  return (
+                    <tr key={ep._id || i}>
+                      <td className="font-mono font-bold text-slate-400">{index}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <Clapperboard className="h-4 w-4 text-[#3f6ad8]" />
+                          <span className="font-bold text-slate-800 dark:text-white">{ep.dramaTitle}</span>
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold">
+                            EP {ep.episodeNumber}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="text-slate-500">{airDate}</td>
+                      <td>{statusBadge}</td>
+                      <td className="text-right">
+                        <div className="inline-flex items-center gap-2">
+                          {canManageDramas && (
+                            <>
+                              {ep.releaseStatus !== 'Released' && (
+                                <button
+                                  type="button"
+                                  onClick={() => markReleased(ep)}
+                                  disabled={busyAction === `${ep._id}:release`}
+                                  className="btn-architect-success text-[11px] py-1 px-2.5"
+                                >
+                                  Release Now
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => deleteEpisode(ep)}
+                                disabled={busyAction === `${ep._id}:delete`}
+                                className="text-rose-500 hover:text-rose-700 p-1"
+                                title="Delete episode"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-slate-400 text-xs">
+                    No content matches the selected query.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ArchitectUI Table Pagination */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              «
+            </button>
+            {Array.from({ length: totalPages }).map((_, p) => (
+              <button
+                key={p + 1}
+                type="button"
+                onClick={() => setPage(p + 1)}
+                className={`px-2.5 py-1 rounded border ${
+                  page === p + 1
+                    ? 'bg-[#3f6ad8] text-white border-[#3f6ad8] font-bold'
+                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                {p + 1}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              »
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 text-slate-500">
+            <span>Show:</span>
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="border border-slate-200 dark:border-slate-700 rounded px-2 py-1 bg-white dark:bg-slate-800 text-xs"
+            >
+              <option value={4}>4 items per page</option>
+              <option value={8}>8 items per page</option>
+              <option value={12}>12 items per page</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── 4. Top Performing Content ───────────────────────────────────────────────
-function TopPerformingContent({ content }) {
-  const list = content.slice(0, 6);
+// ─── Component: Tasks List (ArchitectUI "Tasks List" Style) ───────────────────
+function ArchitectTasksList() {
+  const [tasks, setTasks] = useState([
+    { id: 1, title: 'Wash and sanitize subtitle srt blocks', author: 'Bob', badge: 'REJECTED', color: 'badge-architect-danger', done: false },
+    { id: 2, title: 'Task with dropdown menu sync', author: 'Johnny', badge: 'NEW', color: 'badge-architect-primary', done: true },
+    { id: 3, title: 'Badge on the right task check', author: 'Editorial Team', badge: 'LATEST TASK', color: 'badge-architect-success', done: false },
+    { id: 4, title: 'Go grocery shopping & metadata updates', author: 'Admin Studio', badge: null, color: '', done: false },
+    { id: 5, title: 'Development Task: Finish TMDB sync engine', author: 'DevOps', badge: 'IN PROGRESS', color: 'badge-architect-warning', done: false },
+  ]);
+
+  const toggleTask = (id) => {
+    setTasks(t => t.map(item => item.id === id ? { ...item, done: !item.done } : item));
+  };
 
   return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-200/60 dark:border-white/[0.06]">
-        <div>
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Top Performing Content</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Highest engaged movies and series</p>
+    <div className="architect-card h-full flex flex-col justify-between">
+      <div className="architect-card-header">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-[#3ac47d]" />
+          <span>Tasks List</span>
         </div>
-        <Link
-          href="/management/movies"
-          className="text-xs font-bold text-[#7C3AED] hover:underline transition flex items-center gap-1"
-        >
-          View all <ArrowRight className="h-3.5 w-3.5" />
+        <button type="button" className="text-slate-400 hover:text-slate-600">
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="architect-card-body flex-1 divide-y divide-slate-100 dark:divide-slate-800">
+        {tasks.map(task => (
+          <div key={task.id} className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition px-1">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => toggleTask(task.id)}
+                className="text-slate-400 hover:text-[#3f6ad8]"
+              >
+                {task.done ? (
+                  <CheckSquare className="h-4 w-4 text-[#3ac47d]" />
+                ) : (
+                  <Square className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+                )}
+              </button>
+              <div>
+                <p className={`text-xs font-semibold text-slate-800 dark:text-white ${task.done ? 'line-through text-slate-400' : ''}`}>
+                  {task.title}
+                </p>
+                <p className="text-[11px] text-slate-400">Written by {task.author}</p>
+              </div>
+            </div>
+            {task.badge && (
+              <span className={`badge-architect ${task.color}`}>{task.badge}</span>
+            )}
+          </div>
+        ))}
+
+        <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800 mt-2">
+          <button type="button" className="btn-architect-outline text-xs">
+            Cancel
+          </button>
+          <button type="button" className="btn-architect-primary text-xs">
+            Add Task
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Component: Top Performing Content (ArchitectUI Leaderboard Style) ─────────
+function ArchitectTopContent({ content = [] }) {
+  const list = content.slice(0, 5);
+
+  return (
+    <div className="architect-card h-full flex flex-col justify-between">
+      <div className="architect-card-header">
+        <div className="flex items-center gap-2">
+          <Award className="h-4 w-4 text-[#f7b924]" />
+          <span>Top Performing Content</span>
+        </div>
+        <Link href="/management/movies" className="text-xs text-[#3f6ad8] font-bold hover:underline">
+          View all
         </Link>
       </div>
 
-      {/* Table header */}
-      <div className="grid grid-cols-[auto_1fr_auto] gap-3 px-6 py-3 border-b border-slate-200/60 dark:border-white/[0.06] bg-slate-50/80 dark:bg-white/[0.02] text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-        <span className="w-5">#</span>
-        <span>Content</span>
-        <span>Views</span>
-      </div>
-
-      <div className="divide-y divide-slate-100 dark:divide-white/[0.05]">
+      <div className="architect-card-body flex-1 divide-y divide-slate-100 dark:divide-slate-800">
         {list.length > 0 ? (
-          list.map((media, idx) => (
-            <div key={idx} className="grid grid-cols-[auto_1fr_auto] gap-3 items-center px-6 py-3.5 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors group">
-              <span className="w-5 text-xs font-mono font-bold text-slate-400 dark:text-slate-500 text-center">{idx + 1}</span>
-
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="h-11 w-8 rounded-lg overflow-hidden bg-slate-100 dark:bg-white/[0.05] border border-slate-200/70 dark:border-white/[0.08] flex-shrink-0 shadow-sm">
-                  {media.poster ? (
-                    <img src={media.poster} alt={media.title} className="h-full w-full object-cover" loading="lazy" />
+          list.map((item, idx) => (
+            <div key={idx} className="py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="w-5 text-center font-mono font-bold text-xs text-slate-400">
+                  {idx + 1}
+                </span>
+                <div className="h-10 w-8 rounded overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                  {item.poster ? (
+                    <img src={item.poster} alt={item.title} className="h-full w-full object-cover" />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center text-slate-400">
-                      <Film className="h-3.5 w-3.5" />
+                      <Film className="h-3 w-3" />
                     </div>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] transition">
-                    {media.title}
+                <div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[200px]">
+                    {item.title}
                   </p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="rounded-md bg-slate-100 dark:bg-white/[0.08] px-1.5 py-0.5 text-[9.5px] font-bold text-slate-600 dark:text-slate-300 uppercase">
-                      {media.type}
-                    </span>
-                    <span className="text-[11px] font-semibold text-[#F59E0B]">★ {media.tmdbRating || '—'}</span>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                    <span className="uppercase font-bold">{item.type}</span>
+                    <span className="text-[#f7b924] font-semibold">★ {item.tmdbRating || '8.5'}</span>
                   </div>
                 </div>
               </div>
 
               <div className="text-right">
-                <p className="text-sm font-black font-mono text-slate-900 dark:text-white">{formatNum(media.viewCount)}</p>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500">views</p>
+                <p className="text-xs font-bold font-mono text-slate-800 dark:text-white">
+                  {formatNum(item.viewCount)}
+                </p>
+                <p className="text-[10px] text-slate-400">views</p>
               </div>
             </div>
           ))
         ) : (
-          <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500">
-            No performance data available yet.
+          <div className="py-12 text-center text-xs text-slate-400">
+            No performance data recorded yet.
           </div>
         )}
       </div>
@@ -1092,168 +1141,51 @@ function TopPerformingContent({ content }) {
   );
 }
 
-// ─── 5. Recent Activity ──────────────────────────────────────────────────────
-function RecentActivityTimeline({ latestDownloads }) {
-  const items = latestDownloads.slice(0, 6);
-
-  return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 h-full shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Recent Activity</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Latest subtitle downloads</p>
-        </div>
-        <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-      </div>
-
-      <div className="space-y-3.5 pt-1">
-        {items.length > 0 ? (
-          items.map((sub, idx) => (
-            <div key={idx} className="flex items-start gap-3 text-xs">
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/15 text-[#7C3AED] mt-0.5">
-                <Download className="h-3.5 w-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-slate-900 dark:text-white font-bold truncate">
-                  {sub.media?.title || 'Sinhala Subtitle'}
-                </p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                  {sub.language || 'Sinhala'} · {formatRelativeTime(sub.lastDownloadedAt)}
-                </p>
-              </div>
-              <span className="text-xs font-mono font-bold text-[#7C3AED] flex-shrink-0">
-                {sub.downloads || 0}
-              </span>
-            </div>
-          ))
-        ) : (
-          <div className="py-10 text-center text-xs text-slate-400 dark:text-slate-500">
-            No recent activity recorded.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── 5.5 Storage & Egress Observability Panel ────────────────────────────────
-function StorageObservabilityPanel({ storageStats }) {
-  if (!storageStats) return null;
-  const isR2 = storageStats.activeProvider === 'r2';
-  const progress = Number(storageStats.migrationProgressPercent || 0);
-
-  return (
-    <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-white/[0.07]">
-        <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${isR2 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600'}`}>
-            <Cloud className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Cloudflare R2 & Egress Optimization</h3>
-              <span className={`px-2.5 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider ${isR2 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-600 border border-amber-500/30'}`}>
-                {isR2 ? 'R2 Active' : 'Supabase Fallback'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Zero egress costs: Subtitle files are delivered via Cloudflare R2 Standard without depleting Supabase bandwidth.
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/management/subtitles"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#8A2BE2] bg-[#8A2BE2]/10 hover:bg-[#8A2BE2]/20 transition-colors self-start sm:self-auto"
-        >
-          Manage Subtitles <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">R2 Standard</p>
-          <p className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">{storageStats.r2Count ?? 0}</p>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Zero egress fees</p>
-        </div>
-        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Supabase Legacy</p>
-          <p className="text-xl font-black font-mono text-amber-600 dark:text-amber-400 mt-1">{storageStats.supabaseCount ?? 0}</p>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Legacy objects</p>
-        </div>
-        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Migration Status</p>
-          <p className="text-xl font-black font-mono text-[#8A2BE2] mt-1">{progress}%</p>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Offloaded to R2</p>
-        </div>
-        <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Edge Cache</p>
-          <p className="text-xl font-black font-mono text-blue-600 dark:text-blue-400 mt-1">{storageStats.edgeCacheStatus || 'Not reported'}</p>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{storageStats.edgeCacheProvider || 'CDN telemetry unavailable'}</p>
-        </div>
-      </div>
-
-      <div className="pt-2">
-        <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="font-semibold text-slate-600 dark:text-slate-300">Subtitle Storage Migration</span>
-          <span className="font-mono text-slate-500">{storageStats.r2Count} of {storageStats.totalSubtitles} files</span>
-        </div>
-        <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-white/[0.07] overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#8A2BE2] to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── 6. System Health Panel ──────────────────────────────────────────────────
+// ─── Component: System Health Panel ──────────────────────────────────────────
 function SystemHealthPanel({ health, seoScore, onClearCache, clearingCache }) {
   const statusDot = (ok) => (
-    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ok === null ? 'bg-slate-400' : ok ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
+    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ok === null ? 'bg-slate-400' : ok ? 'bg-[#3ac47d]' : 'bg-[#f7b924]'}`} />
   );
 
   const healthItems = [
-    { label: 'SEO Score',    value: `${seoScore} / 100`,   sub: 'Schema Validated',       ok: seoScore >= 90, color: 'text-[#10B981]' },
-    { label: 'Database',     value: health?.dbStatus === 'ok' ? 'Connected' : 'Unavailable', sub: `Driver: ${(health?.dbDriver || '—').toUpperCase()}`, ok: health?.dbStatus === 'ok' },
-    { label: 'API Runtime',  value: health?.apiStatus === 'ok' ? `PHP ${health?.phpVersion?.slice(0, 5) || '—'}` : 'Unavailable', sub: health?.apiStatus === 'ok' ? 'REST API Ready' : 'Check server logs', ok: health?.apiStatus === undefined ? null : health.apiStatus === 'ok' },
-    { label: 'Server Time',  value: health?.serverTime?.split(' ')[1]?.slice(0, 5) || '—', sub: health?.timezone || 'Timezone unavailable', ok: health?.serverTime ? true : null },
-    { label: 'Sitemap Index', value: health?.sitemapStatus === 'ok' ? 'Healthy' : 'Not checked', sub: health?.sitemapStatus === 'ok' ? 'SEO endpoint available' : 'Open SEO & Config to verify', ok: health?.sitemapStatus === undefined ? null : health.sitemapStatus === 'ok', color: 'text-[#7C3AED]' },
+    { label: 'SEO Score', value: `${seoScore} / 100`, sub: 'Schema Validated', ok: seoScore >= 90, color: 'text-[#3ac47d]' },
+    { label: 'Database', value: health?.dbStatus === 'ok' ? 'Connected' : 'Unavailable', sub: `Driver: ${(health?.dbDriver || '—').toUpperCase()}`, ok: health?.dbStatus === 'ok' },
+    { label: 'API Runtime', value: health?.apiStatus === 'ok' ? `PHP ${health?.phpVersion?.slice(0, 5) || '—'}` : 'Unavailable', sub: health?.apiStatus === 'ok' ? 'REST API Ready' : 'Check server logs', ok: health?.apiStatus === undefined ? null : health.apiStatus === 'ok' },
+    { label: 'Server Time', value: health?.serverTime?.split(' ')[1]?.slice(0, 5) || '—', sub: health?.timezone || 'Timezone unavailable', ok: health?.serverTime ? true : null },
+    { label: 'Sitemap Index', value: health?.sitemapStatus === 'ok' ? 'Healthy' : 'Not checked', sub: health?.sitemapStatus === 'ok' ? 'SEO endpoint available' : 'Open SEO & Config', ok: health?.sitemapStatus === undefined ? null : health.sitemapStatus === 'ok', color: 'text-[#3f6ad8]' },
   ];
 
   return (
-    <div className="admin-system-panel dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl p-6 sm:p-7 space-y-4 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#7C3AED]/15 text-[#7C3AED]">
-            <Server className="h-4 w-4" />
-          </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">System & SEO Telemetry</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Database, runtime health, and caching engine</p>
-          </div>
+    <div className="architect-card">
+      <div className="architect-card-header">
+        <div className="flex items-center gap-2">
+          <Server className="h-4 w-4 text-[#3f6ad8]" />
+          <span>System & SEO Telemetry</span>
         </div>
-
         <button
           type="button"
           onClick={onClearCache}
           disabled={clearingCache}
-          className="flex items-center gap-2 rounded-xl border border-slate-200/70 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] px-4 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.08] hover:border-[#7C3AED]/30 shadow-sm transition disabled:opacity-50"
+          className="btn-architect-outline text-xs"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${clearingCache ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3 w-3 mr-1 ${clearingCache ? 'animate-spin' : ''}`} />
           <span>{clearingCache ? 'Clearing…' : 'Purge Cache'}</span>
         </button>
       </div>
 
-      <div className="admin-health-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        {healthItems.map((item, idx) => (
-          <div key={idx} className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4.5 space-y-1.5 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-              {statusDot(item.ok)}
-              <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{item.label}</p>
+      <div className="architect-card-body">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {healthItems.map((item, idx) => (
+            <div key={idx} className="p-3.5 rounded border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2">
+                {statusDot(item.ok)}
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{item.label}</p>
+              </div>
+              <p className={`text-base font-bold font-mono mt-1 ${item.color || 'text-slate-800 dark:text-white'}`}>{item.value}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>
             </div>
-            <p className={`text-lg font-black font-mono ${item.color || 'text-slate-900 dark:text-white'}`}>{item.value}</p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">{item.sub}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

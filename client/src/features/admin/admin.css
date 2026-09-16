@@ -1,28 +1,33 @@
 /* Shared management tokens. Keep public-site styling independent. */
 .admin-theme-wrapper {
-  --studio-bg: #0d0d12;
-  --studio-surface: #17171f;
-  --studio-raised: #20202b;
-  --studio-border: #30303d;
-  --studio-text: #f4f2fa;
-  --studio-muted: #aaa7bb;
-  --studio-brand: #9b71f7;
-  --studio-success: #65dbb2;
-  --studio-warning: #f3c66e;
-  --studio-error: #ff94a4;
-  --studio-radius: 16px;
+  --studio-bg: #131722;
+  --studio-surface: #1c2130;
+  --studio-raised: #242b3d;
+  --studio-border: #2d364c;
+  --studio-text: #e9ecef;
+  --studio-muted: #8a96aa;
+  --studio-brand: #4a77e5;
+  --studio-success: #3ac47d;
+  --studio-warning: #f7b924;
+  --studio-error: #d92550;
+  --studio-info: #16aaff;
+  --studio-radius: 8px;
   --studio-gap: 24px;
   --studio-motion: 160ms;
   color: var(--studio-text);
 }
 .admin-theme-light {
-  --studio-bg: #f5f4f8;
+  --studio-bg: #f1f4f6;
   --studio-surface: #ffffff;
-  --studio-raised: #efedf5;
-  --studio-border: #dedbe7;
-  --studio-text: #252134;
-  --studio-muted: #686176;
-  --studio-brand: #7040c6;
+  --studio-raised: #f8f9fa;
+  --studio-border: #e9ecef;
+  --studio-text: #495057;
+  --studio-muted: #6c757d;
+  --studio-brand: #3f6ad8;
+  --studio-success: #3ac47d;
+  --studio-warning: #f7b924;
+  --studio-error: #d92550;
+  --studio-info: #16aaff;
 }
 .admin-theme-wrapper .admin-shell { background: var(--studio-bg) !important; min-height: 100dvh; font-family: Inter, sans-serif; }
 .admin-theme-wrapper .admin-main { padding: var(--studio-gap) !important; max-width: 1600px; min-width: 0; }
@@ -569,3 +574,319 @@
     display: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   ArchitectUI Angular Pro Design System Styles
+   Matches: https://demo.dashboardpack.com/architectui-angular-pro/dashboards/analytics
+---------------------------------------------------------------------------- */
+
+/* ArchitectUI Page Title Bar */
+.admin-theme-wrapper .app-page-title {
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  background: var(--studio-surface);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  box-shadow: 0 0.46875rem 2.1875rem rgba(4, 9, 20, 0.03), 0 0.9375rem 1.40625rem rgba(4, 9, 20, 0.03), 0 0.25rem 0.53125rem rgba(4, 9, 20, 0.05), 0 0.125rem 0.1875rem rgba(4, 9, 20, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.admin-theme-wrapper .page-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.admin-theme-wrapper .page-title-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(63, 106, 216, 0.1);
+  color: #3f6ad8;
+  font-size: 24px;
+  box-shadow: 0 0.125rem 0.625rem rgba(63, 106, 216, 0.2);
+  flex-shrink: 0;
+}
+
+.admin-theme-wrapper .page-title-heading h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--studio-text);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.admin-theme-wrapper .page-title-subheading {
+  margin-top: 4px;
+  font-size: 0.815rem;
+  color: var(--studio-muted);
+}
+
+.admin-theme-wrapper .page-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ArchitectUI Cards */
+.admin-theme-wrapper .architect-card {
+  background: var(--studio-surface);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  box-shadow: 0 0.46875rem 2.1875rem rgba(4, 9, 20, 0.03), 0 0.9375rem 1.40625rem rgba(4, 9, 20, 0.03), 0 0.25rem 0.53125rem rgba(4, 9, 20, 0.05), 0 0.125rem 0.1875rem rgba(4, 9, 20, 0.03);
+  margin-bottom: 24px;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-theme-wrapper .architect-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--studio-border);
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--studio-text);
+}
+
+.admin-theme-wrapper .architect-card-body {
+  padding: 1.5rem;
+}
+
+/* ArchitectUI 4 Sparkline Bottom-Border Cards */
+.admin-theme-wrapper .card-btm-border {
+  border-bottom-width: 4px !important;
+  border-bottom-style: solid !important;
+}
+
+.admin-theme-wrapper .border-success {
+  border-bottom-color: #3ac47d !important;
+}
+
+.admin-theme-wrapper .border-primary {
+  border-bottom-color: #3f6ad8 !important;
+}
+
+.admin-theme-wrapper .border-warning {
+  border-bottom-color: #f7b924 !important;
+}
+
+.admin-theme-wrapper .border-danger {
+  border-bottom-color: #d92550 !important;
+}
+
+.admin-theme-wrapper .card-shadow-success {
+  box-shadow: 0 0.46875rem 2.1875rem rgba(58, 196, 125, 0.12), 0 0.9375rem 1.40625rem rgba(58, 196, 125, 0.08), 0 0.25rem 0.53125rem rgba(58, 196, 125, 0.06);
+}
+
+.admin-theme-wrapper .card-shadow-primary {
+  box-shadow: 0 0.46875rem 2.1875rem rgba(63, 106, 216, 0.12), 0 0.9375rem 1.40625rem rgba(63, 106, 216, 0.08), 0 0.25rem 0.53125rem rgba(63, 106, 216, 0.06);
+}
+
+.admin-theme-wrapper .card-shadow-warning {
+  box-shadow: 0 0.46875rem 2.1875rem rgba(247, 185, 36, 0.12), 0 0.9375rem 1.40625rem rgba(247, 185, 36, 0.08), 0 0.25rem 0.53125rem rgba(247, 185, 36, 0.06);
+}
+
+.admin-theme-wrapper .card-shadow-danger {
+  box-shadow: 0 0.46875rem 2.1875rem rgba(217, 37, 80, 0.12), 0 0.9375rem 1.40625rem rgba(217, 37, 80, 0.08), 0 0.25rem 0.53125rem rgba(217, 37, 80, 0.06);
+}
+
+/* ArchitectUI Buttons */
+.admin-theme-wrapper .btn-architect-primary {
+  background-color: #3f6ad8;
+  color: #fff;
+  border: 1px solid #3f6ad8;
+  border-radius: 4px;
+  font-size: 0.815rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  box-shadow: 0 0.125rem 0.625rem rgba(63, 106, 216, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.admin-theme-wrapper .btn-architect-primary:hover {
+  background-color: #3158be;
+  transform: translateY(-1px);
+}
+
+.admin-theme-wrapper .btn-architect-success {
+  background-color: #3ac47d;
+  color: #fff;
+  border: 1px solid #3ac47d;
+  border-radius: 4px;
+  font-size: 0.815rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  box-shadow: 0 0.125rem 0.625rem rgba(58, 196, 125, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-theme-wrapper .btn-architect-outline {
+  border: 1px solid var(--studio-border);
+  background: transparent;
+  color: var(--studio-text);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  transition: background 0.15s ease-in-out;
+}
+
+.admin-theme-wrapper .btn-architect-outline:hover {
+  background: var(--studio-raised);
+}
+
+/* ArchitectUI Badges */
+.admin-theme-wrapper .badge-architect {
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.admin-theme-wrapper .badge-architect-success {
+  background-color: rgba(58, 196, 125, 0.15);
+  color: #3ac47d;
+}
+
+.admin-theme-wrapper .badge-architect-primary {
+  background-color: rgba(63, 106, 216, 0.15);
+  color: #3f6ad8;
+}
+
+.admin-theme-wrapper .badge-architect-warning {
+  background-color: rgba(247, 185, 36, 0.15);
+  color: #d89b14;
+}
+
+.admin-theme-wrapper .badge-architect-danger {
+  background-color: rgba(217, 37, 80, 0.15);
+  color: #d92550;
+}
+
+/* ArchitectUI Timeline */
+.admin-theme-wrapper .vertical-timeline {
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-theme-wrapper .vertical-timeline::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 0;
+  left: 7px;
+  width: 2px;
+  background: var(--studio-border);
+}
+
+.admin-theme-wrapper .vertical-timeline-item {
+  position: relative;
+  padding-left: 28px;
+  padding-bottom: 20px;
+}
+
+.admin-theme-wrapper .vertical-timeline-point {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--studio-surface);
+  border: 3px solid #3f6ad8;
+}
+
+.admin-theme-wrapper .vertical-timeline-point.point-danger {
+  border-color: #d92550;
+}
+
+.admin-theme-wrapper .vertical-timeline-point.point-success {
+  border-color: #3ac47d;
+}
+
+.admin-theme-wrapper .vertical-timeline-point.point-warning {
+  border-color: #f7b924;
+}
+
+.admin-theme-wrapper .vertical-timeline-point.point-info {
+  border-color: #16aaff;
+}
+
+/* ArchitectUI Data Table */
+.admin-theme-wrapper .architect-table-wrap {
+  overflow-x: auto;
+  border-radius: 6px;
+}
+
+.admin-theme-wrapper .architect-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-theme-wrapper .architect-table th {
+  padding: 12px 16px;
+  background: var(--studio-raised);
+  color: var(--studio-muted);
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--studio-border);
+}
+
+.admin-theme-wrapper .architect-table td {
+  padding: 12px 16px;
+  font-size: 0.825rem;
+  border-bottom: 1px solid var(--studio-border);
+  color: var(--studio-text);
+  vertical-align: middle;
+}
+
+.admin-theme-wrapper .architect-table tr:hover td {
+  background: rgba(63, 106, 216, 0.03);
+}
+
+/* ArchitectUI Multi-Metric Summary Strip */
+.admin-theme-wrapper .architect-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  background: var(--studio-surface);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  box-shadow: 0 0.46875rem 2.1875rem rgba(4, 9, 20, 0.03);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.admin-theme-wrapper .architect-summary-item {
+  padding: 20px 24px;
+  border-right: 1px solid var(--studio-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-theme-wrapper .architect-summary-item:last-child {
+  border-right: none;
+}
+
