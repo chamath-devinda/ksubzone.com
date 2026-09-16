@@ -380,6 +380,67 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   Rounded component language
+   Keep the entire admin surface soft and consistent. Existing full pills
+   remain pills; rectangular controls/cards receive the shared 10–14px radius.
+---------------------------------------------------------------------------- */
+.admin-theme-wrapper :is(
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  .admin-search-trigger,
+  .admin-error,
+  .workspace-intro-panel,
+  .workspace-action-panel,
+  .workspace-action,
+  .studio-card,
+  .dashstack-card,
+  .doit-data-table,
+  .doit-table-toolbar,
+  .architect-card,
+  .app-page-title,
+  .admin-system-panel,
+  .admin-modal-drawer,
+  .admin-profile-hero
+) {
+  border-radius: 12px !important;
+}
+
+.admin-theme-wrapper .admin-sidebar nav a,
+.admin-theme-wrapper .admin-sidebar > div:last-child a,
+.admin-theme-wrapper .admin-topbar > div > button,
+.admin-theme-wrapper .admin-topbar > div > a {
+  border-radius: 10px !important;
+}
+
+.admin-theme-wrapper .admin-main :is(table, .table-responsive, .architect-table-wrap) {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.admin-theme-wrapper .admin-main table thead tr:first-child th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.admin-theme-wrapper .admin-main table thead tr:first-child th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.admin-theme-wrapper .admin-main :is(.workspace-action, .btn-oio-pill, .btn-studio-pill, .btn-studio-primary) {
+  border-radius: 10px !important;
+}
+
+.admin-theme-wrapper .admin-main :is(.badge-emerald, .badge-amber, .badge-indigo, .badge-rose) {
+  border-radius: 999px !important;
+}
+
+.admin-theme-wrapper .admin-modal-drawer :is(button, input, textarea, select) {
+  border-radius: 10px !important;
+}
+
 /* Profile uses a bespoke legacy cover component; bring it into the same
    information-dense control-plane language as the catalog modules. */
 .admin-theme-wrapper .admin-profile-hero {
