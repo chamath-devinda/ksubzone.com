@@ -131,12 +131,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
-  const [adsterraStats, setAdsterraStats] = useState(null);
-  const [adsterraLoading, setAdsterraLoading] = useState(true);
-  const [adsterraError, setAdsterraError] = useState('');
-  const [adsterraRange, setAdsterraRange] = useState(30);
-  const [adsterraApiKey, setAdsterraApiKey] = useState('');
-  const [savingAdsterraKey, setSavingAdsterraKey] = useState(false);
+
 
   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -155,44 +150,7 @@ export default function AdminDashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
-  const loadAdsterraStats = async (range = adsterraRange) => {
-    setAdsterraLoading(true);
-    setAdsterraError('');
-    try {
-      const res = await apiClient.get(`/api/admin/adsterra/stats?range=${range}`);
-      setAdsterraStats(res.data);
-    } catch (err) {
-      const responseData = err.response?.data;
-      setAdsterraStats(responseData?.configured === false ? { configured: false } : { configured: true });
-      setAdsterraError(responseData?.message || err.message || 'Failed to load Adsterra statistics');
-    } finally {
-      setAdsterraLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    loadAdsterraStats(adsterraRange);
-  }, [adsterraRange]);
-
-  const handleSaveAdsterraKey = async (event) => {
-    event.preventDefault();
-    if (!adsterraApiKey.trim()) return;
-
-    setSavingAdsterraKey(true);
-    try {
-      await apiClient.post('/api/admin/settings', {
-        key: 'ADSTERRA_API_KEY',
-        value: adsterraApiKey.trim(),
-      });
-      setAdsterraApiKey('');
-      toast.success('Adsterra API key saved securely');
-      await loadAdsterraStats(adsterraRange);
-    } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to save Adsterra API key');
-    } finally {
-      setSavingAdsterraKey(false);
-    }
-  };
 
   const handleClearCache = async () => {
     setClearingCache(true);
@@ -373,28 +331,7 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          {/* ── Storage & Egress Observability ── */}
-          {stats?.storageStats && (
-            <section aria-label="Storage Observability">
-              <StorageObservabilityPanel storageStats={stats.storageStats} />
-            </section>
-          )}
 
-          {/* ── Adsterra Revenue Panel ── */}
-          <section aria-label="Adsterra Revenue">
-            <AdsterraRevenuePanel
-              stats={adsterraStats}
-              loading={adsterraLoading}
-              error={adsterraError}
-              range={adsterraRange}
-              onRangeChange={setAdsterraRange}
-              onRefresh={() => loadAdsterraStats(adsterraRange)}
-              apiKey={adsterraApiKey}
-              onApiKeyChange={setAdsterraApiKey}
-              onSaveKey={handleSaveAdsterraKey}
-              savingKey={savingAdsterraKey}
-            />
-          </section>
 
           {/* ── 3. Secondary Metrics Row ── */}
           <section aria-label="Secondary Metrics">
