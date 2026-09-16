@@ -30,3 +30,22 @@ test('admin login has a ModSecurity-safe 403 fallback route', () => {
   assert.match(controller, /base64url-reverse/);
   assert.match(router, /'\/api\/admin\/session'/);
 });
+
+test('premium admin redesign keeps real-data and inline-operation contracts', () => {
+  const dashboard = fs.readFileSync(new URL('../client/src/features/admin/pages/AdminDashboard.jsx', import.meta.url), 'utf8');
+  const notifications = fs.readFileSync(new URL('../client/src/features/admin/components/AdminNotifications.jsx', import.meta.url), 'utf8');
+  const seo = fs.readFileSync(new URL('../client/src/features/admin/pages/SeoManager.jsx', import.meta.url), 'utf8');
+  const router = fs.readFileSync(new URL('../server-php/index.php', import.meta.url), 'utf8');
+  const dramaController = fs.readFileSync(new URL('../server-php/controllers/DramaController.php', import.meta.url), 'utf8');
+  const subtitleController = fs.readFileSync(new URL('../server-php/controllers/SubtitleController.php', import.meta.url), 'utf8');
+
+  assert.match(dashboard, /workspace-intro-grid/);
+  assert.match(dashboard, /downloadCsv/);
+  assert.match(dashboard, /episodes\/\$\{episode\._id\}\/release/);
+  assert.match(notifications, /api\/admin\/notifications/);
+  assert.match(seo, /JSON\.stringify/);
+  assert.match(router, /api\/admin\/notifications/);
+  assert.match(router, /episodes\/\(\[\^\/\]\+\)\/release/);
+  assert.match(dramaController, /releaseStatus.*Released/);
+  assert.match(subtitleController, /Resolve uploader references in batches/);
+});
