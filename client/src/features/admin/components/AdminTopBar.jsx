@@ -98,13 +98,13 @@ export default function AdminTopBar({ onOpenMobileNav }) {
   };
 
   return (
-    <header className="admin-topbar sticky top-0 z-30 flex h-[60px] w-full items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#161b26] border-b border-slate-200/60 dark:border-white/[0.08] transition-colors">
+    <header className="admin-topbar sticky top-0 z-30 flex h-16 w-full items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors">
       {/* ── Left: Mobile Menu & Smart Search ── */}
       <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl">
         <button
           type="button"
           onClick={onOpenMobileNav}
-          className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 hover:text-[#1976d2] transition"
+          className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition"
           aria-label="Open sidebar menu"
         >
           <Menu className="h-4 w-4" />
@@ -122,22 +122,22 @@ export default function AdminTopBar({ onOpenMobileNav }) {
             type="button"
             aria-expanded={quickAddOpen}
             onClick={() => setQuickAddOpen(!quickAddOpen)}
-            className="hidden sm:flex h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold text-white bg-[#1976d2] hover:bg-[#1565c0] shadow-sm transition"
+            className="hidden sm:flex h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-sm shadow-indigo-500/25 transition"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Create</span>
+            <span>New Content</span>
           </button>
 
           {quickAddOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#161b26]/95 backdrop-blur-xl p-1.5 shadow-xl z-50 animate-fadeInAdmin">
+            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] p-1.5 shadow-xl z-50 animate-fadeInAdmin">
               <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Quick Actions
               </div>
               <div className="space-y-0.5 mt-1">
                 {[
-                  { href: '/management/import', icon: Sparkles, label: 'Import from TMDB', color: 'text-[#1976d2]' },
+                  { href: '/management/import', icon: Sparkles, label: 'Import from TMDB', color: 'text-indigo-500' },
                   { href: '/management/movies', icon: Film, label: 'Add New Movie', color: 'text-blue-500' },
-                  { href: '/management/dramas', icon: Tv, label: 'Add New Drama', color: 'text-indigo-500' },
+                  { href: '/management/dramas', icon: Tv, label: 'Add New Drama', color: 'text-purple-500' },
                   { href: '/management/subtitles', icon: Languages, label: 'Upload Subtitle', color: 'text-emerald-500' },
                   { href: '/management/articles', icon: BookOpenText, label: 'Write Article', color: 'text-amber-500' },
                 ].map(({ href, icon: Icon, label, color }) => (

@@ -891,39 +891,43 @@
 }
 
 /* --------------------------------------------------------------------------
-   SmartAngular Transport Dashboard System Styles
-   Matches: https://www.einfosoft.com/templates/admin/smartangular/source/light/#/admin/dashboard/transport-dashboard
+   KSUBZONE STUDIO — Executive Media & Subtitle Operations Design System
 ---------------------------------------------------------------------------- */
 
-.admin-theme-wrapper .modern-card {
+.admin-theme-wrapper .studio-card {
   background: var(--studio-surface);
   border: 1px solid var(--studio-border);
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
   margin-bottom: 24px;
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.2s ease-in-out;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.admin-theme-wrapper .modern-card-header {
+.admin-theme-wrapper .studio-card:hover {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+}
+
+.admin-theme-wrapper .studio-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--studio-border);
   font-size: 15px;
   font-weight: 700;
   color: var(--studio-text);
 }
 
-.admin-theme-wrapper .modern-card-body {
-  padding: 20px;
+.admin-theme-wrapper .studio-card-body {
+  padding: 24px;
 }
 
-.admin-theme-wrapper .badge-status-active {
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
+/* Badges */
+.admin-theme-wrapper .badge-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
   font-weight: 700;
   font-size: 11px;
   padding: 4px 10px;
@@ -932,8 +936,11 @@
   align-items: center;
   gap: 4px;
 }
+.admin-theme-dark .badge-emerald {
+  color: #34d399;
+}
 
-.admin-theme-wrapper .badge-status-maintenance {
+.admin-theme-wrapper .badge-amber {
   background: rgba(245, 158, 11, 0.12);
   color: #d97706;
   font-weight: 700;
@@ -944,10 +951,13 @@
   align-items: center;
   gap: 4px;
 }
+.admin-theme-dark .badge-amber {
+  color: #fbbf24;
+}
 
-.admin-theme-wrapper .badge-status-inactive {
-  background: rgba(108, 117, 125, 0.12);
-  color: #6c757d;
+.admin-theme-wrapper .badge-indigo {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
   font-weight: 700;
   font-size: 11px;
   padding: 4px 10px;
@@ -956,13 +966,32 @@
   align-items: center;
   gap: 4px;
 }
+.admin-theme-dark .badge-indigo {
+  color: #a5b4fc;
+}
 
-.admin-theme-wrapper .btn-smart-pill {
+.admin-theme-wrapper .badge-rose {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 10px;
   border-radius: 20px;
-  padding: 6px 14px;
-  border: 1px solid #dbeafe;
-  color: #1d4ed8;
-  background: #eff6ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.admin-theme-dark .badge-rose {
+  color: #f87171;
+}
+
+/* Studio Buttons */
+.admin-theme-wrapper .btn-studio-pill {
+  border-radius: 20px;
+  padding: 7px 16px;
+  border: 1px solid var(--studio-border);
+  color: var(--studio-text);
+  background: var(--studio-surface);
   font-size: 12px;
   font-weight: 600;
   display: inline-flex;
@@ -971,30 +1000,30 @@
   transition: all 0.15s ease-in-out;
 }
 
-.admin-theme-wrapper .btn-smart-pill:hover {
-  background: #dbeafe;
+.admin-theme-wrapper .btn-studio-pill:hover {
+  background: var(--studio-raised);
+  border-color: var(--studio-brand);
 }
 
-.admin-theme-wrapper .smart-fab {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #4f46e5;
-  color: #fff;
-  display: flex;
+.admin-theme-wrapper .btn-studio-primary {
+  border-radius: 20px;
+  padding: 7px 18px;
+  border: 1px solid transparent;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
-  z-index: 40;
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
+  gap: 6px;
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+  transition: all 0.15s ease-in-out;
 }
 
-.admin-theme-wrapper .smart-fab:hover {
-  transform: scale(1.08);
+.admin-theme-wrapper .btn-studio-primary:hover {
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.45);
+  transform: translateY(-1px);
 }
+
 
 
