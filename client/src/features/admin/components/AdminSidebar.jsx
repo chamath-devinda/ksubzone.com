@@ -124,31 +124,30 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
       >
         {/* ── Top Brand Section ── */}
         <div
-          className={`flex h-[88px] items-center flex-shrink-0 ${
-            collapsed ? 'justify-center px-0' : 'justify-between px-6'
-          } border-b border-slate-200/50 dark:border-white/[0.06]`}
+          className={`flex h-[68px] items-center flex-shrink-0 ${
+            collapsed ? 'justify-center px-0' : 'justify-between px-5'
+          } border-b border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-[#161b26]`}
         >
           <Link
             href="/management/dashboard"
-            className="flex items-center gap-3.5 min-w-0 group"
+            className="flex items-center gap-3 min-w-0 group"
             title="KSubZone Control Center"
           >
-            {/* Logo container matching reference card style with hover micro-interaction */}
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-[#7C3AED] via-[#8B5CF6] to-[#A855F7] text-white font-black shadow-lg shadow-[#7C3AED]/25 group-hover:scale-105 group-hover:shadow-[#7C3AED]/40 transition-all duration-300">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1976d2] to-[#42a5f5] text-white font-black shadow-md shadow-[#1976d2]/20 group-hover:scale-105 transition-all duration-200">
               {logoUrl ? (
-                <img src={logoUrl} alt={brand.siteName || 'KSubZone'} className="h-6 w-6 object-contain" />
+                <img src={logoUrl} alt={brand.siteName || 'KSubZone'} className="h-5 w-5 object-contain" />
               ) : (
-                <span className="font-sans text-lg font-black tracking-tight">K</span>
+                <span className="font-sans text-base font-black tracking-tight">K</span>
               )}
             </div>
 
             {!collapsed && (
               <div className="min-w-0">
-                <span className="block truncate text-[17px] font-black tracking-tight text-slate-900 dark:text-white">
+                <span className="block truncate text-[16px] font-bold tracking-tight text-slate-900 dark:text-white">
                   {brand.logoText || brand.siteName || 'KSubZone'}
                 </span>
-                <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#7C3AED] dark:text-[#A855F7]">
-                  Executive Studio
+                <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[#1976d2] dark:text-[#60a5fa]">
+                  Studio Admin
                 </span>
               </div>
             )}
@@ -157,7 +156,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           <button
             type="button"
             onClick={onCloseMobileNav}
-            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
             aria-label="Close menu"
           >
             <X className="h-4 w-4" />
@@ -167,7 +166,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 hover:text-[#7C3AED] hover:bg-[#7C3AED]/10 transition"
+              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-[#1976d2] hover:bg-[#1976d2]/10 transition"
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
@@ -176,84 +175,116 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           )}
         </div>
 
-        {/* ── Navigation List (Categorized Sections with 18px Rounded Pills) ── */}
+        {/* ── SmartAngular Centered Profile Portrait Card ── */}
+        {!collapsed ? (
+          <div className="flex flex-col items-center justify-center py-5 px-4 border-b border-slate-200/60 dark:border-white/[0.08] text-center bg-slate-50/40 dark:bg-white/[0.02] flex-shrink-0">
+            <div className="relative mb-2.5">
+              <div className="h-16 w-16 rounded-full overflow-hidden ring-4 ring-[#1976d2]/15 bg-gradient-to-br from-[#1976d2] to-[#42a5f5] flex items-center justify-center text-white text-xl font-black shadow-md">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={adminName} className="h-full w-full object-cover" />
+                ) : (
+                  <span>{adminInitial}</span>
+                )}
+              </div>
+              <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#161b26]" />
+            </div>
+            <Link href="/management/profile" className="group">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight group-hover:text-[#1976d2] transition truncate max-w-[190px]">
+                {adminName}
+              </h3>
+            </Link>
+            <span className="inline-block mt-0.5 text-[11px] font-semibold text-[#1976d2] dark:text-[#60a5fa]">
+              {adminRoleName || 'Admin'}
+            </span>
+          </div>
+        ) : (
+          <div className="flex justify-center py-3 border-b border-slate-200/60 dark:border-white/[0.08] flex-shrink-0">
+            <Link href="/management/profile">
+              <div className="h-10 w-10 rounded-full overflow-hidden bg-[#1976d2] ring-2 ring-[#1976d2]/20 flex items-center justify-center text-white text-sm font-bold">
+                {avatarUrl ? <img src={avatarUrl} alt={adminName} className="h-full w-full object-cover" /> : adminInitial}
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {/* ── Navigation List (SmartAngular Transport Menu Layout) ── */}
         <nav
-          className="admin-custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-4 min-h-0"
+          className="admin-custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-3 px-3 space-y-3 min-h-0 bg-white dark:bg-[#161b26]"
           aria-label="Main navigation"
         >
           {NAV_SECTIONS.map((section, sIdx) => {
             const visibleItems = section.items.filter(canSee);
             if (!visibleItems.length) return null;
             return (
-            <div key={sIdx} className="space-y-1">
-              {!collapsed && (
-                <div className="px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                  {section.title}
-                </div>
-              )}
-              {visibleItems.map((item) => {
-                const Icon = item.icon;
-                const isActive =
-                  pathname === item.to ||
-                  (item.to !== '/management/dashboard' && pathname.startsWith(`${item.to}/`));
+              <div key={sIdx} className="space-y-1">
+                {!collapsed && (
+                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+                    {section.title === 'PAGES' ? 'MAIN' : section.title}
+                  </div>
+                )}
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    pathname === item.to ||
+                    (item.to !== '/management/dashboard' && pathname.startsWith(`${item.to}/`));
 
-                return (
-                  <Link
-                    key={item.to}
-                    href={item.to}
-                    title={collapsed ? item.label : undefined}
-                    aria-label={item.label}
-                    aria-current={isActive ? "page" : undefined}
-                    onClick={() => {
-                      if (mobileOpen) onCloseMobileNav();
-                    }}
-                    className={`group relative flex items-center gap-3.5 rounded-[18px] text-[13px] font-semibold transition-all duration-200 ${
-                      collapsed ? 'h-11 w-11 mx-auto justify-center' : 'h-11 px-3.5'
-                    } ${
-                      isActive
-                        ? 'bg-[#7C3AED]/12 dark:bg-[#7C3AED]/22 text-[#7C3AED] dark:text-[#C084FC] font-bold shadow-[0_4px_16px_rgba(124,58,237,0.1)]'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/[0.06] hover:translate-x-1'
-                    }`}
-                  >
-                    <Icon
-                      className={`h-4.5 w-4.5 flex-shrink-0 transition-colors ${
+                  return (
+                    <Link
+                      key={item.to}
+                      href={item.to}
+                      title={collapsed ? item.label : undefined}
+                      aria-label={item.label}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => {
+                        if (mobileOpen) onCloseMobileNav();
+                      }}
+                      className={`group relative flex items-center gap-3 rounded-[10px] text-[13px] font-medium transition-all duration-150 ${
+                        collapsed ? 'h-10 w-10 mx-auto justify-center' : 'h-10 px-3'
+                      } ${
                         isActive
-                          ? 'text-[#7C3AED] dark:text-[#C084FC]'
-                          : 'text-slate-400 dark:text-slate-500 group-hover:text-[#7C3AED] dark:group-hover:text-white'
+                          ? 'bg-[#e8effd] dark:bg-[#1976d2]/20 text-[#1976d2] dark:text-[#60a5fa] font-bold'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-[#1976d2] dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/[0.04]'
                       }`}
-                      strokeWidth={isActive ? 2.2 : 1.9}
-                    />
-
-                    {!collapsed && (
-                      <span className="flex-1 truncate tracking-tight">{item.label}</span>
-                    )}
-
-                    {!collapsed && item.badge && (
-                      <span
-                        className={`rounded-md px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider ${
+                    >
+                      <Icon
+                        className={`h-4.5 w-4.5 flex-shrink-0 transition-colors ${
                           isActive
-                            ? 'bg-[#7C3AED] text-white'
-                            : 'bg-slate-200/80 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300'
+                            ? 'text-[#1976d2] dark:text-[#60a5fa]'
+                            : 'text-slate-400 dark:text-slate-500 group-hover:text-[#1976d2] dark:group-hover:text-white'
                         }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
+                        strokeWidth={isActive ? 2.2 : 1.9}
+                      />
+
+                      {!collapsed && (
+                        <span className="flex-1 truncate tracking-tight">{item.label}</span>
+                      )}
+
+                      {!collapsed && item.badge && (
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider ${
+                            isActive
+                              ? 'bg-[#1976d2] text-white'
+                              : 'bg-slate-200/70 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
 
-        {/* ── Bottom Section: Red-Tinted Logout & Profile Pill ── */}
-        <div className="flex-shrink-0 p-3.5 border-t border-slate-200/50 dark:border-white/[0.06] space-y-2">
+        {/* ── Bottom Section: Actions & Logout ── */}
+        <div className="flex-shrink-0 p-3 border-t border-slate-200/60 dark:border-white/[0.08] space-y-1.5 bg-white dark:bg-[#161b26]">
           {collapsed && (
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden lg:flex mx-auto mb-2 h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:text-[#7C3AED] hover:bg-[#7C3AED]/10 transition"
+              className="hidden lg:flex mx-auto mb-1 h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-[#1976d2] hover:bg-[#1976d2]/10 transition"
               title="Expand sidebar"
               aria-label="Expand sidebar"
             >
@@ -261,36 +292,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
             </button>
           )}
 
-          {/* User Profile Pill */}
-          <Link
-            href="/management/profile"
-            className={`flex items-center gap-3 rounded-[18px] p-2 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] hover:border-[#7C3AED]/30 transition group ${
-              collapsed ? 'justify-center p-1.5' : ''
-            }`}
-            title="Edit Admin Profile & Photo"
-          >
-            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-xs font-black text-white overflow-hidden shadow-sm">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={adminName} className="h-full w-full object-cover" />
-              ) : (
-                <span>{adminInitial}</span>
-              )}
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-[#0B0813] bg-[#10B981]" />
-            </div>
-
-            {!collapsed && (
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
-                  {adminName}
-                </p>
-                <p className="truncate text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
-                  {adminRoleName}
-                </p>
-              </div>
-            )}
-          </Link>
-
-          {/* Dedicated Red-Tinted Logout Button Matching Reference Image */}
+          {/* Clean Logout Button */}
           <button
             type="button"
             onClick={() => {
@@ -298,14 +300,14 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                 logoutAdmin();
               }
             }}
-            className={`flex items-center gap-3 rounded-[16px] text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-all duration-200 w-full ${
-              collapsed ? 'h-10 w-10 mx-auto justify-center' : 'h-11 px-4'
+            className={`flex items-center gap-2.5 rounded-[10px] text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-150 w-full ${
+              collapsed ? 'h-9 w-9 mx-auto justify-center' : 'h-9 px-3'
             }`}
             title="Sign out"
             aria-label="Sign out"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
-            {!collapsed && <span>Logout</span>}
+            {!collapsed && <span>Sign Out</span>}
           </button>
         </div>
       </aside>

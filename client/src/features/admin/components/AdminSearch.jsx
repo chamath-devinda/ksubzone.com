@@ -59,7 +59,7 @@ export default function AdminSearch() {
   const choose = item => { closePalette(); router.push(item.href); };
   return <>
     <button type="button" onClick={() => setOpen(true)} className="admin-search-trigger" aria-label="Search admin content">
-      <Search size={18} /><span className="hidden sm:inline">Search content…</span><kbd className="hidden lg:inline">Ctrl K</kbd>
+      <Search size={16} className="text-slate-400" /><span className="hidden sm:inline text-xs">Search pages, settings or ...</span><kbd className="hidden lg:inline text-[10px]">Ctrl K</kbd>
     </button>
     <ModalDrawer isOpen={open} onClose={closePalette} title="Search your content">
       <label className="block text-sm" htmlFor="admin-global-search">Movies, dramas, articles and subtitles</label>

@@ -1,33 +1,33 @@
 /* Shared management tokens. Keep public-site styling independent. */
 .admin-theme-wrapper {
-  --studio-bg: #131722;
-  --studio-surface: #1c2130;
-  --studio-raised: #242b3d;
-  --studio-border: #2d364c;
+  --studio-bg: #141724;
+  --studio-surface: #1c2032;
+  --studio-raised: #242a42;
+  --studio-border: #2d3450;
   --studio-text: #e9ecef;
   --studio-muted: #8a96aa;
-  --studio-brand: #4a77e5;
-  --studio-success: #3ac47d;
-  --studio-warning: #f7b924;
-  --studio-error: #d92550;
-  --studio-info: #16aaff;
-  --studio-radius: 8px;
+  --studio-brand: #2563eb;
+  --studio-success: #22c55e;
+  --studio-warning: #f59e0b;
+  --studio-error: #ef4444;
+  --studio-info: #0ea5e9;
+  --studio-radius: 12px;
   --studio-gap: 24px;
   --studio-motion: 160ms;
   color: var(--studio-text);
 }
 .admin-theme-light {
-  --studio-bg: #f1f4f6;
+  --studio-bg: #f0f3fb;
   --studio-surface: #ffffff;
-  --studio-raised: #f8f9fa;
-  --studio-border: #e9ecef;
-  --studio-text: #495057;
+  --studio-raised: #f8fafd;
+  --studio-border: #eef2f7;
+  --studio-text: #212529;
   --studio-muted: #6c757d;
-  --studio-brand: #3f6ad8;
-  --studio-success: #3ac47d;
-  --studio-warning: #f7b924;
-  --studio-error: #d92550;
-  --studio-info: #16aaff;
+  --studio-brand: #1976d2;
+  --studio-success: #22c55e;
+  --studio-warning: #f59e0b;
+  --studio-error: #ef4444;
+  --studio-info: #0ea5e9;
 }
 .admin-theme-wrapper .admin-shell { background: var(--studio-bg) !important; min-height: 100dvh; font-family: Inter, sans-serif; }
 .admin-theme-wrapper .admin-main { padding: var(--studio-gap) !important; max-width: 1600px; min-width: 0; }
@@ -889,4 +889,112 @@
 .admin-theme-wrapper .architect-summary-item:last-child {
   border-right: none;
 }
+
+/* --------------------------------------------------------------------------
+   SmartAngular Transport Dashboard System Styles
+   Matches: https://www.einfosoft.com/templates/admin/smartangular/source/light/#/admin/dashboard/transport-dashboard
+---------------------------------------------------------------------------- */
+
+.admin-theme-wrapper .modern-card {
+  background: var(--studio-surface);
+  border: 1px solid var(--studio-border);
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.admin-theme-wrapper .modern-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--studio-border);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--studio-text);
+}
+
+.admin-theme-wrapper .modern-card-body {
+  padding: 20px;
+}
+
+.admin-theme-wrapper .badge-status-active {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-theme-wrapper .badge-status-maintenance {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-theme-wrapper .badge-status-inactive {
+  background: rgba(108, 117, 125, 0.12);
+  color: #6c757d;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-theme-wrapper .btn-smart-pill {
+  border-radius: 20px;
+  padding: 6px 14px;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease-in-out;
+}
+
+.admin-theme-wrapper .btn-smart-pill:hover {
+  background: #dbeafe;
+}
+
+.admin-theme-wrapper .smart-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+  z-index: 40;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.admin-theme-wrapper .smart-fab:hover {
+  transform: scale(1.08);
+}
+
 
