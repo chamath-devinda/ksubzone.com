@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const AdminThemeContext = createContext({
   theme: 'dark',
@@ -13,6 +14,8 @@ const AdminThemeContext = createContext({
 const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v2';
 
 export function AdminThemeProvider({ children }) {
+  const { admin } = useAuth();
+  const storageKey = `${ADMIN_THEME_STORAGE_KEY}:${admin?._id || admin?.id || admin?.username || 'guest'}`;
   const [theme, setThemeState] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -28,13 +31,13 @@ export function AdminThemeProvider({ children }) {
 
   useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
+      const savedTheme = localStorage.getItem(storageKey) || localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
       if (savedTheme === 'light' || savedTheme === 'dark') {
         setThemeState(savedTheme);
       }
     } catch (_) {}
     setMounted(true);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -55,7 +58,7 @@ export function AdminThemeProvider({ children }) {
     const validTheme = newTheme === 'light' ? 'light' : 'dark';
     setThemeState(validTheme);
     try {
-      localStorage.setItem(ADMIN_THEME_STORAGE_KEY, validTheme);
+      localStorage.setItem(storageKey, validTheme);
     } catch (_) {}
   };
 

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import apiClient from '@/services/api/apiClient';
 import ModalDrawer from './ModalDrawer';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const QUICK_COMMANDS = [
   { id: 'dashboard', title: 'Open Dashboard', type: 'Navigation', href: '/management/dashboard' },
@@ -14,9 +15,18 @@ const QUICK_COMMANDS = [
   { id: 'studio', title: 'Open Subtitle Studio', type: 'Navigation', href: '/management/subtitle-tools' },
   { id: 'database', title: 'Open Database', type: 'Navigation', href: '/management/database' },
   { id: 'settings', title: 'Open Site Builder', type: 'Navigation', href: '/management/settings' },
+  { id: 'articles', title: 'Manage Articles', type: 'Navigation', href: '/management/articles' },
+  { id: 'comments', title: 'Manage Comments', type: 'Navigation', href: '/management/comments' },
+  { id: 'users', title: 'Manage Members', type: 'Navigation', href: '/management/users' },
+  { id: 'cleaner', title: 'Open SRT Cleaner', type: 'Navigation', href: '/management/srt-cleaner' },
+  { id: 'seo', title: 'Open SEO Telemetry', type: 'Navigation', href: '/management/seo' },
+  { id: 'backup', title: 'Open Backups', type: 'Navigation', href: '/management/backup' },
+  { id: 'profile', title: 'Open Admin Profile', type: 'Navigation', href: '/management/profile' },
 ];
+const PERMISSIONS = { import: 'manage_movies', movies: 'manage_movies', dramas: 'manage_dramas', articles: 'manage_articles', comments: 'manage_comments', users: 'manage_users', subtitles: 'approve_subtitles', studio: 'approve_subtitles', cleaner: 'approve_subtitles', database: 'manage_settings', settings: 'manage_settings', seo: 'manage_settings', backup: 'manage_settings' };
 
 export default function AdminSearch() {
+  const { admin } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -26,9 +36,9 @@ export default function AdminSearch() {
   const router = useRouter();
   const paletteItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    const commands = QUICK_COMMANDS.filter(item => !normalized || `${item.title} ${item.type}`.toLowerCase().includes(normalized));
+    const commands = QUICK_COMMANDS.filter(item => (!PERMISSIONS[item.id] || admin?.isSuperAdmin || admin?.role === 'SuperAdmin' || admin?.role?.name === 'SuperAdmin' || admin?.permissions?.includes(PERMISSIONS[item.id])) && (!normalized || `${item.title} ${item.type}`.toLowerCase().includes(normalized)));
     return [...commands, ...results];
-  }, [query, results]);
+  }, [query, results, admin]);
   const closePalette = () => {
     setOpen(false);
     setQuery('');
@@ -77,8 +87,9 @@ export default function AdminSearch() {
       <p role="status" className="text-sm text-slate-500 dark:text-slate-400">{status === 'loading' ? 'Searching…' : status === 'error' ? 'Search unavailable. Change the query to retry.' : status === 'ready' && !paletteItems.length ? 'No matching commands or content.' : status === 'idle' ? 'Jump to a module or search content you have permission to manage.' : `${paletteItems.length} matches`}</p>
       <ul id="admin-search-results" role="listbox" aria-label="Search results" className="space-y-1">
         {paletteItems.map((item, index) => <li key={`${item.type}-${item.id}`} id={`admin-result-${index}`} role="option" aria-selected={index === active}>
-          <button tabIndex={-1} type="button" onClick={() => choose(item)} className={`w-full rounded-xl p-3 text-left ${index === active ? 'bg-violet-500/20' : 'hover:bg-violet-500/10'}`}>
-            <span className="block text-xs text-violet-400">{item.type}</span><span className="block truncate">{item.title}</span>
+          <button tabIndex={-1} type="button" onClick={() => choose(item)} className={`w-full rounded-[12px] p-3 text-left transition ${index === active ? 'bg-[#2563EB]/20 text-white' : 'hover:bg-[#2563EB]/10 text-slate-200'}`}>
+            <span className="block text-[11px] font-bold text-[#2563EB] uppercase tracking-wider">{item.type}</span>
+            <span className="block truncate text-sm font-medium mt-0.5">{item.title}</span>
           </button>
         </li>)}
       </ul>

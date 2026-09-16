@@ -7,22 +7,22 @@ import { ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 // KSubZone Frosted Soft-Tinted Squircle Schemes (Matching 70x70 Reference Image)
 const SCHEMES = {
   purple: {
-    bg: 'bg-[#7C3AED]/10 dark:bg-[#7C3AED]/20',
-    text: 'text-[#7C3AED] dark:text-[#C084FC]',
-    border: 'border-[#7C3AED]/20',
-    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(124,58,237,0.18)]',
+    bg: 'bg-[#2563EB]/10 dark:bg-[#2563EB]/20',
+    text: 'text-[#2563EB] dark:text-[#93C5FD]',
+    border: 'border-[#2563EB]/20',
+    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(37,99,235,0.18)]',
   },
   violet: {
-    bg: 'bg-[#8B5CF6]/10 dark:bg-[#8B5CF6]/20',
-    text: 'text-[#8B5CF6] dark:text-[#DDD6FE]',
-    border: 'border-[#8B5CF6]/20',
-    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(139,92,246,0.18)]',
+    bg: 'bg-[#14B8A6]/10 dark:bg-[#14B8A6]/20',
+    text: 'text-[#14B8A6] dark:text-[#5EEAD4]',
+    border: 'border-[#14B8A6]/20',
+    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(20,184,166,0.18)]',
   },
   blue: {
-    bg: 'bg-[#3B82F6]/10 dark:bg-[#3B82F6]/20',
-    text: 'text-[#3B82F6] dark:text-[#93C5FD]',
-    border: 'border-[#3B82F6]/20',
-    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(59,130,246,0.18)]',
+    bg: 'bg-[#2563EB]/10 dark:bg-[#2563EB]/20',
+    text: 'text-[#2563EB] dark:text-[#93C5FD]',
+    border: 'border-[#2563EB]/20',
+    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(37,99,235,0.18)]',
   },
   green: {
     bg: 'bg-[#10B981]/10 dark:bg-[#10B981]/20',
@@ -78,17 +78,17 @@ export default function StatCard({
   variant = 'primary',
   href = null,
   badge = null,
-  accentColor = 'purple',
+  accentColor = 'blue',
 }) {
   const isPositive = trend > 0;
   const isNegative = trend < 0;
-  const scheme = SCHEMES[accentColor] || SCHEMES.purple;
+  const scheme = SCHEMES[accentColor] || SCHEMES.blue;
 
   const CardContent = () => {
     // Secondary compact card (for quick launcher or secondary metrics)
     if (variant === 'secondary') {
       return (
-        <div className="dashstack-card relative flex items-center justify-between gap-3.5 p-4 sm:p-5 rounded-[24px] bg-white/85 dark:bg-[#120E1E]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] hover:-translate-y-1 hover:border-[#7C3AED]/30 transition-all duration-300 group">
+        <div className="dashstack-card relative flex items-center justify-between gap-3.5 p-4 sm:p-5 rounded-[16px] bg-white/85 dark:bg-[#12161F]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] hover:-translate-y-1 hover:border-[#2563EB]/30 transition-all duration-300 group">
           <div className="min-w-0 space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500 truncate">
               {label}

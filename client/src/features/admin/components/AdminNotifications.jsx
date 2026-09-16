@@ -204,7 +204,7 @@ export default function AdminNotifications() {
             </div>
           </div>
 
-          <button type="button" className="p-3 text-xs text-violet-400" onClick={async () => {
+          <button type="button" className="px-4 py-2 text-xs font-semibold text-[#2563EB] hover:underline text-left" onClick={async () => {
             await Promise.all(unread.map(markRead));
           }}>Mark all as read</button>
           {error && <p role="alert" className="p-4 text-sm text-amber-400">{error}</p>}
