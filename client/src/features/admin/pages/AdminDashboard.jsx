@@ -121,24 +121,44 @@ export default function AdminDashboard() {
   const pendingSubtitles = stats?.counts?.pendingSubtitles || 0;
   const totalUsers = stats?.counts?.totalUsers || 0;
   const totalViews = stats?.counts?.totalViews || 0;
-  const rawEpisodes = stats?.episodes || stats?.recentEpisodes || [];
+  const upcomingEpisodes = stats?.upcomingEpisodes;
+  const rawEpisodes = useMemo(
+    () => (Array.isArray(upcomingEpisodes) ? upcomingEpisodes : []),
+    [upcomingEpisodes]
+  );
   const topContent = stats?.topContent || [];
   const health = stats?.systemHealth || {};
+  const trafficLogs = Array.isArray(stats?.trafficLogs) ? stats.trafficLogs : [];
+  const trafficWindowSize = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+  const trafficSeries = trafficLogs.slice(-trafficWindowSize);
+  const trafficTotal = trafficSeries.reduce((sum, log) => sum + Number(log.views || 0), 0);
+  const maxTraffic = Math.max(...trafficSeries.map((log) => Number(log.views || 0)), 1);
+  const subtitleStats = stats?.subtitleStats || null;
+  const storageStats = stats?.storageStats || null;
+  const hasLiveStats = Boolean(stats);
+  const filteredTopContent = activeCategoryTab === 'all'
+    ? topContent
+    : topContent.filter((item) => item.type?.toLowerCase() === (activeCategoryTab === 'movies' ? 'movie' : 'drama'));
 
   const adminName = admin?.displayName || admin?.username || admin?.name || 'Chamath';
   const adminRole = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'SuperAdmin'));
 
-  // Pending subtitles queue mock if none
+  // Use only API-provided queue items. Upcoming episodes without an approved
+  // subtitle are a real derived attention queue; no demo records are injected.
   const pendingQueue = useMemo(() => {
-    if (stats?.pendingSubtitlesList && stats.pendingSubtitlesList.length > 0) {
-      return stats.pendingSubtitlesList;
-    }
-    return [
-      { id: 'sub-1', title: 'Queen of Tears - Episode 16', uploader: 'SinhalaSubs Team', time: '12m ago', language: 'Sinhala' },
-      { id: 'sub-2', title: 'Lovely Runner - Episode 12', uploader: 'K-Drama Fans SL', time: '45m ago', language: 'Sinhala' },
-      { id: 'sub-3', title: 'Dune: Part Two (2024)', uploader: 'CinemaTranslate', time: '2h ago', language: 'Sinhala' },
-    ];
-  }, [stats]);
+    const submissions = Array.isArray(stats?.pendingSubtitlesList) ? stats.pendingSubtitlesList : [];
+    if (submissions.length > 0) return submissions;
+    return rawEpisodes
+      .filter((episode) => episode.hasSubtitles === false)
+      .slice(0, 4)
+      .map((episode) => ({
+        id: episode._id,
+        title: `${episode.dramaTitle || 'Drama episode'} · Episode ${episode.episodeNumber || '—'}`,
+        uploader: 'No approved Sinhala subtitle',
+        time: episode.airDate ? formatRelativeTime(episode.airDate) : 'Schedule not reported',
+        language: 'Sinhala'
+      }));
+  }, [rawEpisodes, stats]);
 
   if (loading) {
     return (
@@ -181,67 +201,81 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ── 1. Executive Briefing Header (Retains workspace-intro-grid test contract) ── */}
-          <section className="workspace-intro-grid flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1" aria-label="Executive Briefing">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Platform Operational
-                </span>
-                <span className="text-slate-300 dark:text-slate-700">•</span>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
+          {/* ── 1. Command-centre briefing ── */}
+          <section className="workspace-intro-grid" aria-label="Executive Briefing">
+            <div className="workspace-intro-panel">
+              <div>
+                <div className="workspace-kicker">
+                  <span className="workspace-kicker-dot" />
+                  <span>{hasLiveStats ? 'Live platform operational' : 'Live data unavailable'}</span>
+                  <span className="workspace-date">
+                    {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+
+                <h1 className="workspace-title">Welcome back, {adminName}</h1>
+                <p className="workspace-subtitle">
+                  Sinhala subtitle workflows, streaming performance, and episode release control in one operating view.
+                </p>
               </div>
-              
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Welcome back, {adminName} 👋
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                KSUBZONE STUDIO · Sinhala subtitle workflows, streaming performance, and episode release radar
-              </p>
+
+              <div className="workspace-context-row" aria-label="Workspace context">
+                <span><Activity className={`h-3 w-3 ${hasLiveStats ? 'text-emerald-400' : 'text-rose-400'}`} /> {hasLiveStats ? 'API runtime healthy' : 'API response unavailable'}</span>
+                <span><Shield className="h-3 w-3 text-violet-400" /> {adminRole}</span>
+                <span><CheckCircle className={`h-3 w-3 ${hasLiveStats ? 'text-sky-400' : 'text-rose-400'}`} /> {hasLiveStats ? 'Live data verified' : 'Awaiting live data'}</span>
+              </div>
             </div>
 
-            {/* Quick Action Controls */}
-            <div className="flex items-center flex-wrap gap-2.5 self-start lg:self-auto">
-              <button
-                type="button"
-                onClick={() => downloadCsv('ksubzone-studio-summary.csv', [
-                  ['Metric', 'Value'],
-                  ['Total Media Catalog', totalCatalog],
-                  ['Movies Count', totalMovies],
-                  ['Dramas Count', totalDramas],
-                  ['Approved Subtitles', totalSubtitles],
-                  ['Pending Subtitles', pendingSubtitles],
-                  ['Total Viewership', totalViews],
-                  ['Community Members', totalUsers],
-                ])}
-                className="btn-studio-pill text-xs shadow-sm"
-                title="Download operations CSV report"
-              >
-                <Download className="h-3.5 w-3.5 text-indigo-500" />
-                <span>Export Report</span>
-              </button>
+            <div className="workspace-action-panel">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="workspace-panel-label">Operator actions</div>
+                  <p className="workspace-panel-hint">Move through the day without leaving the control room.</p>
+                </div>
+                <kbd className="workspace-kbd">⌘K</kbd>
+              </div>
 
-              <button
-                type="button"
-                onClick={handleClearCache}
-                disabled={clearingCache}
-                className="btn-studio-pill text-xs shadow-sm"
-                title="Purge system runtime cache"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 text-slate-500 ${clearingCache ? 'animate-spin' : ''}`} />
-                <span>{clearingCache ? 'Purging…' : 'Purge Cache'}</span>
-              </button>
+              <div className="workspace-action-grid">
+                <button
+                  type="button"
+                  onClick={() => downloadCsv('ksubzone-studio-summary.csv', [
+                    ['Metric', 'Value'],
+                    ['Total Media Catalog', totalCatalog],
+                    ['Movies Count', totalMovies],
+                    ['Dramas Count', totalDramas],
+                    ['Approved Subtitles', totalSubtitles],
+                    ['Pending Subtitles', pendingSubtitles],
+                    ['Total Viewership', totalViews],
+                    ['Community Members', totalUsers],
+                  ])}
+                  className="workspace-action"
+                  title="Download operations CSV report"
+                >
+                  <Download className="h-4 w-4 text-sky-400" />
+                  <span>Export report</span>
+                </button>
 
-              <Link
-                href="/management/import"
-                className="btn-studio-primary text-xs shadow-md shadow-indigo-500/20"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>TMDB Auto-Import</span>
-              </Link>
+                <button
+                  type="button"
+                  onClick={handleClearCache}
+                  disabled={clearingCache}
+                  className="workspace-action"
+                  title="Purge system runtime cache"
+                >
+                  <RefreshCw className={`h-4 w-4 text-amber-400 ${clearingCache ? 'animate-spin' : ''}`} />
+                  <span>{clearingCache ? 'Purging…' : 'Purge cache'}</span>
+                </button>
+
+                <Link href="/management/import" className="workspace-action">
+                  <Sparkles className="h-4 w-4 text-violet-400" />
+                  <span>Import titles</span>
+                </Link>
+
+                <Link href="/management/subtitles" className="workspace-action">
+                  <Languages className="h-4 w-4 text-emerald-400" />
+                  <span>Review queue</span>
+                </Link>
+              </div>
             </div>
           </section>
 
@@ -261,11 +295,11 @@ export default function AdminDashboard() {
 
               <div className="mt-2">
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {totalCatalog || 88}
+                  {hasLiveStats ? totalCatalog : '—'}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="badge-emerald text-[10.5px]">
-                    ▲ +4 new
+                    Reported
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
                     {totalMovies} Movies · {totalDramas} Dramas
@@ -287,7 +321,7 @@ export default function AdminDashboard() {
 
               <div className="mt-2">
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {formatNum(totalSubtitles || 1420)}
+                  {hasLiveStats ? formatNum(totalSubtitles) : '—'}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
                   {pendingSubtitles > 0 ? (
@@ -299,7 +333,7 @@ export default function AdminDashboard() {
                     </Link>
                   ) : (
                     <span className="badge-emerald text-[10.5px]">
-                      ● Up to date
+                      ● Reported
                     </span>
                   )}
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
@@ -322,14 +356,14 @@ export default function AdminDashboard() {
 
               <div className="mt-2">
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {formatNum(totalViews || 1850000)}
+                  {hasLiveStats ? formatNum(totalViews) : '—'}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="badge-indigo text-[10.5px]">
-                    ▲ +18.4%
+                    {hasLiveStats ? 'Reported total' : 'Not reported'}
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                    vs last 7 days
+                    from API
                   </span>
                 </div>
               </div>
@@ -348,11 +382,11 @@ export default function AdminDashboard() {
 
               <div className="mt-2">
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {formatNum(totalUsers || 1280)}
+                  {hasLiveStats ? formatNum(totalUsers) : '—'}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="badge-emerald text-[10.5px]">
-                    Verified
+                    Reported
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     Active Translators & Fans
@@ -396,65 +430,32 @@ export default function AdminDashboard() {
 
               <div className="studio-card-body">
                 <div className="flex items-baseline gap-3 mb-4">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white">42,850</span>
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center">
-                    ▲ +14.2% <span className="text-slate-400 font-normal ml-1">avg. daily stream volume</span>
+                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                    {hasLiveStats ? formatNum(trafficTotal) : '—'}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400">
+                    {trafficSeries.length > 0 ? `${trafficSeries.length} reported days` : 'No daily telemetry reported'}
                   </span>
                 </div>
 
-                {/* SVG Area Chart */}
-                <div className="h-56 w-full relative">
-                  <svg viewBox="0 0 600 180" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="studioStreamGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Background Grid Lines */}
-                    <line x1="0" y1="40" x2="600" y2="40" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" strokeWidth="0.8" />
-                    <line x1="0" y1="90" x2="600" y2="90" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" strokeWidth="0.8" />
-                    <line x1="0" y1="140" x2="600" y2="140" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" strokeWidth="0.8" />
-
-                    {/* Area fill */}
-                    <path
-                      d="M 0 130 Q 75 70 150 95 T 300 45 T 450 65 T 600 25 L 600 180 L 0 180 Z"
-                      fill="url(#studioStreamGrad)"
-                    />
-
-                    {/* Smooth curve line */}
-                    <path
-                      d="M 0 130 Q 75 70 150 95 T 300 45 T 450 65 T 600 25"
-                      fill="none"
-                      stroke="#6366f1"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-
-                    {/* Data Points */}
-                    {[[0,130], [100,82], [200,90], [300,45], [400,55], [500,60], [600,25]].map(([cx, cy], idx) => (
-                      <circle
-                        key={idx}
-                        cx={cx}
-                        cy={cy}
-                        r="4.5"
-                        className="fill-indigo-600 stroke-white dark:stroke-slate-900"
-                        strokeWidth="2.5"
-                      />
-                    ))}
-                  </svg>
-                </div>
-
-                <div className="flex justify-between text-[11px] font-semibold text-slate-400 dark:text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-2">
-                  <span>Monday</span>
-                  <span>Tuesday</span>
-                  <span>Wednesday</span>
-                  <span>Thursday</span>
-                  <span>Friday</span>
-                  <span>Saturday</span>
-                  <span>Sunday</span>
-                </div>
+                {trafficSeries.length > 0 ? (
+                  <div className="h-56 w-full flex items-end gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                    {trafficSeries.map((log, index) => {
+                      const value = Number(log.views || 0);
+                      const height = Math.max(8, Math.round((value / maxTraffic) * 100));
+                      return (
+                        <div key={`${log.date || 'day'}-${index}`} className="flex h-full flex-1 flex-col items-center justify-end gap-2" title={`${log.date || 'Reported day'} · ${value.toLocaleString()} views`}>
+                          <div className="w-full max-w-10 rounded-t-md bg-violet-500/70" style={{ height: `${height}%` }} />
+                          <span className="text-[9px] text-slate-400 truncate max-w-full">{log.date ? String(log.date).slice(5) : `D${index + 1}`}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                    The analytics endpoint did not report daily traffic for this period.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -465,52 +466,36 @@ export default function AdminDashboard() {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Sinhala Subtitle Coverage</h3>
                   <p className="text-xs text-slate-400 font-normal">Catalog translation completeness</p>
                 </div>
-                <span className="badge-emerald text-xs">92.4% Ready</span>
+                <span className={hasLiveStats ? 'badge-emerald text-xs' : 'badge-amber text-xs'}>
+                  {hasLiveStats ? `${formatNum(subtitleStats?.approved || 0)} approved` : 'Not reported'}
+                </span>
               </div>
 
-              <div className="studio-card-body flex flex-col items-center justify-center flex-1">
-                {/* Donut Visual */}
-                <div className="relative w-44 h-44 flex items-center justify-center my-2">
-                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" strokeWidth="11" className="text-slate-100 dark:text-slate-800" />
-                    <circle
-                      cx="50" cy="50" r="40" fill="transparent"
-                      stroke="#4f46e5" strokeWidth="11"
-                      strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - 0.924)}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute text-center">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">92%</span>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Subtitled</span>
-                  </div>
+              <div className="studio-card-body flex flex-col justify-center flex-1 gap-3">
+                <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-4 text-center">
+                  <Languages className="mx-auto h-7 w-7 text-violet-400" />
+                  <p className="mt-2 text-sm font-bold text-slate-900 dark:text-white">
+                    {hasLiveStats ? 'Subtitle moderation snapshot' : 'Coverage telemetry unavailable'}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {hasLiveStats ? 'The API reports moderation totals, not a catalog coverage percentage.' : 'No coverage value was reported by the dashboard endpoint.'}
+                  </p>
                 </div>
 
-                {/* Legend List */}
-                <div className="w-full space-y-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                      <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
-                      Sinhala SRT Released
-                    </span>
-                    <strong className="text-slate-900 dark:text-white font-bold">92.4%</strong>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                      In Translation
-                    </span>
-                    <strong className="text-amber-600 dark:text-amber-400 font-bold">5.8%</strong>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                      Missing Subtitles
-                    </span>
-                    <strong className="text-rose-600 dark:text-rose-400 font-bold">1.8%</strong>
-                  </div>
+                <div className="w-full space-y-2 pt-1 text-xs">
+                  {[
+                    ['Approved', subtitleStats?.approved, 'text-emerald-400', 'bg-emerald-500'],
+                    ['Pending', subtitleStats?.pending, 'text-amber-400', 'bg-amber-500'],
+                    ['Rejected', subtitleStats?.rejected, 'text-rose-400', 'bg-rose-500']
+                  ].map(([label, value, textColor, dotColor]) => (
+                    <div key={label} className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-slate-500 dark:text-slate-300">
+                        <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+                        {label}
+                      </span>
+                      <strong className={`font-bold ${textColor}`}>{hasLiveStats ? formatNum(value || 0) : '—'}</strong>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -599,59 +584,11 @@ export default function AdminDashboard() {
                           </tr>
                         ))
                       ) : (
-                        // Curated Fallback Mock demonstrating the exact episode release contract
-                        [
-                          { _id: 'ep-101', dramaTitle: 'Queen of Tears', episodeNumber: 16, releaseStatus: 'Pending', airDate: '2026-09-16 18:00' },
-                          { _id: 'ep-102', dramaTitle: 'Lovely Runner', episodeNumber: 12, releaseStatus: 'Pending', airDate: '2026-09-16 20:00' },
-                          { _id: 'ep-103', dramaTitle: 'Chief Detective 1958', episodeNumber: 8, releaseStatus: 'Released', airDate: '2026-09-15 12:00' },
-                          { _id: 'ep-104', dramaTitle: 'The Atypical Family', episodeNumber: 6, releaseStatus: 'Pending', airDate: '2026-09-17 14:00' },
-                        ].map((episode) => (
-                          <tr key={episode._id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition">
-                            <td className="py-3.5 px-5">
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
-                                  <Clapperboard className="h-4 w-4" />
-                                </div>
-                                <div>
-                                  <p className="font-bold text-slate-900 dark:text-white">
-                                    {episode.dramaTitle}
-                                  </p>
-                                  <span className="text-[11px] text-slate-400">
-                                    Episode {episode.episodeNumber}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="py-3.5 px-4">
-                              <span className={episode.releaseStatus === 'Released' ? 'badge-emerald' : 'badge-amber'}>
-                                {episode.releaseStatus === 'Released' ? '● Released' : '⏳ Scheduled'}
-                              </span>
-                            </td>
-
-                            <td className="py-3.5 px-4 text-slate-500">
-                              {episode.airDate}
-                            </td>
-
-                            <td className="py-3.5 px-5 text-right">
-                              {episode.releaseStatus !== 'Released' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => markReleased(episode)}
-                                  disabled={busyAction === `${episode._id}:release`}
-                                  className="btn-studio-primary text-[11px] py-1 px-3.5"
-                                >
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  <span>{busyAction === `${episode._id}:release` ? 'Releasing…' : 'Release Now'}</span>
-                                </button>
-                              ) : (
-                                <span className="text-slate-400 font-semibold text-[11px]">
-                                  Live & Subtitled
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))
+                        <tr>
+                          <td colSpan={4} className="py-12 px-5 text-center text-xs text-slate-400">
+                            No upcoming episode data was reported by the dashboard endpoint.
+                          </td>
+                        </tr>
                       )}
                     </tbody>
                   </table>
@@ -678,7 +615,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="studio-card-body space-y-3">
-                {pendingQueue.map((item) => (
+                {pendingQueue.length > 0 ? pendingQueue.map((item) => (
                   <div
                     key={item.id}
                     className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-3 hover:border-indigo-500/30 transition"
@@ -688,7 +625,7 @@ export default function AdminDashboard() {
                         {item.title}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        Uploaded by <span className="font-semibold text-slate-700 dark:text-slate-300">{item.uploader}</span> · {item.time}
+                        {item.uploader} · {item.time}
                       </p>
                     </div>
 
@@ -699,20 +636,17 @@ export default function AdminDashboard() {
                       >
                         Review
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => toast.success(`Subtitle "${item.title}" approved!`)}
-                        className="btn-studio-primary text-[11px] py-1 px-2.5"
-                      >
-                        Approve
-                      </button>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 px-4 py-10 text-center text-xs text-slate-400">
+                    No pending subtitle attention items were reported by the API.
+                  </div>
+                )}
               </div>
 
               <div className="p-3 px-5 bg-slate-50/60 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-                <span>Translator SLA: <strong>98.2% Accuracy</strong></span>
+                <span>Queue data is derived from the live moderation response.</span>
                 <Link href="/management/subtitle-tools" className="text-indigo-600 font-bold hover:underline">
                   Open Subtitle Studio
                 </Link>
@@ -751,12 +685,7 @@ export default function AdminDashboard() {
 
               <div className="studio-card-body p-0">
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {(topContent.length > 0 ? topContent : [
-                    { id: '1', title: 'Queen of Tears', type: 'Drama', views: 342000, rating: 9.2 },
-                    { id: '2', title: 'Lovely Runner', type: 'Drama', views: 289000, rating: 9.0 },
-                    { id: '3', title: 'Dune: Part Two', type: 'Movie', views: 245000, rating: 8.8 },
-                    { id: '4', title: 'Chief Detective 1958', type: 'Drama', views: 182000, rating: 8.5 },
-                  ]).slice(0, 4).map((item, idx) => (
+                  {filteredTopContent.length > 0 ? filteredTopContent.slice(0, 4).map((item, idx) => (
                     <div key={item.id || idx} className="p-4 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/20 transition">
                       <div className="flex items-center gap-3">
                         <span className="h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono font-bold text-xs text-slate-500">
@@ -769,19 +698,23 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
                             <span className="uppercase font-bold text-indigo-600 dark:text-indigo-400">{item.type}</span>
                             <span>•</span>
-                            <span className="text-amber-500 font-semibold">★ {item.rating || '8.8'}</span>
+                            <span className="text-amber-500 font-semibold">★ {item.tmdbRating || '—'}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="text-right">
                         <p className="text-xs font-black text-slate-900 dark:text-white">
-                          {formatNum(item.views || item.viewCount)}
+                          {formatNum(item.viewCount || 0)}
                         </p>
                         <span className="text-[10.5px] text-slate-400">views</span>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="px-4 py-12 text-center text-xs text-slate-400">
+                      No top-content ranking was reported by the analytics endpoint.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -793,7 +726,9 @@ export default function AdminDashboard() {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">System & Server Telemetry</h3>
                   <p className="text-xs text-slate-400 font-normal">Database, API gateway, and R2 storage health</p>
                 </div>
-                <span className="badge-emerald text-xs">All Systems Green</span>
+                <span className={hasLiveStats ? 'badge-emerald text-xs' : 'badge-amber text-xs'}>
+                  {hasLiveStats ? 'Snapshot reported' : 'Not reported'}
+                </span>
               </div>
 
               <div className="studio-card-body space-y-3">
@@ -802,10 +737,12 @@ export default function AdminDashboard() {
                     <Database className="h-4 w-4 text-blue-500" />
                     <div>
                       <p className="text-xs font-bold text-slate-900 dark:text-white">Primary Database</p>
-                      <p className="text-[10px] text-slate-400">Driver: {health.dbDriver || 'PostgreSQL / MySQL'}</p>
+                      <p className="text-[10px] text-slate-400">Driver: {health.dbDriver || 'Not reported'}</p>
                     </div>
                   </div>
-                  <span className="badge-emerald">Connected</span>
+                  <span className={health.dbStatus === 'ok' ? 'badge-emerald' : 'badge-amber'}>
+                    {health.dbStatus === 'ok' ? 'Connected' : 'Not reported'}
+                  </span>
                 </div>
 
                 <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
@@ -813,10 +750,12 @@ export default function AdminDashboard() {
                     <Server className="h-4 w-4 text-indigo-500" />
                     <div>
                       <p className="text-xs font-bold text-slate-900 dark:text-white">PHP Core REST Engine</p>
-                      <p className="text-[10px] text-slate-400">Runtime: {health.phpVersion || 'PHP 8.2.20'}</p>
+                      <p className="text-[10px] text-slate-400">Runtime: {health.phpVersion || 'Not reported'}</p>
                     </div>
                   </div>
-                  <span className="badge-emerald">Operational</span>
+                  <span className={health.apiStatus === 'ok' ? 'badge-emerald' : 'badge-amber'}>
+                    {health.apiStatus === 'ok' ? 'Operational' : 'Not reported'}
+                  </span>
                 </div>
 
                 <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
@@ -824,10 +763,12 @@ export default function AdminDashboard() {
                     <HardDrive className="h-4 w-4 text-purple-500" />
                     <div>
                       <p className="text-xs font-bold text-slate-900 dark:text-white">Cloudflare R2 Subtitles</p>
-                      <p className="text-[10px] text-slate-400">Encrypted Storage & CDN</p>
+                      <p className="text-[10px] text-slate-400">Provider: {storageStats?.activeProvider || 'Not reported'}</p>
                     </div>
                   </div>
-                  <span className="badge-emerald">Synced</span>
+                  <span className={storageStats ? 'badge-emerald' : 'badge-amber'}>
+                    {storageStats ? 'Reported' : 'Not reported'}
+                  </span>
                 </div>
 
                 <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
@@ -838,7 +779,7 @@ export default function AdminDashboard() {
                       <p className="text-[10px] text-slate-400">Administrator Scope: {adminRole}</p>
                     </div>
                   </div>
-                  <span className="badge-indigo">SuperAdmin</span>
+                  <span className="badge-indigo">{adminRole}</span>
                 </div>
               </div>
             </div>

@@ -99,8 +99,8 @@ export default function AdminTopBar({ onOpenMobileNav }) {
 
   return (
     <header className="admin-topbar sticky top-0 z-30 flex h-16 w-full items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors">
-      {/* ── Left: Mobile Menu & Smart Search ── */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl">
+      {/* ── Left: mobile menu, current workspace and global search ── */}
+      <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
         <button
           type="button"
           onClick={onOpenMobileNav}
@@ -110,8 +110,15 @@ export default function AdminTopBar({ onOpenMobileNav }) {
           <Menu className="h-4 w-4" />
         </button>
 
+        <div className="admin-topbar-context hidden md:flex min-w-[148px] flex-col leading-none">
+          <span>KSUBZONE STUDIO</span>
+          <strong>{pageTitle}</strong>
+        </div>
+
         {/* Global Catalog & Commands Search */}
-        <AdminSearch />
+        <div className="min-w-0 flex-1 max-w-[460px]">
+          <AdminSearch />
+        </div>
       </div>
 
       {/* ── Right: Quick Actions, Fullscreen, Theme, and Profile ── */}
@@ -125,7 +132,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
             className="hidden sm:flex h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-sm shadow-indigo-500/25 transition"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>New Content</span>
+            <span>Create</span>
           </button>
 
           {quickAddOpen && (

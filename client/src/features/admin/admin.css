@@ -380,6 +380,107 @@
   }
 }
 
+/* Profile uses a bespoke legacy cover component; bring it into the same
+   information-dense control-plane language as the catalog modules. */
+.admin-theme-wrapper .admin-profile-hero {
+  background: var(--studio-surface) !important;
+  border: 1px solid var(--studio-border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .16) !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero > div:first-child {
+  display: none !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero > div:nth-child(2) {
+  height: 76px !important;
+  background: var(--studio-raised) !important;
+  border-bottom: 1px solid var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero > div:nth-child(2) span {
+  background: var(--studio-brand-soft) !important;
+  border-color: color-mix(in srgb, var(--studio-brand) 34%, var(--studio-border)) !important;
+  color: var(--studio-brand) !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero > div:nth-child(3) {
+  margin-top: -32px !important;
+  padding: 0 24px 22px !important;
+  align-items: flex-end;
+}
+
+.admin-theme-wrapper .admin-profile-hero > div:nth-child(3) > div:first-child > div:first-child {
+  background: var(--studio-brand-soft) !important;
+  border: 1px solid var(--studio-border-strong) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero > div:nth-child(3) > div:first-child > div:first-child > div {
+  background: var(--studio-raised) !important;
+  border-color: var(--studio-border) !important;
+  border-radius: 10px !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero h1,
+.admin-theme-wrapper .admin-profile-hero p {
+  color: var(--studio-text) !important;
+  text-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero p { color: var(--studio-muted) !important; }
+
+.admin-theme-wrapper .admin-profile-hero h1 + span {
+  background: var(--studio-brand-soft) !important;
+  border-color: color-mix(in srgb, var(--studio-brand) 38%, var(--studio-border)) !important;
+  color: var(--studio-brand) !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero button:not([title*="Remove"]) {
+  background: var(--studio-brand-strong) !important;
+  color: #fff !important;
+  border-color: var(--studio-brand) !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-profile-hero button[title*="Remove"] {
+  background: transparent !important;
+  border-color: var(--studio-border) !important;
+  color: var(--studio-muted) !important;
+}
+
+.admin-theme-wrapper .admin-main > .flex.items-center.gap-2.border-b {
+  border-color: var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-main > .flex.items-center.gap-2.border-b button {
+  border-radius: 8px !important;
+  color: var(--studio-muted) !important;
+}
+
+.admin-theme-wrapper .admin-main > .flex.items-center.gap-2.border-b button[class*="bg-violet"] {
+  background: var(--studio-brand-strong) !important;
+  color: #fff !important;
+  border-color: var(--studio-brand) !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 639px) {
+  .admin-theme-wrapper .admin-profile-hero > div:nth-child(3) {
+    margin-top: -22px !important;
+    padding-inline: 16px !important;
+    align-items: center;
+  }
+  .admin-theme-wrapper .admin-profile-hero > div:nth-child(3) > div:first-child > div:first-child {
+    height: 92px;
+    width: 92px;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Premium workspace direction
    This is intentionally a stronger visual reset than the legacy glass-card
@@ -1025,5 +1126,299 @@
   transform: translateY(-1px);
 }
 
+/* --------------------------------------------------------------------------
+   KSUBZONE STUDIO — Control Plane v3
+   Final shared shell pass for every management module. The pages retain their
+   live data and actions, while the old decorative dashboard language is
+   replaced by a quieter operations workspace: rail navigation, compact
+   context header, dense data surfaces, and consistent controls.
+---------------------------------------------------------------------------- */
+.admin-theme-wrapper {
+  --studio-bg: #090c11;
+  --studio-surface: #10151c;
+  --studio-raised: #151b24;
+  --studio-border: #27313d;
+  --studio-border-strong: #354252;
+  --studio-text: #edf2f7;
+  --studio-muted: #8b97a7;
+  --studio-brand: #a78bfa;
+  --studio-brand-strong: #8b5cf6;
+  --studio-brand-soft: color-mix(in srgb, var(--studio-brand) 13%, transparent);
+  --studio-success: #36d399;
+  --studio-warning: #f5b94c;
+  --studio-error: #fb7185;
+  --studio-info: #67b7ff;
+  --studio-radius: 12px;
+  color: var(--studio-text);
+}
 
+.admin-theme-wrapper.admin-theme-light {
+  --studio-bg: #f4f6f9;
+  --studio-surface: #ffffff;
+  --studio-raised: #f8fafc;
+  --studio-border: #dfe5ec;
+  --studio-border-strong: #cbd5e1;
+  --studio-text: #17202b;
+  --studio-muted: #667384;
+  --studio-brand: #6941c6;
+  --studio-brand-strong: #5b21b6;
+  --studio-brand-soft: color-mix(in srgb, var(--studio-brand) 10%, transparent);
+}
 
+.admin-theme-wrapper .admin-shell {
+  background: var(--studio-bg) !important;
+  color: var(--studio-text);
+}
+
+.admin-theme-wrapper .admin-sidebar {
+  width: 236px;
+  background: var(--studio-surface) !important;
+  border-color: var(--studio-border) !important;
+  box-shadow: 1px 0 0 rgb(255 255 255 / 0.025) !important;
+}
+
+.admin-theme-wrapper .admin-sidebar > div:first-child {
+  height: 70px;
+  background: var(--studio-surface) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-sidebar nav {
+  padding: 18px 10px 12px;
+  gap: 20px;
+}
+
+.admin-theme-wrapper .admin-sidebar nav > div > div:first-child {
+  padding: 0 12px 7px;
+  color: var(--studio-muted) !important;
+  font-size: 9px;
+  letter-spacing: .16em;
+}
+
+.admin-theme-wrapper .admin-sidebar nav a {
+  height: 36px;
+  border-radius: 8px !important;
+  color: var(--studio-muted) !important;
+  font-size: 11px;
+  font-weight: 650;
+  border-left: 2px solid transparent;
+}
+
+.admin-theme-wrapper .admin-sidebar nav a:hover {
+  color: var(--studio-text) !important;
+  background: var(--studio-raised) !important;
+}
+
+.admin-theme-wrapper .admin-sidebar nav a[aria-current='page'] {
+  color: var(--studio-text) !important;
+  background: var(--studio-brand-soft) !important;
+  border-left-color: var(--studio-brand) !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-sidebar nav a[aria-current='page'] svg {
+  color: var(--studio-brand) !important;
+}
+
+.admin-theme-wrapper .admin-sidebar > div:last-child {
+  background: var(--studio-surface) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-sidebar > div:last-child a {
+  background: var(--studio-raised) !important;
+  border-color: var(--studio-border) !important;
+  border-radius: 9px !important;
+}
+
+.admin-theme-wrapper .admin-topbar {
+  height: 66px !important;
+  padding-inline: 22px !important;
+  background: color-mix(in srgb, var(--studio-surface) 94%, transparent) !important;
+  border-color: var(--studio-border) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.admin-topbar-context {
+  gap: 5px;
+  border-right: 1px solid var(--studio-border);
+  padding-right: 20px;
+}
+
+.admin-topbar-context span {
+  color: var(--studio-muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.admin-topbar-context strong {
+  color: var(--studio-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -.015em;
+}
+
+.admin-theme-wrapper .admin-search-trigger {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--studio-raised) !important;
+  border-color: var(--studio-border) !important;
+  color: var(--studio-muted) !important;
+}
+
+.admin-theme-wrapper .admin-search-trigger:hover {
+  border-color: var(--studio-border-strong) !important;
+  background: color-mix(in srgb, var(--studio-raised) 75%, var(--studio-brand-soft)) !important;
+}
+
+.admin-theme-wrapper .admin-main {
+  max-width: 1500px;
+  padding: 28px 34px !important;
+  color: var(--studio-text);
+}
+
+/* Consistent module title bars. Dashboard has its own briefing grid. */
+.admin-theme-wrapper .admin-main > div:first-child:not(.workspace-intro-grid) {
+  min-height: 64px;
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-main > div:first-child:not(.workspace-intro-grid) h1 {
+  color: var(--studio-text) !important;
+  font-size: clamp(1.45rem, 2vw, 1.85rem) !important;
+  font-weight: 750 !important;
+  letter-spacing: -.045em !important;
+}
+
+.admin-theme-wrapper .admin-main > div:first-child:not(.workspace-intro-grid) p {
+  color: var(--studio-muted) !important;
+  font-size: 11px;
+}
+
+.admin-theme-wrapper .admin-main :is(.dashstack-card, .doit-data-table, .doit-table-toolbar, .studio-card, .architect-card, .app-page-title) {
+  background: var(--studio-surface) !important;
+  border: 1px solid var(--studio-border) !important;
+  border-radius: var(--studio-radius) !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .16) !important;
+}
+
+.admin-theme-wrapper .admin-main :is(.studio-card, .architect-card) {
+  overflow: hidden;
+}
+
+.admin-theme-wrapper .admin-main :is(.studio-card-header, .app-page-title, .doit-table-toolbar) {
+  border-color: var(--studio-border) !important;
+  background: var(--studio-raised) !important;
+}
+
+.admin-theme-wrapper .admin-main :is(.studio-card-body, .page-title-wrapper) {
+  color: var(--studio-text);
+}
+
+.admin-theme-wrapper .admin-main :is(table thead tr, .table-header, .data-table-header) {
+  background: var(--studio-raised) !important;
+  border-color: var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-main table th {
+  color: var(--studio-muted) !important;
+  font-size: 9px !important;
+  letter-spacing: .12em;
+  font-weight: 800;
+}
+
+.admin-theme-wrapper .admin-main table td {
+  color: var(--studio-text);
+  border-color: var(--studio-border) !important;
+}
+
+.admin-theme-wrapper .admin-main table tbody tr:hover {
+  background: color-mix(in srgb, var(--studio-brand) 5%, var(--studio-surface)) !important;
+}
+
+.admin-theme-wrapper .admin-main :is(input, textarea, select) {
+  min-height: 40px;
+  background: var(--studio-raised) !important;
+  color: var(--studio-text) !important;
+  border: 1px solid var(--studio-border) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-main :is(input, textarea, select):focus {
+  border-color: var(--studio-brand) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--studio-brand) 16%, transparent) !important;
+}
+
+.admin-theme-wrapper .admin-main :is(button, a).btn-oio-pill,
+.admin-theme-wrapper .admin-main :is(button, a).btn-studio-primary {
+  background: var(--studio-brand-strong) !important;
+  border: 1px solid color-mix(in srgb, var(--studio-brand) 70%, #fff 0%) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-main :is(button, a).btn-oio-pill:hover,
+.admin-theme-wrapper .admin-main :is(button, a).btn-studio-primary:hover {
+  background: var(--studio-brand) !important;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--studio-brand) 24%, transparent) !important;
+}
+
+.admin-theme-wrapper .admin-main :is(button, a)[class*="bg-gradient-to-r"] {
+  background: var(--studio-brand-strong) !important;
+  border: 1px solid var(--studio-brand) !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-main :is(button, a)[class*="bg-gradient-to-r"]:hover {
+  background: var(--studio-brand) !important;
+}
+
+.admin-theme-wrapper .admin-main button[class*="bg-violet-600"] {
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-main .rounded-full.btn-oio-pill,
+.admin-theme-wrapper .admin-main .rounded-full.btn-studio-primary {
+  border-radius: 8px !important;
+}
+
+.admin-theme-wrapper .admin-main :is(.badge-emerald, .badge-amber, .badge-indigo, .badge-rose) {
+  border-radius: 6px;
+  padding: 4px 8px;
+  letter-spacing: .04em;
+}
+
+.admin-theme-wrapper .admin-modal-drawer {
+  background: var(--studio-surface) !important;
+  color: var(--studio-text) !important;
+  border-color: var(--studio-border) !important;
+  box-shadow: -18px 0 60px rgb(0 0 0 / .28) !important;
+}
+
+.admin-theme-wrapper .admin-modal-drawer :is(input, textarea, select) {
+  background: var(--studio-raised) !important;
+  color: var(--studio-text) !important;
+  border-color: var(--studio-border) !important;
+}
+
+@media (max-width: 900px) {
+  .admin-theme-wrapper .admin-main { padding: 22px 20px !important; }
+  .admin-theme-wrapper .admin-topbar { padding-inline: 16px !important; }
+}
+
+@media (max-width: 639px) {
+  .admin-theme-wrapper .admin-main { padding: 18px 14px !important; }
+  .admin-theme-wrapper .admin-topbar { height: 60px !important; padding-inline: 12px !important; }
+  .admin-theme-wrapper .admin-main > div:first-child:not(.workspace-intro-grid) {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .admin-theme-wrapper .admin-main > div:first-child:not(.workspace-intro-grid) h1 {
+    font-size: 1.35rem !important;
+  }
+}

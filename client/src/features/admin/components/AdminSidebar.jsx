@@ -33,7 +33,7 @@ import {
 
 const NAV_SECTIONS = [
   {
-    title: 'OVERVIEW',
+    title: 'WORKSPACE',
     items: [
       { to: '/management/dashboard', label: 'Studio Dashboard', icon: LayoutDashboard },
       { to: '/management/profile', label: 'Admin Profile', icon: UserCheck },
@@ -41,7 +41,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    title: 'MEDIA CATALOG',
+    title: 'CONTENT',
     items: [
       { to: '/management/movies', label: 'Movies', icon: Film, permission: 'manage_movies' },
       { to: '/management/dramas', label: 'Dramas & TV', icon: Tv, permission: 'manage_dramas' },
@@ -51,7 +51,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    title: 'STUDIO & SYSTEM',
+    title: 'OPERATIONS',
     items: [
       { to: '/management/users', label: 'Community Members', icon: Users, permission: 'manage_users' },
       { to: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles, permission: 'approve_subtitles' },
