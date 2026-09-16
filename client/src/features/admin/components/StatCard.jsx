@@ -7,22 +7,22 @@ import { ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 // KSubZone Frosted Soft-Tinted Squircle Schemes (Matching 70x70 Reference Image)
 const SCHEMES = {
   purple: {
-    bg: 'bg-[#2563EB]/10 dark:bg-[#2563EB]/20',
-    text: 'text-[#2563EB] dark:text-[#93C5FD]',
-    border: 'border-[#2563EB]/20',
-    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(37,99,235,0.18)]',
+    bg: 'bg-[#9E57F6]/10 dark:bg-[#9E57F6]/20',
+    text: 'text-[#9E57F6] dark:text-[#C495FD]',
+    border: 'border-[#9E57F6]/20',
+    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(158,87,246,0.18)]',
   },
   violet: {
-    bg: 'bg-[#14B8A6]/10 dark:bg-[#14B8A6]/20',
-    text: 'text-[#14B8A6] dark:text-[#5EEAD4]',
-    border: 'border-[#14B8A6]/20',
-    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(20,184,166,0.18)]',
+    bg: 'bg-[#9E57F6]/10 dark:bg-[#9E57F6]/20',
+    text: 'text-[#9E57F6] dark:text-[#C495FD]',
+    border: 'border-[#9E57F6]/20',
+    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(158,87,246,0.18)]',
   },
   blue: {
-    bg: 'bg-[#2563EB]/10 dark:bg-[#2563EB]/20',
-    text: 'text-[#2563EB] dark:text-[#93C5FD]',
-    border: 'border-[#2563EB]/20',
-    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(37,99,235,0.18)]',
+    bg: 'bg-[#9E57F6]/10 dark:bg-[#9E57F6]/20',
+    text: 'text-[#9E57F6] dark:text-[#C495FD]',
+    border: 'border-[#9E57F6]/20',
+    hoverGlow: 'group-hover:shadow-[0_10px_25px_rgba(158,87,246,0.18)]',
   },
   green: {
     bg: 'bg-[#10B981]/10 dark:bg-[#10B981]/20',
@@ -88,7 +88,7 @@ export default function StatCard({
     // Secondary compact card (for quick launcher or secondary metrics)
     if (variant === 'secondary') {
       return (
-        <div className="dashstack-card relative flex items-center justify-between gap-3.5 p-4 sm:p-5 rounded-[16px] bg-white/85 dark:bg-[#12161F]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] hover:-translate-y-1 hover:border-[#2563EB]/30 transition-all duration-300 group">
+        <div className="dashstack-card relative flex items-center justify-between gap-3.5 p-4 sm:p-5 rounded-[16px] bg-white/85 dark:bg-[#12161F]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.03)] hover:-translate-y-1 hover:border-[#9E57F6]/30 transition-all duration-300 group">
           <div className="min-w-0 space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500 truncate">
               {label}
@@ -109,7 +109,7 @@ export default function StatCard({
 
     // ── Primary Stat Card (Frosted Glass with 70x70 Soft Squircle Icon Box) ──
     return (
-      <div className="dashstack-card relative flex items-center justify-between gap-4 p-6 rounded-[28px] sm:rounded-[32px] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.08] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.03)] hover:-translate-y-1.5 hover:shadow-[0_20px_35px_-8px_rgba(124,58,237,0.08)] hover:border-[#7C3AED]/30 transition-all duration-300 group min-h-[142px]">
+      <div className="dashstack-card relative flex items-center justify-between gap-4 p-6 rounded-[28px] sm:rounded-[32px] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.08] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.03)] hover:-translate-y-1.5 hover:shadow-[0_20px_35px_-8px_rgba(158,87,246,0.12)] hover:border-[#9E57F6]/30 transition-all duration-300 group min-h-[142px]">
         {/* Left Side: Label, Big Bold Value, Trend */}
         <div className="flex flex-col justify-between h-full min-w-0 flex-1 space-y-2">
           <div>

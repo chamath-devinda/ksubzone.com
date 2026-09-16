@@ -12,7 +12,7 @@ export function ReportExports({ title, rows, disabled = false }) {
       <button
         type="button"
         disabled={disabled}
-        className="btn-studio-pill text-[11px] h-7 px-3 rounded-[9999px] hover:text-[#2563EB]"
+        className="btn-studio-pill text-[11px] h-7 px-3 rounded-[9999px] hover:text-[#9E57F6]"
         onClick={() => downloadCsv(`${title}.csv`, rows)}
       >
         CSV
@@ -20,7 +20,7 @@ export function ReportExports({ title, rows, disabled = false }) {
       <button
         type="button"
         disabled={disabled}
-        className="btn-studio-pill text-[11px] h-7 px-3 rounded-[9999px] hover:text-[#2563EB]"
+        className="btn-studio-pill text-[11px] h-7 px-3 rounded-[9999px] hover:text-[#9E57F6]"
         onClick={() => downloadPng(`${title}.png`, title, rows)}
       >
         PNG
@@ -100,7 +100,7 @@ export default function DashboardReports({ stats }) {
         }
       >
         {loading ? (
-          <div role="status" className="h-36 flex items-center justify-center animate-pulse rounded-[16px] bg-[#2563EB]/5 text-xs text-[var(--studio-muted)]">
+          <div role="status" className="h-36 flex items-center justify-center animate-pulse rounded-[16px] bg-[#9E57F6]/5 text-xs text-[var(--studio-muted)]">
             Fetching Adsterra telemetry…
           </div>
         ) : error || !revenue?.summary ? (
@@ -149,7 +149,7 @@ export default function DashboardReports({ stats }) {
                   {revenue.daily.map((day) => (
                     <div
                       key={day.date}
-                      className="flex-1 bg-gradient-to-t from-[#2563EB] to-[#14B8A6] rounded-t-[4px] hover:brightness-125 transition cursor-pointer"
+                      className="flex-1 bg-gradient-to-t from-[#9E57F6] to-[#14B8A6] rounded-t-[4px] hover:brightness-125 transition cursor-pointer"
                       style={{ height: `${Math.max(4, (day.revenue / peak) * 100)}%` }}
                       title={`${day.date}: USD ${day.revenue}`}
                     />
@@ -171,7 +171,7 @@ export default function DashboardReports({ stats }) {
           <div className="space-y-4">
             {distribution.map((item, idx) => {
               const pct = total ? ((Number(item.count || 0) / total) * 100).toFixed(1) : 0;
-              const colors = ['bg-[#2563EB]', 'bg-[#14B8A6]', 'bg-[#3B82F6]', 'bg-[#10B981]', 'bg-[#F59E0B]'];
+              const colors = ['bg-[#9E57F6]', 'bg-[#14B8A6]', 'bg-[#8B3DEB]', 'bg-[#10B981]', 'bg-[#F59E0B]'];
               const barColor = colors[idx % colors.length];
 
               return (
@@ -225,7 +225,7 @@ export default function DashboardReports({ stats }) {
             {stats.latestDownloads.map((item) => (
               <li key={item._id} className="py-3 flex items-center justify-between gap-4 text-xs">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <DownloadCloud className="h-4 w-4 text-[#2563EB] flex-shrink-0" />
+                  <DownloadCloud className="h-4 w-4 text-[#9E57F6] flex-shrink-0" />
                   <span className="font-semibold text-[var(--studio-text)] truncate">
                     {item.title || item.fileName || item.filename || 'Sinhala Subtitle Package'}
                   </span>

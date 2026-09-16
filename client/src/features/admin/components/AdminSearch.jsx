@@ -87,8 +87,8 @@ export default function AdminSearch() {
       <p role="status" className="text-sm text-slate-500 dark:text-slate-400">{status === 'loading' ? 'Searching…' : status === 'error' ? 'Search unavailable. Change the query to retry.' : status === 'ready' && !paletteItems.length ? 'No matching commands or content.' : status === 'idle' ? 'Jump to a module or search content you have permission to manage.' : `${paletteItems.length} matches`}</p>
       <ul id="admin-search-results" role="listbox" aria-label="Search results" className="space-y-1">
         {paletteItems.map((item, index) => <li key={`${item.type}-${item.id}`} id={`admin-result-${index}`} role="option" aria-selected={index === active}>
-          <button tabIndex={-1} type="button" onClick={() => choose(item)} className={`w-full rounded-[12px] p-3 text-left transition ${index === active ? 'bg-[#2563EB]/20 text-white' : 'hover:bg-[#2563EB]/10 text-slate-200'}`}>
-            <span className="block text-[11px] font-bold text-[#2563EB] uppercase tracking-wider">{item.type}</span>
+          <button tabIndex={-1} type="button" onClick={() => choose(item)} className={`w-full rounded-[12px] p-3 text-left transition ${index === active ? 'bg-[#9E57F6]/20 text-white' : 'hover:bg-[#9E57F6]/10 text-slate-200'}`}>
+            <span className="block text-[11px] font-bold text-[#9E57F6] uppercase tracking-wider">{item.type}</span>
             <span className="block truncate text-sm font-medium mt-0.5">{item.title}</span>
           </button>
         </li>)}

@@ -197,7 +197,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="admin-shell min-h-screen flex flex-col lg:flex-row bg-[#0B0E14] text-[#F5F6F8]">
+      <div className="admin-shell min-h-screen flex flex-col lg:flex-row bg-[var(--studio-bg)] text-[#F5F6F8]">
         <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
                               onClick={() => setTimeRange(range)}
                               className={`px-3 py-1 text-xs font-bold rounded-[9999px] transition ${
                                 timeRange === range
-                                  ? 'bg-[#2563EB] text-white shadow-sm'
+                                  ? 'bg-[#9E57F6] text-white shadow-sm'
                                   : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
                               }`}
                             >
@@ -338,7 +338,7 @@ export default function AdminDashboard() {
                                   {log.date}: {value.toLocaleString()} views
                                 </div>
                                 <div
-                                  className="w-full max-w-10 rounded-t-[6px] bg-gradient-to-t from-[#2563EB] to-[#14B8A6] group-hover:brightness-125 transition-all duration-200"
+                                  className="w-full max-w-10 rounded-t-[6px] bg-gradient-to-t from-[#9E57F6] to-[#14B8A6] group-hover:brightness-125 transition-all duration-200"
                                   style={{ height: `${height}%` }}
                                 />
                                 <span className="text-[9px] font-medium text-[var(--studio-muted)] truncate max-w-full">
@@ -394,7 +394,7 @@ export default function AdminDashboard() {
                       {/* Subtitles */}
                       <div className="p-3.5 rounded-[12px] bg-[var(--studio-raised)] border border-[var(--studio-border)] flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-[12px] bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center">
+                          <div className="h-9 w-9 rounded-[12px] bg-[#9E57F6]/15 text-[#9E57F6] flex items-center justify-center">
                             <Languages className="h-4.5 w-4.5" />
                           </div>
                           <div>
@@ -454,9 +454,9 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-2 gap-2">
                       <Link
                         href="/management/import"
-                        className="btn-studio-pill justify-center text-xs h-9 hover:border-[#2563EB]"
+                        className="btn-studio-pill justify-center text-xs h-9 hover:border-[#9E57F6]"
                       >
-                        <Sparkles className="h-3.5 w-3.5 text-[#2563EB]" />
+                        <Sparkles className="h-3.5 w-3.5 text-[#9E57F6]" />
                         <span>TMDB Import</span>
                       </Link>
 
@@ -523,7 +523,7 @@ export default function AdminDashboard() {
                           onClick={() => setActiveDeck(deck.id)}
                           className={`flex items-center gap-2 px-4 py-1.5 rounded-[9999px] text-xs font-bold transition-all ${
                             isActive
-                              ? 'bg-[#2563EB] text-white shadow-sm'
+                              ? 'bg-[#9E57F6] text-white shadow-sm'
                               : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
                           }`}
                         >
@@ -549,7 +549,7 @@ export default function AdminDashboard() {
                         <div className="studio-card-header flex items-center justify-between flex-wrap gap-2">
                           <div>
                             <h3 className="text-sm font-bold text-[var(--studio-text)] flex items-center gap-2">
-                              <Tv className="h-4 w-4 text-[#2563EB]" />
+                              <Tv className="h-4 w-4 text-[#9E57F6]" />
                               Drama Episode Broadcast Radar
                             </h3>
                             <p className="text-xs text-[var(--studio-muted)] mt-0.5">
@@ -568,7 +568,7 @@ export default function AdminDashboard() {
                                 type="button"
                                 onClick={() => setQueueTab(id)}
                                 className={`px-2.5 py-0.5 text-[11px] font-bold rounded-[9999px] transition ${
-                                  queueTab === id ? 'bg-[#2563EB] text-white' : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
+                                  queueTab === id ? 'bg-[#9E57F6] text-white' : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
                                 }`}
                               >
                                 {label}
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
                                   <tr key={episode._id || idx} className="hover:bg-[var(--studio-raised)]/60 transition">
                                     <td className="py-3.5 px-5">
                                       <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-[12px] bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center font-bold flex-shrink-0">
+                                        <div className="h-8 w-8 rounded-[12px] bg-[#9E57F6]/15 text-[#9E57F6] flex items-center justify-center font-bold flex-shrink-0">
                                           <Clapperboard className="h-4 w-4" />
                                         </div>
                                         <div className="min-w-0">
@@ -718,7 +718,7 @@ export default function AdminDashboard() {
 
                       <div className="p-4 border-t border-[var(--studio-border)] flex items-center justify-between text-xs text-[var(--studio-muted)]">
                         <span>Showing {visibleEpisodes.length} episodes</span>
-                        <Link href="/management/dramas" className="text-[#2563EB] font-bold hover:underline">
+                        <Link href="/management/dramas" className="text-[#9E57F6] font-bold hover:underline">
                           Open Dramas Manager →
                         </Link>
                       </div>
@@ -737,7 +737,7 @@ export default function AdminDashboard() {
                           </div>
                           <Link
                             href="/management/subtitles"
-                            className="text-xs font-bold text-[#2563EB] hover:underline"
+                            className="text-xs font-bold text-[#9E57F6] hover:underline"
                           >
                             View All ({pendingSubtitles || pendingQueue.length}) →
                           </Link>
@@ -748,7 +748,7 @@ export default function AdminDashboard() {
                             pendingQueue.map((item) => (
                               <div
                                 key={item.id}
-                                className="p-3.5 rounded-[12px] bg-[var(--studio-raised)]/60 border border-[var(--studio-border)] flex items-center justify-between gap-3 hover:border-[#2563EB]/40 transition"
+                                className="p-3.5 rounded-[12px] bg-[var(--studio-raised)]/60 border border-[var(--studio-border)] flex items-center justify-between gap-3 hover:border-[#9E57F6]/40 transition"
                               >
                                 <div className="min-w-0">
                                   <p className="text-xs font-bold text-[var(--studio-text)] truncate">{item.title}</p>
@@ -758,7 +758,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <Link
                                   href="/management/subtitles"
-                                  className="btn-studio-pill text-[11px] py-1 px-3 rounded-[9999px] flex-shrink-0 hover:text-[#2563EB]"
+                                  className="btn-studio-pill text-[11px] py-1 px-3 rounded-[9999px] flex-shrink-0 hover:text-[#9E57F6]"
                                 >
                                   Review
                                 </Link>
@@ -797,7 +797,7 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="p-3.5 rounded-[12px] bg-[var(--studio-raised)]/60 border border-[var(--studio-border)]">
                           <div className="flex items-center gap-2 text-xs font-bold text-[var(--studio-muted)] mb-1">
-                            <Database className="h-4 w-4 text-[#2563EB]" />
+                            <Database className="h-4 w-4 text-[#9E57F6]" />
                             <span>Primary Database</span>
                           </div>
                           <p className="text-base font-black text-[var(--studio-text)]">{health.dbDriver || 'PostgreSQL / MySQL'}</p>
@@ -847,7 +847,7 @@ export default function AdminDashboard() {
                       <div className="studio-card-header flex items-center justify-between flex-wrap gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-[var(--studio-text)] flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4 text-[#2563EB]" />
+                            <BarChart3 className="h-4 w-4 text-[#9E57F6]" />
                             Top Performing Media Catalog
                           </h3>
                           <p className="text-xs text-[var(--studio-muted)] mt-0.5">Ranked by streaming views and subtitle downloads</p>
@@ -861,7 +861,7 @@ export default function AdminDashboard() {
                               onClick={() => setActiveCategoryTab(tab)}
                               className={`px-3 py-0.5 text-[11px] font-bold rounded-[9999px] capitalize transition ${
                                 activeCategoryTab === tab
-                                  ? 'bg-[#2563EB] text-white'
+                                  ? 'bg-[#9E57F6] text-white'
                                   : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
                               }`}
                             >
@@ -886,7 +886,7 @@ export default function AdminDashboard() {
                                   <div className="min-w-0">
                                     <p className="text-xs font-bold text-[var(--studio-text)] truncate">{item.title}</p>
                                     <div className="flex items-center gap-2 text-[10px] text-[var(--studio-muted)] mt-0.5">
-                                      <span className="uppercase font-bold text-[#2563EB]">{item.type}</span>
+                                      <span className="uppercase font-bold text-[#9E57F6]">{item.type}</span>
                                       <span>•</span>
                                       <span className="text-[#F59E0B] font-semibold flex items-center gap-0.5">
                                         <Star className="h-3 w-3 fill-[#F59E0B]" />
@@ -958,7 +958,7 @@ export default function AdminDashboard() {
 
                       <div className="pt-4 border-t border-[var(--studio-border)] mt-4 flex items-center justify-between text-xs">
                         <span className="text-[var(--studio-muted)]">Sitemaps updated hourly</span>
-                        <Link href="/management/seo" className="text-[#2563EB] font-bold hover:underline">
+                        <Link href="/management/seo" className="text-[#9E57F6] font-bold hover:underline">
                           SEO Console →
                         </Link>
                       </div>
