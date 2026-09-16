@@ -676,6 +676,16 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::getMissingSubtitleAlerts'
     ]],
+    ['GET', '/api/admin/notifications', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('view_analytics'); },
+        'Controllers\AdminNotificationController::list'
+    ]],
+    ['PUT', '/api/admin/notifications/([^/]+)/read', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('view_analytics'); },
+        'Controllers\AdminNotificationController::markRead'
+    ]],
     ['GET', '/api/admin/dramas/([^/]+)/structure', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
@@ -730,6 +740,11 @@ $routes = [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::editEpisode'
+    ]],
+    ['PUT', '/api/admin/episodes/([^/]+)/release', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
+        'Controllers\DramaController::releaseEpisode'
     ]],
     ['DELETE', '/api/admin/episodes/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',

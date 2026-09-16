@@ -416,6 +416,14 @@ class AuthController {
             return;
         }
 
+        $role = is_array($admin['role'] ?? null) ? $admin['role'] : [];
+        $permissions = [];
+        foreach (($role['permissions'] ?? []) as $permission) {
+            if (is_array($permission) && !empty($permission['name'])) {
+                $permissions[] = $permission['name'];
+            }
+        }
+
         header('Content-Type: application/json');
         echo json_encode([
             'id' => $admin['_id'],
@@ -424,7 +432,9 @@ class AuthController {
             'avatar' => $admin['avatar'] ?? '',
             'displayName' => $admin['displayName'] ?? $admin['username'],
             'bio' => $admin['bio'] ?? '',
-            'role' => $admin['role']['name'] ?? 'Admin',
+            'role' => $role['name'] ?? (is_string($admin['role'] ?? null) ? $admin['role'] : 'Admin'),
+            'permissions' => array_values(array_unique($permissions)),
+            'isSuperAdmin' => ($role['name'] ?? '') === 'SuperAdmin',
             'twoFactorEnabled' => !empty($admin['twoFactorEnabled']),
             'lastLogin' => $admin['lastLogin'] ?? null,
             'createdAt' => $admin['createdAt'] ?? null

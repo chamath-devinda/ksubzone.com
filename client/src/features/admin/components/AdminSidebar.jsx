@@ -35,28 +35,28 @@ const NAV_SECTIONS = [
     items: [
       { to: '/management/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/management/profile', label: 'Admin Profile', icon: UserCheck, badge: 'PROFILE' },
-      { to: '/management/import', label: 'TMDB Import', icon: Sparkles, badge: 'AUTO' },
+      { to: '/management/import', label: 'TMDB Import', icon: Sparkles, badge: 'AUTO', permission: 'manage_movies' },
     ],
   },
   {
     title: 'CONTENT ENGINE',
     items: [
-      { to: '/management/movies', label: 'Movies', icon: Film },
-      { to: '/management/dramas', label: 'Dramas & TV', icon: Tv },
-      { to: '/management/articles', label: 'Articles', icon: BookOpenText },
-      { to: '/management/subtitles', label: 'Subtitles', icon: Languages },
-      { to: '/management/comments', label: 'Comments', icon: MessageSquareText },
+      { to: '/management/movies', label: 'Movies', icon: Film, permission: 'manage_movies' },
+      { to: '/management/dramas', label: 'Dramas & TV', icon: Tv, permission: 'manage_dramas' },
+      { to: '/management/articles', label: 'Articles', icon: BookOpenText, permission: 'manage_articles' },
+      { to: '/management/subtitles', label: 'Subtitles', icon: Languages, permission: 'approve_subtitles' },
+      { to: '/management/comments', label: 'Comments', icon: MessageSquareText, permission: 'manage_comments' },
     ],
   },
   {
     title: 'SYSTEM & TOOLS',
     items: [
-      { to: '/management/users', label: 'Members', icon: Users },
-      { to: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles },
-      { to: '/management/srt-cleaner', label: 'SRT Cleaner', icon: Languages },
-      { to: '/management/settings', label: 'Site Builder', icon: Settings2 },
-      { to: '/management/database', label: 'Database', icon: Database },
-      { to: '/management/seo', label: 'SEO & Config', icon: Server },
+      { to: '/management/users', label: 'Members', icon: Users, permission: 'manage_users' },
+      { to: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles, permission: 'approve_subtitles' },
+      { to: '/management/srt-cleaner', label: 'SRT Cleaner', icon: Languages, permission: 'approve_subtitles' },
+      { to: '/management/settings', label: 'Site Builder', icon: Settings2, permission: 'manage_settings' },
+      { to: '/management/database', label: 'Database', icon: Database, permission: 'manage_settings' },
+      { to: '/management/seo', label: 'SEO & Config', icon: Server, permission: 'manage_settings' },
     ],
   },
 ];
@@ -93,6 +93,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
   const adminInitial = adminName.charAt(0).toUpperCase();
   const adminRoleName = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Administrator'));
   const avatarUrl = admin?.avatar;
+  const permissions = Array.isArray(admin?.permissions) ? admin.permissions : [];
+  const isSuperAdmin = admin?.isSuperAdmin || adminRoleName === 'SuperAdmin';
+  const canSee = (item) => !item.permission || isSuperAdmin || permissions.includes(item.permission);
 
   return (
     <>
@@ -178,14 +181,17 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
           className="admin-custom-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-4 min-h-0"
           aria-label="Main navigation"
         >
-          {NAV_SECTIONS.map((section, sIdx) => (
+          {NAV_SECTIONS.map((section, sIdx) => {
+            const visibleItems = section.items.filter(canSee);
+            if (!visibleItems.length) return null;
+            return (
             <div key={sIdx} className="space-y-1">
               {!collapsed && (
                 <div className="px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                   {section.title}
                 </div>
               )}
-              {section.items.map((item) => {
+              {visibleItems.map((item) => {
                 const Icon = item.icon;
                 const isActive =
                   pathname === item.to ||
@@ -237,7 +243,8 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                 );
               })}
             </div>
-          ))}
+            );
+          })}
         </nav>
 
         {/* ── Bottom Section: Red-Tinted Logout & Profile Pill ── */}

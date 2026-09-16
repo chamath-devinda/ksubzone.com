@@ -847,9 +847,31 @@ class SubtitleController {
         $dramaMap = []; foreach ($dramas as $d) $dramaMap[(string)$d['_id']] = $d;
         $episodeMap = []; foreach ($episodes as $e) $episodeMap[(string)$e['_id']] = $e;
 
+        // Resolve uploader references in batches. The moderation queue can
+        // contain hundreds of rows; one database query per row caused the
+        // admin page to hit PHP's 30-second execution limit.
+        $uploaderIds = [];
+        $adminUploaderIds = [];
+        foreach ($subtitles as $subtitle) {
+            if (!empty($subtitle['uploader'])) $uploaderIds[] = $subtitle['uploader'];
+            if (!empty($subtitle['adminUploader'])) $adminUploaderIds[] = $subtitle['adminUploader'];
+        }
+        $uploaderMap = [];
+        if (!empty($uploaderIds)) {
+            foreach ($db->find('users', ['_id' => ['$in' => array_values(array_unique($uploaderIds))]]) as $uploader) {
+                $uploaderMap[(string)$uploader['_id']] = $uploader;
+            }
+        }
+        $adminUploaderMap = [];
+        if (!empty($adminUploaderIds)) {
+            foreach ($db->find('admins', ['_id' => ['$in' => array_values(array_unique($adminUploaderIds))]]) as $adminUploader) {
+                $adminUploaderMap[(string)$adminUploader['_id']] = $adminUploader;
+            }
+        }
+
         foreach ($subtitles as &$sub) {
             $uploaderId = $sub['uploader'] ?? null;
-            $uploader = $uploaderId ? $db->findOne('users', ['_id' => $uploaderId]) : null;
+            $uploader = $uploaderId ? ($uploaderMap[(string)$uploaderId] ?? null) : null;
             $sub['uploader'] = $uploader ? [
                 '_id' => $uploader['_id'],
                 'username' => $uploader['username'],
@@ -857,7 +879,7 @@ class SubtitleController {
             ] : null;
 
             $adminUploaderId = $sub['adminUploader'] ?? null;
-            $adminUploader = $adminUploaderId ? $db->findOne('admins', ['_id' => $adminUploaderId]) : null;
+            $adminUploader = $adminUploaderId ? ($adminUploaderMap[(string)$adminUploaderId] ?? null) : null;
             $sub['adminUploader'] = $adminUploader ? [
                 '_id' => $adminUploader['_id'],
                 'username' => $adminUploader['username'] ?? $adminUploader['name'] ?? 'Admin',

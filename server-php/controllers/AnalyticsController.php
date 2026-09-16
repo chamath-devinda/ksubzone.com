@@ -152,6 +152,10 @@ class AnalyticsController {
             'serverTime' => date('Y-m-d H:i:s'),
             'phpVersion' => PHP_VERSION,
             'dbStatus'   => 'ok',
+            // A successful dashboard response is a real runtime check for the
+            // authenticated API path, so the UI can distinguish it from an
+            // unreported/unknown health metric.
+            'apiStatus'  => 'ok',
             'timezone'   => date_default_timezone_get()
         ];
 
@@ -329,7 +333,9 @@ class AnalyticsController {
                 'totalSubtitles' => $totalSubtitles,
                 'r2Count' => $db->count('subtitles', ['storageProvider' => 'r2']),
                 'supabaseCount' => max(0, $totalSubtitles - $db->count('subtitles', ['storageProvider' => 'r2'])),
-                'migrationProgressPercent' => $totalSubtitles > 0 ? round(($db->count('subtitles', ['storageProvider' => 'r2']) / $totalSubtitles) * 100, 1) : 100
+                'migrationProgressPercent' => $totalSubtitles > 0 ? round(($db->count('subtitles', ['storageProvider' => 'r2']) / $totalSubtitles) * 100, 1) : 100,
+                'edgeCacheStatus' => getenv('CDN_EDGE_CACHE_STATUS') ?: null,
+                'edgeCacheProvider' => getenv('CDN_EDGE_CACHE_PROVIDER') ?: null
             ],
             'systemHealth' => $systemHealth
         ];

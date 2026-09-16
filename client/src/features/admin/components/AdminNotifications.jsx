@@ -6,7 +6,7 @@ import Link from 'next/link';
 import apiClient from '@/services/api/apiClient';
 import { Bell, X, Languages, RefreshCw, AlertCircle } from 'lucide-react';
 
-const CACHE_KEY = 'admin_notif_v2';
+const CACHE_KEY = 'admin_notif_v3';
 const CACHE_TTL = 5 * 60 * 1000;
 
 function getCache() {
@@ -30,7 +30,7 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [readIds, setReadIds] = useState([]);
-  const unread = alerts.filter(alert => !readIds.includes(alert.id));
+  const unread = alerts.filter(alert => !alert.isRead && !readIds.includes(alert.id));
   const [toasts, setToasts] = useState([]);
   const [mounted, setMounted] = useState(false);
   const [coords, setCoords] = useState({ top: 80, left: 16 });
@@ -70,11 +70,34 @@ export default function AdminNotifications() {
     setLoading(true);
     setError('');
     try {
-      const res = await apiClient.get('/api/admin/dramas/missing-subtitles?limit=50');
-      const missing = Array.isArray(res.data?.alerts) ? res.data.alerts : [];
+      const [adminRes, missingRes] = await Promise.all([
+        apiClient.get('/api/admin/notifications'),
+        apiClient.get('/api/admin/dramas/missing-subtitles?limit=50'),
+      ]);
+      const databaseItems = Array.isArray(adminRes.data?.notifications)
+        ? adminRes.data.notifications
+        : [];
+      const missing = Array.isArray(missingRes.data?.alerts) ? missingRes.data.alerts : [];
+      const derivedItems = missing.map((alert) => ({
+        id: `missing-subtitle:${alert.id}`,
+        title: 'Subtitle coverage alert',
+        message: `${alert.dramaTitle} · S${alert.season} E${alert.episode} is missing an approved Sinhala subtitle.`,
+        href: '/management/subtitles',
+        type: 'missing_subtitle',
+        isRead: false,
+        createdAt: alert.airDate,
+        source: 'derived',
+        poster: alert.poster,
+        dramaTitle: alert.dramaTitle,
+        season: alert.season,
+        episode: alert.episode,
+        episodeTitle: alert.episodeTitle,
+      }));
+      const combined = [...databaseItems, ...derivedItems]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-      setAlerts(missing);
-      setCache(missing);
+      setAlerts(combined);
+      setCache(combined);
 
     } catch (err) {
       setError('Subtitle alerts are unavailable. Please retry.');
@@ -83,6 +106,24 @@ export default function AdminNotifications() {
       setLoading(false);
     }
   }, []);
+
+  const markRead = useCallback(async (alert) => {
+    if (alert.isRead || readIds.includes(alert.id)) return;
+    if (alert.source === 'database') {
+      try {
+        await apiClient.put(`/api/admin/notifications/${alert.id}/read`);
+      } catch (_) {
+        setError('Could not mark this notification as read.');
+        return;
+      }
+    }
+    setReadIds((current) => {
+      const next = current.includes(alert.id) ? current : [...current, alert.id];
+      try { sessionStorage.setItem('admin-alerts-read', JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+    setAlerts((current) => current.map((item) => item.id === alert.id ? { ...item, isRead: true } : item));
+  }, [readIds]);
 
   useEffect(() => {
     fetchMissing();
@@ -135,14 +176,14 @@ export default function AdminNotifications() {
             <div>
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-brand-secondary" />
-                <p className="text-xs font-black text-white uppercase tracking-wider">Subtitle Alerts</p>
+                <p className="text-xs font-black text-white uppercase tracking-wider">Notifications</p>
                 {alerts.length > 0 && (
                   <span className="px-1.5 py-0.5 rounded-lg bg-brand-secondary/20 text-brand-secondary text-[9px] font-black uppercase tracking-wider">
                     {alerts.length} missing
                   </span>
                 )}
               </div>
-              <p className="text-[9px] text-slate-400 mt-0.5 ml-6 font-medium">Episodes without Sinhala subtitles</p>
+              <p className="text-[9px] text-slate-400 mt-0.5 ml-6 font-medium">Operational alerts and review tasks</p>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -163,10 +204,9 @@ export default function AdminNotifications() {
             </div>
           </div>
 
-          <button type="button" className="p-3 text-xs text-violet-400" onClick={() => {
-            const ids = alerts.map(alert => alert.id); setReadIds(ids);
-            try { sessionStorage.setItem('admin-alerts-read', JSON.stringify(ids)); } catch { /* Session-only state remains available. */ }
-          }}>Mark all as read on this device</button>
+          <button type="button" className="p-3 text-xs text-violet-400" onClick={async () => {
+            await Promise.all(unread.map(markRead));
+          }}>Mark all as read</button>
           {error && <p role="alert" className="p-4 text-sm text-amber-400">{error}</p>}
           {/* List */}
           <div className="overflow-y-auto flex-grow">
@@ -183,7 +223,7 @@ export default function AdminNotifications() {
             ) : (
               <div className="divide-y divide-white/5">
                 {alerts.map((alert) => (
-                  <div key={alert.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] hover:border-l-2 hover:border-brand-primary pl-4 hover:pl-3.5 transition-all duration-200">
+                  <div key={alert.id} className={`flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-all duration-200 ${!alert.isRead && !readIds.includes(alert.id) ? 'bg-white/[0.025]' : 'opacity-70'}`}>
                     {/* Poster */}
                     {alert.poster ? (
                       <img
@@ -200,29 +240,31 @@ export default function AdminNotifications() {
                     {/* Info */}
                     <div className="flex-grow min-w-0">
                       <p className="text-[11px] font-semibold text-white leading-tight truncate">
-                        {alert.dramaTitle}
+                        {alert.title || alert.dramaTitle}
                       </p>
                       <p className="text-[10px] font-black text-brand-secondary font-mono mt-0.5 tracking-wider uppercase">
-                        Season {alert.season} · Ep {alert.episode}
+                        {alert.season ? `Season ${alert.season} · Ep ${alert.episode}` : (alert.type || 'system notification').replaceAll('_', ' ')}
                       </p>
-                      {alert.episodeTitle && (
+                      {alert.message ? (
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">{alert.message}</p>
+                      ) : alert.episodeTitle && (
                         <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium italic">
                           "{alert.episodeTitle}"
                         </p>
                       )}
                       <span className="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded-md bg-brand-secondary/10 border border-brand-secondary/20 text-brand-secondary text-[8px] font-bold uppercase tracking-wider">
-                        <Languages className="w-2.5 h-2.5" />
-                        No Subtitles
+                      <Languages className="w-2.5 h-2.5" />
+                        {alert.source === 'derived' ? 'No Subtitles' : 'Admin Alert'}
                       </span>
                     </div>
 
                     {/* Action */}
                     <Link
-                      href="/management/subtitles"
-                      onClick={() => setOpen(false)}
+                      href={alert.href || '/management/dashboard'}
+                      onClick={() => { markRead(alert); setOpen(false); }}
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white border border-brand-primary/25 hover:border-transparent text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm"
                     >
-                      Import
+                      Open
                     </Link>
                   </div>
                 ))}

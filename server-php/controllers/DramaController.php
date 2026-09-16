@@ -960,6 +960,34 @@ class DramaController {
         echo json_encode(['message' => 'Episode updated successfully', 'episode' => $updated]);
     }
 
+    public static function releaseEpisode($id) {
+        $db = Database::getInstance();
+        $episode = $db->findOne('episodes', ['_id' => $id]);
+        if (!$episode) {
+            http_response_code(404);
+            echo json_encode(['message' => 'Episode not found']);
+            return;
+        }
+
+        $releasedAt = date('Y-m-d H:i:s');
+        $db->updateOne('episodes', ['_id' => $id], [
+            'releaseStatus' => 'Released',
+            'releasedAt' => $releasedAt,
+            'airDate' => $releasedAt
+        ]);
+        $updated = $db->findOne('episodes', ['_id' => $id]);
+
+        if (!empty($episode['dramaId'])) {
+            self::bumpDramaUpdatedAt($episode['dramaId']);
+            \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);
+        }
+        \Utils\Cache::flush();
+        \Utils\Revalidate::catalog('drama');
+
+        header('Content-Type: application/json');
+        echo json_encode(['message' => 'Episode marked released', 'episode' => $updated]);
+    }
+
     public static function deleteEpisode($id) {
         $db = Database::getInstance();
         $episode = $db->findOne('episodes', ['_id' => $id]);
