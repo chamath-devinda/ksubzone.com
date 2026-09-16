@@ -33,21 +33,24 @@ export default function ManagementLayout({ children }) {
   // SSR guard: Always show initial loading until mounted to prevent hydration mismatches
   if (!hasMounted) {
     return (
-      <div className="h-screen w-screen bg-luxury-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-[3px] border-brand-primary border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen w-screen bg-[#0B0E14] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#9AA3B2] font-medium tracking-wide">Initializing KSubZone Studio...</p>
       </div>
     );
   }
 
   const isAuthorized = !!admin;
 
-  // Show full-screen spinner only if we do NOT have an authorized session yet and auth is loading.
-  // If we already have a cached session (isAuthorized is true), render the dashboard immediately
-  // while the API validates in the background with the top progress bar.
-  if (!isLoginPage && (!isAuthorized && loading)) {
+  // If visiting a protected management route without authorization:
+  // Render clean status screen while session check resolves or redirection to /management/login completes.
+  if (!isLoginPage && !isAuthorized) {
     return (
-      <div className="h-screen w-screen bg-luxury-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-[3px] border-brand-primary border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen w-screen bg-[#0B0E14] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#9AA3B2] font-medium tracking-wide">
+          {loading ? 'Verifying Studio session...' : 'Redirecting to Studio login...'}
+        </p>
       </div>
     );
   }
@@ -57,8 +60,8 @@ export default function ManagementLayout({ children }) {
       <ToastProvider>
         {/* Slim progress bar while auth verifies in background */}
         {!isLoginPage && loading && (
-          <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 overflow-hidden bg-brand-primary/20">
-            <div className="h-full bg-brand-primary" style={{ animation: 'adminBar 1.2s ease-in-out infinite' }} />
+          <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 overflow-hidden bg-[#2563EB]/20">
+            <div className="h-full bg-[#2563EB]" style={{ animation: 'adminBar 1.2s ease-in-out infinite' }} />
           </div>
         )}
         {/* Instant render — no opacity delay */}
