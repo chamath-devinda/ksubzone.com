@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import Link from 'next/link';
 import apiClient from '@/services/api/apiClient';
@@ -10,7 +10,8 @@ import {
   Activity, ArrowUpRight, BarChart3, Globe, Database, Server, Clock,
   Shield, Download, Plus, RefreshCw, ExternalLink, Check, Search,
   Sparkles, ArrowRight, Filter, Zap, FileText, MessageSquare,
-  DollarSign, MousePointerClick, User, WandSparkles, Cloud, ChevronRight
+  DollarSign, MousePointerClick, User, WandSparkles, Cloud, ChevronRight,
+  CalendarClock, Trash2, Send
 } from 'lucide-react';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
@@ -74,6 +75,53 @@ function getFormattedToday() {
   });
 }
 
+function downloadCsv(filename, rows) {
+  const csv = rows.map(row => row.map(value => {
+    const text = String(value ?? '');
+    return `"${text.replace(/"/g, '""')}"`;
+  }).join(',')).join('\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadSvgAsPng(filename, svgElement) {
+  if (!svgElement) return;
+  const source = new XMLSerializer().serializeToString(svgElement);
+  const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    const scale = 2;
+    canvas.width = (svgElement.viewBox.baseVal.width || 700) * scale;
+    canvas.height = (svgElement.viewBox.baseVal.height || 210) * scale;
+    const context = canvas.getContext('2d');
+    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--studio-surface').trim() || '#17171f';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const anchor = document.createElement('a');
+    anchor.download = filename;
+    anchor.href = canvas.toDataURL('image/png');
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+  image.src = url;
+}
+
+function ExportActions({ onCsv, onPng, label = 'Export' }) {
+  return (
+    <div className="flex items-center gap-1" aria-label={`${label} options`}>
+      <button type="button" onClick={onCsv} className="rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-[#7C3AED] transition" title={`Download ${label} as CSV`}>CSV</button>
+      <button type="button" onClick={onPng} className="rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-[#7C3AED] transition" title={`Download ${label} as PNG`}>PNG</button>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ──────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const { admin } = useAuth();
@@ -90,12 +138,22 @@ export default function AdminDashboard() {
   const [adsterraApiKey, setAdsterraApiKey] = useState('');
   const [savingAdsterraKey, setSavingAdsterraKey] = useState(false);
 
-  useEffect(() => {
-    apiClient.get('/api/admin/dashboard')
-      .then(res => setStats(res.data))
-      .catch(err => setError(err.response?.data?.message || 'Failed to load dashboard statistics'))
-      .finally(() => setLoading(false));
+  const loadDashboard = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    setError('');
+    try {
+      const res = await apiClient.get('/api/admin/dashboard');
+      setStats(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to load dashboard statistics');
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const loadAdsterraStats = async (range = adsterraRange) => {
     setAdsterraLoading(true);
@@ -161,6 +219,17 @@ export default function AdminDashboard() {
   }, [sortedLogs]);
 
   const adminName = admin?.displayName || admin?.username || admin?.name || 'Superadmin';
+  const adminRole = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Administrator'));
+  const permissions = Array.isArray(admin?.permissions) ? admin.permissions : [];
+  const isSuperAdmin = admin?.isSuperAdmin || adminRole === 'SuperAdmin';
+  const canManageDramas = isSuperAdmin || permissions.includes('manage_dramas');
+  const canViewAnalytics = isSuperAdmin || permissions.includes('view_analytics');
+  const canManageSettings = isSuperAdmin || permissions.includes('manage_settings');
+  const healthIssues = [
+    stats?.systemHealth?.dbStatus !== undefined && stats.systemHealth.dbStatus !== 'ok' ? 'Database connection needs attention.' : null,
+    stats?.systemHealth?.apiStatus !== undefined && stats.systemHealth.apiStatus !== 'ok' ? 'API runtime is reporting a problem.' : null,
+    stats?.systemHealth?.sitemapStatus !== undefined && stats.systemHealth.sitemapStatus !== 'ok' ? 'Sitemap index is reporting a problem.' : null,
+  ].filter(Boolean);
 
   if (loading) {
     return (
@@ -210,76 +279,50 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ── 1. KSubZone Studio hero ── */}
-          <div className="doit-dashboard-hero relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-5 sm:p-7">
-            <div>
-              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Content operations</p>
-              <h1 className="text-2xl sm:text-[32px] font-extrabold text-white tracking-tight">
-                {getGreeting()}, {adminName}
-              </h1>
-              <p className="text-xs sm:text-[13px] text-white/65 mt-2 flex items-center gap-2 flex-wrap">
-                <span>{getFormattedToday()}</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white text-[10px] font-bold border border-white/10">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#54E6B1] animate-pulse" />
-                  Live Operational
-                </span>
-              </p>
+          {healthIssues.length > 0 && (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300" role="alert">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <div>
+                <p className="font-bold">System health needs attention</p>
+                <p className="mt-1 text-amber-700/80 dark:text-amber-300/80">{healthIssues.join(' ')}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── 1. Operations command centre: intentionally different from the old hero/action grid ── */}
+          <section className="workspace-intro-grid" aria-label="Operations command centre">
+            <div className="workspace-intro-panel">
+              <div className="workspace-kicker"><span className="workspace-kicker-dot" /> CONTROL ROOM / DAILY BRIEF</div>
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h1 className="workspace-title">{getGreeting()}, {adminName}</h1>
+                  <p className="workspace-subtitle">A live operational view of catalog throughput, subtitle readiness, and site health.</p>
+                </div>
+                <div className="workspace-date">{getFormattedToday()}</div>
+              </div>
+              <div className="workspace-context-row">
+                <span><Activity className="h-3.5 w-3.5 text-emerald-400" /> Runtime connected</span>
+                <span><Shield className="h-3.5 w-3.5 text-violet-400" /> {adminRole} scope</span>
+                <span><Database className="h-3.5 w-3.5 text-sky-400" /> {canViewAnalytics ? 'Verified API data' : 'Limited data scope'}</span>
+              </div>
             </div>
 
-            {/* DashStack Top Action Controls */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <Link
-                href="/management/profile"
-                className="flex h-10 items-center gap-2 rounded-full px-4 text-xs font-bold text-white btn-oio-glass transition"
-              >
-                <User className="h-4 w-4 text-purple-200" />
-                <span>Admin Profile</span>
-              </Link>
-
-              <Link
-                href="/management/import"
-                className="flex h-10 items-center gap-2 rounded-full px-5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill transition"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>TMDB Auto Import</span>
-              </Link>
-
-              <Link
-                href="/"
-                target="_blank"
-                className="flex h-10 w-10 items-center justify-center rounded-full btn-oio-glass text-white transition"
-                title="View Public Site"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* ── DashStack Quick Action Launcher ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-            {[
-              { href: '/management/import', label: 'TMDB Import', icon: Sparkles, color: 'text-[#8A2BE2]', bg: 'bg-[#8A2BE2]/15' },
-              { href: '/management/movies', label: 'Movies', icon: Film, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/15' },
-              { href: '/management/dramas', label: 'Dramas', icon: Tv, color: 'text-[#F59E0B]', bg: 'bg-[#F59E0B]/15' },
-              { href: '/management/subtitles', label: 'Subtitles', icon: Languages, color: 'text-[#10B981]', bg: 'bg-[#10B981]/15' },
-              { href: '/management/subtitle-tools', label: 'Subtitle Studio', icon: WandSparkles, color: 'text-[#8A2BE2]', bg: 'bg-[#8A2BE2]/15' },
-              { href: '/management/database', label: 'Database', icon: Database, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-500/15' },
-            ].map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={idx}
-                  href={item.href}
-                  className="dashstack-card doit-quick-action flex items-center gap-3 rounded-[22px] p-3.5 text-xs font-semibold bg-white/85 dark:bg-[#120E1E]/85 backdrop-blur-xl border border-slate-200/70 dark:border-white/[0.07] hover:border-[#8A2BE2]/40 hover:-translate-y-0.5 transition-all shadow-sm group"
-                >
-                  <div className={`h-9 w-9 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <span className="truncate font-bold text-slate-800 dark:text-slate-200">{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+            <aside className="workspace-action-panel" aria-label="Operator actions">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="workspace-panel-label">Operator actions</p>
+                  <p className="workspace-panel-hint">Jump into the next task</p>
+                </div>
+                <kbd className="workspace-kbd">Ctrl K</kbd>
+              </div>
+              <div className="workspace-action-grid">
+                <Link href="/management/import" className="workspace-action"><Sparkles className="h-4 w-4 text-violet-400" /><span>Import title</span><ArrowUpRight className="ml-auto h-3.5 w-3.5" /></Link>
+                <Link href="/management/subtitles" className="workspace-action"><Languages className="h-4 w-4 text-emerald-400" /><span>Review queue</span><ArrowUpRight className="ml-auto h-3.5 w-3.5" /></Link>
+                <Link href="/management/profile" className="workspace-action"><User className="h-4 w-4 text-sky-400" /><span>My profile</span><ArrowUpRight className="ml-auto h-3.5 w-3.5" /></Link>
+                <button type="button" onClick={handleClearCache} disabled={clearingCache || !canManageSettings} title={canManageSettings ? 'Clear application cache' : 'Requires manage_settings permission'} className="workspace-action text-left"><RefreshCw className={`h-4 w-4 text-amber-400 ${clearingCache ? 'animate-spin' : ''}`} /><span>{clearingCache ? 'Clearing…' : 'Purge cache'}</span><ChevronRight className="ml-auto h-3.5 w-3.5" /></button>
+              </div>
+            </aside>
+          </section>
 
           {/* ── 2. Primary DashStack 4-Metric Row ── */}
           <section aria-label="Primary KPIs">
@@ -287,7 +330,8 @@ export default function AdminDashboard() {
               <StatCard
                 label="Total Users"
                 value={formatNum(stats?.counts?.totalUsers)}
-                trend={8.5}
+                 trend={stats?.trends?.totalUsers ?? null}
+                 trendText="Live account count"
                 trendPeriod="from yesterday"
                 icon={Users}
                 variant="primary"
@@ -297,7 +341,8 @@ export default function AdminDashboard() {
               <StatCard
                 label="Total Catalog (Dramas & Movies)"
                 value={formatNum((stats?.counts?.totalDramas || 0) + (stats?.counts?.totalMovies || 0))}
-                trend={2.1}
+                 trend={stats?.trends?.totalCatalog ?? null}
+                 trendText="Live catalog count"
                 trendPeriod="from yesterday"
                 icon={Film}
                 variant="primary"
@@ -307,7 +352,8 @@ export default function AdminDashboard() {
               <StatCard
                 label="Total Subtitles"
                 value={formatNum(stats?.counts?.totalSubtitles)}
-                trend={12.4}
+                 trend={stats?.trends?.totalSubtitles ?? null}
+                 trendText="Live repository count"
                 trendPeriod="from yesterday"
                 icon={Languages}
                 variant="primary"
@@ -379,7 +425,11 @@ export default function AdminDashboard() {
 
           {/* ── 5. Subtitle Queue (Deals Details Style) ── */}
           <section aria-label="Subtitle Queue">
-            <SubtitleQueueSection episodes={stats?.upcomingEpisodes || []} />
+            <SubtitleQueueSection
+              episodes={stats?.upcomingEpisodes || []}
+              canManageDramas={canManageDramas}
+              onChanged={() => loadDashboard({ silent: true })}
+            />
           </section>
 
           {/* ── 6. Top Content + Recent Activity ── */}
@@ -422,6 +472,7 @@ function AdsterraRevenuePanel({
   savingKey,
 }) {
   const [showKeyForm, setShowKeyForm] = useState(false);
+  const revenueChartRef = useRef(null);
   const summary = stats?.summary || {};
   const daily = stats?.daily || [];
   const maxRevenue = Math.max(...daily.map(item => Number(item.revenue || 0)), 0.01);
@@ -562,24 +613,31 @@ function AdsterraRevenuePanel({
                 <p className="text-xs font-bold text-slate-900 dark:text-slate-200">Daily Revenue Timeline</p>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500">{stats?.period?.start || '—'} to {stats?.period?.finish || '—'}</p>
               </div>
-              <span className="text-xs font-bold text-[#10B981] font-mono">LKR · approx. Rs. {AD_REVENUE_LKR_PER_USD}/USD</span>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-xs font-bold text-[#10B981] font-mono">LKR · approx. Rs. {AD_REVENUE_LKR_PER_USD}/USD</span>
+                <ExportActions
+                  label="revenue"
+                  onCsv={() => downloadCsv('ksubzone-revenue.csv', [
+                    ['Date', 'Revenue USD', 'Revenue LKR', 'Impressions', 'Clicks', 'CPM', 'CTR'],
+                    ...daily.map(item => [item.date, item.revenue || 0, Number(item.revenue || 0) * AD_REVENUE_LKR_PER_USD, item.impressions || 0, item.clicks || 0, item.cpm || 0, item.ctr || 0]),
+                  ])}
+                  onPng={() => downloadSvgAsPng('ksubzone-revenue.png', revenueChartRef.current)}
+                />
+              </div>
             </div>
 
             {daily.length > 0 ? (
-              <div className="flex h-28 items-end gap-1.5 overflow-hidden">
+              <svg ref={revenueChartRef} viewBox="0 0 700 120" className="h-28 w-full" role="img" aria-label="Daily revenue timeline">
                 {daily.map((item, index) => {
                   const height = Math.max((Number(item.revenue || 0) / maxRevenue) * 100, 4);
+                  const barWidth = 700 / Math.max(daily.length, 1);
                   return (
-                    <div key={`${item.date}-${index}`} className="group relative flex-1 min-w-[3px] h-full flex items-end">
-                      <div
-                        className="w-full rounded-t-md bg-gradient-to-t from-[#10B981]/70 to-[#10B981] transition hover:brightness-125 cursor-pointer"
-                        style={{ height: `${height}%` }}
-                        title={`${item.date}: ${formatLkr(item.revenue)} (${formatUsd(item.revenue)}) · ${formatNum(item.impressions)} impressions`}
-                      />
-                    </div>
+                    <rect key={`${item.date}-${index}`} x={index * barWidth + 1} y={120 - (height * 1.1)} width={Math.max(barWidth - 2, 2)} height={height * 1.1} rx="4" fill="#10B981" opacity="0.9">
+                      <title>{`${item.date}: ${formatLkr(item.revenue)} (${formatUsd(item.revenue)}) · ${formatNum(item.impressions)} impressions`}</title>
+                    </rect>
                   );
                 })}
-              </div>
+              </svg>
             ) : (
               <div className="h-28 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
                 No Adsterra activity recorded for this period yet.
@@ -596,6 +654,7 @@ function AdsterraRevenuePanel({
 function TrafficOverviewChart({ allLogs }) {
   const [range, setRange] = useState(30);
   const [tooltip, setTooltip] = useState(null);
+  const chartRef = useRef(null);
 
   const displayLogs = useMemo(() => allLogs.slice(-range), [allLogs, range]);
 
@@ -647,7 +706,7 @@ function TrafficOverviewChart({ allLogs }) {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Page views and content stream telemetry</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-white/[0.06] border border-slate-200/60 dark:border-white/[0.08] rounded-xl p-1 self-start sm:self-auto">
+          <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-white/[0.06] border border-slate-200/60 dark:border-white/[0.08] rounded-xl p-1 self-start sm:self-auto">
           {[{ label: '7D', val: 7 }, { label: '30D', val: 30 }, { label: '90D', val: 90 }].map(tab => (
             <button
               key={tab.val}
@@ -661,12 +720,17 @@ function TrafficOverviewChart({ allLogs }) {
             >
               {tab.label}
             </button>
-          ))}
+            ))}
+          </div>
+          <ExportActions
+            label="viewership"
+            onCsv={() => downloadCsv('ksubzone-viewership.csv', [['Date', 'Views'], ...displayLogs.map(log => [log.date, log.views || 0])])}
+            onPng={() => downloadSvgAsPng('ksubzone-viewership.png', chartRef.current)}
+          />
         </div>
-      </div>
 
       <div className="relative w-full overflow-hidden pt-2">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 210 }} onMouseLeave={() => setTooltip(null)}>
+        <svg ref={chartRef} viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 210 }} onMouseLeave={() => setTooltip(null)}>
           <defs>
             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.26" />
@@ -719,6 +783,7 @@ function TrafficOverviewChart({ allLogs }) {
 
 // ─── 2. Content Distribution ─────────────────────────────────────────────────
 function ContentDistributionWidget({ movies, dramas, episodes, articles, subtitles }) {
+  const distributionRef = useRef(null);
   const total = movies + dramas + episodes + articles + subtitles || 1;
 
   const items = [
@@ -736,20 +801,29 @@ function ContentDistributionWidget({ movies, dramas, episodes, articles, subtitl
           <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Content Distribution</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Catalog breakdown by category</p>
         </div>
-        <span className="text-xs font-mono font-bold text-[#7C3AED]">{formatNum(total)} items</span>
+         <div className="flex items-center gap-2">
+           <span className="text-xs font-mono font-bold text-[#7C3AED]">{formatNum(total)} items</span>
+           <ExportActions
+             label="content distribution"
+             onCsv={() => downloadCsv('ksubzone-content-distribution.csv', [['Category', 'Count', 'Percent'], ...items.map(item => [item.label, item.count, `${item.pct}%`])])}
+             onPng={() => downloadSvgAsPng('ksubzone-content-distribution.png', distributionRef.current)}
+           />
+         </div>
       </div>
 
       {/* Stacked progress bar */}
-      <div className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden flex shadow-inner">
-        {items.map((item, idx) => (
-          <div
-            key={idx}
-            style={{ width: `${item.pct}%`, backgroundColor: item.color }}
-            className="h-full transition-all duration-500"
-            title={`${item.label}: ${item.count} (${item.pct}%)`}
-          />
-        ))}
-      </div>
+       <svg ref={distributionRef} viewBox="0 0 500 16" className="h-3 w-full rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden" role="img" aria-label="Content distribution breakdown">
+         {items.map((item, idx) => (
+           <rect
+             key={idx}
+             x={`${items.slice(0, idx).reduce((sum, previous) => sum + previous.pct, 0) * 5}`}
+             y="0"
+             width={`${item.pct * 5}`}
+             height="16"
+             fill={item.color}
+           />
+         ))}
+       </svg>
 
       {/* Legend */}
       <div className="flex-1 space-y-3 pt-2">
@@ -771,8 +845,12 @@ function ContentDistributionWidget({ movies, dramas, episodes, articles, subtitl
 }
 
 // ─── 3. Subtitle Queue (Deals Details Style) ─────────────────────────────────
-function SubtitleQueueSection({ episodes }) {
+function SubtitleQueueSection({ episodes, canManageDramas = false, onChanged }) {
   const [filter, setFilter] = useState('all');
+  const [busyAction, setBusyAction] = useState('');
+  const [rescheduleId, setRescheduleId] = useState(null);
+  const [rescheduleValue, setRescheduleValue] = useState('');
+  const toast = useToast();
 
   const filteredEpisodes = useMemo(() => {
     if (!episodes || episodes.length === 0) return [];
@@ -789,6 +867,59 @@ function SubtitleQueueSection({ episodes }) {
     { id: 'needs', label: 'Needs Subtitle' },
     { id: 'upcoming', label: 'Upcoming' },
   ];
+
+  const toDateTimeLocal = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (part) => String(part).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  const markReleased = async (episode) => {
+    setBusyAction(`${episode._id}:release`);
+    try {
+      await apiClient.put(`/api/admin/episodes/${episode._id}/release`);
+      toast.success('Episode marked as released.');
+      await onChanged?.();
+    } catch (err) {
+      toast.error(err.message || 'Could not mark the episode as released.');
+    } finally {
+      setBusyAction('');
+    }
+  };
+
+  const reschedule = async (episode) => {
+    if (!rescheduleValue) return;
+    setBusyAction(`${episode._id}:reschedule`);
+    try {
+      await apiClient.put(`/api/admin/episodes/${episode._id}`, {
+        airDate: new Date(rescheduleValue).toISOString(),
+      });
+      setRescheduleId(null);
+      setRescheduleValue('');
+      toast.success('Episode schedule updated.');
+      await onChanged?.();
+    } catch (err) {
+      toast.error(err.message || 'Could not reschedule the episode.');
+    } finally {
+      setBusyAction('');
+    }
+  };
+
+  const deleteEpisode = async (episode) => {
+    if (!window.confirm(`Delete ${episode.dramaTitle || 'this episode'} EP ${episode.episodeNumber}?`)) return;
+    setBusyAction(`${episode._id}:delete`);
+    try {
+      await apiClient.delete(`/api/admin/episodes/${episode._id}`);
+      toast.success('Episode deleted.');
+      await onChanged?.();
+    } catch (err) {
+      toast.error(err.message || 'Could not delete the episode.');
+    } finally {
+      setBusyAction('');
+    }
+  };
 
   return (
     <div className="dashstack-card rounded-[28px] sm:rounded-[32px] border border-slate-200/70 dark:border-white/[0.08] bg-white/90 dark:bg-[#120E1E]/90 backdrop-blur-xl overflow-hidden shadow-sm">
@@ -859,7 +990,13 @@ function SubtitleQueueSection({ episodes }) {
             }
 
             let statusEl;
-            if (!ep.hasSubtitles) {
+            if (ep.releaseStatus === 'Released') {
+              statusEl = (
+                <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/30 px-3 py-1 text-xs font-bold text-[#10B981] flex items-center gap-1">
+                  <Check className="h-3 w-3" /> Released
+                </span>
+              );
+            } else if (!ep.hasSubtitles) {
               statusEl = ep.isUpcoming ? (
                 <span className="rounded-full bg-[#7C3AED]/15 border border-[#7C3AED]/30 px-3 py-1 text-xs font-bold text-[#7C3AED] dark:text-[#C084FC]">
                   Scheduled
@@ -899,9 +1036,40 @@ function SubtitleQueueSection({ episodes }) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-shrink-0">
+                <div className="flex items-center gap-2.5 flex-shrink-0 flex-wrap justify-end">
                   {countdownEl}
                   {statusEl}
+                  {canManageDramas && (
+                    <div className="flex items-center gap-1.5 ml-1" aria-label={`Actions for ${ep.dramaTitle} episode ${ep.episodeNumber}`}>
+                      {rescheduleId === ep._id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="datetime-local"
+                            value={rescheduleValue}
+                            onChange={(event) => setRescheduleValue(event.target.value)}
+                            className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-[10px] text-slate-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200"
+                            aria-label="New episode schedule"
+                          />
+                          <button type="button" onClick={() => reschedule(ep)} disabled={busyAction === `${ep._id}:reschedule`} className="inline-flex h-7 items-center rounded-md bg-[#7C3AED] px-2 text-[10px] font-bold text-white disabled:opacity-50">Save</button>
+                          <button type="button" onClick={() => setRescheduleId(null)} className="inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-300">Cancel</button>
+                        </div>
+                      ) : (
+                        <>
+                          {ep.releaseStatus !== 'Released' && (
+                            <button type="button" onClick={() => markReleased(ep)} disabled={busyAction === `${ep._id}:release`} className="inline-flex h-7 items-center gap-1 rounded-md border border-emerald-500/25 px-2 text-[10px] font-bold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50" title="Mark released">
+                              <Send className="h-3 w-3" /> Release
+                            </button>
+                          )}
+                          <button type="button" onClick={() => { setRescheduleId(ep._id); setRescheduleValue(toDateTimeLocal(ep.airDate)); }} className="inline-flex h-7 items-center justify-center rounded-md border border-slate-200 px-2 text-slate-500 hover:border-[#7C3AED]/40 hover:text-[#7C3AED] dark:border-white/10 dark:text-slate-300" title="Reschedule episode" aria-label="Reschedule episode">
+                            <CalendarClock className="h-3 w-3" />
+                          </button>
+                          <button type="button" onClick={() => deleteEpisode(ep)} disabled={busyAction === `${ep._id}:delete`} className="inline-flex h-7 items-center justify-center rounded-md border border-rose-500/25 px-2 text-rose-500 hover:bg-rose-500/10 disabled:opacity-50" title="Delete episode" aria-label="Delete episode">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -1082,8 +1250,8 @@ function StorageObservabilityPanel({ storageStats }) {
         </div>
         <div className="rounded-[22px] border border-slate-200/70 dark:border-white/[0.07] bg-slate-50/70 dark:bg-white/[0.03] p-4 backdrop-blur-sm">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Edge Cache</p>
-          <p className="text-xl font-black font-mono text-blue-600 dark:text-blue-400 mt-1">Active</p>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Vercel CDN</p>
+          <p className="text-xl font-black font-mono text-blue-600 dark:text-blue-400 mt-1">{storageStats.edgeCacheStatus || 'Not reported'}</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{storageStats.edgeCacheProvider || 'CDN telemetry unavailable'}</p>
         </div>
       </div>
 
@@ -1103,15 +1271,15 @@ function StorageObservabilityPanel({ storageStats }) {
 // ─── 6. System Health Panel ──────────────────────────────────────────────────
 function SystemHealthPanel({ health, seoScore, onClearCache, clearingCache }) {
   const statusDot = (ok) => (
-    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ok ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
+    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ok === null ? 'bg-slate-400' : ok ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
   );
 
   const healthItems = [
     { label: 'SEO Score',    value: `${seoScore} / 100`,   sub: 'Schema Validated',       ok: seoScore >= 90, color: 'text-[#10B981]' },
-    { label: 'Database',     value: health?.dbStatus === 'ok' ? 'Connected' : 'Checking', sub: `Driver: ${(health?.dbDriver || 'SQLite').toUpperCase()}`, ok: health?.dbStatus === 'ok' },
-    { label: 'API Runtime',  value: `PHP ${health?.phpVersion?.slice(0, 5) || '8.2'}`,    sub: 'REST API Ready',         ok: true },
-    { label: 'Server Time',  value: health?.serverTime?.split(' ')[1]?.slice(0, 5) || '—', sub: health?.timezone || 'Asia/Colombo', ok: true },
-    { label: 'Sitemap Index', value: '826 URLs',            sub: 'Cached (< 50ms)',         ok: true, color: 'text-[#7C3AED]' },
+    { label: 'Database',     value: health?.dbStatus === 'ok' ? 'Connected' : 'Unavailable', sub: `Driver: ${(health?.dbDriver || '—').toUpperCase()}`, ok: health?.dbStatus === 'ok' },
+    { label: 'API Runtime',  value: health?.apiStatus === 'ok' ? `PHP ${health?.phpVersion?.slice(0, 5) || '—'}` : 'Unavailable', sub: health?.apiStatus === 'ok' ? 'REST API Ready' : 'Check server logs', ok: health?.apiStatus === undefined ? null : health.apiStatus === 'ok' },
+    { label: 'Server Time',  value: health?.serverTime?.split(' ')[1]?.slice(0, 5) || '—', sub: health?.timezone || 'Timezone unavailable', ok: health?.serverTime ? true : null },
+    { label: 'Sitemap Index', value: health?.sitemapStatus === 'ok' ? 'Healthy' : 'Not checked', sub: health?.sitemapStatus === 'ok' ? 'SEO endpoint available' : 'Open SEO & Config to verify', ok: health?.sitemapStatus === undefined ? null : health.sitemapStatus === 'ok', color: 'text-[#7C3AED]' },
   ];
 
   return (

@@ -7,9 +7,19 @@ import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
 import {
-  TrendingUp, Film, Tv, Languages, Star, Users, Settings,
-  Database, ShieldCheck, CheckCircle, Sliders, Calendar, Sparkles, Plus, Key
+  CheckCircle, Key
 } from 'lucide-react';
+
+const formatSettingValue = (value) => {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch (_) {
+    return '[unserializable value]';
+  }
+};
 
 export default function SeoManager() {
   const { admin } = useAuth();
@@ -117,7 +127,7 @@ export default function SeoManager() {
                     <div key={s._id} className="p-3.5 sm:px-5 flex items-center justify-between gap-4 hover:bg-[#151821]/50 transition">
                       <div className="min-w-0">
                         <span className="font-mono text-xs font-bold text-violet-400 block truncate">{s.key}</span>
-                        <span className="text-[10px] text-slate-500 font-mono block mt-0.5 truncate max-w-md">{s.value}</span>
+                        <span className="text-[10px] text-slate-500 font-mono block mt-0.5 truncate max-w-md" title={formatSettingValue(s.value)}>{formatSettingValue(s.value)}</span>
                       </div>
                       <span className="text-[10px] text-slate-500 font-mono flex-shrink-0">
                         {new Date(s.updatedAt || s.createdAt).toLocaleDateString()}
