@@ -260,7 +260,7 @@ export default function SubtitleManager() {
   });
 
   return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+    <div className="admin-shell min-h-screen bg-[var(--studio-bg)] text-[var(--studio-text)] flex flex-col lg:flex-row">
       <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
@@ -269,16 +269,16 @@ export default function SubtitleManager() {
         <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
           
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.05]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--studio-border)]">
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Subtitle Queue & Moderation</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Review Sinhala and English subtitle uploads, verify formatting, and approve for live catalog</p>
+              <h1 className="text-2xl sm:text-3xl font-black text-[var(--studio-text)] font-display tracking-tight">Subtitle Queue & Moderation</h1>
+              <p className="text-xs text-[var(--studio-muted)] mt-1">Review Sinhala and English subtitle uploads, verify formatting, and approve for live catalog</p>
             </div>
             {enableTranslation && (
               <button
                 type="button"
                 onClick={() => setActiveModal('ai_translate')}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white font-semibold rounded-lg text-xs shadow-sm transition active:scale-95 flex-shrink-0"
+                className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold rounded-[9999px] text-xs shadow-sm transition active:scale-95 flex-shrink-0"
               >
                 <Sparkles className="w-3.5 h-3.5" /> AI Translate
               </button>
@@ -288,26 +288,27 @@ export default function SubtitleManager() {
           {/* Filters Row: Status + Storage Provider */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Status Filter Tabs */}
-            <div className="flex gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
+            <div className="flex items-center gap-1 bg-[var(--studio-raised)] p-1 rounded-[9999px] border border-[var(--studio-border)] w-fit">
               {['Pending', 'Approved', 'Rejected', 'All'].map((status) => {
                 const count = status === 'All' ? subtitles.length : subtitles.filter(s => s.approvalStatus === status).length;
+                const isActive = filterTab === status;
                 return (
                   <button
                     key={status}
                     type="button"
                     onClick={() => setFilterTab(status)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                      filterTab === status
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                    className={`px-3.5 py-1.5 rounded-[9999px] text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
                     }`}
                   >
                     <span>{status}</span>
                     {count > 0 && (
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                        filterTab === status
+                      <span className={`px-1.5 py-0.5 rounded-[9999px] text-[10px] font-mono font-bold ${
+                        isActive
                           ? 'bg-white/20 text-white'
-                          : 'bg-white/[0.06] text-slate-400'
+                          : 'bg-[var(--studio-surface)] text-[var(--studio-muted)]'
                       }`}>
                         {count}
                       </span>
@@ -318,37 +319,40 @@ export default function SubtitleManager() {
             </div>
 
             {/* Storage Provider Filter */}
-            <div className="flex items-center gap-1 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] text-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 px-2">Storage:</span>
+            <div className="flex items-center gap-1 bg-[var(--studio-raised)] p-1 rounded-[9999px] border border-[var(--studio-border)] text-xs">
+              <span className="text-[10px] uppercase font-bold text-[var(--studio-muted)] px-2.5">Storage:</span>
               {[
                 { id: 'All', label: 'All' },
                 { id: 'r2', label: 'Cloudflare R2' },
                 { id: 'supabase', label: 'Supabase Legacy' }
-              ].map((prov) => (
-                <button
-                  key={prov.id}
-                  type="button"
-                  onClick={() => setStorageFilter(prov.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition ${
-                    storageFilter === prov.id
-                      ? 'bg-white/10 text-white font-bold'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {prov.label}
-                </button>
-              ))}
+              ].map((prov) => {
+                const isActive = storageFilter === prov.id;
+                return (
+                  <button
+                    key={prov.id}
+                    type="button"
+                    onClick={() => setStorageFilter(prov.id)}
+                    className={`px-3 py-1.5 rounded-[9999px] text-xs font-bold transition-all ${
+                      isActive
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
+                    }`}
+                  >
+                    {prov.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Subtitles List */}
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {loading ? (
-              <div className="text-center py-16 text-slate-500 text-xs">Checking pending subtitle uploads...</div>
+              <div className="text-center py-16 text-[var(--studio-muted)] text-xs">Checking pending subtitle uploads...</div>
             ) : filteredSubtitles.length === 0 ? (
-              <div className="text-center py-16 text-slate-400 bg-[#11131A] border border-white/[0.06] rounded-xl flex flex-col items-center justify-center gap-2">
-                <AlertCircle className="w-6 h-6 text-slate-500 mb-1" />
-                <span className="text-xs">No subtitles found matching filter criteria.</span>
+              <div className="studio-card p-12 rounded-[16px] border border-[var(--studio-border)] text-center flex flex-col items-center justify-center gap-2">
+                <AlertCircle className="w-6 h-6 text-[var(--studio-muted)] mb-1" />
+                <span className="text-xs text-[var(--studio-muted)]">No subtitles found matching filter criteria.</span>
               </div>
             ) : (
               filteredSubtitles.map((sub) => {
@@ -357,51 +361,51 @@ export default function SubtitleManager() {
                 return (
                 <div 
                   key={sub._id}
-                  className="bg-[#11131A] border border-white/[0.06] p-4 sm:p-5 rounded-xl flex flex-col lg:flex-row justify-between gap-5 hover:border-white/[0.12] transition-colors"
+                  className="studio-card p-5 rounded-[16px] border border-[var(--studio-border)] flex flex-col lg:flex-row justify-between gap-5 transition-all"
                 >
                   <div className="flex-1 space-y-3 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 text-violet-300 font-bold uppercase text-[10px] tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-[9999px] bg-[#2563EB]/15 border border-[#2563EB]/30 text-[#60A5FA] font-bold uppercase text-[10px] tracking-wider">
                         {sub.language}
                       </span>
                       {isR2 ? (
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center gap-1">
+                        <span className="px-2.5 py-0.5 rounded-[9999px] bg-[#14B8A6]/15 border border-[#14B8A6]/30 text-[#14B8A6] font-bold text-[10px] flex items-center gap-1">
                           <Cloud className="w-3 h-3" /> Storage: Cloudflare R2
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-[10px] flex items-center gap-1">
+                        <span className="px-2.5 py-0.5 rounded-[9999px] bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B] font-bold text-[10px] flex items-center gap-1">
                           <Database className="w-3 h-3" /> Storage: Supabase Legacy
                         </span>
                       )}
-                      <span className="px-2 py-0.5 rounded bg-[#151821] text-slate-300 font-mono text-[10px] uppercase">
+                      <span className="px-2.5 py-0.5 rounded-[9999px] bg-[var(--studio-raised)] text-[var(--studio-muted)] border border-[var(--studio-border)] font-mono text-[10px] uppercase">
                         Format: {sub.format}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-[#151821] text-slate-400 font-mono text-[10px]">
+                      <span className="px-2.5 py-0.5 rounded-[9999px] bg-[var(--studio-raised)] text-[var(--studio-muted)] border border-[var(--studio-border)] font-mono text-[10px]">
                         v{sub.version}
                       </span>
                       {(sub.seasonNumber || sub.episodeNumber) && (
-                        <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-300 font-mono text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-[9999px] bg-[#2563EB]/15 border border-[#2563EB]/25 text-[#60A5FA] font-mono text-[10px]">
                           S{sub.seasonNumber || 1} E{sub.episodeNumber || 1}
                         </span>
                       )}
                       {sub.seasonStatus && (
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-[9999px] bg-[#10B981]/15 border border-[#10B981]/25 text-[#10B981] font-mono text-[10px]">
                           {sub.seasonStatus}
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <p className="text-[10px] text-slate-500 font-mono uppercase">Media target:</p>
-                      <p className="text-xs font-bold text-slate-200 mt-0.5 flex items-center gap-1.5 truncate">
-                        <Film className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
+                      <p className="text-[10px] text-[var(--studio-muted)] font-mono uppercase tracking-wider">Media target:</p>
+                      <p className="text-xs font-bold text-[var(--studio-text)] mt-0.5 flex items-center gap-1.5 truncate">
+                        <Film className="w-3.5 h-3.5 text-[#2563EB] flex-shrink-0" />
                         <span>{sub.mediaTitle || `${sub.mediaType} ID: ${sub.mediaId}`}</span>
                       </p>
                     </div>
 
                     {publicUrl && (
-                      <div className="flex items-center gap-2 p-1.5 rounded-lg bg-black/40 border border-white/5 w-fit max-w-full">
-                        <span className="text-[10px] text-slate-400 font-mono truncate max-w-sm sm:max-w-md">
+                      <div className="flex items-center gap-2 p-2 rounded-[12px] bg-[var(--studio-raised)] border border-[var(--studio-border)] w-fit max-w-full">
+                        <span className="text-[10px] text-[var(--studio-muted)] font-mono truncate max-w-sm sm:max-w-md">
                           {publicUrl}
                         </span>
                         <button
@@ -412,42 +416,42 @@ export default function SubtitleManager() {
                             setTimeout(() => setCopiedUrlId(null), 2000);
                             toast.success('Direct public URL copied!');
                           }}
-                          className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition flex-shrink-0"
+                          className="p-1 rounded-md hover:bg-white/10 text-[var(--studio-muted)] hover:text-[var(--studio-text)] transition flex-shrink-0"
                           title="Copy public URL"
                         >
-                          {copiedUrlId === sub._id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          {copiedUrlId === sub._id ? <Check className="w-3 h-3 text-[#10B981]" /> : <Copy className="w-3 h-3 text-[var(--studio-muted)]" />}
                         </button>
                       </div>
                     )}
 
                     {sub.releaseNotes && (
-                      <div className="bg-[#151821] p-3 rounded-lg border border-white/[0.04] text-xs text-slate-400">
-                        <span className="font-semibold text-slate-300 block mb-0.5">Uploader Notes:</span>
+                      <div className="bg-[var(--studio-raised)] p-3 rounded-[12px] border border-[var(--studio-border)] text-xs text-[var(--studio-muted)]">
+                        <span className="font-bold text-[var(--studio-text)] block mb-0.5">Uploader Notes:</span>
                         {sub.releaseNotes}
                       </div>
                     )}
 
-                    <div className="text-[11px] text-slate-500 flex gap-4 flex-wrap">
+                    <div className="text-[11px] text-[var(--studio-muted)] flex gap-4 flex-wrap">
                       <span>
                         Uploader:
-                        <b className="text-slate-300"> {sub.uploaderRole === 'Admin' ? sub.adminUploader?.username || 'Admin' : sub.uploader?.username || 'Unknown'}</b>
-                        <b className="ml-1 text-violet-400">({sub.uploaderRole || 'User'})</b>
+                        <b className="text-[var(--studio-text)]"> {sub.uploaderRole === 'Admin' ? sub.adminUploader?.username || 'Admin' : sub.uploader?.username || 'Unknown'}</b>
+                        <b className="ml-1 text-[#2563EB]">({sub.uploaderRole || 'User'})</b>
                       </span>
-                      <span>Submitted: <b>{new Date(sub.createdAt).toLocaleString()}</b></span>
+                      <span>Submitted: <b className="text-[var(--studio-text)]">{new Date(sub.createdAt).toLocaleString()}</b></span>
                     </div>
                   </div>
 
                   {/* Actions Panel */}
-                  <div className="flex flex-col justify-between w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-white/[0.06] pt-4 lg:pt-0 lg:pl-5 space-y-3.5">
+                  <div className="flex flex-col justify-between w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-[var(--studio-border)] pt-4 lg:pt-0 lg:pl-5 space-y-3.5">
                     {sub.approvalStatus === 'Pending' && (
                       <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Moderator Remarks</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--studio-muted)]">Moderator Remarks</label>
                         <input
                           type="text"
                           placeholder="Add reason or notes..."
                           value={moderatorNotes[sub._id] || sub.moderatorNotes || ''}
                           onChange={(e) => handleNoteChange(sub._id, e.target.value)}
-                          className="w-full px-3 py-1.5 bg-[#08090D] border border-white/[0.08] rounded-lg text-slate-200 text-xs outline-none focus:border-violet-500"
+                          className="w-full px-3 py-1.5 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-[var(--studio-text)] text-xs outline-none focus:border-[#2563EB]"
                         />
                       </div>
                     )}
@@ -459,7 +463,7 @@ export default function SubtitleManager() {
                           target="_blank"
                           rel="noreferrer"
                           download
-                          className="flex-1 p-2 bg-[#151821] hover:bg-white/[0.08] text-slate-200 rounded-lg text-xs font-semibold text-center border border-white/[0.06] transition flex items-center justify-center gap-1.5"
+                          className="flex-1 p-2 bg-[var(--studio-raised)] hover:bg-white/[0.08] text-[var(--studio-text)] rounded-[12px] text-xs font-semibold text-center border border-[var(--studio-border)] transition flex items-center justify-center gap-1.5"
                           title="Download File"
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -468,7 +472,7 @@ export default function SubtitleManager() {
                         <button
                           type="button"
                           onClick={() => handleOpenView(sub)}
-                          className="flex-1 p-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/25 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                          className="flex-1 p-2 bg-[#2563EB]/15 hover:bg-[#2563EB]/25 text-[#60A5FA] border border-[#2563EB]/30 rounded-[12px] text-xs font-semibold transition flex items-center justify-center gap-1.5"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>Preview</span>
@@ -479,7 +483,7 @@ export default function SubtitleManager() {
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(sub)}
-                          className="flex-1 p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                          className="flex-1 p-2 bg-[var(--studio-raised)] hover:bg-white/[0.08] text-[var(--studio-text)] border border-[var(--studio-border)] rounded-[12px] text-xs font-semibold transition flex items-center justify-center gap-1.5"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                           <span>Edit</span>
@@ -487,7 +491,7 @@ export default function SubtitleManager() {
                         <button
                           type="button"
                           onClick={() => handleOpenReplace(sub)}
-                          className="flex-1 p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                          className="flex-1 p-2 bg-[#14B8A6]/15 hover:bg-[#14B8A6]/25 text-[#14B8A6] border border-[#14B8A6]/30 rounded-[12px] text-xs font-semibold transition flex items-center justify-center gap-1.5"
                           title="Re-upload or fix broken subtitle file"
                         >
                           <UploadCloud className="w-3.5 h-3.5" />
@@ -496,7 +500,7 @@ export default function SubtitleManager() {
                         <button
                           type="button"
                           onClick={() => handleDeleteSubtitle(sub._id)}
-                          className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 rounded-lg text-xs font-semibold transition flex items-center justify-center"
+                          className="p-2 bg-[#EF4444]/15 hover:bg-[#EF4444]/25 text-[#EF4444] border border-[#EF4444]/30 rounded-[12px] text-xs font-semibold transition flex items-center justify-center"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -504,12 +508,12 @@ export default function SubtitleManager() {
                       </div>
                       
                       {sub.approvalStatus === 'Pending' && (
-                        <div className="flex gap-2 border-t border-white/[0.06] pt-2 mt-1">
+                        <div className="flex gap-2 border-t border-[var(--studio-border)] pt-2 mt-1">
                           <button
                             type="button"
                             disabled={processingId === sub._id}
                             onClick={() => handleUpdateStatus(sub._id, 'Approved')}
-                            className="flex-grow p-2 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                            className="flex-grow p-2 bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/30 rounded-[12px] text-xs font-bold transition flex items-center justify-center gap-1.5"
                           >
                             <Check className="w-3.5 h-3.5" /> Approve
                           </button>
@@ -517,7 +521,7 @@ export default function SubtitleManager() {
                             type="button"
                             disabled={processingId === sub._id}
                             onClick={() => handleUpdateStatus(sub._id, 'Rejected')}
-                            className="flex-grow p-2 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1"
+                            className="flex-grow p-2 bg-[#EF4444]/15 hover:bg-[#EF4444]/25 text-[#EF4444] border border-[#EF4444]/30 rounded-[12px] text-xs font-bold transition flex items-center justify-center gap-1.5"
                           >
                             <X className="w-3.5 h-3.5" /> Reject
                           </button>
@@ -542,62 +546,62 @@ export default function SubtitleManager() {
       >
         {selectedSubtitle && (
           <form onSubmit={handleEditSubmit} className="space-y-4">
-            <div className="bg-[#151821] border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <div className="bg-[var(--studio-surface)] border border-[var(--studio-border)] rounded-[16px] p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Language</label>
+                  <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Language</label>
                   <input
                     type="text"
                     value={editForm.language}
                     onChange={e => setEditForm({ ...editForm, language: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                    className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Version</label>
+                  <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Version</label>
                   <input
                     type="text"
                     value={editForm.version}
                     onChange={e => setEditForm({ ...editForm, version: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                    className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Format</label>
+                  <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Format</label>
                   <input
                     type="text"
                     value={editForm.format}
                     onChange={e => setEditForm({ ...editForm, format: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                    className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Season No</label>
+                  <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Season No</label>
                   <input
                     type="number"
                     value={editForm.seasonNumber}
                     onChange={e => setEditForm({ ...editForm, seasonNumber: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                    className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Episode No</label>
+                  <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Episode No</label>
                   <input
                     type="number"
                     value={editForm.episodeNumber}
                     onChange={e => setEditForm({ ...editForm, episodeNumber: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                    className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Approval Status</label>
+                  <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Approval Status</label>
                   <select
                     value={editForm.approvalStatus}
                     onChange={e => setEditForm({ ...editForm, approvalStatus: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                    className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   >
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
@@ -607,28 +611,28 @@ export default function SubtitleManager() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">Release Notes</label>
+                <label className="block text-[11px] font-bold text-[var(--studio-muted)] uppercase tracking-wider mb-1.5">Release Notes</label>
                 <textarea
                   rows="2"
                   value={editForm.releaseNotes}
                   onChange={e => setEditForm({ ...editForm, releaseNotes: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500"
+                  className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB]"
                   placeholder="Notes about sync, rips, or translator info..."
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.06]">
+            <div className="flex justify-end gap-3 pt-3 border-t border-[var(--studio-border)]">
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="px-4 py-2 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white"
+                className="px-4 py-2 rounded-[12px] border border-[var(--studio-border)] bg-[var(--studio-raised)] text-xs font-semibold text-[var(--studio-muted)] hover:text-[var(--studio-text)] transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110"
+                className="px-5 py-2 rounded-[12px] bg-[#2563EB] hover:bg-[#1D4ED8] text-xs font-bold text-white shadow-sm transition active:scale-95"
               >
                 Save Changes
               </button>
@@ -646,9 +650,9 @@ export default function SubtitleManager() {
       >
         <div className="space-y-3">
           {previewLoading ? (
-            <div className="text-center py-12 text-xs text-slate-400">Loading subtitle contents...</div>
+            <div className="text-center py-12 text-xs text-[var(--studio-muted)]">Loading subtitle contents...</div>
           ) : (
-            <pre className="p-4 bg-[#08090D] border border-white/[0.08] rounded-xl text-xs font-mono text-slate-300 overflow-x-auto max-h-[60vh] leading-relaxed select-all">
+            <pre className="p-4 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[16px] text-xs font-mono text-[var(--studio-text)] overflow-x-auto max-h-[60vh] leading-relaxed select-all">
               {previewContent}
             </pre>
           )}
@@ -664,11 +668,11 @@ export default function SubtitleManager() {
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">Translate English lines directly to natural Sinhala:</span>
+            <span className="text-xs text-[var(--studio-muted)]">Translate English lines directly to natural Sinhala:</span>
             <select
               value={translationEngine}
               onChange={e => setTranslationEngine(e.target.value)}
-              className="px-2.5 py-1 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-200 outline-none"
+              className="px-3 py-1.5 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none"
             >
               <option value="gemini">Google Gemini AI</option>
               <option value="groq">Groq Llama-3 (Fast)</option>
@@ -676,13 +680,13 @@ export default function SubtitleManager() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-400 mb-1">Source Text (English)</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--studio-muted)] mb-1.5">Source Text (English)</label>
             <textarea
               rows="4"
               value={aiSourceText}
               onChange={e => setAiSourceText(e.target.value)}
               placeholder="Paste English subtitle dialogue lines here..."
-              className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 outline-none focus:border-violet-500 font-mono"
+              className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] outline-none focus:border-[#2563EB] font-mono"
             />
           </div>
 
@@ -691,7 +695,7 @@ export default function SubtitleManager() {
               type="button"
               onClick={handleAiTranslate}
               disabled={isAiTranslating}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-[12px] text-xs font-bold disabled:opacity-50 transition active:scale-95 shadow-sm"
             >
               {isAiTranslating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
               <span>{isAiTranslating ? 'Translating...' : 'Translate to Sinhala'}</span>
@@ -699,19 +703,19 @@ export default function SubtitleManager() {
           </div>
 
           {aiError && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-lg">
+            <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] text-xs rounded-[12px]">
               {aiError}
             </div>
           )}
 
           {aiTranslatedText && (
             <div>
-              <label className="block text-[11px] font-semibold text-emerald-400 mb-1">Translated Sinhala Output</label>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#10B981] mb-1.5">Translated Sinhala Output</label>
               <textarea
                 rows="4"
                 readOnly
                 value={aiTranslatedText}
-                className="w-full px-3 py-2 bg-[#08090D] border border-emerald-500/30 rounded-lg text-xs text-emerald-300 outline-none font-sinhala leading-relaxed"
+                className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[#10B981]/30 rounded-[12px] text-xs text-[#10B981] outline-none font-sinhala leading-relaxed"
               />
             </div>
           )}
@@ -726,7 +730,7 @@ export default function SubtitleManager() {
         size="md"
       >
         <form onSubmit={handleReplaceFileSubmit} className="space-y-4">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--studio-muted)]">
             Upload a replacement file for this subtitle record without changing the media association:
           </p>
 
@@ -743,21 +747,21 @@ export default function SubtitleManager() {
               }
               setReplaceFileInput(file || null);
             }}
-            className="w-full px-3 py-2 bg-[#08090D] border border-white/[0.08] rounded-lg text-xs text-slate-100 file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:bg-violet-600 file:text-white file:text-xs file:font-semibold"
+            className="w-full px-3 py-2 bg-[var(--studio-raised)] border border-[var(--studio-border)] rounded-[12px] text-xs text-[var(--studio-text)] file:mr-3 file:py-1 file:px-3 file:rounded-[9999px] file:border-0 file:bg-[#2563EB] file:text-white file:text-xs file:font-bold cursor-pointer"
           />
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.06]">
+          <div className="flex justify-end gap-3 pt-3 border-t border-[var(--studio-border)]">
             <button
               type="button"
               onClick={() => setActiveModal(null)}
-              className="px-3.5 py-1.5 rounded-lg border border-white/[0.08] bg-[#151821] text-xs font-semibold text-slate-300 hover:text-white"
+              className="px-4 py-2 rounded-[12px] border border-[var(--studio-border)] bg-[var(--studio-raised)] text-xs font-semibold text-[var(--studio-muted)] hover:text-[var(--studio-text)] transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isReplacing || !replaceFileInput}
-              className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-xs font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50"
+              className="px-4 py-2 rounded-[12px] bg-[#2563EB] hover:bg-[#1D4ED8] text-xs font-bold text-white shadow-sm transition active:scale-95 disabled:opacity-50"
             >
               {isReplacing ? 'Uploading...' : 'Replace File'}
             </button>
