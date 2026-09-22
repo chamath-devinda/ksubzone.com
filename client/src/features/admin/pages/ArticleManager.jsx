@@ -4,8 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import apiClient from '@/services/api/apiClient';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import AdminSidebar from '@/features/admin/components/AdminSidebar';
-import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import DataTable from '@/features/admin/components/DataTable';
 import ModalDrawer from '@/features/admin/components/ModalDrawer';
 import { useToast } from '@/features/admin/components/Toast';
@@ -495,14 +493,14 @@ export default function ArticleManager() {
       render: (_, article) => (
         <div className="flex justify-end gap-1.5 items-center">
           {article.status === 'Published' && (
-            <Link href={`/articles/${article.slug}`} target="_blank" className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-full shadow-sm transition active:scale-95" title="View Article">
+            <Link href={`/articles/${article.slug}`} target="_blank" className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-lg shadow-sm transition active:scale-95" title="View Article">
               <Eye className="w-3.5 h-3.5" />
             </Link>
           )}
-          <button onClick={() => openEdit(article)} className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-full shadow-sm transition active:scale-95" title="Edit Article">
+          <button onClick={() => openEdit(article)} className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-lg shadow-sm transition active:scale-95" title="Edit Article">
             <Edit3 className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => handleDelete(article)} className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-full shadow-sm transition active:scale-95" title="Delete Article">
+          <button onClick={() => handleDelete(article)} className="btn-oio-pill w-7 h-7 flex items-center justify-center text-white rounded-lg shadow-sm transition active:scale-95" title="Delete Article">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -511,43 +509,34 @@ export default function ArticleManager() {
   ];
 
   return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.05]">
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Manage Articles</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Create, edit, draft, publish, feature and SEO-control KSubZone articles</p>
-            </div>
-            <button
-              onClick={openCreate}
-              className="flex h-9.5 items-center gap-1.5 px-4 rounded-full btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" /> Compose Article
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <StatCard label="Total articles" value={articles.length} icon={FileText} variant="secondary" />
-            <StatCard label="Published" value={articles.filter(a => a.status === 'Published').length} icon={FileText} variant="secondary" />
-            <StatCard label="Drafts" value={articles.filter(a => a.status === 'Draft').length} icon={FileText} variant="secondary" />
-            <StatCard label="Featured" value={articles.filter(a => a.isFeatured).length} icon={Star} variant="secondary" />
-          </div>
-
-          <DataTable
-            columns={columns}
-            data={articles}
-            loading={loading}
-            searchPlaceholder="Search articles by title or excerpt..."
-            searchKey="title"
-          />
-        </main>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.05]">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Manage Articles</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Create, edit, draft, publish, feature and SEO-control KSubZone articles</p>
+        </div>
+        <button
+          onClick={openCreate}
+          className="flex h-9.5 items-center gap-1.5 px-4 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5" /> Compose Article
+        </button>
       </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <StatCard label="Total articles" value={articles.length} icon={FileText} variant="secondary" />
+        <StatCard label="Published" value={articles.filter(a => a.status === 'Published').length} icon={FileText} variant="secondary" />
+        <StatCard label="Drafts" value={articles.filter(a => a.status === 'Draft').length} icon={FileText} variant="secondary" />
+        <StatCard label="Featured" value={articles.filter(a => a.isFeatured).length} icon={Star} variant="secondary" />
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={articles}
+        loading={loading}
+        searchPlaceholder="Search articles by title or excerpt..."
+        searchKey="title"
+      />
 
       <ModalDrawer
         isOpen={showModal}
@@ -711,8 +700,8 @@ export default function ArticleManager() {
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.06]">
-            <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-full btn-oio-glass text-xs font-bold text-slate-300 hover:text-white transition">Cancel</button>
-            <button type="submit" disabled={saving} className="px-6 py-2.5 rounded-full btn-oio-pill text-xs font-black uppercase tracking-wider text-white shadow-sm disabled:opacity-50 flex items-center gap-1.5">
+            <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl btn-oio-glass text-xs font-bold text-slate-300 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={saving} className="px-6 py-2.5 rounded-xl btn-oio-pill text-xs font-black uppercase tracking-wider text-white shadow-sm disabled:opacity-50 flex items-center gap-1.5">
               <Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Article'}
             </button>
           </div>

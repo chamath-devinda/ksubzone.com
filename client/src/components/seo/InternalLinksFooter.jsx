@@ -27,22 +27,22 @@ export default function InternalLinksFooter() {
   return (
     <nav
       aria-label="Site sections"
-      className="border-t border-white/[0.06] pt-6 pb-4"
+      className="mt-10 pt-8 border-t border-white/[0.06]"
     >
       <p className="sr-only">Quick navigation to all site sections</p>
-      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2.5 text-[11px] text-slate-500">
+        <span className="font-semibold uppercase tracking-wider text-slate-600">Quick Index:</span>
         {CORE_LINKS.map(({ label, href, desc }) => (
-          <li key={href}>
-            <Link
-              href={href}
-              title={desc}
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors duration-150 underline-offset-2 hover:underline"
-            >
-              {label}
-            </Link>
-          </li>
+          <Link
+            key={href}
+            href={href}
+            title={desc}
+            className="hover:text-slate-300 transition-colors duration-150 hover:underline underline-offset-4 decoration-white/20"
+          >
+            {label}
+          </Link>
         ))}
-      </ul>
+      </div>
     </nav>
   );
 }

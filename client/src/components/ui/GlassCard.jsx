@@ -15,7 +15,14 @@ export default function GlassCard({ item, type, priority = false }) {
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
   const posterImage = getMediaImage(item, 'card');
-  const displayTitle = (item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles');
+  const rawTitle = (item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles');
+  const displayTitle = rawTitle
+    .replace(/\s*\|\s*සිංහල\s*උපසිරැසි.*$/i, '')
+    .replace(/\s*\|\s*Sinhala\s*Subtitles?.*$/i, '')
+    .replace(/\s*-\s*සිංහල\s*උපසිරැසි.*$/i, '')
+    .replace(/\s+සිංහල\s+උපසිරැසි.*$/i, '')
+    .replace(/\s+Sinhala\s+Subtitles?.*$/i, '')
+    .trim() || rawTitle;
   // This activity clock only moves when the title or one of its subtitles is
   // imported. Generic record updates (views, admin edits, etc.) must not affect it.
   const timeAgo = formatTimeAgo(item.contentUpdatedAt || item.createdAt);
@@ -98,7 +105,7 @@ export default function GlassCard({ item, type, priority = false }) {
                 </span>
               )}
               {mediaType === 'drama' && hasSubtitles && (
-                <span className={`h-5 max-w-[74px] sm:max-w-none px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border backdrop-blur-md text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider shadow-sm truncate ${
+                <span className={`h-5 max-w-[92px] sm:max-w-none px-1.5 sm:px-2 inline-flex items-center justify-center rounded-full border backdrop-blur-md text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-wider shadow-sm truncate ${
                   subtitleSummary.seasonStatus === 'Complete'
                     ? 'bg-rose-950/80 border-rose-500/50 text-rose-300'
                     : 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'

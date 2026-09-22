@@ -269,18 +269,24 @@ export default function MediaSubtitlesSection({
           ) : (
             <div className="flex flex-col gap-4">
               {standaloneFiles.map((sub) => {
-                const downloadTitle = (displayTitle || 'Subtitle')
+                const movieYear = media?.releaseDate ? new Date(media.releaseDate).getFullYear() : (media?.year || '');
+                const cleanTitle = (displayTitle || media?.title || 'Subtitle')
                   .trim()
-                  .replace(/[^a-zA-Z0-9]+/g, '_')
-                  .replace(/^_+|_+$/g, '');
+                  .replace(/\|.*$/g, '')
+                  .replace(/(sinhala\s*subtitles?|sinhala\s*subtitiles?|සිංහල\s*උපසිරැසි)/gi, '')
+                  .replace(/[\\/:*?"<>|]/g, '')
+                  .replace(/\s+/g, ' ')
+                  .trim();
                 let customFileName = '';
                 const subLang = sub.language || 'Sinhala';
                 if (media.type === 'movie' || (!sub.seasonNumber && !sub.episodeNumber)) {
-                  customFileName = `${downloadTitle}_${subLang}.${sub.format || 'srt'}`;
+                  customFileName = movieYear && !cleanTitle.includes(`(${movieYear})`)
+                    ? `${cleanTitle} (${movieYear}) ${subLang} Subtitles - www.ksubzone.com.${sub.format || 'srt'}`
+                    : `${cleanTitle} ${subLang} Subtitles - www.ksubzone.com.${sub.format || 'srt'}`;
                 } else {
                   const formattedSeason = String(sub.seasonNumber || 1).padStart(2, '0');
                   const formattedEpisode = String(sub.episodeNumber || 1).padStart(2, '0');
-                  customFileName = `${downloadTitle}_S${formattedSeason}_E${formattedEpisode}_${subLang}.${
+                  customFileName = `${cleanTitle} S${formattedSeason}E${formattedEpisode} ${subLang} Subtitles - www.ksubzone.com.${
                     sub.format || 'srt'
                   }`;
                 }

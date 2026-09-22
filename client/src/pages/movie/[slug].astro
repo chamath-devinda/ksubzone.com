@@ -1,0 +1,127 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { Detail } from '@/components/islands';
+import { fetchBackendJson } from '@/lib/server/backend';
+import {
+  SITE_URL,
+  cleanMediaTitle,
+  cleanMediaText,
+  clampDescription,
+  buildMediaMetaTitle,
+  buildMediaMetaDescription,
+  generateMediaKeywords,
+  buildMovieSchema,
+  buildBreadcrumbSchema,
+} from '@/lib/seo';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  try {
+    const data = await fetchBackendJson('/api/media/movies?status=Published&limit=300', {
+      revalidate: 300,
+      fallback: { movies: [] },
+    });
+    const movies = data?.movies || [];
+    return movies
+      .filter((m: any) => m.slug || m.title)
+      .map((movie: any) => ({
+        params: {
+          slug: movie.slug || movie._id,
+        },
+      }));
+  } catch (e) {
+    console.error('[getStaticPaths:movies] Failed to pre-fetch movie slugs:', e);
+    return [];
+  }
+}
+
+const { slug } = Astro.params;
+
+const data = await fetchBackendJson(`/api/media/movies/${encodeURIComponent(slug || '')}?trackView=0`, {
+  revalidate: 300,
+  fallback: null,
+});
+
+if (!data || !data.movie) {
+  return Astro.redirect('/404');
+}
+
+const media = data.movie;
+const cleanTitle = cleanMediaTitle(media.title);
+const canonicalUrl = `${SITE_URL}/movie/${slug}`;
+const metaTitle = buildMediaMetaTitle(media);
+const rawDescription = String(media.metaDescription || '').trim();
+const chosenDescription = rawDescription.length >= 60 
+  ? clampDescription(rawDescription, 155) 
+  : buildMediaMetaDescription(media);
+
+const metaDescription = cleanMediaText(
+  chosenDescription,
+  media.title,
+  cleanTitle
+);
+const keywords = generateMediaKeywords(media);
+
+const breadcrumbs = buildBreadcrumbSchema([
+  { name: 'Home', url: '/' },
+  { name: 'Movies', url: '/movies' },
+  { name: cleanTitle, url: `/movie/${slug}` },
+]);
+
+const movieSchema = buildMovieSchema(media, canonicalUrl);
+
+const faqList = Array.isArray(media.faqs) && media.faqs.length > 0 ? media.faqs : [
+  {
+    question: `How can I download Sinhala subtitles for ${cleanTitle}?`,
+    answer: `You can download synchronized Sinhala subtitles in SRT, VTT, or ASS format by clicking the download buttons in the subtitle section below on KSubZone.`
+  },
+  {
+    question: `Is ${cleanTitle} Sinhala subtitle free to download?`,
+    answer: `Yes, all Sinhala and English subtitle files on KSubZone are 100% free community releases.`
+  }
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqList.map((item: any) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: cleanMediaText(item.answer, media.title, cleanTitle),
+    },
+  })),
+};
+
+const combinedSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [breadcrumbs, movieSchema, faqSchema].filter(Boolean),
+};
+---
+
+<BaseLayout
+  title={metaTitle}
+  description={metaDescription}
+  keywords={keywords}
+  canonical={canonicalUrl}
+  ogImage={media.poster || `${SITE_URL}/main-logo.webp`}
+  ogType="video.movie"
+  schemaMarkup={combinedSchema}
+>
+  <Detail
+    type="Movie"
+    initialData={{
+      ...data,
+      movie: {
+        ...media,
+        title: cleanTitle,
+        metaTitle,
+        metaDescription,
+        schemaMarkup: movieSchema,
+      },
+    }}
+    client:load
+  />
+</BaseLayout>

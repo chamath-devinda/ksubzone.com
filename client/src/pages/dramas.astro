@@ -1,0 +1,62 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { DramasList } from '@/components/islands';
+import { compactCatalogItems } from '@/utils/mediaCatalog';
+import { permalinkSlug } from '@/utils/slug';
+import { buildBreadcrumbSchema, cleanMediaTitle, SITE_URL } from '@/lib/seo';
+import { fetchBackendJson } from '@/lib/server/backend';
+
+export const prerender = true;
+
+const limit = 18;
+const initialData = await fetchBackendJson(
+  `/api/media/dramas?status=Published&sort=popular&page=1&limit=${limit}`,
+  { revalidate: 300, fallback: { dramas: [], totalPages: 1 } }
+);
+
+initialData.dramas = compactCatalogItems(initialData.dramas);
+const items = initialData?.dramas || [];
+const totalPages = initialData?.totalPages || 1;
+
+const canonical = `${SITE_URL}/dramas`;
+const title = 'Korean Dramas with Sinhala & English Subtitles | KSubZone';
+const description = 'Browse Korean TV series and dramas with synchronized Sinhala and English subtitles. Episode guides, seasons, cast lists, and direct subtitle downloads.';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Korean dramas with Sinhala subtitles',
+  numberOfItems: items.length,
+  itemListElement: items.map((drama: any, index: number) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: cleanMediaTitle(drama.title) || drama.title,
+    url: `${SITE_URL}/drama/${permalinkSlug(drama)}`,
+  })),
+};
+
+const breadcrumbs = buildBreadcrumbSchema([
+  { name: 'Home', url: '/' },
+  { name: 'Dramas', url: '/dramas' },
+]);
+
+const combinedSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [breadcrumbs, structuredData],
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  keywords={['korean dramas', 'kdrama sinhala subtitles', 'k-drama subtitle download', 'ksubzone dramas']}
+  schemaMarkup={combinedSchema}
+>
+  <DramasList
+    initialData={initialData}
+    initialPage={1}
+    totalPages={totalPages}
+    client:load
+  />
+</BaseLayout>

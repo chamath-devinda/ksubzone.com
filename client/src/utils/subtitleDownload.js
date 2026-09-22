@@ -125,22 +125,49 @@ export async function downloadSubtitle({ subtitle, subId, downloadUrl, fileUrl, 
     return;
   }
 
-  let targetUrl = directR2Url || downloadUrl || (targetId ? `${apiBase}/api/subtitles/${targetId}/download` : fileUrl);
+  // Route through the application download endpoint so:
+  // 1. Branding cues (www.ksubzone.com) are automatically injected
+  // 2. The authoritative filename is resolved
+  // 3. Blob download preserves the filename across all browsers
+  const targetUrl = targetId
+    ? `${apiBase}/api/subtitles/${encodeURIComponent(targetId)}/download`
+    : (downloadUrl || fileUrl);
 
   try {
     const response = await fetchWithRetry(targetUrl, 3, 20000);
     const blob = await response.blob();
     if (!blob.size) throw new Error(DEFAULT_ERROR);
 
+    // Read filename from Content-Disposition if present
+    let downloadName = safeName;
+    const disposition = response.headers.get('content-disposition');
+    if (disposition && !fileName) {
+      const utf8Match = /filename\*=UTF-8''([^;\n]+)/i.exec(disposition);
+      if (utf8Match && utf8Match[1]) {
+        try {
+          downloadName = decodeURIComponent(utf8Match[1].trim());
+        } catch (_) {}
+      } else {
+        const standardMatch = /filename="?([^";\n]+)"?/i.exec(disposition);
+        if (standardMatch && standardMatch[1]) {
+          downloadName = standardMatch[1].trim();
+        }
+      }
+    }
+
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = safeName;
+    link.download = downloadName || safeName;
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
   } catch (err) {
+    if (targetUrl) {
+      triggerNativeDownload(targetUrl, safeName);
+      return;
+    }
     throw err;
   }
 }

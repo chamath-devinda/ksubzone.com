@@ -1,0 +1,319 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { fetchBackendJson } from '@/lib/server/backend';
+import { buildBreadcrumbSchema, SITE_URL, cleanMediaTitle } from '@/lib/seo';
+import { permalinkSlug } from '@/utils/slug';
+import { 
+  Compass, Tv, Film, Grid, BookOpen, 
+  Info, Mail, ArrowRight, Download 
+} from 'lucide-react';
+
+export const prerender = false;
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400'
+);
+
+let catalog: any = { dramas: [], movies: [] };
+let rawGenres: any[] = [];
+let articlesRes: any = { articles: [] };
+
+try {
+  const [cRes, gRes, aRes] = await Promise.all([
+    fetchBackendJson('/api/media/sitemap-catalog', { fallback: { dramas: [], movies: [] } }),
+    fetchBackendJson('/api/media/genres', { fallback: [] }),
+    fetchBackendJson('/api/articles?status=Published&limit=500', { fallback: { articles: [] } }),
+  ]);
+  catalog = cRes || { dramas: [], movies: [] };
+  rawGenres = Array.isArray(gRes) ? gRes : [];
+  articlesRes = aRes || { articles: [] };
+} catch (err: any) {
+  console.warn('[sitemap.astro] Failed to fetch catalog data:', err?.message);
+}
+
+const dramas = catalog?.dramas || [];
+const movies = catalog?.movies || [];
+const articles = articlesRes?.articles || [];
+
+const genres = Array.from(
+  rawGenres.reduce((map: any, genre: any) => {
+    if (!genre?.slug) return map;
+    const current = map.get(genre.slug);
+    if (!current || Number(genre.totalCount || 0) > Number(current.totalCount || 0)) {
+      map.set(genre.slug, genre);
+    }
+    return map;
+  }, new Map()).values()
+).filter((genre: any) => Number(genre.totalCount || 0) > 0);
+
+const articleCategories = Array.from(new Set(articles.map((article: any) => article.category).filter(Boolean)))
+  .map((name: any) => ({ name, slug: String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') }));
+
+const canonical = `${SITE_URL}/sitemap`;
+const title = 'KSubZone HTML Sitemap | Korean Dramas & Movies Directory';
+const description = 'Explore the complete directory of Korean dramas, movies, genre catalogs, guides, and Sinhala subtitle downloads on KSubZone.';
+
+const breadcrumbs = buildBreadcrumbSchema([
+  { name: 'Home', url: '/' },
+  { name: 'Sitemap', url: '/sitemap' },
+]);
+
+const coreSections = [
+  { title: 'Home', href: '/', desc: 'Homepage with trending K-Dramas & latest subtitle feed', icon: Compass },
+  { title: 'Korean Dramas', href: '/dramas', desc: 'Browse the complete Korean drama directory', icon: Tv },
+  { title: 'Korean Movies', href: '/movies', desc: 'Feature films & blockbuster movies with Sinhala subtitles', icon: Film },
+  { title: 'Genres Catalog', href: '/genres', desc: 'Explore titles categorized by genre & themes', icon: Grid },
+  { title: 'Articles & Guides', href: '/articles', desc: 'K-Drama watch guides, reviews & news', icon: BookOpen },
+  { title: 'About KSubZone', href: '/about', desc: 'Our mission, subtitle team, and community info', icon: Info },
+  { title: 'Contact Us', href: '/contact', desc: 'Support, subtitle requests, and inquiries', icon: Mail },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  keywords={['ksubzone sitemap', 'korean drama sitemap', 'sinhala subtitles directory', 'k-drama index']}
+  schemaMarkup={breadcrumbs}
+>
+  <div class="min-h-screen bg-transparent pb-20 pt-20 sm:pt-24 lg:pt-28 text-left w-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      {/* Page Header */}
+      <div class="flex flex-col gap-3 border-b border-white/[0.08] pb-8">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#9E57F6]/15 border border-[#9E57F6]/30 text-[#9E57F6] text-xs font-black uppercase tracking-widest self-start">
+          <Compass className="w-3.5 h-3.5" /> HTML Directory
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight font-display">
+          KSubZone HTML Sitemap
+        </h1>
+        <p class="text-sm sm:text-base text-slate-400 max-w-3xl leading-relaxed">
+          Welcome to the comprehensive site directory of KSubZone. Discover direct links to every Korean drama, movie, genre category, and synchronized Sinhala subtitle download.
+        </p>
+      </div>
+
+      {/* SECTION 1: Core Navigation */}
+      <section class="mt-12 flex flex-col gap-6">
+        <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display border-b border-white/[0.06] pb-3">
+          <span class="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-[#9E57F6]">
+            <Compass className="w-5 h-5" />
+          </span>
+          Core Navigation & Pages
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {coreSections.map((sec) => {
+            const Icon = sec.icon;
+            return (
+              <a
+                href={sec.href}
+                class="glass-panel p-5 rounded-2xl border border-white/[0.08] hover:border-[#9E57F6]/40 hover:bg-white/[0.04] transition group flex flex-col justify-between"
+              >
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="p-2 rounded-xl bg-[#9E57F6]/10 text-[#9E57F6] border border-[#9E57F6]/20 group-hover:scale-110 transition-transform">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span class="text-sm font-black text-white group-hover:text-[#9E57F6] transition">
+                    {sec.title}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  {sec.desc}
+                </p>
+                <span class="text-[10px] font-black uppercase tracking-wider text-[#9E57F6] flex items-center gap-1 mt-auto">
+                  Visit Page <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* SECTION 2: Korean TV Dramas Directory */}
+      <section class="mt-16 flex flex-col gap-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/[0.06] pb-3">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display">
+              <span class="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-[#9E57F6]">
+                <Tv className="w-5 h-5" />
+              </span>
+              Korean TV Dramas (Sinhala Subtitles)
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Index of ongoing and completed Korean drama series available on KSubZone.
+            </p>
+          </div>
+          <a
+            href="/dramas"
+            class="text-xs font-bold text-[#9E57F6] hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            View all dramas ({dramas.length}) <ArrowRight className="w-3 h-3" />
+          </a>
+        </div>
+
+        {dramas.length === 0 ? (
+          <p class="text-xs text-slate-500 py-6 text-center">No dramas found in catalog.</p>
+        ) : (
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {dramas.map((drama: any) => {
+              const year = drama.releaseDate ? new Date(drama.releaseDate).getFullYear() : (drama.year || null);
+              return (
+                <a
+                  href={`/drama/${permalinkSlug(drama)}`}
+                  class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#9E57F6]/30 hover:bg-white/[0.05] transition flex items-center justify-between gap-2 group"
+                >
+                  <div class="min-w-0 flex flex-col">
+                    <span class="text-xs font-bold text-slate-200 group-hover:text-[#9E57F6] transition truncate">
+                      {cleanMediaTitle(drama.title) || drama.title}
+                    </span>
+                    <span class="text-[10px] text-slate-400">
+                      {year ? `${year} • ` : ''}Sinhala Subtitles
+                    </span>
+                  </div>
+                  <Download className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#9E57F6] flex-shrink-0 transition-colors" />
+                </a>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* SECTION 3: Korean Movies Directory */}
+      <section class="mt-16 flex flex-col gap-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/[0.06] pb-3">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display">
+              <span class="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-pink-400">
+                <Film className="w-5 h-5" />
+              </span>
+              Korean Movies (Sinhala Subtitles)
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Index of Korean feature films, blockbusters, and indie releases with Sinhala subtitles.
+            </p>
+          </div>
+          <a
+            href="/movies"
+            class="text-xs font-bold text-pink-400 hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            View all movies ({movies.length}) <ArrowRight className="w-3 h-3" />
+          </a>
+        </div>
+
+        {movies.length === 0 ? (
+          <p class="text-xs text-slate-500 py-6 text-center">No movies found in catalog.</p>
+        ) : (
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {movies.map((movie: any) => {
+              const year = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : (movie.year || null);
+              return (
+                <a
+                  href={`/movie/${permalinkSlug(movie)}`}
+                  class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-pink-500/30 hover:bg-white/[0.05] transition flex items-center justify-between gap-2 group"
+                >
+                  <div class="min-w-0 flex flex-col">
+                    <span class="text-xs font-bold text-slate-200 group-hover:text-pink-400 transition truncate">
+                      {cleanMediaTitle(movie.title) || movie.title}
+                    </span>
+                    <span class="text-[10px] text-slate-400">
+                      {year ? `${year} • ` : ''}Movie Sinhala Sub
+                    </span>
+                  </div>
+                  <Download className="w-3.5 h-3.5 text-slate-500 group-hover:text-pink-400 flex-shrink-0 transition-colors" />
+                </a>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* SECTION 4: Genre Cross-Linking */}
+      <section class="mt-16 flex flex-col gap-6">
+        <div class="border-b border-white/[0.06] pb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display">
+            <span class="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-amber-400">
+              <Grid className="w-5 h-5" />
+            </span>
+            Korean Entertainment Genres
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Explore Korean drama and movie titles filtered by your favorite genres.
+          </p>
+        </div>
+
+        {genres.length === 0 ? (
+          <p class="text-xs text-slate-500 py-6 text-center">No genres available.</p>
+        ) : (
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {genres.map((g: any) => (
+              <div class="flex flex-col gap-1 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <span class="text-xs font-black text-white truncate">{g.name}</span>
+                <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
+                  {Number(g.dramaCount || 0) > 0 && (
+                    <a href={`/drama/genre/${g.slug}`} class="hover:text-[#9E57F6] transition">
+                      Dramas ({g.dramaCount})
+                    </a>
+                  )}
+                  {Number(g.dramaCount || 0) > 0 && Number(g.movieCount || 0) > 0 && <span>•</span>}
+                  {Number(g.movieCount || 0) > 0 && (
+                    <a href={`/movie/genre/${g.slug}`} class="hover:text-pink-400 transition">
+                      Movies ({g.movieCount})
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* SECTION 5: Articles & Subtitle Guides */}
+      {articles.length > 0 && (
+        <section class="mt-16 flex flex-col gap-6">
+          <div class="border-b border-white/[0.06] pb-3">
+            <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display">
+              <span class="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-emerald-400">
+                <BookOpen className="w-5 h-5" />
+              </span>
+              Articles, Reviews & Guides
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              K-Drama watch guides, episode breakdowns, translator insights, and articles.
+            </p>
+          </div>
+
+          {articleCategories.length > 0 && (
+            <nav aria-label="Article categories" class="flex flex-wrap gap-2">
+              {articleCategories.map((category: any) => (
+                <a
+                  href={`/articles/category/${category.slug}`}
+                  class="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 transition hover:border-[#9E57F6]/40 hover:text-white"
+                >
+                  {category.name}
+                </a>
+              ))}
+            </nav>
+          )}
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {articles.map((art: any) => (
+              <a
+                href={`/article/${art.slug}`}
+                class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/30 hover:bg-white/[0.05] transition flex flex-col gap-1 group"
+              >
+                <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition line-clamp-1">
+                  {art.title}
+                </span>
+                <p class="text-[10px] text-slate-400 line-clamp-1">
+                  {art.summary || 'Read full Korean drama article and guide on KSubZone.'}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+    </div>
+  </div>
+</BaseLayout>

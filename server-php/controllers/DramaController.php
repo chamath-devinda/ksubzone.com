@@ -1131,71 +1131,65 @@ class DramaController {
         }
         
         $completedSeasons = [];
+        $seasonStats = [];
         foreach ($episodesBySeason as $sNum => $eps) {
-            $allSubbed = true;
+            $totalInSeason = count($eps);
+            $subbedEpsInSeason = [];
             foreach ($eps as $ep) {
-                if (!isset($subbedEpisodeIds[(string)$ep['_id']])) {
-                    $allSubbed = false;
-                    break;
+                if (isset($subbedEpisodeIds[(string)$ep['_id']])) {
+                    $subbedEpsInSeason[] = (int)($ep['episodeNumber'] ?? 0);
                 }
             }
-            if ($allSubbed && !empty($eps)) {
+            $subbedCount = count($subbedEpsInSeason);
+            $maxSubbedEp = !empty($subbedEpsInSeason) ? max($subbedEpsInSeason) : 0;
+            $isComplete = ($totalInSeason > 0 && $subbedCount >= $totalInSeason);
+            if ($isComplete) {
                 $completedSeasons[] = $sNum;
             }
+            $seasonStats[$sNum] = [
+                'total' => $totalInSeason,
+                'subbedCount' => $subbedCount,
+                'maxEp' => $maxSubbedEp,
+                'isComplete' => $isComplete,
+                'hasSubtitles' => ($subbedCount > 0)
+            ];
         }
         
+        $totalSeasons = count($seasons);
         $seasonStatus = 'Ongoing';
         $progressLabel = '';
         
-        if (!empty($completedSeasons)) {
-            $maxCompletedSeason = max($completedSeasons);
-            $totalSeasons = count($seasons);
-            if ($totalSeasons <= 1) {
-                $progressLabel = 'Completed';
-            } else {
-                $progressLabel = 'S' . str_pad($maxCompletedSeason, 2, '0', STR_PAD_LEFT) . ' Completed';
-            }
-            if (count($completedSeasons) >= $totalSeasons && $totalSeasons > 0) {
-                $seasonStatus = 'Complete';
-            }
+        if ($totalSeasons > 0 && count($completedSeasons) >= $totalSeasons) {
+            $seasonStatus = 'Complete';
+            $progressLabel = 'Completed';
         } else {
-            // Determine which episodes have subtitles
-            $subbedEpisodes = [];
-            foreach ($episodeSubtitles as $sub) {
-                $epNum = isset($sub['episodeNumber']) ? (int)$sub['episodeNumber'] : null;
-                if ($epNum !== null && !in_array($epNum, $subbedEpisodes)) {
-                    $subbedEpisodes[] = $epNum;
+            // Find the highest season that has subtitles
+            $activeSeasonNum = null;
+            krsort($seasonStats);
+            foreach ($seasonStats as $sNum => $stats) {
+                if ($stats['hasSubtitles']) {
+                    $activeSeasonNum = $sNum;
+                    break;
                 }
             }
-            
-            foreach ($episodeSubtitles as $sub) {
-                if (!isset($sub['episodeNumber']) || $sub['episodeNumber'] === null) {
-                    foreach ($episodes as $ep) {
-                        if ($ep['_id'] === $sub['mediaId']) {
-                            $epNum = (int)$ep['episodeNumber'];
-                            if (!in_array($epNum, $subbedEpisodes)) {
-                                $subbedEpisodes[] = $epNum;
-                            }
-                            break;
-                        }
+
+            if ($activeSeasonNum !== null) {
+                $stats = $seasonStats[$activeSeasonNum];
+                if ($stats['isComplete']) {
+                    $progressLabel = $totalSeasons <= 1 ? 'Completed' : 'S' . str_pad($activeSeasonNum, 2, '0', STR_PAD_LEFT) . ' Completed';
+                } else {
+                    $epNum = $stats['maxEp'] > 0 ? $stats['maxEp'] : $stats['subbedCount'];
+                    if ($totalSeasons <= 1) {
+                        $progressLabel = 'EPISODE ' . str_pad($epNum, 2, '0', STR_PAD_LEFT);
+                    } else {
+                        $progressLabel = 'S' . str_pad($activeSeasonNum, 2, '0', STR_PAD_LEFT) . ' EP ' . str_pad($epNum, 2, '0', STR_PAD_LEFT);
                     }
                 }
-            }
-            
-            $subbedCount = count($subbedEpisodes);
-            $maxEpisodeNumber = !empty($subbedEpisodes) ? max($subbedEpisodes) : 0;
-
-            if ($totalEpisodesCount === 0 && $hasCompleteStatus) {
+            } elseif ($totalEpisodesCount === 0 && $hasCompleteStatus) {
                 $seasonStatus = 'Complete';
                 $progressLabel = 'Completed';
             } else {
-                if ($totalEpisodesCount > 0) {
-                    $progressLabel = 'EPISODE ' . ($maxEpisodeNumber > 0 ? $maxEpisodeNumber : $subbedCount);
-                } elseif ($maxEpisodeNumber > 0) {
-                    $progressLabel = 'EPISODE ' . str_pad($maxEpisodeNumber, 2, '0', STR_PAD_LEFT);
-                } else {
-                    $progressLabel = $totalSubtitles . ' subs';
-                }
+                $progressLabel = $totalSubtitles > 0 ? $totalSubtitles . ' subs' : 'No subs';
             }
         }
 
@@ -1350,70 +1344,65 @@ class DramaController {
             }
             
             $completedSeasons = [];
+            $seasonStats = [];
             foreach ($episodesBySeason as $sNum => $eps) {
-                $allSubbed = true;
+                $totalInSeason = count($eps);
+                $subbedEpsInSeason = [];
                 foreach ($eps as $ep) {
-                    if (!isset($subbedEpisodeIds[(string)$ep['_id']])) {
-                        $allSubbed = false;
-                        break;
+                    if (isset($subbedEpisodeIds[(string)$ep['_id']])) {
+                        $subbedEpsInSeason[] = (int)($ep['episodeNumber'] ?? 0);
                     }
                 }
-                if ($allSubbed && !empty($eps)) {
+                $subbedCount = count($subbedEpsInSeason);
+                $maxSubbedEp = !empty($subbedEpsInSeason) ? max($subbedEpsInSeason) : 0;
+                $isComplete = ($totalInSeason > 0 && $subbedCount >= $totalInSeason);
+                if ($isComplete) {
                     $completedSeasons[] = $sNum;
                 }
+                $seasonStats[$sNum] = [
+                    'total' => $totalInSeason,
+                    'subbedCount' => $subbedCount,
+                    'maxEp' => $maxSubbedEp,
+                    'isComplete' => $isComplete,
+                    'hasSubtitles' => ($subbedCount > 0)
+                ];
             }
             
+            $totalSeasons = count($dramaSeasons);
             $seasonStatus = ($drama['status'] ?? '') === 'Upcoming' ? 'Upcoming' : 'Ongoing';
             $progressLabel = '';
             
-            if (!empty($completedSeasons)) {
-                $maxCompletedSeason = max($completedSeasons);
-                $totalSeasons = count($dramaSeasons);
-                if ($totalSeasons <= 1) {
-                    $progressLabel = 'Completed';
-                } else {
-                    $progressLabel = 'S' . str_pad($maxCompletedSeason, 2, '0', STR_PAD_LEFT) . ' Completed';
-                }
-                if (count($completedSeasons) >= $totalSeasons && $totalSeasons > 0) {
-                    $seasonStatus = 'Complete';
-                }
+            if ($totalSeasons > 0 && count($completedSeasons) >= $totalSeasons) {
+                $seasonStatus = 'Complete';
+                $progressLabel = 'Completed';
             } else {
-                $subbedEpisodes = [];
-                foreach ($epSubbed as $sub) {
-                    $epNum = isset($sub['episodeNumber']) ? (int)$sub['episodeNumber'] : null;
-                    if ($epNum !== null && !in_array($epNum, $subbedEpisodes)) {
-                        $subbedEpisodes[] = $epNum;
+                // Find the highest season that has subtitles
+                $activeSeasonNum = null;
+                krsort($seasonStats);
+                foreach ($seasonStats as $sNum => $stats) {
+                    if ($stats['hasSubtitles']) {
+                        $activeSeasonNum = $sNum;
+                        break;
                     }
                 }
-                
-                foreach ($epSubbed as $sub) {
-                    if (!isset($sub['episodeNumber']) || $sub['episodeNumber'] === null) {
-                        foreach ($dramaEps as $ep) {
-                            if ($ep['_id'] === $sub['mediaId']) {
-                                $epNum = (int)$ep['episodeNumber'];
-                                if (!in_array($epNum, $subbedEpisodes)) {
-                                    $subbedEpisodes[] = $epNum;
-                                }
-                                break;
-                            }
+
+                if ($activeSeasonNum !== null) {
+                    $stats = $seasonStats[$activeSeasonNum];
+                    if ($stats['isComplete']) {
+                        $progressLabel = $totalSeasons <= 1 ? 'Completed' : 'S' . str_pad($activeSeasonNum, 2, '0', STR_PAD_LEFT) . ' Completed';
+                    } else {
+                        $epNum = $stats['maxEp'] > 0 ? $stats['maxEp'] : $stats['subbedCount'];
+                        if ($totalSeasons <= 1) {
+                            $progressLabel = 'EPISODE ' . str_pad($epNum, 2, '0', STR_PAD_LEFT);
+                        } else {
+                            $progressLabel = 'S' . str_pad($activeSeasonNum, 2, '0', STR_PAD_LEFT) . ' EP ' . str_pad($epNum, 2, '0', STR_PAD_LEFT);
                         }
                     }
-                }
-                
-                $subbedCount = count($subbedEpisodes);
-                $maxEpisodeNumber = !empty($subbedEpisodes) ? max($subbedEpisodes) : 0;
-                
-                if ($totalEpisodesCount === 0 && $hasCompleteStatus) {
+                } elseif ($totalEpisodesCount === 0 && $hasCompleteStatus) {
                     $seasonStatus = 'Complete';
                     $progressLabel = 'Completed';
                 } else {
-                    if ($totalEpisodesCount > 0) {
-                        $progressLabel = 'EPISODE ' . ($maxEpisodeNumber > 0 ? $maxEpisodeNumber : $subbedCount);
-                    } elseif ($maxEpisodeNumber > 0) {
-                        $progressLabel = 'EPISODE ' . str_pad($maxEpisodeNumber, 2, '0', STR_PAD_LEFT);
-                    } else {
-                        $progressLabel = $totalSubtitles . ' subs';
-                    }
+                    $progressLabel = $totalSubtitles > 0 ? $totalSubtitles . ' subs' : 'No subs';
                 }
             }
             

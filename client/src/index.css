@@ -929,16 +929,24 @@ textarea {
 
 .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'],
 .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'] {
-  background-color: #490570 !important;
-  background-image: linear-gradient(135deg, #72149A, #490570) !important;
-  box-shadow: 0 12px 28px rgba(73, 5, 112, 0.28) !important;
+  border-radius: 0.75rem !important;
+  background: rgba(168, 85, 247, 0.10) !important;
+  background-image: none !important;
+  border: 1px solid rgba(168, 85, 247, 0.28) !important;
+  box-shadow: none !important;
+  color: #C084FC !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
 }
 
 @media (hover: hover) {
   .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover,
   .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover {
-    filter: brightness(1.15);
-    box-shadow: 0 15px 35px rgba(73, 5, 112, 0.38) !important;
+    background: rgba(168, 85, 247, 0.20) !important;
+    background-image: none !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.18) !important;
   }
 }
 
@@ -2124,47 +2132,123 @@ textarea {
   transform: translateY(0px) scale(0.985) !important;
 }
 
-/* ── Admin Management Studio Action Buttons (Unified Hiru Luxury Pill) ── */
+/* ── Admin Management Studio Action Buttons (Unified Outlined Translucent Glass) ── */
 .admin-shell button:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']),
 .admin-shell a:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']),
-.admin-shell .btn-admin-action {
-  background:
-    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 75%),
-    linear-gradient(135deg, #8A2BE2 0%, #9D4EDD 48%, #7B2CBF 100%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
-  box-shadow:
-    0 18px 50px -20px rgba(138, 43, 226, 0.95),
-    0 4px 14px -2px rgba(138, 43, 226, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
+.admin-shell .btn-admin-action,
+.admin-shell .btn-oio-pill,
+.admin-shell .oio-btn-primary,
+.admin-shell .action-button-fill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0.75rem !important; /* rounded-xl (12px) */
+  background: rgba(168, 85, 247, 0.10) !important;
+  background-image: none !important;
+  border: 1px solid rgba(168, 85, 247, 0.28) !important;
+  box-shadow: none !important;
+  color: #C084FC !important;
+  font-weight: 800 !important;
   letter-spacing: 0.045em !important;
-  border-radius: 9999px !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .admin-shell button:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):hover,
 .admin-shell a:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):hover,
-.admin-shell .btn-admin-action:hover {
-  background:
-    radial-gradient(130% 90% at 50% -15%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 50%, transparent 80%),
-    linear-gradient(135deg, #9D4EDD 0%, #B066FF 48%, #8A2BE2 100%) !important;
-  border-color: rgba(255, 255, 255, 0.65) !important;
-  box-shadow:
-    0 24px 55px -16px rgba(157, 78, 221, 1),
-    0 0 25px rgba(138, 43, 226, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-  transform: translateY(-2px) !important;
-  filter: brightness(1.08) !important;
+.admin-shell .btn-admin-action:hover,
+.admin-shell .btn-oio-pill:hover,
+.admin-shell .oio-btn-primary:hover,
+.admin-shell .action-button-fill:hover {
+  background: rgba(168, 85, 247, 0.20) !important;
+  background-image: none !important;
+  border-color: rgba(168, 85, 247, 0.45) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.18) !important;
+  transform: translateY(-1px) !important;
+  filter: none !important;
 }
 
 .admin-shell button:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):active,
 .admin-shell a:is([class*='from-violet'], [class*='from-[#7C3AED]'], [class*='bg-violet'], [class*='bg-[#7C3AED]']):not([class*='bg-violet-600/']):not([class*='bg-[#7C3AED]/']):not([role='tab']):active,
-.admin-shell .btn-admin-action:active {
-  transform: translateY(0px) scale(0.985) !important;
-  box-shadow: 0 8px 25px -10px rgba(138, 43, 226, 0.8) !important;
+.admin-shell .btn-admin-action:active,
+.admin-shell .btn-oio-pill:active,
+.admin-shell .oio-btn-primary:active,
+.admin-shell .action-button-fill:active {
+  transform: scale(0.98) !important;
+  background: rgba(168, 85, 247, 0.25) !important;
+  box-shadow: none !important;
+}
+
+/* Secondary / Neutral Glass Buttons in Admin Shell */
+.admin-shell .btn-oio-glass {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0.75rem !important; /* rounded-xl (12px) */
+  background: rgba(255, 255, 255, 0.05) !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: none !important;
+  color: #CBD5E1 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-shell .btn-oio-glass:hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+  background-image: none !important;
+  border-color: rgba(255, 255, 255, 0.20) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px) !important;
+}
+
+.admin-shell .btn-oio-glass:active {
+  transform: scale(0.98) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.admin-shell .btn-oio-pill::before,
+.admin-shell .btn-oio-glass::before,
+.admin-shell :where(button, a)[class~='bg-brand-primary']::before {
+  display: none !important;
+}
+
+/* Enforce 12px rounded-xl on all action/pill buttons in admin shell */
+.admin-shell button[class*='rounded-full']:not([class*='w-']):not([class*='h-']),
+.admin-shell a[class*='rounded-full']:not([class*='w-']):not([class*='h-']) {
+  border-radius: 0.75rem !important; /* 12px */
+}
+
+/* Small action icon buttons in admin tables (e.g. w-7 h-7, w-8 h-8) */
+.admin-shell button[class*='w-7'][class*='h-7'],
+.admin-shell a[class*='w-7'][class*='h-7'],
+.admin-shell button[class*='w-8'][class*='h-8'],
+.admin-shell a[class*='w-8'][class*='h-8'] {
+  border-radius: 0.625rem !important; /* 10px rounded-lg */
+}
+
+/* Segmented tab pill containers and tabs in admin pages */
+.admin-shell div[class*='rounded-full']:has(> button) {
+  border-radius: 0.75rem !important;
+}
+.admin-shell div[class*='rounded-full'] > button[class*='rounded-full'] {
+  border-radius: 0.625rem !important;
+}
+
+/* Danger / Delete button hover state in admin shell */
+.admin-shell button[title*='Delete']:hover,
+.admin-shell a[title*='Delete']:hover,
+.admin-shell button[class*='text-red']:hover,
+.admin-shell a[class*='text-red']:hover {
+  background: rgba(239, 68, 68, 0.20) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #EF4444 !important;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.18) !important;
 }
 
 /* ── Admin Dashboard Quick Action Launcher Cards ── */
@@ -2317,10 +2401,12 @@ textarea {
 .admin-theme-dark .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'],
 [data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary'],
 [data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary'] {
-  background: #8A2BE2 !important;
+  border-radius: 0.75rem !important;
+  background: rgba(168, 85, 247, 0.10) !important;
   background-image: none !important;
-  border-color: #9D4EDD !important;
-  box-shadow: 0 8px 20px rgba(138, 43, 226, 0.28) !important;
+  border: 1px solid rgba(168, 85, 247, 0.28) !important;
+  box-shadow: none !important;
+  color: #C084FC !important;
 }
 
 @media (hover: hover) {
@@ -2328,10 +2414,11 @@ textarea {
   .admin-theme-dark .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover,
   [data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='bg-brand-primary']:hover,
   [data-admin-theme='dark'] .admin-shell :where(button, a, [role='button'], input[type='submit'])[class~='from-brand-primary']:hover {
-    background: #9D4EDD !important;
+    background: rgba(168, 85, 247, 0.20) !important;
     background-image: none !important;
-    filter: none !important;
-    box-shadow: 0 10px 24px rgba(138, 43, 226, 0.36) !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.18) !important;
   }
 }
 

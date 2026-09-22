@@ -1,4 +1,6 @@
-import 'server-only';
+if (typeof window !== 'undefined') {
+  throw new Error('[backend.js] Security violation: Backend fetcher cannot be executed in the browser.');
+}
 
 const DEFAULT_TIMEOUT_MS = 12_000;
 const DEFAULT_ATTEMPTS = 3;
@@ -34,7 +36,7 @@ export async function fetchBackendJson(
     revalidate = 60,
     tags = [],
     attempts = 2,
-    timeoutMs = 4_000,
+    timeoutMs = 8_000,
     notFoundStatuses = [404],
     fallback = undefined,
   } = {},

@@ -23,6 +23,11 @@ function useMediaQuery(query) {
 }
 
 export default function AdSlot({ slotId, className = '' }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { config, pageType, resolvePlacement, emitAdEvent } = useAds();
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
@@ -37,7 +42,7 @@ export default function AdSlot({ slotId, className = '' }) {
   const { matches: matchesPlacementViewport } = useMediaQuery(
     placement?.mediaQuery || '(min-width: 0px)'
   );
-  const viewportAllowed = !placement?.mediaQuery || matchesPlacementViewport;
+  const viewportAllowed = mounted && (!placement?.mediaQuery || matchesPlacementViewport);
 
   const isResponsiveBanner = placement?.format === 'responsiveBanner';
   const isNativePlacement = placement?.format === 'native';
@@ -125,8 +130,6 @@ export default function AdSlot({ slotId, className = '' }) {
   if (!viewportAllowed) return null;
   if (!placement) return null;
   if (selectedResponsiveFormatDisabled) return null;
-  if (slotFailed) return null;
-
   const reservationClass = isNativePlacement
     ? 'min-h-[280px]'
     : isSidebar
@@ -134,6 +137,23 @@ export default function AdSlot({ slotId, className = '' }) {
       : isSquare
         ? 'min-h-[250px]'
         : 'min-h-[66px] md:min-h-[106px]';
+
+  if (slotFailed) {
+    if (config?.showDevelopmentPlaceholders) {
+      return (
+        <aside
+          ref={hostRef}
+          aria-label="Advertisement Placeholder"
+          data-ad-slot={slotId}
+          className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border border-dashed border-amber-500/20 bg-amber-500/[0.03] p-4 text-center ${reservationClass} ${className}`}
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">Ad Slot: {zoneName || placement.format}</span>
+          <span className="text-xs text-slate-400">{slotId}</span>
+        </aside>
+      );
+    }
+    return null;
+  }
 
   return (
     <aside

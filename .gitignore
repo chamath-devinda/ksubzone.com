@@ -5,6 +5,7 @@ server/node_modules/
 
 # Production build outputs
 client/dist/
+client/.astro/
 
 # Environment variables
 .env

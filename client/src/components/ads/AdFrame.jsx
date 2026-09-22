@@ -144,13 +144,11 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
           callbacksRef.current.onUnavailable?.('no_fill');
         }
       } catch {
-        // Cross-origin redirection is still a terminal state for this slot.
-        // Remove it instead of holding an empty reserved block indefinitely.
-        finished = true;
-        cleanup();
-        callbacksRef.current.onUnavailable?.('unavailable');
+        // A cross-origin security exception means the ad network has loaded
+        // external third-party creative content. Treat this as a successful load.
+        finish(true);
       }
-    }, 6000);
+    }, 12000);
 
     timeout = setTimeout(() => {
       inspect();

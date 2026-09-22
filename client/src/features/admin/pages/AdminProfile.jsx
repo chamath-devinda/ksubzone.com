@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import AdminSidebar from '@/features/admin/components/AdminSidebar';
-import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
 import {
   User,
@@ -192,13 +190,7 @@ export default function AdminProfile() {
   const adminRole = admin?.role?.name || (typeof admin?.role === 'object' ? admin.role.name : String(admin?.role || 'Super Administrator'));
 
   return (
-    <div className="admin-shell flex min-h-screen font-sans">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8">
 
           {/* ── Top Hero Profile Banner ── */}
           <div className="admin-profile-hero relative overflow-hidden rounded-3xl border border-white/[0.15] shadow-2xl">
@@ -418,7 +410,7 @@ export default function AdminProfile() {
                       <button
                         type="submit"
                         disabled={savingProfile}
-                        className="flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill disabled:opacity-50"
                       >
                         {savingProfile ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         <span>Save Changes</span>
@@ -525,7 +517,7 @@ export default function AdminProfile() {
                         type="button"
                         onClick={() => handleApplyAvatarUrl(customAvatarInput.trim())}
                         disabled={!customAvatarInput.trim() || uploadingFile}
-                        className="px-5 h-10 rounded-full btn-oio-pill text-xs font-bold text-white disabled:opacity-40"
+                        className="px-5 h-10 rounded-xl btn-oio-pill text-xs font-bold text-white disabled:opacity-40"
                       >
                         Apply
                       </button>
@@ -693,7 +685,7 @@ export default function AdminProfile() {
                       <button
                         type="submit"
                         disabled={savingPassword}
-                        className="flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white btn-oio-pill disabled:opacity-50"
                       >
                         {savingPassword ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                         <span>Update Password</span>
@@ -774,8 +766,6 @@ export default function AdminProfile() {
             </div>
           )}
 
-        </main>
-      </div>
     </div>
   );
 }

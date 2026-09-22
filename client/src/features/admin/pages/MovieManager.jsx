@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
-import AdminSidebar from '@/features/admin/components/AdminSidebar';
-import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import DataTable from '@/features/admin/components/DataTable';
 import ModalDrawer from '@/features/admin/components/ModalDrawer';
 import { useToast } from '@/features/admin/components/Toast';
@@ -31,7 +29,6 @@ export default function MovieManager() {
   const { admin } = useAuth();
   const toast = useToast();
   
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState(null);
 
@@ -313,66 +310,57 @@ export default function MovieManager() {
   ];
 
   return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
-          
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.05]">
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Movies Library</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Manage film database records, ratings, and video assets</p>
-            </div>
-            
-            <button
-              type="button"
-              onClick={handleOpenCreate}
-              className="flex h-9.5 items-center gap-1.5 px-4 rounded-full btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Movie
-            </button>
-          </div>
-
-          {/* Status Filter Tabs */}
-          <div className="flex gap-1.5 bg-[#11131A] p-1 rounded-full border border-white/[0.06] w-fit">
-            {['All', 'Published', 'Upcoming', 'Draft'].map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => { setFilterStatus(s); setPage(1); }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
-                  filterStatus === s
-                    ? 'btn-oio-pill text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-
-          <label className="block text-sm" htmlFor="movie-search">Search all movies</label>
-          <input id="movie-search" className="w-full rounded-xl border p-3" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by title" />
-          {fetchError && <div role="alert" className="admin-error">{fetchError} <button onClick={() => fetchMovies()}>Retry</button></div>}
-          {/* Reusable DataTable */}
-          <DataTable
-            columns={columns}
-            data={movies}
-            loading={loading}
-            searchPlaceholder="Search movies by title or director..."
-            pageSize={25}
-          />
-          <nav aria-label="Movie pages" className="flex items-center justify-between gap-3 text-sm">
-            <button disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)}>Previous</button>
-            <span>Page {page} of {totalPages}</span>
-            <button disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)}>Next</button>
-          </nav>
-        </main>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.05]">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">Movies Library</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Manage film database records, ratings, and video assets</p>
+        </div>
+        
+        <button
+          type="button"
+          onClick={handleOpenCreate}
+          className="flex h-9.5 items-center gap-1.5 px-4 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add Movie
+        </button>
       </div>
+
+      {/* Status Filter Tabs */}
+      <div className="flex gap-1.5 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
+        {['All', 'Published', 'Upcoming', 'Draft'].map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => { setFilterStatus(s); setPage(1); }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+              filterStatus === s
+                ? 'btn-oio-pill text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <label className="block text-sm" htmlFor="movie-search">Search all movies</label>
+      <input id="movie-search" className="w-full rounded-xl border p-3" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by title" />
+      {fetchError && <div role="alert" className="admin-error">{fetchError} <button onClick={() => fetchMovies()}>Retry</button></div>}
+      {/* Reusable DataTable */}
+      <DataTable
+        columns={columns}
+        data={movies}
+        loading={loading}
+        searchPlaceholder="Search movies by title or director..."
+        pageSize={25}
+      />
+      <nav aria-label="Movie pages" className="flex items-center justify-between gap-3 text-sm">
+        <button disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)} className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95">Previous</button>
+        <span className="font-mono text-xs text-slate-400">Page {page} of {totalPages}</span>
+        <button disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)} className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95">Next</button>
+      </nav>
 
       {/* Manual Creation / Edit Drawer Modal */}
       <ModalDrawer
@@ -582,14 +570,14 @@ export default function MovieManager() {
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              className="px-5 py-2.5 rounded-full btn-oio-glass text-xs font-bold text-slate-300 hover:text-white"
+              className="px-5 py-2.5 rounded-xl btn-oio-glass text-xs font-bold text-slate-300 hover:text-white transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 rounded-full btn-oio-pill text-xs font-black uppercase tracking-wider text-white shadow-sm disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl btn-oio-pill text-xs font-black uppercase tracking-wider text-white shadow-sm disabled:opacity-50"
             >
               {saving ? 'Saving Movie...' : 'Save Movie'}
             </button>

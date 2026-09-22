@@ -1,0 +1,22 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { Search } from '@/components/islands';
+import { SITE_URL } from '@/lib/seo';
+
+export const prerender = false;
+
+const canonical = `${SITE_URL}/search`;
+const title = 'Advanced Search - KSubZone Catalog';
+const description = 'Search through hundreds of Korean dramas, movies, and subtitles. Filter by genre, rating, release year, or origin.';
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  noIndex={true}
+>
+  <div class="pt-16 pb-12 w-full">
+    <Search client:load />
+  </div>
+</BaseLayout>

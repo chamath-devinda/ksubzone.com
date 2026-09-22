@@ -194,12 +194,12 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                className="btn-oio-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed shadow-sm transition active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
               
-              <span className="px-3 py-1 rounded-full bg-violet-500/15 border border-violet-500/30 text-xs font-mono font-bold text-violet-300">
+              <span className="px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-500/25 text-xs font-mono font-bold text-purple-300">
                 {currentPage} / {totalPages}
               </span>
 
@@ -207,7 +207,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                className="btn-oio-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-white text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed shadow-sm transition active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>

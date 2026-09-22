@@ -82,7 +82,7 @@ const DEFAULT_OPTIONS = {
   correctTime2: '',
 };
 
-export default function SrtCleaner() {
+export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
   const { admin } = useAuth();
   const fileInputRef = useRef(null);
   const toast = useToast();
@@ -100,12 +100,12 @@ export default function SrtCleaner() {
     toast.info("Preparing files for Subtitle Branding...");
     try {
       const transferData = await Promise.all(
-        files.map((fileObj) => {
+        files.map(async (fileObj) => {
           if (fileObj.isCleaned && fileObj.cleanedText) {
-            return Promise.resolve({
+            return {
               name: fileObj.name,
               content: fileObj.cleanedText,
-            });
+            };
           }
           return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -122,7 +122,11 @@ export default function SrtCleaner() {
       );
 
       sessionStorage.setItem("sub_transfer_files", JSON.stringify(transferData));
-      window.location.href = "/management/subtitle-tools";
+      if (typeof onNavigate === 'function') {
+        onNavigate('/management/subtitle-tools');
+      } else {
+        window.location.href = "/management/subtitle-tools";
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to read files for transfer.");
@@ -844,16 +848,9 @@ export default function SrtCleaner() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
-          <div className="max-w-6xl mx-auto space-y-8">
-            {/* Header */}
+  const mainContent = (
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header */}
           <div className="text-left border-b border-white/5 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
@@ -868,7 +865,7 @@ export default function SrtCleaner() {
               <button
                 type="button"
                 onClick={navigateToBranding}
-                className="px-4 py-2.5 bg-brand-primary/10 border border-brand-primary/20 hover:bg-brand-primary/20 text-brand-primary rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
               >
                 <Languages className="w-4 h-4" /> Send to Branding
               </button>
@@ -935,7 +932,7 @@ export default function SrtCleaner() {
                   <h3 className="text-lg font-bold text-white">Drag & drop your subtitle files here</h3>
                   <p className="text-slate-400 text-xs mt-1">Supports uploading multiple standard SubRip (.srt) subtitle files at once</p>
                 </div>
-                <button className="px-5 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition">
+                <button className="px-5 py-2.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition">
                   Browse Files
                 </button>
               </div>
@@ -946,7 +943,7 @@ export default function SrtCleaner() {
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Uploaded Files ({files.length})</h3>
                     <button 
                       onClick={() => setActiveTab('settings')}
-                      className="px-5 py-2.5 bg-gradient-to-r from-brand-secondary to-brand-primary hover:brightness-110 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
+                      className="px-5 py-2.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
                     >
                       Next: Configure Settings <Wand2 className="w-4 h-4" />
                     </button>
@@ -1008,7 +1005,7 @@ export default function SrtCleaner() {
                 <div className="pt-2 flex flex-col gap-2">
                   <button 
                     onClick={handleCleanAllAndNavigate}
-                    className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shadow-brand-primary/10 flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5"
                   >
                     <Wand2 className="w-4 h-4" /> Clean All ({files.length})
                   </button>
@@ -1190,7 +1187,7 @@ export default function SrtCleaner() {
                 <button 
                   disabled={activeFile.isCleaning}
                   onClick={handleCleanAndNavigate}
-                  className="w-full py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black uppercase tracking-widest rounded-2xl transition shadow-lg shadow-brand-primary/10 text-xs sm:text-sm flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 disabled:opacity-40 text-purple-400 font-black uppercase tracking-widest rounded-xl transition text-xs sm:text-sm flex items-center justify-center gap-2"
                 >
                   {activeFile.isCleaning ? (
                     <>
@@ -1216,7 +1213,7 @@ export default function SrtCleaner() {
                   <button
                     onClick={handleDownloadAll}
                     disabled={!files.some(f => f.isCleaned)}
-                    className="flex-grow h-9 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1 transition"
+                    className="flex-grow h-9 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 disabled:opacity-40 text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1 transition"
                   >
                     <Download className="w-3 h-3" /> Download All
                   </button>
@@ -1314,7 +1311,7 @@ export default function SrtCleaner() {
                       </div>
                       <button
                         onClick={() => triggerDownloadForFile(activeFile)}
-                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-wider text-xs rounded-xl flex items-center gap-1.5 transition"
+                        className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 text-emerald-400 font-black uppercase tracking-wider text-xs rounded-xl flex items-center gap-1.5 transition"
                       >
                         <Download className="w-4 h-4" /> Download File
                       </button>
@@ -1340,7 +1337,7 @@ export default function SrtCleaner() {
                     </div>
                     <button
                       onClick={() => cleanFile(activeFile.id)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition"
+                      className="px-4 py-2 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 text-red-400 font-bold text-xs rounded-xl transition"
                     >
                       Try Again
                     </button>
@@ -1351,7 +1348,7 @@ export default function SrtCleaner() {
                     <p>This file is pending cleaning.</p>
                     <button
                       onClick={() => cleanFile(activeFile.id)}
-                      className="mt-4 px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-xs rounded-xl transition"
+                      className="mt-4 px-4 py-2 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 font-bold text-xs rounded-xl transition"
                     >
                       Clean Now
                     </button>
@@ -1362,6 +1359,21 @@ export default function SrtCleaner() {
           )}
 
           </div>
+  );
+
+  if (embedded) {
+    return mainContent;
+  }
+
+  return (
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
+
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
+          {mainContent}
         </main>
       </div>
     </div>

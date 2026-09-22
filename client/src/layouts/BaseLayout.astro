@@ -1,0 +1,121 @@
+---
+import '@/index.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/outfit/600.css';
+import '@fontsource/outfit/700.css';
+import '@fontsource/outfit/800.css';
+
+import { Navbar, Footer, StickyAnchorAd, ParticleBackground } from '@/components/islands';
+import { serializeJsonLd, SITE_URL, normalizeBrandName } from '@/lib/seo';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string | string[];
+  canonical?: string;
+  ogImage?: string;
+  ogType?: string;
+  schemaMarkup?: any;
+  breadcrumbs?: Array<{ name: string; url: string }>;
+  noIndex?: boolean;
+}
+
+const {
+  title = 'KSubZone - Korean Drama & Movie Subtitles in Sinhala and English',
+  description = 'Download synchronized Sinhala & English community subtitles for Korean dramas and movies in SRT, VTT, and ASS formats on KSubZone.',
+  keywords = 'ksubzone, korean drama sinhala subtitles, sinhala subtitles, k-drama subtitles, kdrama sinhala sub download',
+  canonical = SITE_URL,
+  ogImage = `${SITE_URL}/main-logo.webp`,
+  ogType = 'website',
+  schemaMarkup,
+  breadcrumbs,
+  noIndex = false,
+} = Astro.props;
+
+const keywordStr = Array.isArray(keywords) ? keywords.join(', ') : keywords;
+const cleanCanonical = canonical.startsWith('http') ? canonical : `${SITE_URL}${canonical.startsWith('/') ? '' : '/'}${canonical}`;
+const siteName = 'KSubZone';
+---
+
+<!doctype html>
+<html lang="si" class="dark scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/main-logo.webp" />
+
+    <!-- Core SEO -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    {keywordStr && <meta name="keywords" content={keywordStr} />}
+    <link rel="canonical" href={cleanCanonical} />
+
+    {noIndex ? (
+      <meta name="robots" content="noindex, nofollow, noarchive" />
+    ) : (
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    )}
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={cleanCanonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={siteName} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta property="og:locale" content="si_LK" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={cleanCanonical} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    <!-- Color Scheme & Mobile PWA -->
+    <meta name="theme-color" content="#09090B" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Structured Data (JSON-LD) -->
+    {schemaMarkup && (
+      <script
+        type="application/ld+json"
+        is:inline
+        set:html={serializeJsonLd(schemaMarkup)}
+      />
+    )}
+  </head>
+  <body class="bg-[#09090B] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-[#9E57F6]/30 selection:text-white antialiased overflow-x-hidden">
+    <!-- Skip to main content accessibility -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:z-[9999] focus:p-4 focus:bg-[#18181B] focus:text-[#9E57F6] focus:rounded-md focus:outline-none focus:ring-2 focus:ring-[#9E57F6]"
+    >
+      Skip to content
+    </a>
+
+    <!-- Ambient Particle Background -->
+    <ParticleBackground client:idle />
+
+    <!-- Global Navigation -->
+    <Navbar client:load />
+
+    <!-- Main Viewport Slot -->
+    <main id="main-content" class="flex-grow flex flex-col relative w-full">
+      <slot />
+    </main>
+
+    <!-- Global Footer -->
+    <Footer client:visible />
+
+    <!-- Interactive Sticky Ad Banner -->
+    <StickyAnchorAd client:only="react" />
+  </body>
+</html>

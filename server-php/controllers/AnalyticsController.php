@@ -303,18 +303,30 @@ class AnalyticsController {
         $mostDownloaded = array_slice($populatedDownloads, 0, $mostDownloadedCount);
         $latestDownloads = array_slice($populatedDownloads, $mostDownloadedCount);
 
+        $totalArticles = $db->count('articles');
+
         $payload = [
             'counts' => [
                 'totalMovies'       => $totalMovies,
-                'totalArticles' => $db->count('articles'),
+                'movies'            => $totalMovies,
+                'totalArticles'     => $totalArticles,
+                'articles'          => $totalArticles,
                 'totalDramas'       => $totalDramas,
+                'dramas'            => $totalDramas,
                 'totalEpisodes'     => $totalEpisodes,
+                'episodes'          => $totalEpisodes,
                 'totalUsers'        => $totalUsers,
+                'users'             => $totalUsers,
                 'totalSubtitles'    => $totalSubtitles,
+                'subtitles'         => $totalSubtitles,
                 'totalReviews'      => $totalReviews,
+                'reviews'           => $totalReviews,
                 'totalViews'        => $totalViews,
+                'views'             => $totalViews,
                 'totalTrafficViews' => $trafficViews,
-                'totalDownloads'    => $totalDownloads
+                'totalDownloads'    => $totalDownloads,
+                'downloads'         => $totalDownloads,
+                'pendingSubtitles'  => $pendingSubtitles,
             ],
             'seoHealthScore'   => null,
             'trafficLogs'      => $analyticsRecord['trafficLogs'] ?? [],

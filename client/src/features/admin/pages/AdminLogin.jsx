@@ -58,10 +58,10 @@ export default function AdminLogin() {
 
     try {
       const data = await loginAdmin(email, password, require2Fa ? code2fa : undefined);
-      if (data.require2Fa) {
+      if (data && data.require2Fa) {
         setRequire2Fa(true);
         setLoading(false);
-      } else {
+      } else if (data) {
         router.push('/management/dashboard');
       }
     } catch (err) {

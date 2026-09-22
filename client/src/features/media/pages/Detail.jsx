@@ -14,7 +14,6 @@ import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, handleImageFallback } from '@/utils/mediaImages';
 import { downloadSubtitle } from '@/utils/subtitleDownload';
 import AdSlot from '@/components/ads/AdSlot';
-import SideAdLayout from '@/components/ads/SideAdLayout';
 import { cleanMediaText, cleanMediaTitle } from '@/utils/seo';
 import MediaSubtitlesSection from '../components/MediaSubtitlesSection';
 
@@ -31,8 +30,9 @@ const asNumber = (value, fallback = 0) => {
   return Number.isFinite(number) ? number : fallback;
 };
 
-export default function Detail({ type = 'Movie', initialData, topOnly = false }) {
-  const { slug } = useParams();
+export default function Detail({ type = 'Movie', initialData, topOnly = false, slug: propSlug }) {
+  const params = useParams();
+  const slug = propSlug || params.slug || initialData?.slug || initialData?.drama?.slug || initialData?.movie?.slug;
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, admin, refreshProfile } = useAuth();
@@ -465,25 +465,35 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
   };
 
   return (
-    <SideAdLayout enabled={!topOnly}>
-    <div className="w-full flex flex-col gap-12 bg-transparent text-left pb-16">
+    <div className="w-full flex flex-col gap-10 bg-transparent text-left pb-16 relative">
       
-      {/* Cinematic Banner Backdrop Header */}
-      <div className="relative w-full h-[42vh] min-h-[300px] sm:h-[70vh] lg:h-[85vh] overflow-hidden">
+      {/* Cinematic Banner Backdrop Header - Extends all the way up behind the Navbar */}
+      <div 
+        className="absolute -top-14 sm:-top-16 left-0 right-0 w-full h-[650px] sm:h-[800px] lg:h-[920px] overflow-hidden pointer-events-none z-0"
+        style={{
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0.5) 75%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0.5) 75%, rgba(0,0,0,0) 100%)'
+        }}
+      >
         <img
           src={backdropImage}
           alt={`${displayTitle} backdrop`}
-          fetchPriority="high"
+          fetchpriority="high"
           decoding="async"
-          className="w-full h-full object-cover object-top"
+          className="w-full h-full object-cover object-top scale-105"
           onError={(event) => handleImageFallback(event, media, 'backdrop')}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-luxury-950 via-luxury-950/20 to-transparent" />
-        <div className="absolute inset-0 bg-black/10" />
+        {/* Soft atmospheric gradient for crisp contrast and readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-luxury-950/20 via-luxury-950/50 to-luxury-950" />
+        {/* Deep bottom blend to guarantee 100% seamless transition into the page background */}
+        <div className="absolute inset-x-0 bottom-0 h-64 sm:h-80 bg-gradient-to-t from-luxury-950 via-luxury-950/90 to-transparent" />
+        {/* Side vignette gradients to ensure smooth edge blending on ultrawide monitors */}
+        <div className="absolute inset-y-0 left-0 w-32 sm:w-56 bg-gradient-to-r from-luxury-950 via-luxury-950/40 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-32 sm:w-56 bg-gradient-to-l from-luxury-950 via-luxury-950/40 to-transparent" />
       </div>
 
-      {/* Media Metadata Layout */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full -mt-16 sm:-mt-52 lg:-mt-64 relative z-10">
+      {/* Media Metadata Layout (Balanced spacing below Navbar) */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full pt-12 sm:pt-20 lg:pt-32 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 items-start">
           
           {/* LEFT: POSTER CARD */}
@@ -565,14 +575,20 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                     <ShieldCheck className="w-2.5 h-2.5" /> {mediaSubtitleSummary.latestUploaderRole}
                   </span>
                 )}
-                <span className="px-2.5 py-0.5 bg-brand-primary/10 border border-brand-primary/25 text-brand-primary text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
+                <span suppressHydrationWarning className="px-2.5 py-0.5 bg-brand-primary/10 border border-brand-primary/25 text-brand-primary text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
                   <Eye className="w-2.5 h-2.5" /> {asNumber(media.viewCount)} Views
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight font-display">
-                {displayTitle}{releaseYear ? ` (${releaseYear})` : ''} Sinhala Subtitles
-              </h1>
+              {topOnly ? (
+                <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight font-display">
+                  {displayTitle}{releaseYear ? ` (${releaseYear})` : ''} Sinhala Subtitles
+                </h2>
+              ) : (
+                <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight font-display">
+                  {displayTitle}{releaseYear ? ` (${releaseYear})` : ''} Sinhala Subtitles
+                </h1>
+              )}
               <p className="text-sm sm:text-base font-bold text-brand-primary/90 mt-1.5 flex items-center gap-2 flex-wrap">
                 <span>{displayTitle} සිංහල උපසිරැසි (SRT / VTT / ASS)</span>
                 {asText(media.originalTitle) && asText(media.originalTitle) !== displayTitle && (
@@ -619,7 +635,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
                 <span>•</span>
                 <span className="uppercase">{asText(media.language, 'KO')}</span>
                 <span>•</span>
-                <span>{asNumber(media.viewCount)} Views</span>
+                <span suppressHydrationWarning>{asNumber(media.viewCount)} Views</span>
               </div>
 
               {/* PROMINENT HERO DOWNLOAD ACTION BAR */}
@@ -1041,6 +1057,5 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false })
 
 
     </div>
-    </SideAdLayout>
   );
 }

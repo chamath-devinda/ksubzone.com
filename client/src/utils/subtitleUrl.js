@@ -77,12 +77,12 @@ export function resolveSubtitleDownloadUrl(subtitle) {
 export function getSafeSubtitleFilename(subtitle, customName) {
   const format = (subtitle?.format || 'srt').toLowerCase();
   if (customName) {
-    const clean = customName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const clean = customName.replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g, '').replace(/\s+/g, ' ').trim();
     return clean.endsWith(`.${format}`) ? clean : `${clean}.${format}`;
   }
 
   if (subtitle?.originalFilename) {
-    return subtitle.originalFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    return subtitle.originalFilename.replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g, '').replace(/\s+/g, ' ').trim();
   }
 
   const id = subtitle?._id || subtitle?.id || 'subtitle';

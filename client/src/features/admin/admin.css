@@ -34,7 +34,7 @@
   --radius-card: 16px;
   --radius-btn: 12px;
   --radius-input: 12px;
-  --radius-pill: 9999px;
+  --radius-pill: 12px;
 
   /* Spacing */
   --studio-gap: 20px;
@@ -117,30 +117,40 @@
 }
 
 /* ==========================================================================
-   BUTTONS (12px standard, 9999px for pills and icon-only buttons)
+   BUTTONS (12px rounded-xl unified outlined translucent glass style)
    ========================================================================== */
 .btn-studio-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 38px;
   padding: 8px 18px;
   font-size: 13px;
-  font-weight: 600;
-  border-radius: var(--radius-btn) !important;
-  background-color: var(--studio-brand) !important;
-  color: #FFFFFF !important;
-  border: 1px solid var(--studio-brand-strong) !important;
-  box-shadow: 0 1px 2px rgba(158, 87, 246, 0.25) !important;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 12px !important;
+  background: rgba(168, 85, 247, 0.10) !important;
+  color: #C084FC !important;
+  border: 1px solid rgba(168, 85, 247, 0.28) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   cursor: pointer;
-  transition: all var(--studio-motion) ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-studio-primary:hover:not(:disabled) {
-  background-color: var(--studio-brand-strong) !important;
-  box-shadow: 0 4px 12px rgba(158, 87, 246, 0.35) !important;
+  background: rgba(168, 85, 247, 0.20) !important;
+  border-color: rgba(168, 85, 247, 0.45) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.18) !important;
   transform: translateY(-1px);
+}
+
+.btn-studio-primary:active:not(:disabled) {
+  transform: scale(0.98);
+  background: rgba(168, 85, 247, 0.25) !important;
 }
 
 .btn-studio-pill {
@@ -149,41 +159,50 @@
   justify-content: center;
   gap: 6px;
   min-height: 32px;
-  padding: 4px 14px;
+  padding: 5px 14px;
   font-size: 12px;
   font-weight: 600;
-  border-radius: var(--radius-pill) !important;
-  background-color: var(--studio-raised) !important;
-  color: var(--studio-text) !important;
-  border: 1px solid var(--studio-border) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #CBD5E1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   cursor: pointer;
-  transition: all var(--studio-motion) ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-studio-pill:hover:not(:disabled) {
-  background-color: var(--studio-surface-hover) !important;
-  border-color: var(--studio-border-strong) !important;
-  color: var(--studio-brand) !important;
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+}
+
+.btn-studio-pill:active:not(:disabled) {
+  transform: scale(0.98);
+  background: rgba(168, 85, 247, 0.22) !important;
 }
 
 .btn-icon-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-pill) !important;
-  background-color: var(--studio-raised) !important;
-  border: 1px solid var(--studio-border) !important;
-  color: var(--studio-muted) !important;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: #94A3B8 !important;
   cursor: pointer;
-  transition: all var(--studio-motion) ease;
+  transition: all 0.2s ease;
 }
 
 .btn-icon-pill:hover:not(:disabled) {
-  background-color: var(--studio-surface-hover) !important;
-  border-color: var(--studio-border-strong) !important;
-  color: var(--studio-text) !important;
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+  color: #C084FC !important;
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================

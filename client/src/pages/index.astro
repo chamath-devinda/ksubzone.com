@@ -1,0 +1,100 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { Home } from '@/components/islands';
+import { compactHomeCatalog } from '@/utils/mediaCatalog';
+import {
+  SITE_URL,
+  normalizeBrandName,
+  normalizeBrandText,
+  normalizeSiteUrl,
+} from '@/lib/seo';
+import { fetchBackendJson } from '@/lib/server/backend';
+import { getServerSiteContent } from '@/lib/server/siteContent';
+
+export const prerender = true;
+
+const siteContent = await getServerSiteContent();
+const brand = siteContent?.brand || {};
+const seo = siteContent?.seo || {};
+const footer = siteContent?.footer || {};
+const siteName = normalizeBrandName(brand.siteName);
+const primaryUrl = normalizeSiteUrl(brand.primaryUrl);
+const title = normalizeBrandText(seo.homeTitle || `${siteName} - ${brand.tagline || 'K-Drama & Movie Subtitles'}`);
+const description = seo.homeDescription || 'Download synchronized Sinhala and English SRT, VTT, and ASS community subtitles for Korean dramas and movies on KSubZone.';
+
+const catalogRes = await fetchBackendJson('/api/media/home', {
+  revalidate: 300,
+  fallback: {},
+});
+
+const initialHomeCatalog = compactHomeCatalog(catalogRes);
+const initialLibraryMovies = {
+  movies: (initialHomeCatalog.popularMovies?.length ? initialHomeCatalog.popularMovies : initialHomeCatalog.trendingMovies || []).slice(0, 10),
+  totalPages: 1,
+};
+const initialLibraryDramas = {
+  dramas: (initialHomeCatalog.popularDramas?.length ? initialHomeCatalog.popularDramas : initialHomeCatalog.trendingDramas || []).slice(0, 10),
+  totalPages: 1,
+};
+
+const homeSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${primaryUrl}#website`,
+      url: primaryUrl,
+      name: siteName,
+      alternateName: ['KSUBZONE', 'ksubzone.com', 'KSubZone Sinhala Subtitles'],
+      description,
+      inLanguage: ['en', 'si'],
+      publisher: { '@id': `${primaryUrl}#organization` },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${SITE_URL}/search?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${primaryUrl}#organization`,
+      name: siteName,
+      url: primaryUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/main-logo.webp`,
+      },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': `${primaryUrl}#webpage`,
+      url: primaryUrl,
+      name: title,
+      description,
+      isPartOf: { '@id': `${primaryUrl}#website` },
+      about: { '@id': `${primaryUrl}#organization` },
+      inLanguage: ['en', 'si'],
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={primaryUrl}
+  keywords={seo.keywords || ['ksubzone', 'korean drama sinhala subtitles', 'sinhala subtitles', 'korean movies']}
+  schemaMarkup={homeSchema}
+>
+  <!-- SEO Heading Hierarchy for Googlebot & Screen Readers -->
+  <h1 class="sr-only">
+    {siteName} - Download Korean Drama & Movie Sinhala and English Subtitles
+  </h1>
+
+  <Home
+    initialHomeCatalog={initialHomeCatalog}
+    initialLibraryMovies={initialLibraryMovies}
+    initialLibraryDramas={initialLibraryDramas}
+    client:idle={{ timeout: 1500 }}
+  />
+</BaseLayout>

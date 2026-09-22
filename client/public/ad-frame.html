@@ -21,6 +21,7 @@
   <script type="text/javascript">
     (function () {
       var host = 'https://alwingulla.com';
+      var fallbackHost = 'https://nobleduringsurveillance.com';
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
@@ -44,49 +45,63 @@
         document.body.style.height = zone.height + 'px';
       }
 
-      function isVisible(el) {
-        if (!el) return false;
-        var style = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
-        if (style && (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0')) return false;
-        var rect = el.getBoundingClientRect();
-        return rect.left >= -50 && rect.top >= -50 && rect.width >= 10 && rect.height >= 10;
+      function notifyLoaded() {
+        try {
+          window.parent.postMessage({ type: 'AD_LOADED', zone: zoneName }, '*');
+        } catch (e) {}
       }
 
       // Notify parent window when ad is rendered and visible on screen
       try {
         var obs = new MutationObserver(function () {
           var elements = document.querySelectorAll('iframe, img, a[href] img, div[id^="container-"] > *');
-          for (var i = 0; i < elements.length; i++) {
-            if (isVisible(elements[i])) {
-              window.parent.postMessage({ type: 'AD_LOADED', zone: zoneName }, '*');
-              break;
-            }
+          if (elements.length > 0) {
+            notifyLoaded();
           }
         });
-        obs.observe(document.body, { childList: true, subtree: true, attributes: true });
+        obs.observe(document.body, { childList: true, subtree: true });
       } catch (e) {}
 
       if (zone.native) {
-        document.write(
-          '<div id="container-' + zone.key + '"></div>' +
-          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" onerror="this.onerror=null;this.src=\'https://nobleduringsurveillance.com/' + zone.key + '/invoke.js\';"><' + '/script>'
-        );
+        var container = document.createElement('div');
+        container.id = 'container-' + zone.key;
+        document.body.appendChild(container);
+
+        var s = document.createElement('script');
+        s.async = true;
+        s.setAttribute('data-cfasync', 'false');
+        s.src = host + '/' + zone.key + '/invoke.js';
+        s.onerror = function() {
+          var fb = document.createElement('script');
+          fb.async = true;
+          fb.setAttribute('data-cfasync', 'false');
+          fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
+          document.body.appendChild(fb);
+        };
+        s.onload = function() { notifyLoaded(); };
+        document.body.appendChild(s);
         return;
       }
 
-      document.write(
-        '<script type="text/javascript">' +
-          'atOptions = {' +
-            'key: "' + zone.key + '",' +
-            'format: "iframe",' +
-            'height: ' + zone.height + ',' +
-            'width: ' + zone.width + ',' +
-            'params: {}' +
-          '};' +
-          'window.atOptions = atOptions;' +
-        '<' + '/script>' +
-        '<script type="text/javascript" src="' + host + '/' + zone.key + '/invoke.js" onerror="this.onerror=null;this.src=\'https://nobleduringsurveillance.com/' + zone.key + '/invoke.js\';"><' + '/script>'
-      );
+      window.atOptions = {
+        key: zone.key,
+        format: 'iframe',
+        height: zone.height,
+        width: zone.width,
+        params: {}
+      };
+
+      var script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = host + '/' + zone.key + '/invoke.js';
+      script.onerror = function() {
+        var fb = document.createElement('script');
+        fb.type = 'text/javascript';
+        fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
+        document.body.appendChild(fb);
+      };
+      script.onload = function() { notifyLoaded(); };
+      document.body.appendChild(script);
     }());
   </script>
 </body>

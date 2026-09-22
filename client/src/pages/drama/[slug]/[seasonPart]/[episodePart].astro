@@ -1,0 +1,89 @@
+---
+export const prerender = false;
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { Watch } from '@/components/islands';
+import { fetchBackendJson } from '@/lib/server/backend';
+import {
+  SITE_URL,
+  cleanMediaTitle,
+  clampDescription,
+  buildEpisodeSchema,
+  buildBreadcrumbSchema,
+} from '@/lib/seo';
+
+const getId = (value: any) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value._id || value.$oid || String(value);
+};
+
+const { slug, seasonPart, episodePart } = Astro.params;
+const seasonNumber = Number(String(seasonPart || '').replace('season-', '')) || 1;
+const episodeNumber = Number(String(episodePart || '').replace('episode-', '')) || 1;
+
+const data = await fetchBackendJson(`/api/media/dramas/${encodeURIComponent(slug || '')}?trackView=0`, {
+  revalidate: 300,
+  fallback: null,
+});
+
+if (!data || !data.drama) {
+  return Astro.redirect('/404');
+}
+
+const drama = data.drama;
+const cleanTitle = cleanMediaTitle(drama.title);
+const episodes = data.episodes || [];
+const seasons = data.seasons || [];
+
+const activeSeasonDoc = seasons.find((s: any) => s.seasonNumber === seasonNumber) || seasons[0];
+const activeEpisodeDoc = episodes.find(
+  (ep: any) => (activeSeasonDoc ? getId(ep.seasonId) === getId(activeSeasonDoc?._id) : true) && ep.episodeNumber === episodeNumber
+) || episodes.find((ep: any) => ep.episodeNumber === episodeNumber);
+
+const canonicalUrl = `${SITE_URL}/drama/${slug}/season-${seasonNumber}/episode-${episodeNumber}`;
+const epCode = `S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')}`;
+const title = `${cleanTitle} ${epCode} Sinhala Subtitles | KSubZone`;
+const rawDescription = activeEpisodeDoc?.episodeDescription || `Download Sinhala and English subtitles for ${cleanTitle} Season ${seasonNumber} Episode ${episodeNumber}. High speed direct download on KSubZone.`;
+const description = clampDescription(rawDescription, 155);
+
+const breadcrumbs = buildBreadcrumbSchema([
+  { name: 'Home', url: '/' },
+  { name: 'Dramas', url: '/dramas' },
+  { name: cleanTitle, url: `/drama/${slug}` },
+  { name: `Season ${seasonNumber}`, url: `/drama/${slug}` },
+  { name: `Episode ${episodeNumber}`, url: canonicalUrl },
+]);
+
+const episodeSchema = buildEpisodeSchema(drama, activeEpisodeDoc || { episodeNumber }, seasonNumber, episodeNumber, canonicalUrl);
+
+const combinedSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [breadcrumbs, episodeSchema].filter(Boolean),
+};
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonicalUrl}
+  ogImage={drama.poster || `${SITE_URL}/main-logo.webp`}
+  ogType="video.episode"
+  schemaMarkup={combinedSchema}
+>
+  <Watch
+    initialDramaData={{
+      ...data,
+      drama: {
+        ...drama,
+        title: cleanTitle,
+      },
+    }}
+    slug={slug}
+    seasonPart={seasonPart}
+    episodePart={episodePart}
+    client:load
+  />
+</BaseLayout>

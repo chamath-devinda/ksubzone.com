@@ -71,7 +71,9 @@ export default function Home({
     },
     initialData: (sortBy === 'popular' && country === '' && hasInitialMovies) ? initialLibraryMovies : undefined,
     staleTime: 10_000,
-    refetchOnMount: 'always',
+    // The page already includes this first page in its server snapshot. Only
+    // fetch again when the visitor changes a filter or sort order.
+    refetchOnMount: false,
     retry: 2
   });
 
@@ -84,7 +86,8 @@ export default function Home({
     },
     initialData: (sortBy === 'popular' && country === '' && hasInitialDramas) ? initialLibraryDramas : undefined,
     staleTime: 10_000,
-    refetchOnMount: 'always',
+    // Avoid two redundant catalog requests during initial page startup.
+    refetchOnMount: false,
     retry: 2
   });
 
@@ -219,8 +222,6 @@ export default function Home({
 
   return (
     <div className="w-full flex flex-col gap-10 sm:gap-12 bg-transparent pb-12 sm:pb-20">
-      <h1 className="sr-only">KSubZone Sinhala subtitles for Korean dramas and movies</h1>
-      
       {/* Hero Banner Slider */}
       <HeroSlider items={slideItems} loading={homeCatalogLoading} />
 

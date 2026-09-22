@@ -397,6 +397,171 @@ class SubtitleController {
         echo json_encode(['message' => 'Download tracked', 'downloads' => $downloads]);
     }
 
+    private static function sanitizeBaseTitle($rawTitle) {
+        $title = trim((string)$rawTitle);
+        // Strip pipe and anything after, e.g. "Title | Sinhala Subtitles" or "Title | සිංහල උපසිරැසි"
+        if (strpos($title, '|') !== false) {
+            $title = trim(explode('|', $title)[0]);
+        }
+        // Strip common redundant subtitle text
+        $title = preg_replace('/\s*(sinhala\s*subtitles?|sinhala\s*subtitiles?|සිංහල\s*උපසිරැසි).*$/iu', '', $title);
+        // Strip illegal filename characters: \ / : * ? " < > |
+        $title = preg_replace('/[\\\\\/:*?"<>|]/', '', $title);
+        // Collapse spaces
+        $title = trim(preg_replace('/\s+/', ' ', $title));
+        return $title;
+    }
+
+    public static function resolveDownloadFilename($subtitle, $db) {
+        $ext = strtolower((string)($subtitle['format'] ?? 'srt'));
+        if (empty($ext)) $ext = 'srt';
+
+        $mediaType = strtolower((string)($subtitle['mediaType'] ?? ''));
+        $mediaId = $subtitle['mediaId'] ?? null;
+        $subLang = trim((string)($subtitle['language'] ?? 'Sinhala'));
+        if (empty($subLang)) $subLang = 'Sinhala';
+
+        if ($mediaType === 'episode') {
+            $episode = $db->findOne('episodes', ['_id' => $mediaId]);
+            $dramaTitle = '';
+            $seasonNum = (int)($subtitle['seasonNumber'] ?? ($episode['seasonNumber'] ?? 1));
+            $episodeNum = (int)($subtitle['episodeNumber'] ?? ($episode['episodeNumber'] ?? 1));
+            if ($episode && !empty($episode['dramaId'])) {
+                $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
+                if ($drama) {
+                    $dramaTitle = trim((string)($drama['title'] ?? ''));
+                }
+            }
+            if (empty($dramaTitle)) {
+                $dramaTitle = 'K-Drama';
+            }
+            $cleanTitle = self::sanitizeBaseTitle($dramaTitle);
+            // For episode filenames, also strip trailing year (e.g. "Love on the Menu (2026)" -> "Love on the Menu")
+            $cleanTitle = preg_replace('/\s*\(\d{4}\)$/', '', $cleanTitle);
+            $cleanTitle = trim($cleanTitle) ?: 'K-Drama';
+            $seasonFormatted = sprintf('S%02d', $seasonNum);
+            $episodeFormatted = sprintf('E%02d', $episodeNum);
+            return "{$cleanTitle} {$seasonFormatted}{$episodeFormatted} {$subLang} Subtitles - www.ksubzone.com.{$ext}";
+        }
+
+        if ($mediaType === 'movie') {
+            $movie = $db->findOne('movies', ['_id' => $mediaId]);
+            $movieTitle = trim((string)($movie['title'] ?? ''));
+            $cleanTitle = self::sanitizeBaseTitle($movieTitle);
+            if (empty($cleanTitle)) $cleanTitle = 'Movie';
+
+            // Check if title already has a 4-digit year like (2024)
+            $hasYear = preg_match('/\(\d{4}\)/', $cleanTitle);
+            if (!$hasYear) {
+                $year = '';
+                if (!empty($movie['releaseDate'])) {
+                    $year = substr($movie['releaseDate'], 0, 4);
+                }
+                if (empty($year) && !empty($movie['year'])) {
+                    $year = (string)$movie['year'];
+                }
+                if (!empty($year)) {
+                    return "{$cleanTitle} ({$year}) {$subLang} Subtitles - www.ksubzone.com.{$ext}";
+                }
+            }
+            return "{$cleanTitle} {$subLang} Subtitles - www.ksubzone.com.{$ext}";
+        }
+
+        if ($mediaType === 'drama') {
+            $drama = $db->findOne('dramas', ['_id' => $mediaId]);
+            $dramaTitle = trim((string)($drama['title'] ?? ''));
+            $cleanTitle = self::sanitizeBaseTitle($dramaTitle);
+            if (empty($cleanTitle)) $cleanTitle = 'Drama';
+            if (!empty($subtitle['seasonNumber']) && !empty($subtitle['episodeNumber'])) {
+                $cleanTitle = preg_replace('/\s*\(\d{4}\)$/', '', $cleanTitle);
+                $cleanTitle = trim($cleanTitle) ?: 'Drama';
+                $seasonFormatted = sprintf('S%02d', (int)$subtitle['seasonNumber']);
+                $episodeFormatted = sprintf('E%02d', (int)$subtitle['episodeNumber']);
+                return "{$cleanTitle} {$seasonFormatted}{$episodeFormatted} {$subLang} Subtitles - www.ksubzone.com.{$ext}";
+            }
+            return "{$cleanTitle} {$subLang} Subtitles - www.ksubzone.com.{$ext}";
+        }
+
+        $id = (string)($subtitle['_id'] ?? 'file');
+        return "subtitle-{$id}.{$ext}";
+    }
+
+    public static function injectSubtitleBranding($content, $format = 'srt') {
+        if (empty($content)) return $content;
+        $format = strtolower($format);
+
+        // If already branded with www.ksubzone.com, do not duplicate
+        if (stripos($content, 'www.ksubzone.com') !== false || stripos($content, 'ksubzone.com') !== false) {
+            return $content;
+        }
+
+        if ($format === 'srt') {
+            $normalized = str_replace(["\r\n", "\r"], "\n", $content);
+            $normalized = trim($normalized);
+
+            // Official KSubZone intro branding cue
+            $introCue = "1\n00:00:02,000 --> 00:00:07,000\n<font color=\"#ffcc00\">නවතම කොරියානු චිත්‍රපට සහ රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color=\"#ff9416\">ලබා ගැනීමට පිවිසෙන්න </font>www.ksubzone.com <font color=\"#ff9416\">අපගේ වෙබ් අඩවියට.</font>";
+
+            $blocks = preg_split('/\n{2,}/', $normalized);
+            if (empty($blocks)) {
+                return $introCue . "\r\n\r\n" . $normalized;
+            }
+
+            $newBlocks = [$introCue];
+            $cueIndex = 2;
+            $lastEndTime = '00:00:07,000';
+
+            foreach ($blocks as $block) {
+                $lines = explode("\n", trim($block));
+                if (empty($lines)) continue;
+
+                // Remove original index number if present
+                if (is_numeric(trim($lines[0]))) {
+                    array_shift($lines);
+                }
+
+                // Look for timing line (00:00:00,000 --> 00:00:00,000)
+                if (!empty($lines) && strpos($lines[0], '-->') !== false) {
+                    $timeParts = explode('-->', $lines[0]);
+                    if (count($timeParts) === 2) {
+                        $lastEndTime = trim($timeParts[1]);
+                    }
+                }
+
+                if (!empty($lines)) {
+                    $newBlocks[] = $cueIndex . "\n" . implode("\n", $lines);
+                    $cueIndex++;
+                }
+            }
+
+            // Calculate outro time: 2 seconds after lastEndTime
+            $outroStart = '01:30:00,000';
+            $outroEnd = '01:30:05,000';
+            if (preg_match('/^(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/', $lastEndTime, $m)) {
+                $totalSecs = ((int)$m[1] * 3600) + ((int)$m[2] * 60) + (int)$m[3] + 2;
+                $outStartSecs = $totalSecs;
+                $outEndSecs = $totalSecs + 5;
+                $outroStart = sprintf('%02d:%02d:%02d,000', floor($outStartSecs / 3600), floor(($outStartSecs % 3600) / 60), $outStartSecs % 60);
+                $outroEnd = sprintf('%02d:%02d:%02d,000', floor($outEndSecs / 3600), floor(($outEndSecs % 3600) / 60), $outEndSecs % 60);
+            }
+
+            $outroCue = "{$cueIndex}\n{$outroStart} --> {$outroEnd}\n<font color=\"#ffcc00\">සිංහල උපසිරැසි ගැන්වීම KSubZone කණ්ඩායම</font>\n<font color=\"#ff9416\">www.ksubzone.com වෙතින් බාගත කරන ලදී.</font>";
+            $newBlocks[] = $outroCue;
+
+            return implode("\r\n\r\n", $newBlocks) . "\r\n";
+        }
+
+        if ($format === 'vtt') {
+            $introCue = "00:00:02.000 --> 00:00:07.000\n<c.yellow>නවතම කොරියානු චිත්‍රපට සහ රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</c>\nලබා ගැනීමට පිවිසෙන්න www.ksubzone.com අපගේ වෙබ් අඩවියට.\n\n";
+            if (stripos($content, 'WEBVTT') === 0) {
+                return preg_replace('/^(WEBVTT[^\n]*\n+)/i', "$1" . $introCue, $content);
+            }
+            return "WEBVTT\n\n" . $introCue . $content;
+        }
+
+        return $content;
+    }
+
     public static function downloadSubtitleFile($id) {
         $db = Database::getInstance();
         $subtitle = $db->findOne('subtitles', ['_id' => $id]);
@@ -413,212 +578,94 @@ class SubtitleController {
             return;
         }
 
-        // R2 is a public immutable object store. Redirect instead of proxying
-        // the file through PHP/Vercel, which avoids duplicate egress and
-        // function transfer. The client can opt into a server-side proxy when
-        // a browser-side Cloudflare request is rejected with HTTP 403.
-        if (($subtitle['storageProvider'] ?? '') === 'r2' && preg_match('#^https?://#i', $fileUrl)) {
-            // Native browser navigation cannot attach X-Subtitle-Proxy, so a
-            // query flag is also supported for the reliable download fallback.
-            $proxyRequested = (isset($_SERVER['HTTP_X_SUBTITLE_PROXY'])
-                && (string)$_SERVER['HTTP_X_SUBTITLE_PROXY'] === '1')
-                || (isset($_GET['proxy']) && (string)$_GET['proxy'] === '1');
-
-            if ($proxyRequested) {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $fileUrl);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-                curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-                $fileContent = curl_exec($ch);
-                $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $curlError = curl_error($ch);
-                curl_close($ch);
-
-                if ($httpCode !== 200 || $fileContent === false || strlen($fileContent) === 0) {
-                    error_log('R2 subtitle proxy failed with HTTP ' . $httpCode . ': ' . ($curlError ?: $fileUrl));
-                    http_response_code(503);
-                    header('Content-Type: application/json; charset=UTF-8');
-                    echo json_encode(['message' => 'මෙම උපසිරැසි ගොනුව දැන් බාගත කළ නොහැක. කරුණාකර සුළු මොහොතකින් නැවත උත්සාහ කරන්න.']);
-                    return;
-                }
-
-                try {
-                    if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
-                        $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
-                    }
-                } catch (\Throwable $e) {
-                    error_log('Subtitle download count update failed: ' . $e->getMessage());
-                }
-
-                $customName = $_GET['name'] ?? '';
-                $ext = strtolower((string)($subtitle['format'] ?? 'srt'));
-                if (empty($customName)) {
-                    $customName = 'subtitle-' . $id . '.' . $ext;
-                } else {
-                    $customName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $customName);
-                    if (pathinfo($customName, PATHINFO_EXTENSION) !== $ext) {
-                        $customName .= '.' . $ext;
-                    }
-                }
-
-                $contentTypes = [
-                    'srt' => 'application/x-subrip; charset=UTF-8',
-                    'vtt' => 'text/vtt; charset=UTF-8',
-                    'ass' => 'text/plain; charset=UTF-8'
-                ];
-                header('Content-Type: ' . ($contentTypes[$ext] ?? 'application/octet-stream'));
-                header('Content-Disposition: attachment; filename="' . $customName . '"');
-                header('Content-Length: ' . strlen($fileContent));
-                header('Cache-Control: private, no-store');
-                echo $fileContent;
-                exit;
+        // Track download metrics safely
+        try {
+            if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
+                $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
             }
-
-            try {
-                if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
-                    $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
-                }
-            } catch (\Throwable $e) {
-                // Ignore analytics write errors
-            }
-            header('Cache-Control: public, max-age=31536000, immutable');
-            header('Content-Disposition: attachment; filename="' . preg_replace('/[^a-zA-Z0-9._-]/', '_', 'subtitle-' . $id . '.' . ($subtitle['format'] ?? 'srt')) . '"');
-            header('Location: ' . $fileUrl, true, 302);
-            exit;
+        } catch (\Throwable $e) {
+            error_log('Subtitle download count update failed: ' . $e->getMessage());
         }
 
-        // Determine filename
-        $customName = $_GET['name'] ?? '';
-        $ext = $subtitle['format'] ?? 'srt';
-        if (empty($customName)) {
-            $customName = 'subtitle-' . $id . '.' . $ext;
-        } else {
-            // Clean filename to prevent path traversal or invalid characters
-            $customName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $customName);
+        $ext = strtolower((string)($subtitle['format'] ?? 'srt'));
+        if (empty($ext)) $ext = 'srt';
+
+        // 1. Resolve authoritative filename from media record
+        $resolvedFilename = self::resolveDownloadFilename($subtitle, $db);
+
+        // If client provided a custom name query parameter, use it if valid
+        $customName = trim((string)($_GET['name'] ?? ''));
+        if (!empty($customName)) {
+            $customName = preg_replace('/[^a-zA-Z0-9_\. -]/u', '_', $customName);
             if (pathinfo($customName, PATHINFO_EXTENSION) !== $ext) {
                 $customName .= '.' . $ext;
             }
+            $finalFilename = $customName;
+        } elseif (!empty($resolvedFilename)) {
+            $finalFilename = $resolvedFilename;
+        } else {
+            $finalFilename = 'subtitle-' . $id . '.' . $ext;
         }
 
-        // Clean and prepare local caching directory
-        $baseFileName = basename(parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl);
-        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
-        $legacyServerRoot = !empty($docRoot)
-            ? dirname(rtrim($docRoot, '/\\')) . '/server-php'
-            : dirname(dirname(__DIR__)) . '/server-php';
-
-        $localDir = dirname(__DIR__) . '/uploads/subtitles';
-        if (!file_exists($localDir)) {
-            @mkdir($localDir, 0777, true);
-        }
-
-        // 1. Check local storage paths first (cPanel disk)
-        $possiblePaths = [
-            $localDir . '/' . $baseFileName,
-            dirname(__DIR__) . '/' . ltrim($fileUrl, '/'),
-            dirname(__DIR__) . $fileUrl,
-            dirname(dirname(__DIR__)) . '/' . ltrim($fileUrl, '/'),
-            dirname(dirname(__DIR__)) . $fileUrl,
-            $docRoot . '/uploads/subtitles/' . $baseFileName,
-            $docRoot . '/' . ltrim($fileUrl, '/'),
-            $docRoot . '/api/' . ltrim($fileUrl, '/'),
-            $docRoot . '/api/uploads/subtitles/' . $baseFileName,
-            $legacyServerRoot . '/uploads/subtitles/' . $baseFileName,
-            dirname(dirname(__DIR__)) . '/uploads/subtitles/' . $baseFileName,
-            dirname(dirname(__DIR__)) . '/server-php/uploads/subtitles/' . $baseFileName
-        ];
-
+        // 2. Fetch subtitle content (from R2 remote URL or local storage)
         $fileContent = '';
-        foreach ($possiblePaths as $testPath) {
-            if (!empty($testPath) && file_exists($testPath) && !is_dir($testPath) && filesize($testPath) > 0) {
-                $content = @file_get_contents($testPath);
-                if ($content !== false && strlen($content) > 0) {
-                    $fileContent = $content;
-                    break;
-                }
+        if (preg_match('#^https?://#i', $fileUrl)) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $fileUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) KSubZone/1.0');
+            $fileContent = curl_exec($ch);
+            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($httpCode !== 200 || $fileContent === false || strlen($fileContent) === 0) {
+                error_log('R2 subtitle fetch failed with HTTP ' . $httpCode . ': ' . ($curlError ?: $fileUrl));
+                $fileContent = '';
             }
         }
 
-        // 2. If not cached locally and URL is remote, fetch and cache on cPanel.
-        // Existing records can still point at an older Supabase project. Try
-        // the record URL first, then the currently configured project. This
-        // lets a migrated bucket recover downloads without rewriting every
-        // subtitle row by hand.
-        if (empty($fileContent) && (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0)) {
-            $supabaseKey = $_ENV['SUPABASE_KEY'] ?? getenv('SUPABASE_KEY') ?: '';
-            $remoteCandidates = [$fileUrl];
-            $configuredOrigin = rtrim($_ENV['SUPABASE_URL'] ?? getenv('SUPABASE_URL') ?: '', '/');
-            $configuredBucket = $_ENV['SUPABASE_BUCKET'] ?? getenv('SUPABASE_BUCKET') ?: 'Ksubzone';
+        // Check local storage paths if not fetched remotely
+        if (empty($fileContent)) {
+            $baseFileName = basename(parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl);
+            $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+            $legacyServerRoot = !empty($docRoot)
+                ? dirname(rtrim($docRoot, '/\\')) . '/server-php'
+                : dirname(dirname(__DIR__)) . '/server-php';
 
-            // A legacy public URL may return 402 after the old project hits
-            // its egress cap. Keep the same object path on the active project
-            // as a fallback when the storage migration has copied the file.
-            $parsedPath = parse_url($fileUrl, PHP_URL_PATH) ?: '';
-            if ($configuredOrigin !== '' && strpos($parsedPath, '/storage/v1/object/') !== false) {
-                $objectMarker = '/storage/v1/object/';
-                $markerPosition = strpos($parsedPath, $objectMarker);
-                $objectPath = substr($parsedPath, $markerPosition + strlen($objectMarker));
-                $objectPath = preg_replace('#^public/#', '', $objectPath);
-                $segments = explode('/', trim($objectPath, '/'));
-                if (count($segments) >= 2) {
-                    array_shift($segments); // discard the old bucket name
-                    $remoteCandidates[] = $configuredOrigin . '/storage/v1/object/public/'
-                        . rawurlencode($configuredBucket) . '/' . implode('/', array_map('rawurlencode', $segments));
-                }
-            }
+            $localDir = dirname(__DIR__) . '/uploads/subtitles';
+            $possiblePaths = [
+                $localDir . '/' . $baseFileName,
+                dirname(__DIR__) . '/' . ltrim($fileUrl, '/'),
+                dirname(__DIR__) . $fileUrl,
+                dirname(dirname(__DIR__)) . '/' . ltrim($fileUrl, '/'),
+                dirname(dirname(__DIR__)) . $fileUrl,
+                $docRoot . '/uploads/subtitles/' . $baseFileName,
+                $docRoot . '/' . ltrim($fileUrl, '/'),
+                $docRoot . '/api/' . ltrim($fileUrl, '/'),
+                $docRoot . '/api/uploads/subtitles/' . $baseFileName,
+                $legacyServerRoot . '/uploads/subtitles/' . $baseFileName,
+                dirname(dirname(__DIR__)) . '/uploads/subtitles/' . $baseFileName,
+                dirname(dirname(__DIR__)) . '/server-php/uploads/subtitles/' . $baseFileName
+            ];
 
-            $lastRemoteStatus = 0;
-            foreach (array_unique($remoteCandidates) as $candidateUrl) {
-                $headers = [];
-                if (!empty($supabaseKey) && strpos($candidateUrl, 'supabase.co') !== false) {
-                    $headers[] = "Authorization: Bearer {$supabaseKey}";
-                    $headers[] = "apikey: {$supabaseKey}";
-                }
-
-                for ($attempt = 1; $attempt <= 3; $attempt++) {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $candidateUrl);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-                    curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-                    if (!empty($headers)) curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-                    $fetched = curl_exec($ch);
-                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    $curlError = curl_error($ch);
-                    curl_close($ch);
-                    $lastRemoteStatus = $httpCode;
-
-                    if ($httpCode === 200 && $fetched !== false && strlen($fetched) > 0) {
-                        $fileContent = $fetched;
-                        @file_put_contents($localDir . '/' . $baseFileName, $fileContent);
-                        break 2;
+            foreach ($possiblePaths as $testPath) {
+                if (!empty($testPath) && file_exists($testPath) && !is_dir($testPath) && filesize($testPath) > 0) {
+                    $content = @file_get_contents($testPath);
+                    if ($content !== false && strlen($content) > 0) {
+                        $fileContent = $content;
+                        break;
                     }
-
-                    error_log("Subtitle remote download attempt {$attempt} failed with HTTP {$httpCode}: " . ($curlError ?: $candidateUrl));
-                    if (in_array($httpCode, [400, 401, 403, 404], true)) break;
-                    if ($attempt < 3) usleep(250000 * $attempt);
                 }
-            }
-
-            if (empty($fileContent) && $lastRemoteStatus === 402) {
-                http_response_code(402);
-                header('Content-Type: application/json; charset=UTF-8');
-                echo json_encode([
-                    'code' => 'SUBTITLE_STORAGE_RESTRICTED',
-                    'message' => 'Subtitle backup storage is restricted. Please contact the site administrator to restore the file or storage service.'
-                ]);
-                return;
             }
         }
 
-        // 3. If file content could not be found or resolved
         if (empty($fileContent)) {
             http_response_code(503);
             header('Content-Type: application/json; charset=UTF-8');
@@ -626,36 +673,27 @@ class SubtitleController {
             return;
         }
 
-        // Count only downloads for which the file was actually resolved. A
-        // missing local/remote file must not inflate the public counter.
-        try {
-            if (\Utils\VisitorGuard::shouldCount('sub_dl_' . $id)) {
-                $db->incrementJsonCounter('subtitles', $id, 'downloads', 'lastDownloadedAt');
-            }
-        } catch (\Throwable $e) {
-            // A transient analytics write failure must never block the file.
-            error_log('Subtitle download count update failed: ' . $e->getMessage());
-        }
+        // 3. Inject official KSubZone copyright / branding card into subtitle content
+        $fileContent = self::injectSubtitleBranding($fileContent, $ext);
 
-        // Clean headers to make sure no other output is sent
-        if (ob_get_level()) {
+        // 4. Stream directly to browser with clean descriptive filename and proper UTF-8 headers
+        while (ob_get_level()) {
             ob_end_clean();
         }
 
-        // Send headers for file download
         header('Content-Description: File Transfer');
         $contentTypes = [
             'srt' => 'application/x-subrip; charset=UTF-8',
             'vtt' => 'text/vtt; charset=UTF-8',
             'ass' => 'text/plain; charset=UTF-8'
         ];
-        header('Content-Type: ' . ($contentTypes[strtolower($ext)] ?? 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . $customName . '"');
+        header('Content-Type: ' . ($contentTypes[$ext] ?? 'application/octet-stream'));
+        header('Content-Disposition: attachment; filename="' . $finalFilename . '"; filename*="UTF-8\'\'' . rawurlencode($finalFilename) . '"');
         header('Expires: 0');
-        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0, private');
         header('Pragma: public');
         header('Content-Length: ' . strlen($fileContent));
-        
+
         echo $fileContent;
         exit;
     }

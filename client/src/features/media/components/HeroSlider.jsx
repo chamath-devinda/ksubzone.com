@@ -123,7 +123,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
             <img
               src={backdropUrl}
               alt=""
-              fetchPriority={currentIndex === 0 ? 'high' : 'auto'}
+              fetchpriority={currentIndex === 0 ? 'high' : 'auto'}
               loading={currentIndex === 0 ? 'eager' : 'lazy'}
               decoding="async"
               className="h-full w-full object-cover object-center filter brightness-[0.74] contrast-[1.04] saturate-[0.94] sm:brightness-[0.58] sm:contrast-[1.08] sm:saturate-[0.9]"

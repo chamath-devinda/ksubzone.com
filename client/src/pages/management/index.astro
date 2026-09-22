@@ -1,0 +1,26 @@
+---
+export const prerender = false;
+
+import AdminApp from '@/components/admin/AdminApp';
+import '@/index.css';
+---
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KSubZone Management Studio</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/webp" href="/ksubzone-icon.webp" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-[#0C0C0E] text-slate-100 font-sans antialiased selection:bg-[#9E57F6]/30 overflow-x-hidden min-h-screen">
+    <AdminApp client:only="react" initialPath="/management/dashboard" />
+  </body>
+</html>

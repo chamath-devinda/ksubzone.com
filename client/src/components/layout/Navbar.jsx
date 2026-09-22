@@ -28,7 +28,16 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const abortControllerRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isLoggedIn = mounted && Boolean(user || admin);
+  const hasUser = mounted && Boolean(user);
+  const hasAdmin = mounted && Boolean(admin);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -165,7 +174,7 @@ export default function Navbar() {
   };
 
   return (
-    <>
+    <div className="relative w-full">
       {/* MOBILE BACKDROP OVERLAY */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -273,9 +282,9 @@ export default function Navbar() {
             </form>
 
             {/* USER & NOTIFICATIONS */}
-            {user || admin ? (
+            {isLoggedIn ? (
               <div className="hidden lg:flex items-center gap-3">
-                {user && (
+                {hasUser && (
                   <div className="relative">
                     <button
                       onClick={() => { setShowNotifications(!showNotifications); setShowUserDropdown(false); }}
@@ -324,16 +333,17 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => { setShowUserDropdown(!showUserDropdown); setShowNotifications(false); }}
-                    className="flex items-center gap-2 p-1.5 pl-2.5 pr-3 rounded-full btn-glass-subtle transition"
+                    aria-label={user?.username || admin?.username || 'Account Profile'}
+                    title={user?.username || admin?.username || 'Account Profile'}
+                    className="flex items-center justify-center p-1 rounded-full btn-glass-subtle transition hover:scale-105 active:scale-95 border border-white/10 hover:border-brand-primary/50"
                   >
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-primary to-purple-500 flex items-center justify-center text-white overflow-hidden shadow-sm">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-brand-primary to-purple-500 flex items-center justify-center text-white overflow-hidden shadow-sm">
                       {user?.avatar || admin?.avatar ? (
                         <img src={user?.avatar || admin?.avatar} alt="avatar" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-3.5 h-3.5" />
+                        <User className="w-4 h-4" />
                       )}
                     </div>
-                    <span className="text-xs font-bold text-slate-200 hidden sm:inline">{user?.username || admin?.username || 'Account'}</span>
                   </button>
 
                   <AnimatePresence>
@@ -395,7 +405,7 @@ export default function Navbar() {
             )}
 
             {/* DASHBOARD SHORTCUT */}
-            {(admin || (user && user.hasDashboardAccess)) && (
+            {(hasAdmin || (hasUser && user.hasDashboardAccess)) && (
               <div className="hidden lg:flex items-center ml-1">
                 <Link
                   href="/management/dashboard"
@@ -442,7 +452,7 @@ export default function Navbar() {
                 <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
               </form>
 
-              {(user || admin) && (
+              {isLoggedIn && (
                 <div className="flex items-center gap-3 p-3 bg-white/[0.04] border border-white/10 rounded-2xl">
                   <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white overflow-hidden flex-shrink-0">
                     {user?.avatar || admin?.avatar ? (
@@ -478,7 +488,7 @@ export default function Navbar() {
                 })}
               </div>
 
-              {user && (
+              {hasUser && (
                 <div className="flex flex-col gap-1">
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="text-slate-200 hover:text-white text-xs font-bold uppercase tracking-wider py-2 border-b border-white/[0.06]">My Profile</Link>
                   {user.hasDashboardAccess && (
@@ -495,7 +505,7 @@ export default function Navbar() {
                 </div>
               )}
 
-              {admin && (
+              {hasAdmin && (
                 <div className="flex flex-col gap-1">
                   <Link href="/management/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-brand-accent text-xs font-bold uppercase tracking-wider py-2 border-b border-white/[0.06] flex items-center gap-1.5">
                     <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
@@ -509,7 +519,7 @@ export default function Navbar() {
                 </div>
               )}
 
-              {!user && !admin && (
+              {!isLoggedIn && (
                 <Link
                   href="/auth"
                   onClick={() => setMobileMenuOpen(false)}
@@ -523,6 +533,6 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </header>
-    </>
+    </div>
   );
 }

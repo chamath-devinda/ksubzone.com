@@ -161,7 +161,7 @@ const parseDramaAndEpisode = (fileName) => {
   };
 };
 
-export default function SubtitleTools() {
+export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
   const { admin } = useAuth();
   const fileInputRef = useRef(null);
   const toast = useToast();
@@ -177,11 +177,15 @@ export default function SubtitleTools() {
     toast.info("Preparing files for SRT Cleaner...");
     const transferData = files.map(fileObj => ({
       name: fileObj.name,
-      content: fileObj.originalText
+      content: fileObj.editableSrtText || fileObj.originalText
     }));
 
     sessionStorage.setItem("sub_transfer_files", JSON.stringify(transferData));
-    window.location.href = "/management/srt-cleaner";
+    if (typeof onNavigate === 'function') {
+      onNavigate('/management/srt-cleaner');
+    } else {
+      window.location.href = "/management/srt-cleaner";
+    }
   };
 
   useEffect(() => {
@@ -799,16 +803,9 @@ export default function SubtitleTools() {
     }));
   };
 
-  return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
-          <div className="max-w-6xl mx-auto">
-            {/* Header */}
+  const mainContent = (
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Header */}
           <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
@@ -823,7 +820,7 @@ export default function SubtitleTools() {
               <button
                 type="button"
                 onClick={navigateToCleaner}
-                className="px-4 py-2.5 bg-brand-primary/10 border border-brand-primary/20 hover:bg-brand-primary/20 text-brand-primary rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
               >
                 <Wand2 className="w-4 h-4" /> Send to SRT Cleaner
               </button>
@@ -950,7 +947,7 @@ export default function SubtitleTools() {
                   <h3 className="text-lg font-bold text-white">Drag & drop your subtitle files here</h3>
                   <p className="text-slate-400 text-xs mt-1">Supports uploading multiple standard SubRip (.srt) subtitle files at once</p>
                 </div>
-                <button className="px-5 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition">
+                <button className="px-5 py-2.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition">
                   Browse Files
                 </button>
               </div>
@@ -1307,7 +1304,7 @@ export default function SubtitleTools() {
                   {/* Process Action */}
                   <button
                     onClick={processBrandingBatch}
-                    className="w-full py-4 bg-gradient-to-r from-brand-primary to-brand-accent hover:opacity-95 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4.5 h-4.5" /> Inject Branding & Clean All
                   </button>
@@ -1467,7 +1464,7 @@ export default function SubtitleTools() {
                     )}
                     <button
                       onClick={handleDownloadSelected}
-                      className="px-5 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5 shadow-lg"
+                      className="px-5 py-3 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5"
                     >
                       <Download className="w-4 h-4" /> Download Selected
                     </button>
@@ -1575,7 +1572,7 @@ export default function SubtitleTools() {
                                     </button>
                                     <button
                                       onClick={() => saveBlockEdit(sub.id)}
-                                      className="px-3 py-1 bg-brand-primary hover:bg-brand-primary/95 text-white rounded text-[10px] uppercase font-black transition"
+                                      className="px-3 py-1 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-lg text-[10px] uppercase font-black transition"
                                     >
                                       Save
                                     </button>
@@ -1637,8 +1634,23 @@ export default function SubtitleTools() {
 
           </div>
         </div>
-      </main>
+  );
+
+  if (embedded) {
+    return mainContent;
+  }
+
+  return (
+    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
+
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+
+        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
+          {mainContent}
+        </main>
+      </div>
     </div>
-  </div>
-);
+  );
 }

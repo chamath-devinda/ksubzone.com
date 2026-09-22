@@ -10,6 +10,10 @@ export const SiteContentContext = createContext({
   refreshSiteContent: () => {}
 });
 
+// Astro hydrates the navbar and page content as separate React islands. Share
+// an in-flight request so those islands don't all fetch the same site settings.
+let siteContentRequest = null;
+
 export const SiteContentProvider = ({ children, initialContent }) => {
   const [content, setContent] = useState(() => 
     initialContent ? mergeSiteContent(defaultSiteContent, initialContent) : defaultSiteContent
@@ -18,7 +22,10 @@ export const SiteContentProvider = ({ children, initialContent }) => {
 
   const refreshSiteContent = async () => {
     try {
-      const res = await apiClient.get('/api/site-content');
+      siteContentRequest ||= apiClient.get('/api/site-content').finally(() => {
+        siteContentRequest = null;
+      });
+      const res = await siteContentRequest;
       setContent(mergeSiteContent(defaultSiteContent, res.data || {}));
     } catch (error) {
       if (!initialContent) {

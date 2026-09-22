@@ -117,8 +117,19 @@ function SocialBarLoader({ pageType, provider }) {
 }
 
 export function AdProvider({ children }) {
-  const pathname = usePathname();
-  const pageType = getAdPageType(pathname);
+  const nextPathname = usePathname();
+  const [currentPathname, setCurrentPathname] = useState(() => {
+    if (typeof window !== 'undefined') return window.location.pathname;
+    return nextPathname || '/';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentPathname(window.location.pathname);
+    }
+  }, [nextPathname]);
+
+  const pageType = getAdPageType(currentPathname);
   const [variant, setVariant] = useState('A');
   const [variantReady, setVariantReady] = useState(adConfig.mode !== AD_MODES.AB_TEST);
 
@@ -201,21 +212,26 @@ export function AdProvider({ children }) {
   const contextValue = useMemo(() => ({
     config: adConfig,
     pageType,
-    pathname,
+    pathname: currentPathname,
     variant,
     resolvePlacement,
     emitAdEvent,
-  }), [pageType, pathname, variant, resolvePlacement]);
+  }), [pageType, currentPathname, variant, resolvePlacement]);
+
+  useEffect(() => {
+    for (const origin of displayAdOrigins) {
+      if (!origin) continue;
+      if (!document.querySelector(`link[href="${origin}"]`)) {
+        const dns = document.createElement('link');
+        dns.rel = 'dns-prefetch';
+        dns.href = origin;
+        document.head.appendChild(dns);
+      }
+    }
+  }, [displayAdOrigins]);
 
   return (
     <AdContext.Provider value={contextValue}>
-      {/* Warm only the display providers used on this route before slots mount. */}
-      {displayAdOrigins.map((origin) => (
-        <React.Fragment key={origin}>
-          <link rel="dns-prefetch" href={origin} />
-          <link rel="preconnect" href={origin} />
-        </React.Fragment>
-      ))}
       {children}
       <IntrusiveAdLoader pageType={pageType} provider={activeProvider} />
       <SocialBarLoader pageType={pageType} provider={activeProvider} />

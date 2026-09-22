@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
-import AdminSidebar from '@/features/admin/components/AdminSidebar';
-import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
 import {
   TrendingUp, Film, Tv, Languages, Star, Users, Settings,
@@ -15,7 +13,6 @@ export default function ReviewManager() {
   const { admin } = useAuth();
   const toast = useToast();
   
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('reviews'); // 'reviews' or 'comments'
   const [reviews, setReviews] = useState([]);
   const [comments, setComments] = useState([]);
@@ -71,13 +68,7 @@ export default function ReviewManager() {
   };
 
   return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
+    <div className="space-y-6">
           
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2 border-b border-white/[0.05]">
             <div>
@@ -192,8 +183,6 @@ export default function ReviewManager() {
               )
             )}
           </div>
-        </main>
-      </div>
     </div>
   );
 }

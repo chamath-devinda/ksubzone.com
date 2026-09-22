@@ -17,12 +17,20 @@ import Detail from '@/features/media/pages/Detail';
 import AdSlot from '@/components/ads/AdSlot';
 import SideAdLayout from '@/components/ads/SideAdLayout';
 
-export default function Watch({ initialDramaData }) {
-  const { slug, seasonPart, episodePart } = useParams();
+export default function Watch({
+  initialDramaData,
+  slug: propSlug,
+  seasonPart: propSeasonPart,
+  episodePart: propEpisodePart,
+}) {
+  const routeParams = useParams();
+  const slug = propSlug || routeParams.slug || initialDramaData?.drama?.slug;
+  const seasonPart = propSeasonPart || routeParams.seasonPart || 'season-1';
+  const episodePart = propEpisodePart || routeParams.episodePart || 'episode-1';
   const { user, admin } = useAuth();
 
-  const seasonNumber = Number(String(seasonPart || '').replace('season-', ''));
-  const episodeNumber = Number(String(episodePart || '').replace('episode-', ''));
+  const seasonNumber = Number(String(seasonPart || '').replace('season-', '')) || 1;
+  const episodeNumber = Number(String(episodePart || '').replace('episode-', '')) || 1;
 
   // Comment state
   const [commentName, setCommentName] = useState('');
@@ -51,10 +59,10 @@ export default function Watch({ initialDramaData }) {
   };
 
   // Identify active season and episode
-  const activeSeasonDoc = seasons.find(s => s.seasonNumber === seasonNumber);
+  const activeSeasonDoc = seasons.find(s => s.seasonNumber === seasonNumber) || seasons[0];
   const activeEpisodeDoc = episodes.find(
-    ep => getId(ep.seasonId) === getId(activeSeasonDoc?._id) && ep.episodeNumber === episodeNumber
-  );
+    ep => (activeSeasonDoc ? getId(ep.seasonId) === getId(activeSeasonDoc?._id) : true) && ep.episodeNumber === episodeNumber
+  ) || episodes.find(ep => ep.episodeNumber === episodeNumber);
 
   // The drama detail payload already contains approved episode subtitles.
   // Use those records for the server render so a temporary client-side API or
@@ -217,7 +225,7 @@ export default function Watch({ initialDramaData }) {
     <div className="w-full bg-transparent text-slate-200 min-h-screen pb-20 selection:bg-rose-600 selection:text-white relative">
       
       {/* Keep the complete drama presentation above the episode download area. */}
-      <Detail type="Drama" initialData={dramaData} topOnly />
+      <Detail type="Drama" initialData={dramaData} slug={slug} topOnly />
 
       <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 w-full mb-8">
         <AdSlot slotId="episode_content_banner" />
@@ -230,7 +238,15 @@ export default function Watch({ initialDramaData }) {
           <div id="episode-download" className="md:col-span-3 w-full flex flex-col gap-7">
         <div className="flex flex-col gap-7">
           {/* Prominent Download Section */}
-          <div className="flex flex-col items-center justify-center text-center gap-4 py-4 w-full">
+          <div className="flex flex-col items-center justify-center text-center gap-3 py-4 w-full">
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-display">
+              {drama?.title} {formattedSeason} : {formattedEpisode} Sinhala Subtitles
+            </h1>
+            {activeEpisodeDoc?.episodeTitle && (
+              <p className="text-sm font-semibold text-brand-primary">
+                "{activeEpisodeDoc.episodeTitle}"
+              </p>
+            )}
           
           {/* Release Compatibility Notice */}
           <p className="text-xs sm:text-sm font-semibold text-slate-300 max-w-lg leading-relaxed">
@@ -252,9 +268,18 @@ export default function Watch({ initialDramaData }) {
               disabled={downloadingId !== null}
               onClick={() => {
                 const sub = mainSubtitle || subtitles[0];
-                const cleanTitle = (drama.title || 'Subtitle').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                const cleanTitle = (drama.title || 'Subtitle')
+                  .trim()
+                  .replace(/\|.*$/g, '')
+                  .replace(/(sinhala\s*subtitles?|sinhala\s*subtitiles?|සිංහල\s*උපසිරැසි)/gi, '')
+                  .replace(/\(\d{4}\)/g, '')
+                  .replace(/[\\/:*?"<>|]/g, '')
+                  .replace(/\s+/g, ' ')
+                  .trim();
                 const subLang = sub.language || 'Sinhala';
-                const customFileName = `${cleanTitle}_${formattedSeason}_${formattedEpisode}_${subLang}.${sub.format || 'srt'}`;
+                const seasonCode = `S${String(formattedSeason).padStart(2, '0')}`;
+                const epCode = `E${String(formattedEpisode).padStart(2, '0')}`;
+                const customFileName = `${cleanTitle} ${seasonCode}${epCode} ${subLang} Subtitles - www.ksubzone.com.${sub.format || 'srt'}`;
                 handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName, sub);
               }}
               className="group relative w-full max-w-md min-h-14 rounded-full px-6 btn-oio-pill disabled:opacity-60 text-white font-black text-sm sm:text-base uppercase tracking-wide sm:tracking-wider flex items-center justify-center gap-3 text-center cursor-pointer"
@@ -292,9 +317,18 @@ export default function Watch({ initialDramaData }) {
                 <button
                   key={sub._id}
                   onClick={() => {
-                    const cleanTitle = (drama.title || 'Subtitle').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                    const cleanTitle = (drama.title || 'Subtitle')
+                      .trim()
+                      .replace(/\|.*$/g, '')
+                      .replace(/(sinhala\s*subtitles?|sinhala\s*subtitiles?|සිංහල\s*උපසිරැසි)/gi, '')
+                      .replace(/\(\d{4}\)/g, '')
+                      .replace(/[\\/:*?"<>|]/g, '')
+                      .replace(/\s+/g, ' ')
+                      .trim();
                     const subLang = sub.language || 'Sinhala';
-                    const customFileName = `${cleanTitle}_${formattedSeason}_${formattedEpisode}_${subLang}_v${sub.version}.${sub.format || 'srt'}`;
+                    const seasonCode = `S${String(formattedSeason).padStart(2, '0')}`;
+                    const epCode = `E${String(formattedEpisode).padStart(2, '0')}`;
+                    const customFileName = `${cleanTitle} ${seasonCode}${epCode} ${subLang} Subtitles (v${sub.version}) - www.ksubzone.com.${sub.format || 'srt'}`;
                     handleDownloadSubtitle(sub._id, sub.fileUrl, customFileName, sub);
                   }}
                   className="flex items-center justify-between p-3 rounded-full bg-white/[0.03] hover:bg-brand-primary/20 border border-white/10 text-xs font-bold text-white transition"

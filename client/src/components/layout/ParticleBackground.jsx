@@ -11,35 +11,52 @@ export default function ParticleBackground() {
 
   useEffect(() => {
     if (pathname?.startsWith('/management')) return;
-    if (typeof window !== 'undefined' && window.innerWidth < 768) return;
+    if (typeof window === 'undefined') return;
+    if (
+      window.innerWidth < 768 ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      window.navigator.connection?.saveData
+    ) return;
 
     let mounted = true;
-    Promise.all([
-      import("@tsparticles/react"),
-      import("@tsparticles/slim")
-    ]).then(([reactParticles, slimModule]) => {
-      if (!mounted) return;
-      setModules({
-        Particles: reactParticles.default || reactParticles.Particles,
-        ParticlesProvider: reactParticles.ParticlesProvider,
-        initParticles: async (engine) => {
-          await slimModule.loadSlim(engine);
-        }
+    const loadParticles = () => {
+      Promise.all([
+        import("@tsparticles/react"),
+        import("@tsparticles/slim")
+      ]).then(([reactParticles, slimModule]) => {
+        if (!mounted) return;
+        setModules({
+          Particles: reactParticles.default || reactParticles.Particles,
+          ParticlesProvider: reactParticles.ParticlesProvider,
+          initParticles: async (engine) => {
+            await slimModule.loadSlim(engine);
+          }
+        });
+        setIsMobile(window.innerWidth < 768);
+        setParticlesLoaded(true);
+      }).catch((err) => {
+        console.warn("Failed to load particles:", err);
       });
-      setIsMobile(window.innerWidth < 768);
-      setParticlesLoaded(true);
-    }).catch((err) => {
-      console.warn("Failed to load particles:", err);
-    });
+    };
+
+    // Decorative animation must not compete with the hero image and page JS.
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(loadParticles, { timeout: 2500 })
+      : null;
+    const timeoutId = idleId === null
+      ? window.setTimeout(loadParticles, 1800)
+      : null;
 
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
 
     return () => {
       mounted = false;
+      if (idleId !== null) window.cancelIdleCallback(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
       window.removeEventListener("resize", checkMobile);
     };
   }, [pathname]);

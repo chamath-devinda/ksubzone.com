@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import apiClient from '@/services/api/apiClient';
-import AdminSidebar from '@/features/admin/components/AdminSidebar';
-import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import DataTable from '@/features/admin/components/DataTable';
 import { useToast } from '@/features/admin/components/Toast';
 import {
@@ -232,13 +230,7 @@ export default function TmdbImport() {
   ];
 
   return (
-    <div className="admin-shell min-h-screen bg-[#08090D] text-slate-100 flex flex-col lg:flex-row">
-      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
-
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
-
-        <main className="admin-main flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1560px] w-full mx-auto space-y-6">
+    <div className="space-y-6">
           
           <div className="pb-2 border-b border-white/[0.05]">
             <h1 className="text-2xl font-extrabold text-slate-100 font-display tracking-tight">TMDB Media Importer</h1>
@@ -322,7 +314,7 @@ export default function TmdbImport() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 h-10 rounded-full btn-oio-pill disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-1.5 flex-shrink-0"
+                className="px-5 h-10 rounded-xl btn-oio-pill disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-1.5 flex-shrink-0"
               >
                 {loading ? 'Searching...' : 'Find Matches'}
               </button>
@@ -362,7 +354,7 @@ export default function TmdbImport() {
                     type="button"
                     onClick={handleBulkImport}
                     disabled={selectedIds.length === 0 || bulkImporting}
-                    className="h-8 px-3.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-xs font-semibold disabled:opacity-40 flex items-center gap-1.5"
+                    className="h-8 px-3.5 rounded-lg bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-40 flex items-center gap-1.5 transition"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>{bulkImporting ? 'Importing...' : `Bulk Import (${selectedIds.length})`}</span>
@@ -429,7 +421,7 @@ export default function TmdbImport() {
                           type="button"
                           onClick={() => handleImport(item)}
                           disabled={importingId === item.id}
-                          className="px-3.5 py-1.5 btn-oio-pill disabled:opacity-50 text-white text-[10px] font-black rounded-full flex items-center gap-1"
+                          className="px-3.5 py-1.5 btn-oio-pill disabled:opacity-50 text-white text-[10px] font-black rounded-lg flex items-center gap-1"
                         >
                           {importingId === item.id ? (
                             <>
@@ -466,8 +458,6 @@ export default function TmdbImport() {
             />
           </div>
 
-        </main>
-      </div>
     </div>
   );
 }

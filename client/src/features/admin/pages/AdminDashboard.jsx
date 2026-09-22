@@ -220,7 +220,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="admin-shell min-h-screen flex flex-col lg:flex-row bg-[var(--studio-bg)] text-[var(--studio-text)] transition-colors duration-200">
+    <div className="admin-shell workspace-intro-grid min-h-screen flex flex-col lg:flex-row bg-[var(--studio-bg)] text-[var(--studio-text)] transition-colors duration-200">
       <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">

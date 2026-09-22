@@ -1,19 +1,28 @@
-import 'server-only';
-
-import { unstable_cache } from 'next/cache';
 import { fetchBackendJson } from './backend';
 
-// Site settings are optional during a deployment build. Cache the result of
-// this bounded request so a slow origin cannot stall once for every static
-// route that shares the root layout.
-export const getServerSiteContent = unstable_cache(
-  async () => fetchBackendJson('/api/site-content', {
-    revalidate: 1800,
-    tags: ['site-content'],
-    attempts: 1,
-    timeoutMs: 2_000,
-    fallback: null,
-  }),
-  ['server-site-content'],
-  { revalidate: 1800, tags: ['site-content'] },
-);
+let cachedSiteContent = null;
+let lastFetchTime = 0;
+const CACHE_TTL_MS = 1800 * 1000; // 30 minutes
+
+export async function getServerSiteContent() {
+  const now = Date.now();
+  if (cachedSiteContent && now - lastFetchTime < CACHE_TTL_MS) {
+    return cachedSiteContent;
+  }
+
+  try {
+    const data = await fetchBackendJson('/api/site-content', {
+      attempts: 2,
+      timeoutMs: 3000,
+      fallback: null,
+    });
+    if (data) {
+      cachedSiteContent = data;
+      lastFetchTime = now;
+    }
+    return data || cachedSiteContent;
+  } catch (err) {
+    console.warn('[siteContent] Failed to fetch live site-content, returning cached or null');
+    return cachedSiteContent;
+  }
+}
