@@ -6,33 +6,22 @@ import { tokenService } from './tokenService';
 
 const resolveBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    // Production API calls must bypass the Vercel/Next rewrite. That proxy can
-    // hold requests open while the PHP origin is healthy, which makes login
-    // and catalogue requests look like client-side timeouts. The API already
-    // exposes a strict CORS policy for the public frontend domains.
-    const configuredApi = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL)
-      || (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL)
-      || '';
-    if (configuredApi) return configuredApi.replace(/\/+$/, '');
-
-    const hostname = window.location.hostname.toLowerCase();
-    if (hostname === 'ksubzone.com' || hostname === 'www.ksubzone.com' || hostname.endsWith('.vercel.app')) {
-      return 'https://api.ksubzone.com';
-    }
-
-    // Keep local development on the local Next rewrite/backend.
+    // In the browser, always use same-origin relative URLs ('') so requests
+    // route through Next.js rewrites on Vercel. Direct cross-origin browser calls to
+    // https://api.ksubzone.com trigger CORS preflight checks that get blocked or
+    // timed out by the hosting CDN WAF (StackProtect), causing "Network Error".
     return '';
-  }
-  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
-  }
-  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL) {
-    return process.env.NEXT_PUBLIC_BACKEND_URL.replace(/\/+$/, '');
   }
   if (typeof process !== 'undefined' && process.env.BACKEND_URL) {
     return process.env.BACKEND_URL.replace(/\/+$/, '');
   }
-  return '';
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL.replace(/\/+$/, '');
+  }
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+  return 'https://api.ksubzone.com';
 };
 
 const apiClient = axios.create({
@@ -77,6 +66,20 @@ apiClient.interceptors.response.use(
   async (error) => {
     const status = error.response ? error.response.status : null;
     const requestConfig = error.config;
+
+    // Resilient fallback: If a browser request encounters a Network Error (e.g. proxy issue or CORS/WAF block),
+    // automatically retry once using the alternative origin (same-origin '' <-> direct 'https://api.ksubzone.com').
+    if (!error.response && requestConfig && !requestConfig.__networkRetried && typeof window !== 'undefined') {
+      requestConfig.__networkRetried = true;
+      const currentBase = requestConfig.baseURL || '';
+      if (currentBase === '') {
+        requestConfig.baseURL = 'https://api.ksubzone.com';
+        return apiClient(requestConfig);
+      } else if (currentBase.includes('api.ksubzone.com')) {
+        requestConfig.baseURL = '';
+        return apiClient(requestConfig);
+      }
+    }
 
     // Hosting/CDN layers can briefly answer read requests with 429. Retry GET
     // requests with bounded backoff so management tables do not fall into an

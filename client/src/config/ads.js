@@ -1,5 +1,3 @@
-const env = (typeof process !== 'undefined' && process && process.env) ? process.env : {};
-
 const readBoolean = (value, fallback) => {
   if (value === undefined || value === null || value === '') return fallback;
   return !['0', 'false', 'off', 'no'].includes(String(value).trim().toLowerCase());
@@ -13,94 +11,95 @@ export const AD_MODES = Object.freeze({
   OFF: 'OFF',
 });
 
-const requestedMode = String(env.NEXT_PUBLIC_AD_MODE || AD_MODES.HYBRID).toUpperCase();
+const requestedMode = String(process.env.NEXT_PUBLIC_AD_MODE || AD_MODES.HYBRID).toUpperCase();
 const mode = Object.values(AD_MODES).includes(requestedMode) ? requestedMode : AD_MODES.HYBRID;
-const isProduction = env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 // Adsterra reports earnings in USD. This display-only rate can be updated at
 // deploy time without ever changing the provider's source-of-truth figures.
-export const AD_REVENUE_LKR_PER_USD = Math.max(1, Number(env.NEXT_PUBLIC_AD_REVENUE_LKR_PER_USD || 330));
+export const AD_REVENUE_LKR_PER_USD = Math.max(1, Number(process.env.NEXT_PUBLIC_AD_REVENUE_LKR_PER_USD || 330));
 
 export const adConfig = Object.freeze({
-  enabled: readBoolean(env.NEXT_PUBLIC_ADS_ENABLED, true),
-  showDevelopmentPlaceholders: readBoolean(env.NEXT_PUBLIC_AD_PLACEHOLDERS, !isProduction),
+  enabled: readBoolean(process.env.NEXT_PUBLIC_ADS_ENABLED, true),
+  showDevelopmentPlaceholders: readBoolean(process.env.NEXT_PUBLIC_AD_PLACEHOLDERS, !isProduction),
   mode,
   consent: {
     required: false,
   },
   experiments: {
     storageKey: 'ksubzone_ad_variant',
-    adsterraPercentage: Math.min(100, Math.max(0, Number(env.NEXT_PUBLIC_ADSTERRA_TRAFFIC_PERCENTAGE || 50))),
+    adsterraPercentage: Math.min(100, Math.max(0, Number(process.env.NEXT_PUBLIC_ADSTERRA_TRAFFIC_PERCENTAGE || 50))),
   },
   formats: {
-    banner: readBoolean(env.NEXT_PUBLIC_BANNER_ADS_ENABLED, true),
-    desktopBanner: readBoolean(env.NEXT_PUBLIC_DESKTOP_BANNER_ENABLED, true),
-    mobileBanner: readBoolean(env.NEXT_PUBLIC_MOBILE_BANNER_ENABLED, true),
-    square: readBoolean(env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
-    native: readBoolean(env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
-    sidebar: readBoolean(env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
-    popunder: readBoolean(env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
-    socialBar: readBoolean(env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, true),
-    inPagePush: readBoolean(env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
+    banner: readBoolean(process.env.NEXT_PUBLIC_BANNER_ADS_ENABLED, true),
+    desktopBanner: readBoolean(process.env.NEXT_PUBLIC_DESKTOP_BANNER_ENABLED, true),
+    bannerTablet: readBoolean(process.env.NEXT_PUBLIC_TABLET_BANNER_ENABLED, true),
+    mobileBanner: readBoolean(process.env.NEXT_PUBLIC_MOBILE_BANNER_ENABLED, true),
+    square: readBoolean(process.env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
+    native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
+    sidebar: readBoolean(process.env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
+    popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
+    socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, true),
+    inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
   },
   intrusive: {
-    popunderCooldownMs: Math.max(60 * 60 * 1000, Number(env.NEXT_PUBLIC_POPUNDER_COOLDOWN_MS || 2 * 60 * 60 * 1000)),
+    popunderCooldownMs: Math.max(60 * 60 * 1000, Number(process.env.NEXT_PUBLIC_POPUNDER_COOLDOWN_MS || 2 * 60 * 60 * 1000)),
     storageKey: 'ksubzone_intrusive_ad_loaded_at',
   },
   providers: {
     adsterra: {
-      enabled: readBoolean(env.NEXT_PUBLIC_ADSTERRA_ENABLED, true),
+      enabled: readBoolean(process.env.NEXT_PUBLIC_ADSTERRA_ENABLED, true),
       zones: {
         popunder: {
-          scriptUrl: 'https://alwingulla.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
         },
         socialBar: {
-          scriptUrl: 'https://alwingulla.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
         },
         native: {
-          scriptUrl: 'https://alwingulla.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
           containerId: 'container-90963118e211fbe13565d79b0d81a39d',
           reservedHeight: 320,
         },
         bannerDesktop: {
           key: '23a798c8294b23d3b5f73561f68cc621',
-          scriptUrl: 'https://alwingulla.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/23a798c8294b23d3b5f73561f68cc621/invoke.js',
           width: 728,
           height: 90,
         },
         bannerTablet: {
           key: '8658915090686e956a2289c72ba73b71',
-          scriptUrl: 'https://alwingulla.com/8658915090686e956a2289c72ba73b71/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/8658915090686e956a2289c72ba73b71/invoke.js',
           width: 468,
           height: 60,
         },
         bannerMobile: {
           key: 'cee89ddb1e1c5bd615b6d0a22ba3d9e8',
-          scriptUrl: 'https://alwingulla.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/cee89ddb1e1c5bd615b6d0a22ba3d9e8/invoke.js',
           width: 320,
           height: 50,
         },
         square: {
           key: '586e1584081dab0775623a2b61895f68',
-          scriptUrl: 'https://alwingulla.com/586e1584081dab0775623a2b61895f68/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/586e1584081dab0775623a2b61895f68/invoke.js',
           width: 300,
           height: 250,
         },
         sidebar: {
           key: 'c13f5f2182fb9c307a05678f246a92d3',
-          scriptUrl: 'https://alwingulla.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/c13f5f2182fb9c307a05678f246a92d3/invoke.js',
           width: 160,
           height: 600,
         },
         banner160x300: {
           key: '1a081bf3ee58c48ede1caf299a4f2e36',
-          scriptUrl: 'https://alwingulla.com/1a081bf3ee58c48ede1caf299a4f2e36/invoke.js',
+          scriptUrl: 'https://nobleduringsurveillance.com/1a081bf3ee58c48ede1caf299a4f2e36/invoke.js',
           width: 160,
           height: 300,
         },
       },
     },
     monetag: {
-      enabled: readBoolean(env.NEXT_PUBLIC_MONETAG_ENABLED, false),
+      enabled: readBoolean(process.env.NEXT_PUBLIC_MONETAG_ENABLED, false),
       // Paste only official Monetag code/URLs here when supplied.
       zones: {
         multiTagScriptUrl: '',

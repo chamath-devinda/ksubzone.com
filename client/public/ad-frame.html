@@ -20,8 +20,8 @@
 <body>
   <script type="text/javascript">
     (function () {
-      var host = 'https://alwingulla.com';
-      var fallbackHost = 'https://nobleduringsurveillance.com';
+      var host = 'https://nobleduringsurveillance.com';
+      var fallbackHost = 'https://alwingulla.com';
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
@@ -65,6 +65,8 @@
       if (zone.native) {
         var container = document.createElement('div');
         container.id = 'container-' + zone.key;
+        container.style.width = '100%';
+        container.style.minHeight = '280px';
         document.body.appendChild(container);
 
         var s = document.createElement('script');
@@ -78,7 +80,6 @@
           fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
           document.body.appendChild(fb);
         };
-        s.onload = function() { notifyLoaded(); };
         document.body.appendChild(s);
         return;
       }
@@ -100,7 +101,6 @@
         fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
         document.body.appendChild(fb);
       };
-      script.onload = function() { notifyLoaded(); };
       document.body.appendChild(script);
     }());
   </script>

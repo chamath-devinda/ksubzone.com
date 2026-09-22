@@ -67,7 +67,7 @@ export default function AdminLogin() {
     } catch (err) {
       const msg = err.response?.data?.message || err.message;
       if (!err.response) {
-        setError(msg || 'Cannot connect to the server. Please try again in a moment.');
+        setError(msg && msg !== 'Network Error' ? msg : 'Cannot connect to the server. Please check your connection and try again.');
       } else if (err.status === 403 || err.response?.status === 403) {
         setError(msg && !msg.includes('status code 403') ? msg : 'Access denied (403). Please verify your administrator credentials.');
       } else {
