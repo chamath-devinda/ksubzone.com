@@ -40,6 +40,12 @@ const isProxyOrWaf403 = (error) => {
   return /server rejected|http 403|proxy|firewall|mod.?security|access denied/i.test(message);
 };
 
+const isRetryableAdminLoginTransportError = (error) => {
+  if (isProxyOrWaf403(error)) return true;
+  if (!error?.response) return true;
+  return [502, 503, 504].includes(error.status || error.response?.status);
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
@@ -174,15 +180,15 @@ export const AuthProvider = ({ children }) => {
       code2fa
     };
 
-    // Production uses a Vercel frontend and a separate PHP API origin. Prefer
-    // the API origin for this sensitive request so a proxy/CDN 403 cannot
-    // block a valid admin login. Local development keeps the same-origin route.
+    // Keep the browser request same-origin through the Next.js server proxy.
+    // The direct API variants remain as a recovery path for a temporary proxy
+    // outage or a shared-hosting WAF response.
     const loginRequests = isProductionFrontendHost()
       ? [
-          ['https://api.ksubzone.com/api/admin/login', encodedPayload],
-          ['https://api.ksubzone.com/api/admin/session', fallbackPayload],
           ['/api/admin/login', encodedPayload],
           ['/api/admin/session', fallbackPayload],
+          ['https://api.ksubzone.com/api/admin/login', encodedPayload],
+          ['https://api.ksubzone.com/api/admin/session', fallbackPayload],
         ]
       : [
           ['/api/admin/login', encodedPayload],
@@ -197,9 +203,10 @@ export const AuthProvider = ({ children }) => {
         break;
       } catch (error) {
         lastError = error;
-        // Only continue for an infrastructure-level 403. Invalid credentials
-        // and a suspended account are real API responses and must be shown.
-        if (!isProxyOrWaf403(error)) throw error;
+        // Only continue for transport/infrastructure failures. Invalid
+        // credentials and a suspended account are real API responses and must
+        // be shown immediately.
+        if (!isRetryableAdminLoginTransportError(error)) throw error;
       }
     }
     if (!res) throw lastError || new Error('Admin login failed');
