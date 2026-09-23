@@ -24,7 +24,8 @@ test('admin login has a ModSecurity-safe 403 fallback route', () => {
   const controller = fs.readFileSync(new URL('../server-php/controllers/AuthController.php', import.meta.url), 'utf8');
   const router = fs.readFileSync(new URL('../server-php/index.php', import.meta.url), 'utf8');
 
-  assert.match(context, /error\?\.status !== 403/);
+  assert.match(context, /isProxyOrWaf403/);
+  assert.match(context, /https:\/\/api\.ksubzone\.com\/api\/admin\/login/);
   assert.match(context, /\/api\/admin\/session/);
   assert.match(context, /base64url-reverse/);
   assert.match(controller, /base64url-reverse/);

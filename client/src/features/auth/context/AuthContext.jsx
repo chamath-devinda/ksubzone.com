@@ -24,6 +24,22 @@ const encodeAdminCredentialFallback = (password) => encodeAdminCredential(passwo
   .reverse()
   .join('');
 
+const isProductionFrontendHost = () => {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname.toLowerCase();
+  return hostname === 'ksubzone.com'
+    || hostname === 'www.ksubzone.com'
+    || hostname.endsWith('.vercel.app');
+};
+
+const isProxyOrWaf403 = (error) => {
+  if (error?.status !== 403 && error?.response?.status !== 403) return false;
+  const data = error?.response?.data;
+  if (typeof data === 'string') return true;
+  const message = String(data?.message || error?.message || '');
+  return /server rejected|http 403|proxy|firewall|mod.?security|access denied/i.test(message);
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
@@ -141,28 +157,53 @@ export const AuthProvider = ({ children }) => {
   const loginAdmin = async (email, password, code2fa) => {
     // Clear user session to prevent concurrent mixed roles in single browser
     tokenService.removeUserToken();
+    // Do not let a stale admin token affect the unauthenticated login request.
+    tokenService.removeAdminToken();
     setUser(null);
 
+    const encodedPayload = {
+      email,
+      credential: encodeAdminCredential(password),
+      credentialEncoding: 'base64url',
+      code2fa
+    };
+    const fallbackPayload = {
+      email,
+      credential: encodeAdminCredentialFallback(password),
+      credentialEncoding: 'base64url-reverse',
+      code2fa
+    };
+
+    // Production uses a Vercel frontend and a separate PHP API origin. Prefer
+    // the API origin for this sensitive request so a proxy/CDN 403 cannot
+    // block a valid admin login. Local development keeps the same-origin route.
+    const loginRequests = isProductionFrontendHost()
+      ? [
+          ['https://api.ksubzone.com/api/admin/login', encodedPayload],
+          ['https://api.ksubzone.com/api/admin/session', fallbackPayload],
+          ['/api/admin/login', encodedPayload],
+          ['/api/admin/session', fallbackPayload],
+        ]
+      : [
+          ['/api/admin/login', encodedPayload],
+          ['/api/admin/session', fallbackPayload],
+        ];
+
     let res;
-    try {
-      res = await apiClient.post('/api/admin/login', {
-        email,
-        credential: encodeAdminCredential(password),
-        credentialEncoding: 'base64url',
-        code2fa
-      });
-    } catch (error) {
-      // Some shared-hosting ModSecurity rules return an Apache 403 before PHP
-      // sees an otherwise valid credential payload. Retry once through a
-      // neutral route with a reversed base64url transport.
-      if (error?.status !== 403 && error?.response?.status !== 403) throw error;
-      res = await apiClient.post('/api/admin/session', {
-        email,
-        credential: encodeAdminCredentialFallback(password),
-        credentialEncoding: 'base64url-reverse',
-        code2fa
-      });
+    let lastError;
+    for (const [url, payload] of loginRequests) {
+      try {
+        res = await apiClient.post(url, payload);
+        break;
+      } catch (error) {
+        lastError = error;
+        // Only continue for an infrastructure-level 403. Invalid credentials
+        // and a suspended account are real API responses and must be shown.
+        if (!isProxyOrWaf403(error)) throw error;
+      }
     }
+    if (!res) throw lastError || new Error('Admin login failed');
+
     if (res.data.token) {
       tokenService.setAdminToken(res.data.token);
       setAdmin(res.data.admin);
