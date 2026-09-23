@@ -74,9 +74,9 @@ export default function ManagementLayout({ children }) {
   // SSR guard: Always show initial loading until mounted to prevent hydration mismatches
   if (!hasMounted) {
     return (
-      <div className="h-screen w-screen bg-[#28282B] flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-[3px] border-[#9E57F6] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[#A1A1AA] font-medium tracking-wide">Initializing KSubZone Studio...</p>
+      <div className="h-screen w-screen bg-[#fbf5ff] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-[#800080] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#725b77] font-medium tracking-wide">Initializing KSubZone Studio...</p>
       </div>
     );
   }
@@ -88,9 +88,9 @@ export default function ManagementLayout({ children }) {
   // Render clean status screen while session check resolves or redirection to /management/login completes.
   if (!isLoginPage && !isAuthorized) {
     return (
-      <div className="h-screen w-screen bg-[#28282B] flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-[3px] border-[#9E57F6] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[#A1A1AA] font-medium tracking-wide">
+      <div className="h-screen w-screen bg-[#fbf5ff] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-[#800080] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#725b77] font-medium tracking-wide">
           {loading ? 'Verifying Studio session...' : 'Redirecting to Studio login...'}
         </p>
       </div>
@@ -102,8 +102,8 @@ export default function ManagementLayout({ children }) {
       <ToastProvider>
         {/* Slim progress bar while auth verifies in background */}
         {!isLoginPage && loading && (
-          <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 overflow-hidden bg-[#9E57F6]/20">
-            <div className="h-full bg-[#9E57F6]" style={{ animation: 'adminBar 1.2s ease-in-out infinite' }} />
+          <div className="fixed top-0 left-0 right-0 z-[9999] h-0.5 overflow-hidden bg-[#800080]/20">
+            <div className="h-full bg-[#800080]" style={{ animation: 'adminBar 1.2s ease-in-out infinite' }} />
           </div>
         )}
         {/* Instant render — no opacity delay */}

@@ -4,14 +4,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const AdminThemeContext = createContext({
-  theme: 'dark',
+  theme: 'light',
   setTheme: () => {},
   toggleTheme: () => {},
   isLight: false,
   mounted: false,
 });
 
-const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v2';
+// A new key intentionally starts the redesigned workspace in its sunrise theme
+// instead of retaining the prior dark-purple preference.
+const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v3';
 
 export function AdminThemeProvider({ children }) {
   const { admin } = useAuth();
@@ -25,7 +27,7 @@ export function AdminThemeProvider({ children }) {
         }
       } catch (_) {}
     }
-    return 'dark';
+    return 'light';
   });
   const [mounted, setMounted] = useState(false);
 

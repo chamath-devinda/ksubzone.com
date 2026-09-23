@@ -7,28 +7,24 @@
 [data-admin-theme='dark'],
 .admin-theme-dark,
 .admin-theme-wrapper {
-  /* Dark theme surfaces — Charcoal Canvas #28282B */
-  --studio-bg: #28282B;
-  --studio-surface: #1E1E22;
-  --studio-surface-hover: #26262B;
-  --studio-raised: #34343A;
-  --studio-border: rgba(255, 255, 255, 0.08);
-  --studio-border-strong: rgba(255, 255, 255, 0.16);
-
-  /* Text */
-  --studio-text: #F5F6F8;
-  --studio-muted: #A1A1AA;
-
-  /* Accents — Primary #9E57F6 */
-  --studio-brand: #9E57F6;
-  --studio-brand-strong: #8B3DEB;
-  --studio-brand-soft: rgba(158, 87, 246, 0.15);
-  --studio-accent: #14B8A6;
-  --studio-accent-soft: rgba(20, 184, 166, 0.12);
-  --studio-warning: #F59E0B;
-  --studio-warning-soft: rgba(245, 158, 11, 0.12);
-  --studio-danger: #EF4444;
-  --studio-danger-soft: rgba(239, 68, 68, 0.12);
+  /* Fallback palette for a manually selected dark mode. */
+  --studio-bg: #1f1124;
+  --studio-surface: rgba(49, 27, 58, 0.86);
+  --studio-surface-hover: rgba(69, 37, 79, 0.9);
+  --studio-raised: rgba(78, 42, 89, 0.74);
+  --studio-border: rgba(245, 222, 255, 0.16);
+  --studio-border-strong: rgba(245, 222, 255, 0.32);
+  --studio-text: #fff8ff;
+  --studio-muted: #d8bddc;
+  --studio-brand: #800080;
+  --studio-brand-strong: #5e005e;
+  --studio-brand-soft: rgba(128, 0, 128, 0.22);
+  --studio-accent: #16a394;
+  --studio-accent-soft: rgba(22, 163, 148, 0.15);
+  --studio-warning: #f3a23c;
+  --studio-warning-soft: rgba(243, 162, 60, 0.16);
+  --studio-danger: #e85b68;
+  --studio-danger-soft: rgba(232, 91, 104, 0.16);
 
   /* Border Radii (Strictly rounded — No 0-4px sharp corners!) */
   --radius-card: 16px;
@@ -47,28 +43,24 @@
 
 [data-admin-theme='light'],
 .admin-theme-light {
-  /* Light theme surfaces */
-  --studio-bg: #F7F8FA;
-  --studio-surface: #FFFFFF;
-  --studio-surface-hover: #F1F3F6;
-  --studio-raised: #F1F3F6;
-  --studio-border: #E4E7EC;
-  --studio-border-strong: #D0D5DD;
-
-  /* Text */
-  --studio-text: #131721;
-  --studio-muted: #6B7280;
-
-  /* Accents — Primary #9E57F6 */
-  --studio-brand: #9E57F6;
-  --studio-brand-strong: #8B3DEB;
-  --studio-brand-soft: rgba(158, 87, 246, 0.1);
-  --studio-accent: #14B8A6;
-  --studio-accent-soft: rgba(20, 184, 166, 0.08);
-  --studio-warning: #F59E0B;
-  --studio-warning-soft: rgba(245, 158, 11, 0.08);
-  --studio-danger: #EF4444;
-  --studio-danger-soft: rgba(239, 68, 68, 0.08);
+  /* Purple glass — the default Studio workspace. */
+  --studio-bg: #fbf5ff;
+  --studio-surface: rgba(255, 255, 255, 0.72);
+  --studio-surface-hover: rgba(255, 255, 255, 0.91);
+  --studio-raised: rgba(252, 245, 255, 0.8);
+  --studio-border: rgba(83, 33, 97, 0.14);
+  --studio-border-strong: rgba(128, 0, 128, 0.3);
+  --studio-text: #201224;
+  --studio-muted: #725b77;
+  --studio-brand: #800080;
+  --studio-brand-strong: #5e005e;
+  --studio-brand-soft: rgba(128, 0, 128, 0.13);
+  --studio-accent: #078b7c;
+  --studio-accent-soft: rgba(7, 139, 124, 0.12);
+  --studio-warning: #d97712;
+  --studio-warning-soft: rgba(239, 143, 42, 0.15);
+  --studio-danger: #d84a5b;
+  --studio-danger-soft: rgba(216, 74, 91, 0.13);
 
   color: var(--studio-text);
   color-scheme: light;
@@ -83,6 +75,30 @@
   min-height: 100dvh;
 }
 
+.admin-theme-light .admin-shell,
+.admin-theme-light .admin-shared-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(58rem 38rem at -8% -14%, rgba(224, 187, 237, 0.9), transparent 63%),
+    radial-gradient(46rem 34rem at 104% 3%, rgba(190, 143, 204, 0.66), transparent 61%),
+    radial-gradient(52rem 42rem at 92% 103%, rgba(206, 180, 236, 0.58), transparent 63%),
+    radial-gradient(43rem 36rem at -4% 105%, rgba(224, 176, 212, 0.45), transparent 60%),
+    var(--studio-bg) !important;
+}
+
+.admin-theme-light .admin-shell::before,
+.admin-theme-light .admin-shared-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(89, 32, 101, 0.028) 1px, transparent 1px), linear-gradient(90deg, rgba(89, 32, 101, 0.022) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 88%);
+}
+
 /* ==========================================================================
    CARDS & CONTAINERS (border-radius: 16px)
    ========================================================================== */
@@ -95,7 +111,9 @@
   background: var(--studio-surface) !important;
   border: 1px solid var(--studio-border) !important;
   border-radius: var(--radius-card) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 16px 40px rgba(130, 70, 36, 0.1) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   transition: background-color var(--studio-motion) ease, border-color var(--studio-motion) ease;
 }
 
@@ -130,9 +148,9 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   border-radius: 12px !important;
-  background: rgba(168, 85, 247, 0.10) !important;
-  color: #C084FC !important;
-  border: 1px solid rgba(168, 85, 247, 0.28) !important;
+  background: var(--studio-brand) !important;
+  color: #fffaf6 !important;
+  border: 1px solid var(--studio-brand) !important;
   box-shadow: none !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
@@ -141,16 +159,16 @@
 }
 
 .btn-studio-primary:hover:not(:disabled) {
-  background: rgba(168, 85, 247, 0.20) !important;
-  border-color: rgba(168, 85, 247, 0.45) !important;
+  background: var(--studio-brand-strong) !important;
+  border-color: var(--studio-brand-strong) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.18) !important;
+  box-shadow: 0 10px 24px rgba(128, 0, 128, 0.24) !important;
   transform: translateY(-1px);
 }
 
 .btn-studio-primary:active:not(:disabled) {
   transform: scale(0.98);
-  background: rgba(168, 85, 247, 0.25) !important;
+  background: var(--studio-brand-strong) !important;
 }
 
 .btn-studio-pill {
@@ -163,9 +181,9 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: 12px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: #CBD5E1 !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: var(--studio-raised) !important;
+  color: var(--studio-text) !important;
+  border: 1px solid var(--studio-border) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   cursor: pointer;
@@ -173,15 +191,15 @@
 }
 
 .btn-studio-pill:hover:not(:disabled) {
-  background: rgba(168, 85, 247, 0.15) !important;
-  border-color: rgba(168, 85, 247, 0.35) !important;
-  color: #FFFFFF !important;
+  background: var(--studio-brand-soft) !important;
+  border-color: var(--studio-brand) !important;
+  color: var(--studio-brand-strong) !important;
   transform: translateY(-1px);
 }
 
 .btn-studio-pill:active:not(:disabled) {
   transform: scale(0.98);
-  background: rgba(168, 85, 247, 0.22) !important;
+  background: var(--studio-brand-soft) !important;
 }
 
 .btn-icon-pill {
@@ -191,17 +209,17 @@
   width: 36px;
   height: 36px;
   border-radius: 10px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  color: #94A3B8 !important;
+  background: var(--studio-raised) !important;
+  border: 1px solid var(--studio-border) !important;
+  color: var(--studio-muted) !important;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-icon-pill:hover:not(:disabled) {
-  background: rgba(168, 85, 247, 0.15) !important;
-  border-color: rgba(168, 85, 247, 0.35) !important;
-  color: #C084FC !important;
+  background: var(--studio-brand-soft) !important;
+  border-color: var(--studio-brand) !important;
+  color: var(--studio-brand) !important;
   transform: translateY(-1px);
 }
 
@@ -503,4 +521,124 @@
 }
 .admin-custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--studio-muted);
+}
+
+/* ===========================================================================
+   SUNRISE GLASS COMPATIBILITY
+   Older workspace tools use a few fixed Tailwind colours. Keep those feature
+   screens visually coherent while their functional markup remains untouched.
+   =========================================================================== */
+.sunrise-metric-card {
+  min-height: 144px;
+  padding: 18px;
+  border: 1px solid var(--studio-border);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 245, 0.58));
+  box-shadow: 0 14px 32px rgba(93, 42, 107, 0.1);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.sunrise-metric-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--studio-border-strong);
+  box-shadow: 0 20px 38px rgba(93, 42, 107, 0.14);
+}
+
+.sunrise-metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  color: var(--studio-brand);
+  background: var(--studio-brand-soft);
+}
+
+/* Dark mode needs its own metric surface: the light glass treatment above
+   otherwise leaves low-contrast grey cards against the dark canvas. */
+.admin-theme-dark .admin-shell {
+  background:
+    radial-gradient(58rem 38rem at -8% -14%, rgba(128, 0, 128, 0.2), transparent 63%),
+    radial-gradient(46rem 34rem at 104% 3%, rgba(176, 90, 176, 0.15), transparent 61%),
+    #1f1124 !important;
+}
+
+.admin-theme-dark .sunrise-metric-card {
+  background: linear-gradient(145deg, rgba(62, 34, 72, 0.94), rgba(39, 21, 47, 0.92));
+  border-color: rgba(239, 203, 247, 0.16);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.admin-theme-dark .sunrise-metric-card:hover {
+  border-color: rgba(206, 111, 206, 0.52);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.36);
+}
+
+.admin-theme-dark .sunrise-metric-icon {
+  color: #ecb8ec;
+  background: rgba(128, 0, 128, 0.32);
+}
+
+.admin-theme-light :is(.bg-\[\#08090D\], .bg-\[\#11131A\], .bg-\[\#13151D\], .bg-\[\#151821\]) {
+  background: rgba(255, 255, 255, 0.7) !important;
+  color: var(--studio-text) !important;
+  backdrop-filter: blur(14px);
+}
+
+.admin-theme-light :is(.border-white\/\[0\.04\], .border-white\/\[0\.06\], .border-white\/\[0\.08\], .border-white\/\[0\.1\], .border-white\/\[0\.12\]) {
+  border-color: var(--studio-border) !important;
+}
+
+.admin-theme-light :is(.text-slate-100, .text-slate-200, .text-slate-300) {
+  color: var(--studio-text) !important;
+}
+
+.admin-theme-light :is(.text-slate-400, .text-slate-500, .text-slate-600) {
+  color: var(--studio-muted) !important;
+}
+
+.admin-theme-light :is(.text-violet-300, .text-violet-400, .text-violet-500, .text-violet-600, .text-purple-400, .text-purple-500) {
+  color: var(--studio-brand) !important;
+}
+
+.admin-theme-light .text-\[\#9E57F6\] {
+  color: var(--studio-brand) !important;
+}
+
+.admin-theme-light .bg-\[\#9E57F6\] {
+  background-color: var(--studio-brand) !important;
+}
+
+.admin-theme-light :is(.hover\:border-\[\#9E57F6\]:hover, .hover\:text-\[\#9E57F6\]:hover) {
+  border-color: var(--studio-brand) !important;
+  color: var(--studio-brand) !important;
+}
+
+.admin-theme-light :is(.bg-violet-500, .bg-violet-600, .bg-purple-500, .bg-purple-600) {
+  background-color: var(--studio-brand) !important;
+}
+
+.admin-theme-light :is(.bg-violet-500\/10, .bg-violet-500\/15, .bg-purple-500\/10, .bg-purple-500\/15) {
+  background-color: var(--studio-brand-soft) !important;
+}
+
+.admin-theme-light :is(.border-violet-500\/25, .border-violet-500\/30, .border-purple-500\/25, .border-purple-500\/30) {
+  border-color: rgba(128, 0, 128, 0.28) !important;
+}
+
+.admin-theme-light :is(.focus\:border-violet-500:focus, .focus\:border-purple-500:focus) {
+  border-color: var(--studio-brand) !important;
+  box-shadow: 0 0 0 3px var(--studio-brand-soft) !important;
+}
+
+.admin-theme-light .admin-main,
+.admin-theme-light .admin-shell > div > main {
+  scrollbar-color: rgba(128, 0, 128, 0.42) transparent;
+}
+
+@media (max-width: 1023px) {
+  .sunrise-metric-card { min-height: 126px; }
 }

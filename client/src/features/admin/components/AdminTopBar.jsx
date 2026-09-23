@@ -133,7 +133,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
             type="button"
             aria-expanded={quickAddOpen}
             onClick={() => setQuickAddOpen(!quickAddOpen)}
-            className="flex h-8 items-center gap-1.5 rounded-[9999px] px-3.5 text-xs font-bold text-white bg-[#9E57F6] hover:bg-[#8B3DEB] shadow-sm shadow-purple-500/25 transition active:scale-95"
+            className="flex h-8 items-center gap-1.5 rounded-[9999px] px-3.5 text-xs font-bold text-white bg-[var(--studio-brand)] hover:bg-[var(--studio-brand-strong)] shadow-sm shadow-purple-500/25 transition active:scale-95"
           >
             <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
             <span className="hidden sm:inline">Create</span>
@@ -146,8 +146,8 @@ export default function AdminTopBar({ onOpenMobileNav }) {
               </div>
               <div className="space-y-0.5 mt-1">
                 {[
-                  { href: '/management/import', icon: Sparkles, label: 'Import from TMDB', color: 'text-[#9E57F6]' },
-                  { href: '/management/movies', icon: Film, label: 'Add New Movie', color: 'text-sky-500' },
+                  { href: '/management/import', icon: Sparkles, label: 'Import from TMDB', color: 'text-[var(--studio-brand)]' },
+                  { href: '/management/movies', icon: Film, label: 'Add New Movie', color: 'text-[#800080]' },
                   { href: '/management/dramas', icon: Tv, label: 'Add New Drama', color: 'text-[#14B8A6]' },
                   { href: '/management/subtitles', icon: Languages, label: 'Upload Subtitle', color: 'text-emerald-500' },
                   { href: '/management/articles', icon: BookOpenText, label: 'Write Article', color: 'text-[#F59E0B]' },
@@ -189,7 +189,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
           className="hidden sm:flex h-8 items-center gap-1.5 rounded-[9999px] border border-[var(--studio-border)] bg-[var(--studio-raised)] px-3 text-xs font-semibold text-[var(--studio-text)] hover:border-[var(--studio-border-strong)] transition"
           title="Visit Public Website"
         >
-          <ExternalLink className="h-3 w-3 text-[#9E57F6]" />
+          <ExternalLink className="h-3 w-3 text-[var(--studio-brand)]" />
           <span>Site</span>
         </Link>
 
@@ -202,7 +202,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
             className="flex items-center gap-2 p-1 rounded-[9999px] hover:bg-[var(--studio-raised)] transition group"
             aria-label="User profile menu"
           >
-            <div className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[9999px] bg-gradient-to-br from-[#9E57F6] to-[#14B8A6] text-[11px] font-bold text-white shadow-sm ring-2 ring-[#9E57F6]/20">
+            <div className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[9999px] bg-gradient-to-br from-[var(--studio-brand)] to-[#b05ab0] text-[11px] font-bold text-white shadow-sm ring-2 ring-[var(--studio-brand-soft)]">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={adminName} className="h-full w-full rounded-[9999px] object-cover" />
               ) : (
@@ -218,7 +218,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
               <div className="p-3 border-b border-[var(--studio-border)] mb-1.5 bg-[var(--studio-raised)] rounded-[12px]">
                 <p className="text-xs font-bold text-[var(--studio-text)] truncate">{adminName}</p>
                 <p className="text-[11px] text-[var(--studio-muted)] truncate">{admin?.email || 'admin@ksubzone.com'}</p>
-                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-[9999px] bg-[#9E57F6]/15 text-[9.5px] font-black uppercase tracking-wider text-[#9E57F6]">
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-[9999px] bg-[var(--studio-brand-soft)] text-[9.5px] font-black uppercase tracking-wider text-[var(--studio-brand)]">
                   {adminRole}
                 </span>
               </div>

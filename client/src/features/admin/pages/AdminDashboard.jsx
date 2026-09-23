@@ -263,6 +263,36 @@ export default function AdminDashboard() {
 
           {canViewAnalytics && (
             <>
+              <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between" aria-label="Workspace summary">
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--studio-brand)]">Good to see you</p>
+                  <h1 className="mt-1 font-[Outfit] text-3xl font-extrabold tracking-[-0.04em] text-[var(--studio-text)] sm:text-4xl">Studio command center</h1>
+                  <p className="mt-2 max-w-xl text-sm text-[var(--studio-muted)]">A clear pulse on your catalogue, audience and subtitle workflow.</p>
+                </div>
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--studio-border)] bg-[var(--studio-surface)] px-3 py-2 text-xs font-semibold text-[var(--studio-muted)] shadow-sm backdrop-blur-xl">
+                  <span className="h-2 w-2 rounded-full bg-[var(--studio-accent)]" />
+                  Live workspace data
+                </div>
+              </section>
+
+              <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Key performance indicators">
+                {[
+                  { label: 'Total views', value: formatNum(totalViews), icon: Eye, note: 'Audience reach' },
+                  { label: 'Media library', value: formatNum(totalCatalog), icon: Film, note: `${totalMovies} movies · ${totalDramas} dramas` },
+                  { label: 'Subtitles', value: formatNum(totalSubtitles), icon: Languages, note: pendingSubtitles ? `${pendingSubtitles} awaiting review` : 'All caught up' },
+                  { label: 'Community', value: formatNum(totalUsers), icon: Users, note: 'Registered members' },
+                ].map(({ label, value, icon: Icon, note }) => (
+                  <div key={label} className="sunrise-metric-card">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--studio-muted)]">{label}</span>
+                      <span className="sunrise-metric-icon"><Icon className="h-4 w-4" /></span>
+                    </div>
+                    <p className="mt-5 font-mono text-2xl font-extrabold tracking-[-0.05em] text-[var(--studio-text)] sm:text-3xl">{hasLiveStats ? value : '—'}</p>
+                    <p className="mt-1 text-[11px] font-medium text-[var(--studio-muted)]">{note}</p>
+                  </div>
+                ))}
+              </section>
+
               {/* ==========================================================================
                   ZONE 1: ASYMMETRIC HERO INTELLIGENCE & MISSION CONTROL
                   ========================================================================== */}
@@ -298,7 +328,7 @@ export default function AdminDashboard() {
                               onClick={() => setTimeRange(range)}
                               className={`px-3 py-1 text-xs font-bold rounded-[9999px] transition ${
                                 timeRange === range
-                                  ? 'bg-[#9E57F6] text-white shadow-sm'
+                                  ? 'bg-[var(--studio-brand)] text-white shadow-sm'
                                   : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)]'
                               }`}
                             >
@@ -338,7 +368,7 @@ export default function AdminDashboard() {
                                   {log.date}: {value.toLocaleString()} views
                                 </div>
                                 <div
-                                  className="w-full max-w-10 rounded-t-[6px] bg-gradient-to-t from-[#9E57F6] to-[#14B8A6] group-hover:brightness-125 transition-all duration-200"
+                                  className="w-full max-w-10 rounded-t-[6px] bg-gradient-to-t from-[var(--studio-brand)] to-[#b05ab0] group-hover:brightness-110 transition-all duration-200"
                                   style={{ height: `${height}%` }}
                                 />
                                 <span className="text-[9px] font-medium text-[var(--studio-muted)] truncate max-w-full">
@@ -394,7 +424,7 @@ export default function AdminDashboard() {
                       {/* Subtitles */}
                       <div className="p-3.5 rounded-[12px] bg-[var(--studio-raised)] border border-[var(--studio-border)] flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-[12px] bg-[#9E57F6]/15 text-[#9E57F6] flex items-center justify-center">
+                          <div className="h-9 w-9 rounded-[12px] bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] flex items-center justify-center">
                             <Languages className="h-4.5 w-4.5" />
                           </div>
                           <div>
@@ -454,9 +484,9 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-2 gap-2">
                       <Link
                         href="/management/import"
-                        className="btn-studio-pill justify-center text-xs h-9 hover:border-[#9E57F6]"
+                        className="btn-studio-pill justify-center text-xs h-9 hover:border-[var(--studio-brand)]"
                       >
-                        <Sparkles className="h-3.5 w-3.5 text-[#9E57F6]" />
+                        <Sparkles className="h-3.5 w-3.5 text-[var(--studio-brand)]" />
                         <span>TMDB Import</span>
                       </Link>
 

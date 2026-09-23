@@ -129,7 +129,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
             className="flex items-center gap-3 overflow-hidden group focus-visible:outline-none"
             title="KSubZone Studio Operations"
           >
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] bg-[#9E57F6] text-white font-black shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform duration-200">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] bg-[var(--studio-brand)] text-white font-black shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform duration-200">
               {logoUrl ? (
                 <img src={logoUrl} alt={brand.siteName || 'KSubZone'} className="h-5 w-5 object-contain" />
               ) : (
@@ -143,7 +143,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                   <span className="truncate text-xs font-black tracking-wider text-[var(--studio-text)] uppercase">
                     KSUBZONE
                   </span>
-                  <span className="badge-pill bg-[#9E57F6]/15 text-[#9E57F6] text-[9px] font-black uppercase px-1.5 py-0.2">
+                  <span className="badge-pill bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] text-[9px] font-black uppercase px-1.5 py-0.2">
                     STUDIO
                   </span>
                 </div>
@@ -203,18 +203,18 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                       title={item.label}
                       className={`group relative flex items-center gap-3 px-2.5 py-2.5 rounded-[12px] font-semibold text-xs transition-all duration-150 ${
                         isActive
-                          ? 'bg-[#9E57F6]/15 text-[#9E57F6] shadow-sm'
+                          ? 'bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] shadow-sm'
                           : 'text-[var(--studio-muted)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-raised)]'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                     >
                       {/* Active Indicator Strip */}
                       {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-[#9E57F6]" />
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-[var(--studio-brand)]" />
                       )}
 
                       <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                        <Icon className={`h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-[#9E57F6]' : 'text-[var(--studio-muted)] group-hover:text-[var(--studio-text)]'}`} />
+                        <Icon className={`h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-[var(--studio-brand)]' : 'text-[var(--studio-muted)] group-hover:text-[var(--studio-text)]'}`} />
                       </div>
 
                       {(expanded || mobileOpen) && (
@@ -249,7 +249,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
               className="flex items-center gap-2.5 flex-1 p-1.5 rounded-[12px] hover:bg-[var(--studio-raised)] transition overflow-hidden group"
               title="View Admin Profile"
             >
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[9999px] bg-gradient-to-tr from-[#9E57F6] to-[#14B8A6] text-white text-xs font-bold shadow">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[9999px] bg-gradient-to-tr from-[var(--studio-brand)] to-[#b05ab0] text-white text-xs font-bold shadow">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={adminName} className="h-full w-full rounded-[9999px] object-cover" />
                 ) : (
