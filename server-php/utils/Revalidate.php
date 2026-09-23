@@ -94,7 +94,9 @@ class Revalidate {
             }
         } while ($running && $status === CURLM_OK);
 
-        foreach ($handles as [$ch, $request]) {
+        foreach ($handles as $item) {
+            $ch = $item[0];
+            $request = $item[1];
             $body = curl_multi_getcontent($ch);
             $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error = curl_error($ch);

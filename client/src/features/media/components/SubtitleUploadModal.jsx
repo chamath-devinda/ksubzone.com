@@ -105,9 +105,13 @@ export default function SubtitleUploadModal({
       confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
       uploadSuccessCallback?.();
     } catch (err) {
-      const serverMsg = err.response?.data?.message || '';
+      const serverMsg = err.response?.data?.message || err.response?.data?.error || err.message || '';
+      const debugErr = err.response?.data?.debug?.error;
       const diag = err.response?.data?.diagnostics;
       let errorText = serverMsg || 'Error uploading subtitle. Please try again.';
+      if (debugErr && admin) {
+        errorText += ` (${debugErr})`;
+      }
       if (diag) errorText += ` [uploads_exists:${diag.uploads_dir_exists}, writable:${diag.uploads_dir_writable}]`;
       setError(errorText);
     } finally {
