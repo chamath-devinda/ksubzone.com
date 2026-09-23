@@ -21,14 +21,20 @@ test('UTF-8 and BOM UTF-16 preserve Sinhala; invalid bytes fail explicitly', () 
 
 test('admin login has a ModSecurity-safe 403 fallback route', () => {
   const context = fs.readFileSync(new URL('../client/src/features/auth/context/AuthContext.jsx', import.meta.url), 'utf8');
-  const proxy = fs.readFileSync(new URL('../client/src/app/api/admin/[action]/route.js', import.meta.url), 'utf8');
+  const loginProxy = fs.readFileSync(new URL('../client/src/app/api/admin/login/route.js', import.meta.url), 'utf8');
+  const sessionProxy = fs.readFileSync(new URL('../client/src/app/api/admin/session/route.js', import.meta.url), 'utf8');
+  const proxyHelper = fs.readFileSync(new URL('../client/src/lib/server/adminAuthProxy.js', import.meta.url), 'utf8');
+  const managementLayout = fs.readFileSync(new URL('../client/src/app/management/layout.jsx', import.meta.url), 'utf8');
   const controller = fs.readFileSync(new URL('../server-php/controllers/AuthController.php', import.meta.url), 'utf8');
   const router = fs.readFileSync(new URL('../server-php/index.php', import.meta.url), 'utf8');
 
   assert.match(context, /isProxyOrWaf403/);
   assert.match(context, /isRetryableAdminLoginTransportError/);
-  assert.match(proxy, /api\/admin\/\$\{action\}/);
-  assert.match(proxy, /Admin authentication service is temporarily unavailable/);
+  assert.match(loginProxy, /proxyAdminAuth\(request, 'login'\)/);
+  assert.match(sessionProxy, /proxyAdminAuth\(request, 'session'\)/);
+  assert.match(proxyHelper, /Admin authentication service is temporarily unavailable/);
+  assert.match(managementLayout, /SharedAdminShell/);
+  assert.match(managementLayout, /LEGACY_SHELL_PATHS/);
   assert.match(context, /\/api\/admin\/session/);
   assert.match(context, /base64url-reverse/);
   assert.match(controller, /base64url-reverse/);

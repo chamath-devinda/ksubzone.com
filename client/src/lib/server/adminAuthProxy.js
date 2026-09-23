@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const getBackendUrl = () => (
   process.env.BACKEND_URL ||
   (process.env.NODE_ENV === 'production' ? 'https://api.ksubzone.com' : 'http://127.0.0.1:5000')
@@ -17,12 +14,7 @@ const FORWARDED_RESPONSE_HEADERS = [
   'vary',
 ];
 
-export async function POST(request, { params }) {
-  const action = params?.action;
-  if (action !== 'login' && action !== 'session') {
-    return NextResponse.json({ message: 'API route not found' }, { status: 404 });
-  }
-
+export async function proxyAdminAuth(request, action) {
   let body;
   try {
     body = await request.text();

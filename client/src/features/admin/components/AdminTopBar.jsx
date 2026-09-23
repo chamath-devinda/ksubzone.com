@@ -20,11 +20,13 @@ import {
   Sparkles,
   LogOut,
   UserCheck,
+  User,
   ChevronDown,
   Database,
   Sliders,
   Activity,
-  ShieldCheck
+  ShieldCheck,
+  Shield
 } from 'lucide-react';
 
 const PAGE_TITLES = {

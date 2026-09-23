@@ -8,18 +8,59 @@ import { useRouter, usePathname } from 'next/navigation';
 
 import { ToastProvider } from '@/features/admin/components/Toast';
 import { AdminThemeProvider } from '@/features/admin/context/AdminThemeContext';
+import AdminSidebar from '@/features/admin/components/AdminSidebar';
+import AdminTopBar from '@/features/admin/components/AdminTopBar';
+
+// A few older management screens still render their own shell. Keep those
+// screens intact while providing the shared shell to every page that only
+// renders its feature content. This prevents navigation from disappearing
+// when moving between the dashboard and legacy management tools.
+const LEGACY_SHELL_PATHS = new Set([
+  '/management/dashboard',
+  '/management/backup',
+  '/management/database',
+  '/management/seo',
+  '/management/settings',
+  '/management/srt-cleaner',
+  '/management/subtitles',
+  '/management/subtitle-tools',
+  '/management/users',
+]);
+
+function SharedAdminShell({ children }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="admin-shell min-h-screen flex flex-col lg:flex-row bg-[var(--studio-bg)] text-[var(--studio-text)] transition-colors duration-200">
+      <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <AdminTopBar onOpenMobileNav={() => setMobileOpen(true)} />
+        <main className="admin-main flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+          <div className="w-full max-w-[1600px] mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
 
 export default function ManagementLayout({ children }) {
   const { user, admin, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [hasMounted, setHasMounted] = useState(false);
+  const [pageTransitionKey, setPageTransitionKey] = useState(pathname);
 
   const isLoginPage = pathname === '/management/login';
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  useEffect(() => {
+    setPageTransitionKey(pathname);
+  }, [pathname]);
 
   // Redirect only when we're sure there's no valid session
   useEffect(() => {
@@ -41,6 +82,7 @@ export default function ManagementLayout({ children }) {
   }
 
   const isAuthorized = !!admin;
+  const pageOwnsShell = LEGACY_SHELL_PATHS.has(pathname);
 
   // If visiting a protected management route without authorization:
   // Render clean status screen while session check resolves or redirection to /management/login completes.
@@ -65,8 +107,8 @@ export default function ManagementLayout({ children }) {
           </div>
         )}
         {/* Instant render — no opacity delay */}
-        <div className="animate-fadeInAdmin">
-          {children}
+        <div key={pageTransitionKey} className="animate-fadeInAdmin">
+          {!isLoginPage && !pageOwnsShell ? <SharedAdminShell>{children}</SharedAdminShell> : children}
         </div>
         <style>{`
           @keyframes adminBar {
