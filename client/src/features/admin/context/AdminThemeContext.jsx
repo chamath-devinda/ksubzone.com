@@ -47,11 +47,15 @@ export function AdminThemeProvider({ children }) {
       document.documentElement.setAttribute('data-admin-theme', theme);
       document.documentElement.classList.toggle('dark', isDark);
       document.documentElement.classList.toggle('light', !isDark);
+      document.documentElement.classList.toggle('admin-theme-dark', isDark);
+      document.documentElement.classList.toggle('admin-theme-light', !isDark);
 
       if (document.body) {
         document.body.setAttribute('data-admin-theme', theme);
         document.body.classList.toggle('dark', isDark);
         document.body.classList.toggle('light', !isDark);
+        document.body.classList.toggle('admin-theme-dark', isDark);
+        document.body.classList.toggle('admin-theme-light', !isDark);
       }
     }
   }, [theme]);

@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useId, useRef, useEffect } from 'react';
+import React, { useId, useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useDialogFocus from './useDialogFocus';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 
 export default function ModalDrawer({
   isOpen,
@@ -14,9 +16,17 @@ export default function ModalDrawer({
   maxHeightClass = 'max-h-[92vh]',
   footer = null
 }) {
+  const [mounted, setMounted] = useState(false);
+  const { isLight, theme } = useAdminTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const dirty = useRef(false);
   const requestClose = () => { if (!dirty.current || window.confirm('Discard unsaved changes?')) onClose(); };
   const dialogRef = useDialogFocus(isOpen, requestClose);
+
   useEffect(() => {
     dirty.current = false;
     if (!isOpen) return;
@@ -24,6 +34,7 @@ export default function ModalDrawer({
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [isOpen]);
+
   const titleId = useId();
 
   const sizeClasses = {
@@ -36,79 +47,92 @@ export default function ModalDrawer({
     full: 'max-w-[96vw]'
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 lg:p-6">
-          {/* Backdrop blur overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={requestClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md"
-          />
+        <div
+          data-admin-theme={theme || 'light'}
+          className={`admin-portal-wrapper ${isLight ? 'admin-theme-light' : 'admin-theme-dark'}`}
+        >
+          <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 lg:p-6">
+            {/* Backdrop blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={requestClose}
+              className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            />
 
-          {/* Modal Container */}
-          <motion.div
-            onChangeCapture={e => { if (e.target.closest("form")) dirty.current = true; }} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
-            initial={{ 
-              y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 15, 
-              scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98,
-              opacity: 0 
-            }}
-            animate={{ 
-              y: 0, 
-              scale: 1, 
-              opacity: 1 
-            }}
-            exit={{ 
-              y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 10, 
-              scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98, 
-              opacity: 0 
-            }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className={`admin-modal-drawer w-full border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#11131A] text-slate-900 dark:text-slate-100 shadow-2xl relative overflow-hidden z-10 flex flex-col
-              /* Mobile Styles */
-              fixed bottom-0 inset-x-0 rounded-t-2xl max-h-[94vh] border-b-0
-              /* Desktop Styles */
-              md:relative md:bottom-auto md:inset-x-auto md:rounded-2xl ${maxHeightClass} ${sizeClasses[size] || sizeClasses.md}
-            `}
-          >
-            {/* Grab handle bar on mobile */}
-            <div className="w-full flex justify-center py-2 md:hidden">
-              <div className="w-10 h-1 bg-slate-300 dark:bg-white/20 rounded-full" />
-            </div>
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
-              <h3 id={titleId} className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate mr-4">
-                {title}
-              </h3>
-              <button
-                type="button"
-                onClick={requestClose}
-                className="flex items-center justify-center w-8 h-8 rounded-full border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600 text-violet-300 hover:text-white transition shadow-sm active:scale-95 flex-shrink-0"
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="flex-grow overflow-y-auto p-5 sm:p-6 md:p-7 space-y-5 admin-custom-scrollbar">
-              {children}
-            </div>
-
-            {/* Optional Sticky Footer */}
-            {footer && (
-              <div className="px-6 py-3.5 border-t border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
-                {footer}
+            {/* Modal Container */}
+            <motion.div
+              onChangeCapture={e => { if (e.target.closest("form")) dirty.current = true; }}
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              tabIndex={-1}
+              initial={{ 
+                y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 15, 
+                scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98, 
+                opacity: 0 
+              }}
+              animate={{ 
+                y: 0, 
+                scale: 1, 
+                opacity: 1 
+              }}
+              exit={{ 
+                y: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 10, 
+                scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.98, 
+                opacity: 0 
+              }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className={`admin-modal-drawer admin-main w-full border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#11131A] text-slate-900 dark:text-slate-100 shadow-2xl relative overflow-hidden z-10 flex flex-col
+                /* Mobile Styles */
+                fixed bottom-0 inset-x-0 rounded-t-2xl max-h-[94vh] border-b-0
+                /* Desktop Styles */
+                md:relative md:bottom-auto md:inset-x-auto md:rounded-2xl ${maxHeightClass} ${sizeClasses[size] || sizeClasses.md}
+              `}
+            >
+              {/* Grab handle bar on mobile */}
+              <div className="w-full flex justify-center py-2 md:hidden">
+                <div className="w-10 h-1 bg-slate-300 dark:bg-white/20 rounded-full" />
               </div>
-            )}
-          </motion.div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
+                <h3 id={titleId} className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate mr-4">
+                  {title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={requestClose}
+                  className="flex items-center justify-center w-8 h-8 rounded-full border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600 text-violet-300 hover:text-white transition shadow-sm active:scale-95 flex-shrink-0"
+                  aria-label="Close dialog"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-grow overflow-y-auto p-5 sm:p-6 md:p-7 space-y-5 admin-custom-scrollbar">
+                {children}
+              </div>
+
+              {/* Optional Sticky Footer */}
+              {footer && (
+                <div className="px-6 py-3.5 border-t border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
+                  {footer}
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
