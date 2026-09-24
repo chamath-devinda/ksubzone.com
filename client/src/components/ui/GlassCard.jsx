@@ -8,19 +8,15 @@ import { Star, Calendar, Globe, Download, Languages, Clock3 } from 'lucide-react
 import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, imageFallbackFor } from '@/utils/mediaImages';
 import { formatTimeAgo } from '@/utils/timeAgo';
-import { cleanMediaTitle } from '@/utils/seo';
 
 export default function GlassCard({ item, type, priority = false }) {
   const mediaType = type || (item.seasons ? 'drama' : 'movie');
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
   const posterImage = getMediaImage(item, 'card');
-  const rawTitle = String(item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles');
-  const cleanedTitle = cleanMediaTitle(rawTitle) || rawTitle;
-  const titleYear = rawTitle.match(/\((?:19|20)\d{2}\)/)?.[0] || '';
-  const displayTitle = titleYear && !/\((?:19|20)\d{2}\)/.test(cleanedTitle)
-    ? `${cleanedTitle} ${titleYear}`
-    : cleanedTitle;
+  const rawTitle = String(item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles').trim();
+  const displayTitle = rawTitle;
+  const hasYearInTitle = /\((?:19|20)\d{2}\)/.test(displayTitle);
   // This activity clock only moves when the title or one of its subtitles is
   // imported. Generic record updates (views, admin edits, etc.) must not affect it.
   const timeAgo = formatTimeAgo(item.contentUpdatedAt || item.createdAt);
@@ -80,7 +76,7 @@ export default function GlassCard({ item, type, priority = false }) {
           {/* Poster Image */}
           <Image
             src={imgSrc}
-            alt={`${displayTitle}${releaseYear ? ` (${releaseYear})` : ''} Sinhala subtitles poster`}
+            alt={`${displayTitle}${releaseYear && !hasYearInTitle ? ` (${releaseYear})` : ''} Sinhala subtitles poster`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
             className="w-full h-full object-cover object-center transform scale-100 group-hover:scale-108 transition-transform duration-700 ease-out"
@@ -160,7 +156,7 @@ export default function GlassCard({ item, type, priority = false }) {
             )}
 
             {/* Title */}
-            <h3 className="text-sm font-black text-white leading-snug tracking-tight drop-shadow-md break-words">
+            <h3 className="text-sm font-black text-white leading-snug tracking-tight drop-shadow-md break-words line-clamp-2">
               {displayTitle}
             </h3>
 
@@ -212,13 +208,13 @@ export default function GlassCard({ item, type, priority = false }) {
         <div className="mt-3 px-1 flex flex-col gap-1 text-left">
           <h3
             title={displayTitle}
-            className="min-h-[2.5rem] text-xs font-black text-slate-100 group-hover:text-brand-primary transition-colors leading-tight tracking-tight break-words"
+            className="min-h-[2.5rem] text-xs font-black text-slate-100 group-hover:text-brand-primary-light transition-colors leading-tight tracking-tight break-words line-clamp-2"
           >
             {displayTitle}
           </h3>
           <div className="flex min-w-0 items-center justify-between gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
             <span className="flex-shrink-0 text-slate-500">{releaseYear || 'TBA'}</span>
-            <span className="truncate text-right text-brand-primary/80 font-extrabold">
+            <span className="truncate text-right text-brand-primary-light font-extrabold">
               {hasSubtitles 
                 ? (subtitleLanguages.length > 0 ? subtitleLanguages.join(' • ') : 'Sinhala / English') 
                 : (item.country === 'KR' ? '🇰🇷 KOREAN' : item.country || 'DRAMA')}
