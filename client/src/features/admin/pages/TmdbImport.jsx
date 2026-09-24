@@ -398,7 +398,7 @@ export default function TmdbImport() {
                       <div>
                         <div className="flex justify-between items-start gap-2">
                           <h4 className="font-bold text-xs text-slate-100 truncate">{item.title}</h4>
-                          <span className="text-[9px] text-violet-400 font-mono bg-violet-500/10 px-1.5 py-0.2 rounded border border-violet-500/20 flex-shrink-0">
+                          <span className="text-[9px] text-violet-400 font-mono bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/20 flex-shrink-0">
                             ★ {item.vote_average || '—'}
                           </span>
                         </div>

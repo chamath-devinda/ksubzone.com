@@ -212,7 +212,10 @@ export default function GlassCard({ item, type, priority = false }) {
 
         {/* Default Title & Meta below poster */}
         <div className="mt-3 px-1 flex flex-col gap-1 text-left">
-          <h3 className="min-h-8 text-xs font-black text-slate-100 group-hover:text-brand-primary transition-colors line-clamp-2 leading-tight tracking-tight">
+          <h3
+            title={displayTitle}
+            className="min-h-[2.5rem] text-xs font-black text-slate-100 group-hover:text-brand-primary transition-colors leading-tight tracking-tight break-words"
+          >
             {displayTitle}
           </h3>
           <div className="flex min-w-0 items-center justify-between gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">

@@ -226,7 +226,7 @@
 /* ==========================================================================
    INPUTS & CONTROLS (border-radius: 12px)
    ========================================================================== */
-.admin-theme-wrapper :is(input, select, textarea) {
+:where(.admin-theme-wrapper :is(input, select, textarea)) {
   min-height: 42px;
   border-radius: var(--radius-input) !important;
   border: 1px solid var(--studio-border) !important;
@@ -641,4 +641,28 @@
 
 @media (max-width: 1023px) {
   .sunrise-metric-card { min-height: 126px; }
+}
+
+/* Keep the workspace inside the viewport so the header/sidebar remain stable
+   while only the content area scrolls. Without min-height: 0, long tables can
+   push flex parents and make fixed overlays look clipped or misplaced. */
+.admin-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.admin-shell > .flex-1.flex.flex-col.min-w-0.overflow-hidden {
+  min-height: 0;
+}
+
+.admin-shell > .flex-1.flex.flex-col.min-w-0.overflow-hidden > main {
+  min-height: 0;
+}
+
+/* ModalDrawer reuses admin-main for theme-aware controls. Reset the shell
+   padding there so the drawer body owns spacing at every breakpoint. */
+.admin-portal-wrapper .admin-modal-drawer.admin-main {
+  min-height: 0;
+  padding: 0 !important;
 }

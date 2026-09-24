@@ -67,7 +67,7 @@ function ToastItem({ toast, onClose }) {
       className={`admin-toast pointer-events-auto w-full border border-white/[0.08] border-l-4 rounded-2xl p-4 flex gap-3.5 items-start justify-between select-none relative overflow-hidden ${borderColors}`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColors}`}>
-        <Icon className="w-4.5 h-4.5" />
+        <Icon className="w-5 h-5" />
       </div>
       
       <div className="flex-1 min-w-0 pr-2 pt-0.5">

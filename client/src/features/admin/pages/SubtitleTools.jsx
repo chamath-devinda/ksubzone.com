@@ -1230,7 +1230,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                   {/* Competitor Detections Card */}
                   <div className="bg-luxury-900 border border-white/5 rounded-2xl p-6 space-y-4">
                     <h2 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                      <AlertTriangle className="w-4.5 h-4.5 text-amber-500" /> Competitor Ads Clean Up
+                      <AlertTriangle className="w-5 h-5 text-amber-500" /> Competitor Ads Clean Up
                     </h2>
                     <p className="text-slate-400 text-xs">
                       Scanned competitor branding lines for <b className="text-slate-300">{activeFile.name}</b>.
@@ -1306,7 +1306,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                     onClick={processBrandingBatch}
                     className="w-full py-3.5 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-4.5 h-4.5" /> Inject Branding & Clean All
+                    <Plus className="w-5 h-5" /> Inject Branding & Clean All
                   </button>
 
                 </div>

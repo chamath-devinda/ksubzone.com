@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                       <div className="p-3.5 rounded-[12px] bg-[var(--studio-raised)] border border-[var(--studio-border)] flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-[12px] bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] flex items-center justify-center">
-                            <Languages className="h-4.5 w-4.5" />
+                            <Languages className="h-5 w-5" />
                           </div>
                           <div>
                             <p className="text-[10.5px] font-bold text-[var(--studio-muted)] uppercase">Approved Subtitles</p>
@@ -448,7 +448,7 @@ export default function AdminDashboard() {
                       <div className="p-3.5 rounded-[12px] bg-[var(--studio-raised)] border border-[var(--studio-border)] flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-[12px] bg-sky-500/15 text-sky-500 flex items-center justify-center">
-                            <Film className="h-4.5 w-4.5" />
+                            <Film className="h-5 w-5" />
                           </div>
                           <div>
                             <p className="text-[10.5px] font-bold text-[var(--studio-muted)] uppercase">Media Catalog</p>
@@ -464,7 +464,7 @@ export default function AdminDashboard() {
                       <div className="p-3.5 rounded-[12px] bg-[var(--studio-raised)] border border-[var(--studio-border)] flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-[12px] bg-[#14B8A6]/15 text-[#14B8A6] flex items-center justify-center">
-                            <Users className="h-4.5 w-4.5" />
+                            <Users className="h-5 w-5" />
                           </div>
                           <div>
                             <p className="text-[10.5px] font-bold text-[var(--studio-muted)] uppercase">Active Translators</p>

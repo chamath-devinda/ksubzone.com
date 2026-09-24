@@ -143,7 +143,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                   <span className="truncate text-xs font-black tracking-wider text-[var(--studio-text)] uppercase">
                     KSUBZONE
                   </span>
-                  <span className="badge-pill bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] text-[9px] font-black uppercase px-1.5 py-0.2">
+                  <span className="badge-pill bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] text-[9px] font-black uppercase px-1.5 py-0.5">
                     STUDIO
                   </span>
                 </div>
@@ -214,7 +214,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                       )}
 
                       <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                        <Icon className={`h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-[var(--studio-brand)]' : 'text-[var(--studio-muted)] group-hover:text-[var(--studio-text)]'}`} />
+                        <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-[var(--studio-brand)]' : 'text-[var(--studio-muted)] group-hover:text-[var(--studio-text)]'}`} />
                       </div>
 
                       {(expanded || mobileOpen) && (

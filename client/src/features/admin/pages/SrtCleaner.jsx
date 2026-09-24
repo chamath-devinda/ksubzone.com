@@ -1050,7 +1050,7 @@ export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
                 {/* 3. Essential Cleanup (Manual) */}
                 <div className="bg-luxury-900 border border-white/5 rounded-3xl p-6 space-y-4 text-left">
                   <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-4.5 h-4.5 text-brand-accent" /> Essential Cleanup (Manual)
+                    <Sparkles className="w-5 h-5 text-brand-accent" /> Essential Cleanup (Manual)
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Switch optionKey="fixOverlaps" label="Fix Overlaps & Durations" />
@@ -1064,7 +1064,7 @@ export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
                 {/* 4. Removal Tools */}
                 <div className="bg-luxury-900 border border-white/5 rounded-3xl p-6 space-y-4 text-left">
                   <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Trash2 className="w-4.5 h-4.5 text-red-400" /> Removal Tools
+                    <Trash2 className="w-5 h-5 text-red-400" /> Removal Tools
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Switch optionKey="removeHtml" label="Remove HTML Tags" />
@@ -1083,7 +1083,7 @@ export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
                 {/* 5. Formatting & Advanced */}
                 <div className="bg-luxury-900 border border-white/5 rounded-3xl p-6 space-y-6 text-left">
                   <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Settings className="w-4.5 h-4.5 text-brand-primary" /> Formatting & Advanced
+                    <Settings className="w-5 h-5 text-brand-primary" /> Formatting & Advanced
                   </h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

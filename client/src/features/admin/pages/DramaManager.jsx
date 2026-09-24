@@ -411,11 +411,11 @@ export default function DramaManager() {
             <span className="text-[10px] text-slate-500 font-mono block truncate">{drama.director || 'Unknown Director'}</span>
             <div className="flex gap-1.5 items-center mt-1 flex-wrap">
               {drama.isHistorical && (
-                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold uppercase">
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold uppercase">
                   Historical
                 </span>
               )}
-              <span className="px-1.5 py-0.2 rounded bg-white/[0.04] border border-white/[0.06] text-slate-400 text-[9px] font-bold uppercase font-mono">
+              <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-slate-400 text-[9px] font-bold uppercase font-mono">
                 {drama.episodeCount || 0} eps
               </span>
             </div>
@@ -510,7 +510,7 @@ export default function DramaManager() {
         <button
           type="button"
           onClick={handleOpenCreateDrama}
-          className="flex h-9.5 items-center gap-1.5 px-4 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
+          className="flex min-h-10 items-center gap-1.5 px-4 py-2 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
         >
           <Plus className="w-3.5 h-3.5" /> Add Drama
         </button>

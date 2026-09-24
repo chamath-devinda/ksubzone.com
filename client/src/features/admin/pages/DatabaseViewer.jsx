@@ -335,7 +335,7 @@ export default function DatabaseViewer() {
                             <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-violet-400' : 'bg-slate-600'}`} />
                             {col.name}
                           </span>
-                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${isActive ? 'bg-violet-500/20 text-violet-300' : 'bg-[#08090D] text-slate-500'}`}>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isActive ? 'bg-violet-500/20 text-violet-300' : 'bg-[#08090D] text-slate-500'}`}>
                             {col.count}
                           </span>
                         </button>

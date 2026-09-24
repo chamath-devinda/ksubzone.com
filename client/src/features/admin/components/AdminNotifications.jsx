@@ -229,10 +229,10 @@ export default function AdminNotifications() {
                       <img
                         src={alert.poster}
                         alt=""
-                        className="w-9 h-13 object-cover rounded-xl bg-white/5 border border-white/5 flex-shrink-0 shadow-sm"
+                        className="w-9 h-12 object-cover rounded-xl bg-white/5 border border-white/5 flex-shrink-0 shadow-sm"
                       />
                     ) : (
-                      <div className="w-9 h-13 rounded-xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-12 rounded-xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center flex-shrink-0">
                         <Languages className="w-4 h-4 text-brand-primary" />
                       </div>
                     )}

@@ -209,7 +209,7 @@ export default function MovieManager() {
             <span className="text-[10px] text-slate-500 font-mono block truncate">{movie.director || 'Unknown Director'}</span>
             <div className="flex gap-1.5 items-center mt-1 flex-wrap">
               {movie.isHistorical && (
-                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold uppercase">
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold uppercase">
                   Historical
                 </span>
               )}
@@ -217,12 +217,12 @@ export default function MovieManager() {
                 <button
                   type="button"
                   onClick={() => openSubtitleManage(movie._id, movie.title)}
-                  className="px-1.5 py-0.2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 text-[9px] font-bold uppercase transition cursor-pointer"
+                  className="px-1.5 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 text-[9px] font-bold uppercase transition cursor-pointer"
                 >
                   {movie.subtitleCount} Sub{movie.subtitleCount !== 1 ? 's' : ''}
                 </button>
               ) : (
-                <span className="px-1.5 py-0.2 rounded bg-white/[0.04] border border-white/[0.06] text-slate-500 text-[9px] font-bold uppercase font-mono">
+                <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-slate-500 text-[9px] font-bold uppercase font-mono">
                   0 Subs
                 </span>
               )}
@@ -321,7 +321,7 @@ export default function MovieManager() {
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="flex h-9.5 items-center gap-1.5 px-4 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
+          className="flex min-h-10 items-center gap-1.5 px-4 py-2 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
         >
           <Plus className="w-3.5 h-3.5" /> Add Movie
         </button>
@@ -357,9 +357,9 @@ export default function MovieManager() {
         pageSize={25}
       />
       <nav aria-label="Movie pages" className="flex items-center justify-between gap-3 text-sm">
-        <button disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)} className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95">Previous</button>
+        <button disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)} className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95">Previous</button>
         <span className="font-mono text-xs text-slate-400">Page {page} of {totalPages}</span>
-        <button disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)} className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95">Next</button>
+        <button disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)} className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95">Next</button>
       </nav>
 
       {/* Manual Creation / Edit Drawer Modal */}

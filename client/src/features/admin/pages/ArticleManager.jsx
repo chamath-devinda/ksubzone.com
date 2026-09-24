@@ -517,7 +517,7 @@ export default function ArticleManager() {
         </div>
         <button
           onClick={openCreate}
-          className="flex h-9.5 items-center gap-1.5 px-4 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
+          className="flex min-h-10 items-center gap-1.5 px-4 py-2 rounded-xl btn-oio-pill text-xs font-bold text-white shadow-sm flex-shrink-0"
         >
           <Plus className="w-3.5 h-3.5" /> Compose Article
         </button>

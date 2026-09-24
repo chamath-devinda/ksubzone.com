@@ -93,7 +93,7 @@ export default function DataTable({
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-9.5 pl-9 pr-3.5 bg-[#F5F6FA] dark:bg-[#1B2431] border border-[#EAEBF0] dark:border-[#313D4F] rounded-xl focus:border-[#490570] focus:ring-2 focus:ring-[#490570]/20 outline-none text-[#202224] dark:text-slate-100 text-xs transition placeholder:text-slate-400"
+                className="w-full h-10 pl-9 pr-3.5 bg-[#F5F6FA] dark:bg-[#1B2431] border border-[#EAEBF0] dark:border-[#313D4F] rounded-xl focus:border-[#490570] focus:ring-2 focus:ring-[#490570]/20 outline-none text-[#202224] dark:text-slate-100 text-xs transition placeholder:text-slate-400"
               />
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             </div>
@@ -194,7 +194,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
@@ -207,7 +207,7 @@ export default function DataTable({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed transition active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 text-purple-400 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>
