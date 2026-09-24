@@ -15,14 +15,12 @@ export default function GlassCard({ item, type, priority = false }) {
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
   const posterImage = getMediaImage(item, 'card');
-  const rawTitle = (item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles');
-  const displayTitle = rawTitle
-    .replace(/\s*\|\s*සිංහල\s*උපසිරැසි.*$/i, '')
-    .replace(/\s*\|\s*Sinhala\s*Subtitles?.*$/i, '')
-    .replace(/\s*-\s*සිංහල\s*උපසිරැසි.*$/i, '')
-    .replace(/\s+සිංහල\s+උපසිරැසි.*$/i, '')
-    .replace(/\s+Sinhala\s+Subtitles?.*$/i, '')
-    .trim() || rawTitle;
+  const rawTitle = String(item.title || 'Korean title').replace(/Subtitiles/gi, 'Subtitles');
+  const cleanedTitle = cleanMediaTitle(rawTitle) || rawTitle;
+  const titleYear = rawTitle.match(/\((?:19|20)\d{2}\)/)?.[0] || '';
+  const displayTitle = titleYear && !/\((?:19|20)\d{2}\)/.test(cleanedTitle)
+    ? `${cleanedTitle} ${titleYear}`
+    : cleanedTitle;
   // This activity clock only moves when the title or one of its subtitles is
   // imported. Generic record updates (views, admin edits, etc.) must not affect it.
   const timeAgo = formatTimeAgo(item.contentUpdatedAt || item.createdAt);
@@ -162,7 +160,7 @@ export default function GlassCard({ item, type, priority = false }) {
             )}
 
             {/* Title */}
-            <h3 className="text-sm font-black text-white leading-snug tracking-tight drop-shadow-md line-clamp-2">
+            <h3 className="text-sm font-black text-white leading-snug tracking-tight drop-shadow-md break-words">
               {displayTitle}
             </h3>
 
