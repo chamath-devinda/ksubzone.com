@@ -4,13 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 import AdminNotifications from './AdminNotifications';
 import AdminSearch from './AdminSearch';
 import {
   Plus,
-  Moon,
-  Sun,
   ExternalLink,
   Menu,
   Film,
@@ -49,7 +46,6 @@ const PAGE_TITLES = {
 
 export default function AdminTopBar({ onOpenMobileNav }) {
   const { admin, logoutAdmin } = useAuth();
-  const { isLight, toggleTheme } = useAdminTheme();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -91,7 +87,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
   const pageTitle = PAGE_TITLES[pageKey] || 'Overview';
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between px-4 sm:px-6 bg-[var(--studio-surface)]/90 backdrop-blur-xl border-b border-[var(--studio-border)] transition-colors">
+    <header className="admin-topbar sticky top-0 z-30 flex h-16 w-full items-center justify-between px-4 sm:px-6 bg-[var(--studio-surface)]/90 backdrop-blur-xl border-b border-[var(--studio-border)] transition-colors">
       {/* ── Left: Mobile Hamburger & Command Search ── */}
       <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
         <button
@@ -122,8 +118,8 @@ export default function AdminTopBar({ onOpenMobileNav }) {
       {/* ── Right: Live Operational Status, Quick Create, Notifications, Theme, Profile ── */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Live Operational Status Pill */}
-        <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-[9999px] bg-[#14B8A6]/10 border border-[#14B8A6]/20 text-[#14B8A6] text-[11px] font-semibold">
-          <span className="h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
+        <div className="admin-live-status hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-[9999px] bg-[#14B8A6]/10 border border-[#14B8A6]/20 text-[#14B8A6] text-[11px] font-semibold">
+          <span className="admin-live-dot h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
           <span>Live Operational</span>
         </div>
 
@@ -133,7 +129,7 @@ export default function AdminTopBar({ onOpenMobileNav }) {
             type="button"
             aria-expanded={quickAddOpen}
             onClick={() => setQuickAddOpen(!quickAddOpen)}
-            className="flex h-8 items-center gap-1.5 rounded-[9999px] px-3.5 text-xs font-bold text-white bg-[var(--studio-brand)] hover:bg-[var(--studio-brand-strong)] shadow-sm shadow-purple-500/25 transition active:scale-95"
+            className="admin-create-button flex h-8 items-center gap-1.5 rounded-[9999px] px-3.5 text-xs font-bold text-white bg-[var(--studio-brand)] hover:bg-[var(--studio-brand-strong)] shadow-sm shadow-purple-500/25 transition active:scale-95"
           >
             <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
             <span className="hidden sm:inline">Create</span>
@@ -169,17 +165,6 @@ export default function AdminTopBar({ onOpenMobileNav }) {
 
         {/* Notifications Popover */}
         <AdminNotifications />
-
-        {/* Theme Toggle (Persists to local storage) */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="flex h-8 w-8 items-center justify-center rounded-[9999px] border border-[var(--studio-border)] bg-[var(--studio-raised)] text-[var(--studio-text)] hover:border-[var(--studio-border-strong)] transition"
-          aria-label={isLight ? 'Switch to Dark mode' : 'Switch to Light mode'}
-          title={isLight ? 'Switch to Dark mode' : 'Switch to Light mode'}
-        >
-          {isLight ? <Moon className="h-4 w-4 text-[var(--studio-text)]" /> : <Sun className="h-4 w-4 text-[#F59E0B]" />}
-        </button>
 
         {/* Public Site Link */}
         <Link

@@ -74,9 +74,9 @@ export default function ManagementLayout({ children }) {
   // SSR guard: Always show initial loading until mounted to prevent hydration mismatches
   if (!hasMounted) {
     return (
-      <div className="h-screen w-screen bg-[#fbf5ff] flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-[3px] border-[#800080] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[#725b77] font-medium tracking-wide">Initializing KSubZone Studio...</p>
+      <div className="h-screen w-screen bg-black text-white flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#7A7A7A] font-medium tracking-wide">Initializing KSubZone Studio...</p>
       </div>
     );
   }
@@ -88,9 +88,9 @@ export default function ManagementLayout({ children }) {
   // Render clean status screen while session check resolves or redirection to /management/login completes.
   if (!isLoginPage && !isAuthorized) {
     return (
-      <div className="h-screen w-screen bg-[#fbf5ff] flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-[3px] border-[#800080] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[#725b77] font-medium tracking-wide">
+      <div className="h-screen w-screen bg-black text-white flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#7A7A7A] font-medium tracking-wide">
           {loading ? 'Verifying Studio session...' : 'Redirecting to Studio login...'}
         </p>
       </div>

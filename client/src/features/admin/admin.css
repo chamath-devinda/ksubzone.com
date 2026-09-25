@@ -666,3 +666,531 @@
   min-height: 0;
   padding: 0 !important;
 }
+
+/* ===========================================================================
+   KSUBZONE STUDIO — PURE BLACK CONTROL PANEL
+   Surface separation comes only from the #1A1A1A keyline and depth/glow.
+   =========================================================================== */
+.admin-theme-wrapper,
+.admin-theme-wrapper.admin-theme-dark,
+[data-admin-theme='dark'].admin-theme-wrapper {
+  --studio-bg: #000000;
+  --studio-surface: #000000;
+  --studio-surface-hover: #000000;
+  --studio-raised: #000000;
+  --studio-border: #1A1A1A;
+  --studio-border-strong: rgba(139, 92, 246, 0.52);
+  --studio-text: #FFFFFF;
+  --studio-muted: #7A7A7A;
+  --studio-brand: #8B5CF6;
+  --studio-brand-strong: #7C3AED;
+  --studio-brand-soft: rgba(139, 92, 246, 0.15);
+  --studio-accent: #22D3EE;
+  --studio-accent-soft: rgba(34, 211, 238, 0.13);
+  --studio-warning: #F59E0B;
+  --studio-warning-soft: rgba(245, 158, 11, 0.14);
+  --studio-danger: #EF4444;
+  --studio-danger-soft: rgba(239, 68, 68, 0.14);
+  --radius-card: 18px;
+  --radius-btn: 9999px;
+  --radius-input: 14px;
+  --radius-pill: 9999px;
+  --studio-motion: 240ms;
+  color-scheme: dark;
+}
+
+html[data-admin-theme='dark'],
+body[data-admin-theme='dark'],
+.admin-theme-wrapper,
+.admin-theme-wrapper .admin-shell,
+.admin-theme-wrapper .admin-main,
+.admin-theme-wrapper .workspace-intro-grid {
+  background: #000000 !important;
+  background-image: none !important;
+}
+
+.admin-theme-wrapper .admin-sidebar {
+  background: #000000 !important;
+  background-image: none !important;
+  border-color: #1A1A1A !important;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.6) !important;
+}
+
+.admin-theme-wrapper .admin-topbar {
+  background: #000000 !important;
+  background-image: none !important;
+  border-color: #1A1A1A !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.admin-theme-wrapper .studio-card,
+.admin-theme-wrapper .dashstack-card,
+.admin-theme-wrapper .doit-data-table,
+.admin-theme-wrapper .architect-card,
+.admin-theme-wrapper .admin-modal-drawer,
+.admin-theme-wrapper .admin-system-panel,
+.admin-theme-wrapper .admin-surface-card,
+.admin-theme-wrapper .admin-stat-card,
+.admin-theme-wrapper .admin-table-toolbar,
+.admin-theme-wrapper .admin-data-table,
+.admin-theme-wrapper .sunrise-metric-card,
+.admin-theme-wrapper .admin-bottom-action-bar {
+  background: #000000 !important;
+  background-image: none !important;
+  border: 1px solid #1A1A1A !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.admin-theme-wrapper .studio-card,
+.admin-theme-wrapper .dashstack-card,
+.admin-theme-wrapper .sunrise-metric-card {
+  transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease !important;
+}
+
+@media (hover: hover) {
+  .admin-theme-wrapper .studio-card:hover,
+  .admin-theme-wrapper .dashstack-card:hover,
+  .admin-theme-wrapper .sunrise-metric-card:hover {
+    background: #000000 !important;
+    border-color: rgba(139, 92, 246, 0.58) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), 0 0 18px rgba(139, 92, 246, 0.12) !important;
+    transform: translateY(-2px);
+  }
+}
+
+/* Existing screens use tokenised utility classes for inner rows. Keep those
+   rows black too, while retaining intentionally tinted icon/status chips. */
+.admin-theme-wrapper .admin-main [class*='bg-[var(--studio-raised)]'],
+.admin-theme-wrapper .admin-main [class*='bg-[var(--studio-surface)]'],
+.admin-theme-wrapper .admin-sidebar [class*='bg-[var(--studio-raised)]'],
+.admin-theme-wrapper .admin-topbar [class*='bg-[var(--studio-raised)]'] {
+  background: #000000 !important;
+  background-image: none !important;
+}
+
+.admin-theme-wrapper .admin-main [class*='backdrop-blur'],
+.admin-theme-wrapper .admin-sidebar [class*='backdrop-blur'] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Sidebar */
+.admin-theme-wrapper .admin-sidebar a[aria-current='page'] {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #A78BFA !important;
+  box-shadow: 0 0 16px rgba(167, 139, 250, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.3) !important;
+}
+
+.admin-theme-wrapper .admin-sidebar a[aria-current='page'] svg,
+.admin-theme-wrapper .admin-sidebar a[aria-current='page'] .text-\[var\(--studio-brand\)\] {
+  color: #A78BFA !important;
+}
+
+.admin-theme-wrapper .admin-sidebar a:not([aria-current='page']):hover {
+  background: rgba(139, 92, 246, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.admin-theme-wrapper .admin-sidebar .bg-\[var\(--studio-brand\)\] {
+  background: #8B5CF6 !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.36);
+}
+
+/* Search, buttons, and focused controls */
+.admin-theme-wrapper .admin-search-trigger,
+.admin-theme-wrapper :where(input, select, textarea):not([type='checkbox']):not([type='radio']) {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #1A1A1A !important;
+  box-shadow: none !important;
+}
+
+.admin-theme-wrapper .admin-search-trigger {
+  min-height: 40px;
+  border-radius: 14px !important;
+}
+
+.admin-theme-wrapper .admin-search-trigger kbd {
+  background: rgba(139, 92, 246, 0.12) !important;
+  color: #A78BFA !important;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 6px;
+}
+
+.admin-theme-wrapper :where(input, select, textarea):focus,
+.admin-theme-wrapper .admin-search-trigger:focus-visible {
+  border-color: #8B5CF6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+  outline: none;
+}
+
+.admin-theme-wrapper .btn-studio-primary,
+.admin-theme-wrapper .admin-create-button {
+  background: #7C3AED !important;
+  color: #FFFFFF !important;
+  border-color: #7C3AED !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.5) !important;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, background-color 0.24s ease !important;
+}
+
+.admin-theme-wrapper .btn-studio-primary:hover:not(:disabled),
+.admin-theme-wrapper .admin-create-button:hover:not(:disabled) {
+  background: #8B5CF6 !important;
+  border-color: #8B5CF6 !important;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.7) !important;
+  transform: translateY(-1px);
+}
+
+.admin-theme-wrapper .btn-studio-pill {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #1A1A1A !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+  transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, color 0.24s ease !important;
+}
+
+.admin-theme-wrapper .btn-studio-pill:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.1) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(139, 92, 246, 0.62) !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.28) !important;
+  transform: translateY(-1px);
+}
+
+/* Live and metric states */
+.admin-theme-wrapper .admin-live-status,
+.admin-theme-wrapper .badge-emerald,
+.admin-theme-wrapper .badge-teal,
+.admin-theme-wrapper .badge-success {
+  background: rgba(52, 211, 153, 0.08) !important;
+  color: #34D399 !important;
+  border-color: rgba(52, 211, 153, 0.28) !important;
+}
+
+.admin-theme-wrapper .admin-live-dot,
+.admin-theme-wrapper .operations-live-dot {
+  background: #34D399 !important;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.8) !important;
+}
+
+.admin-theme-wrapper .sunrise-metric-card {
+  min-height: 146px;
+  padding: 22px;
+  border-radius: 18px !important;
+}
+
+.admin-theme-wrapper .sunrise-metric-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: #A78BFA !important;
+  background: rgba(139, 92, 246, 0.15) !important;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.4) !important;
+}
+
+.admin-theme-wrapper .operations-panel [class*='bg-[var(--studio-raised)]'] {
+  background: #000000 !important;
+  border-color: #1A1A1A !important;
+}
+
+/* Streaming Viewership Velocity */
+.admin-theme-wrapper .velocity-card {
+  min-height: 448px;
+}
+
+.admin-theme-wrapper .velocity-range-controls {
+  background: #000000 !important;
+  border-color: #1A1A1A !important;
+}
+
+.admin-theme-wrapper .velocity-range-controls button {
+  border-radius: 9999px !important;
+  transition: color 0.24s ease, background-color 0.24s ease, box-shadow 0.24s ease !important;
+}
+
+.admin-theme-wrapper .velocity-range-controls button.bg-\[var\(--studio-brand\)\] {
+  background: #7C3AED !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.48) !important;
+}
+
+.velocity-chart {
+  position: relative;
+  min-height: 282px;
+  width: 100%;
+  overflow: visible;
+}
+
+.velocity-chart-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  min-height: 24px;
+  margin: 0 0 7px 2px;
+}
+
+.velocity-chart-legend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #C7C7C7;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.velocity-chart-legend button:hover,
+.velocity-chart-legend button:focus-visible {
+  color: #FFFFFF;
+  outline: none;
+}
+
+.velocity-chart-legend button.is-muted {
+  opacity: 0.38;
+}
+
+.velocity-chart-legend-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+}
+
+.velocity-chart-legend-dot-primary {
+  background: #A855F7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.7);
+}
+
+.velocity-chart-legend-dot-comparison {
+  background: #38BDF8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.62);
+}
+
+.velocity-chart-svg {
+  display: block;
+  width: 100%;
+  height: 248px;
+  overflow: visible;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.velocity-chart-gridline {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1;
+}
+
+.velocity-chart-y-label,
+.velocity-chart-label {
+  fill: #7A7A7A;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.velocity-chart-y-label {
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.velocity-chart-area {
+  fill: url(#velocity-area-gradient);
+  animation: velocity-area-fade 0.48s ease 0.42s both;
+}
+
+.velocity-chart-primary-line {
+  fill: none;
+  stroke: #A855F7;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1800;
+  stroke-dashoffset: 1800;
+  animation: velocity-line-draw 1.12s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.velocity-chart-comparison-line {
+  fill: none;
+  stroke: #38BDF8;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6 6;
+  opacity: 0;
+  animation: velocity-comparison-fade 0.46s ease 0.45s both;
+}
+
+.velocity-chart-guideline {
+  stroke: rgba(255, 255, 255, 0.34);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+.velocity-chart-marker-halo {
+  opacity: 0.24;
+}
+
+.velocity-chart-marker-halo-primary {
+  fill: #A855F7;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.78));
+}
+
+.velocity-chart-marker-halo-comparison {
+  fill: #38BDF8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.72));
+}
+
+.velocity-chart-marker {
+  fill: #FFFFFF;
+  stroke-width: 2.5;
+}
+
+.velocity-chart-marker-primary { stroke: #A855F7; }
+.velocity-chart-marker-comparison { stroke: #38BDF8; }
+
+@keyframes velocity-line-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes velocity-area-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes velocity-comparison-fade {
+  from { opacity: 0; }
+  to { opacity: 0.9; }
+}
+
+.velocity-chart-tooltip {
+  position: absolute;
+  z-index: 4;
+  min-width: 126px;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: #1A1625;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.82), 0 0 16px rgba(168, 85, 247, 0.2);
+  color: #B2A8C4;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translate(-50%, -112%);
+}
+
+.velocity-chart-tooltip-date {
+  display: block;
+  margin-bottom: 4px;
+  color: #B2A8C4;
+}
+
+.velocity-chart-tooltip-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.velocity-chart-tooltip-value + .velocity-chart-tooltip-value {
+  margin-top: 3px;
+}
+
+.velocity-chart-tooltip-value i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+}
+
+.velocity-chart-tooltip-value-primary i { background: #A855F7; }
+.velocity-chart-tooltip-value-comparison i { background: #38BDF8; }
+
+.velocity-chart-tooltip-value strong {
+  margin-left: auto;
+  color: #FFFFFF;
+  font-size: 11px;
+}
+
+.velocity-chart-empty {
+  display: flex;
+  min-height: 204px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #1A1A1A;
+  border-radius: 16px;
+  color: #7A7A7A;
+  font-size: 12px;
+}
+
+/* Bottom mode switcher stays available while longer workbench content scrolls. */
+.admin-theme-wrapper .admin-bottom-action-bar {
+  position: sticky;
+  z-index: 20;
+  bottom: 12px;
+  padding: 9px 12px;
+  border-radius: 9999px !important;
+}
+
+.admin-theme-wrapper .admin-deck-tabs {
+  background: #000000 !important;
+  border-color: #1A1A1A !important;
+}
+
+.admin-theme-wrapper .admin-deck-tabs button {
+  border-radius: 9999px !important;
+  transition: color 0.24s ease, background-color 0.24s ease, box-shadow 0.24s ease !important;
+}
+
+.admin-theme-wrapper .admin-deck-tabs button.bg-\[\#9E57F6\] {
+  background: #7C3AED !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.5) !important;
+}
+
+@media (max-width: 1023px) {
+  .admin-theme-wrapper .admin-main { padding-bottom: 28px !important; }
+  .admin-theme-wrapper .velocity-card { min-height: 0; }
+}
+
+@media (max-width: 640px) {
+  .admin-theme-wrapper .sunrise-metric-card {
+    min-height: 132px;
+    padding: 18px;
+  }
+
+  .velocity-chart {
+    min-height: 238px;
+    height: auto;
+  }
+
+  .velocity-chart-svg {
+    min-height: 0;
+    height: 208px;
+  }
+
+  .admin-theme-wrapper .admin-bottom-action-bar {
+    position: static;
+    align-items: flex-start;
+    border-radius: 18px !important;
+  }
+
+  .admin-theme-wrapper .admin-deck-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .admin-theme-wrapper .admin-deck-tabs::-webkit-scrollbar { display: none; }
+  .admin-theme-wrapper .admin-deck-tabs button { flex: 0 0 auto; }
+}

@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import useDialogFocus from './useDialogFocus';
 import { resolveLogoUrl } from '@/utils/mediaImages';
-import { useAdminTheme } from '@/features/admin/context/AdminThemeContext';
 import {
   BookOpenText,
   Database,
@@ -15,8 +14,6 @@ import {
   Languages,
   LayoutDashboard,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
   Server,
   Settings2,
   Sparkles,
@@ -26,9 +23,7 @@ import {
   X,
   MessageSquareText,
   UserCheck,
-  Clapperboard,
-  ChevronRight,
-  Radio
+  Clapperboard
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -65,30 +60,12 @@ const NAV_SECTIONS = [
 
 export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = () => {} }) {
   const { admin, logoutAdmin } = useAuth();
-  const { isLight } = useAdminTheme();
   const pathname = usePathname();
   const { content } = useSiteContent();
   const brand = content?.brand || {};
   const logoUrl = resolveLogoUrl(brand.adminLogoUrl) || '/ksubzone-icon.webp';
 
-  const [expanded, setExpanded] = useState(false);
   const dialogRef = useDialogFocus(mobileOpen, onCloseMobileNav);
-
-  useEffect(() => {
-    try {
-      setExpanded(localStorage.getItem('ksz-admin-nav-expanded') === 'true');
-    } catch (_) {}
-  }, []);
-
-  const toggleExpanded = () => {
-    setExpanded((curr) => {
-      const next = !curr;
-      try {
-        localStorage.setItem('ksz-admin-nav-expanded', String(next));
-      } catch (_) {}
-      return next;
-    });
-  };
 
   const adminName = admin?.displayName || admin?.username || admin?.name || 'Administrator';
   const adminInitial = adminName.charAt(0).toUpperCase();
@@ -116,9 +93,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
         aria-modal={mobileOpen || undefined}
         aria-label="Admin Navigation"
         tabIndex={-1}
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
-          expanded ? 'lg:w-[240px]' : 'lg:w-[72px]'
-        } w-[260px] ${
+        className={`admin-sidebar fixed inset-y-0 left-0 z-50 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:w-[240px] w-[260px] ${
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         } bg-[var(--studio-surface)] border-r border-[var(--studio-border)]`}
       >
@@ -137,34 +112,21 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
               )}
             </div>
 
-            {(expanded || mobileOpen) && (
-              <div className="min-w-0 transition-opacity duration-200">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate text-xs font-black tracking-wider text-[var(--studio-text)] uppercase">
-                    KSUBZONE
-                  </span>
-                  <span className="badge-pill bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] text-[9px] font-black uppercase px-1.5 py-0.5">
-                    STUDIO
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-semibold mt-0.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#14B8A6] animate-pulse" />
-                  <span>Control Plane</span>
-                </div>
+            <div className="min-w-0 transition-opacity duration-200">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-xs font-black tracking-wider text-[var(--studio-text)] uppercase">
+                  KSUBZONE
+                </span>
+                <span className="badge-pill bg-[var(--studio-brand-soft)] text-[var(--studio-brand)] text-[9px] font-black uppercase px-1.5 py-0.5">
+                  STUDIO
+                </span>
               </div>
-            )}
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-semibold mt-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#14B8A6] animate-pulse" />
+                <span>Control Plane</span>
+              </div>
+            </div>
           </Link>
-
-          {/* Expand/Collapse Toggle on Desktop, Close on Mobile */}
-          <button
-            type="button"
-            onClick={mobileOpen ? onCloseMobileNav : toggleExpanded}
-            className="hidden lg:flex h-8 w-8 items-center justify-center rounded-[9999px] text-[var(--studio-muted)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-raised)] transition"
-            title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-            aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            {expanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-          </button>
 
           <button
             type="button"
@@ -186,11 +148,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
             if (!visibleItems.length) return null;
             return (
               <div key={sIdx} className="space-y-1">
-                {(expanded || mobileOpen) && (
-                  <div className="px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
-                    {section.title}
-                  </div>
-                )}
+                <div className="px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-widest text-[var(--studio-muted)]">
+                  {section.title}
+                </div>
                 {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.to || (item.to !== '/management/dashboard' && pathname.startsWith(item.to));
@@ -217,21 +177,12 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                         <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-[var(--studio-brand)]' : 'text-[var(--studio-muted)] group-hover:text-[var(--studio-text)]'}`} />
                       </div>
 
-                      {(expanded || mobileOpen) && (
-                        <span className="truncate flex-1 font-medium">{item.label}</span>
-                      )}
+                      <span className="truncate flex-1 font-medium">{item.label}</span>
 
-                      {(expanded || mobileOpen) && item.badge && (
+                      {item.badge && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[9999px] bg-[var(--studio-raised)] text-[var(--studio-muted)] border border-[var(--studio-border)]">
                           {item.badge}
                         </span>
-                      )}
-
-                      {/* Tooltip for collapsed state */}
-                      {!expanded && !mobileOpen && (
-                        <div className="pointer-events-none absolute left-full ml-3.5 z-50 hidden rounded-[9999px] bg-[var(--studio-surface)] border border-[var(--studio-border)] px-3 py-1 text-[11px] font-bold text-[var(--studio-text)] shadow-xl whitespace-nowrap group-hover:block">
-                          {item.label}
-                        </div>
                       )}
                     </Link>
                   );
@@ -257,29 +208,25 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobileNav = ()
                 )}
               </div>
 
-              {(expanded || mobileOpen) && (
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-xs font-bold text-[var(--studio-text)]">
-                    {adminName}
-                  </p>
-                  <p className="truncate text-[10px] text-[var(--studio-muted)] font-medium">
-                    {adminRoleName}
-                  </p>
-                </div>
-              )}
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-xs font-bold text-[var(--studio-text)]">
+                  {adminName}
+                </p>
+                <p className="truncate text-[10px] text-[var(--studio-muted)] font-medium">
+                  {adminRoleName}
+                </p>
+              </div>
             </Link>
 
-            {(expanded || mobileOpen) && (
-              <button
-                type="button"
-                onClick={logoutAdmin}
-                className="h-8 w-8 flex items-center justify-center rounded-[9999px] text-[var(--studio-muted)] hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition"
-                title="Log out of Studio"
-                aria-label="Log out"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={logoutAdmin}
+              className="h-8 w-8 flex items-center justify-center rounded-[9999px] text-[var(--studio-muted)] hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition"
+              title="Log out of Studio"
+              aria-label="Log out"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
       </aside>

@@ -1,45 +1,24 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const AdminThemeContext = createContext({
-  theme: 'light',
+  theme: 'dark',
   setTheme: () => {},
   toggleTheme: () => {},
   isLight: false,
   mounted: false,
 });
 
-// A new key intentionally starts the redesigned workspace in its sunrise theme
-// instead of retaining the prior dark-purple preference.
-const ADMIN_THEME_STORAGE_KEY = 'ksz-admin-theme-v3';
-
 export function AdminThemeProvider({ children }) {
-  const { admin } = useAuth();
-  const storageKey = `${ADMIN_THEME_STORAGE_KEY}:${admin?._id || admin?.id || admin?.username || 'guest'}`;
-  const [theme, setThemeState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTheme = localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
-        if (savedTheme === 'light' || savedTheme === 'dark') {
-          return savedTheme;
-        }
-      } catch (_) {}
-    }
-    return 'light';
-  });
+  // The Studio design is intentionally dark-only. Do not restore an earlier
+  // per-user light preference here: it would introduce non-black surface layers.
+  const [theme, setThemeState] = useState('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      const savedTheme = localStorage.getItem(storageKey) || localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
-      if (savedTheme === 'light' || savedTheme === 'dark') {
-        setThemeState(savedTheme);
-      }
-    } catch (_) {}
     setMounted(true);
-  }, [storageKey]);
+  }, []);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -60,17 +39,9 @@ export function AdminThemeProvider({ children }) {
     }
   }, [theme]);
 
-  const setTheme = (newTheme) => {
-    const validTheme = newTheme === 'light' ? 'light' : 'dark';
-    setThemeState(validTheme);
-    try {
-      localStorage.setItem(storageKey, validTheme);
-    } catch (_) {}
-  };
+  const setTheme = () => setThemeState('dark');
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const toggleTheme = () => setThemeState('dark');
 
   const isLight = theme === 'light';
 

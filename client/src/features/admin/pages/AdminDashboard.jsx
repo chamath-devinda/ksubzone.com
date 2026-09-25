@@ -19,6 +19,7 @@ import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { Pulse, CardSkeleton } from '@/features/admin/components/Skeleton';
 import { useToast } from '@/features/admin/components/Toast';
 import DashboardReports, { ReportExports } from '../components/DashboardReports';
+import VelocityChart from '../components/VelocityChart';
 import { selectTraffic, downloadCsv } from '../reporting.mjs';
 
 // ─── Number & Time Formatters ────────────────────────────────────────────────
@@ -152,6 +153,23 @@ export default function AdminDashboard() {
   const trafficLogs = Array.isArray(stats?.trafficLogs) ? stats.trafficLogs : [];
   const trafficWindowSize = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
   const trafficSeries = selectTraffic(trafficLogs, trafficWindowSize);
+  const trafficComparison = useMemo(() => {
+    const hasImpressions = trafficSeries.some((log) => Number(log?.impressions || 0) > 0);
+    if (hasImpressions) {
+      return {
+        label: 'Impressions',
+        values: trafficSeries.map((log) => Number(log?.impressions || 0)),
+      };
+    }
+
+    const hasUniqueVisitors = trafficSeries.some((log) => Number(log?.uniqueVisitors || 0) > 0);
+    return hasUniqueVisitors
+      ? {
+          label: 'Unique Visitors',
+          values: trafficSeries.map((log) => Number(log?.uniqueVisitors || 0)),
+        }
+      : null;
+  }, [trafficSeries]);
   const trafficTotal = trafficSeries.reduce((sum, log) => sum + Number(log.views || 0), 0);
   const maxTraffic = Math.max(...trafficSeries.map((log) => Number(log.views || 0)), 1);
   const subtitleStats = stats?.subtitleStats || null;
@@ -220,7 +238,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="admin-shell workspace-intro-grid min-h-screen flex flex-col lg:flex-row bg-[var(--studio-bg)] text-[var(--studio-text)] transition-colors duration-200">
+    <div className="admin-shell admin-dashboard workspace-intro-grid min-h-screen flex flex-col lg:flex-row bg-[var(--studio-bg)] text-[var(--studio-text)] transition-colors duration-200">
       <AdminSidebar mobileOpen={mobileOpen} onCloseMobileNav={() => setMobileOpen(false)} />
 
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
@@ -263,7 +281,7 @@ export default function AdminDashboard() {
 
           {canViewAnalytics && (
             <>
-              <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between" aria-label="Workspace summary">
+              <section className="admin-dashboard-hero flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between" aria-label="Workspace summary">
                 <div>
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--studio-brand)]">Good to see you</p>
                   <h1 className="mt-1 font-[Outfit] text-3xl font-extrabold tracking-[-0.04em] text-[var(--studio-text)] sm:text-4xl">Studio command center</h1>
@@ -298,7 +316,7 @@ export default function AdminDashboard() {
                   ========================================================================== */}
               <section className="grid grid-cols-1 lg:grid-cols-12 gap-6" aria-label="Executive Intelligence Center">
                 {/* ── Left Hero Card: Streaming Viewership Velocity (65% width = 8 cols) ── */}
-                <div className="studio-card rounded-[16px] lg:col-span-8 p-6 flex flex-col justify-between">
+                <div className="studio-card velocity-card rounded-[16px] lg:col-span-8 p-6 flex flex-col justify-between">
                   <div>
                     {/* Header */}
                     <div className="flex items-start justify-between flex-wrap gap-4 border-b border-[var(--studio-border)] pb-4">
@@ -320,7 +338,7 @@ export default function AdminDashboard() {
 
                       {/* Timeframe selector & CSV/PNG export */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center bg-[var(--studio-raised)] p-1 rounded-[9999px] border border-[var(--studio-border)]">
+                        <div className="velocity-range-controls flex items-center bg-[var(--studio-raised)] p-1 rounded-[9999px] border border-[var(--studio-border)]">
                           {['7d', '30d', '90d'].map((range) => (
                             <button
                               key={range}
@@ -344,7 +362,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Velocity Bar Curve */}
+                    {/* Interactive velocity area chart */}
                     <div className="mt-6">
                       <div className="flex items-baseline justify-between mb-3 text-xs text-[var(--studio-muted)]">
                         <span className="font-semibold text-[var(--studio-text)]">
@@ -353,36 +371,7 @@ export default function AdminDashboard() {
                         <span>Period Total: <b className="text-[var(--studio-text)] font-bold">{formatNum(trafficTotal)}</b></span>
                       </div>
 
-                      {trafficSeries.length > 0 ? (
-                        <div className="h-44 w-full flex items-end gap-1.5 border-b border-[var(--studio-border)] pb-2">
-                          {trafficSeries.map((log, index) => {
-                            const value = Number(log.views || 0);
-                            const height = Math.max(8, Math.round((value / maxTraffic) * 100));
-                            return (
-                              <div
-                                key={`${log.date || 'day'}-${index}`}
-                                className="flex h-full flex-1 flex-col items-center justify-end gap-2 group relative"
-                              >
-                                {/* Tooltip */}
-                                <div className="pointer-events-none absolute -top-8 hidden group-hover:block z-20 rounded-[9999px] bg-[var(--studio-surface)] border border-[var(--studio-border)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--studio-text)] whitespace-nowrap shadow-xl">
-                                  {log.date}: {value.toLocaleString()} views
-                                </div>
-                                <div
-                                  className="w-full max-w-10 rounded-t-[6px] bg-gradient-to-t from-[var(--studio-brand)] to-[#b05ab0] group-hover:brightness-110 transition-all duration-200"
-                                  style={{ height: `${height}%` }}
-                                />
-                                <span className="text-[9px] font-medium text-[var(--studio-muted)] truncate max-w-full">
-                                  {log.date ? String(log.date).slice(5) : `D${index + 1}`}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="flex h-44 items-center justify-center rounded-[16px] border border-dashed border-[var(--studio-border)] text-xs text-[var(--studio-muted)]">
-                          No daily telemetry reported by the analytics gateway.
-                        </div>
-                      )}
+                      <VelocityChart series={trafficSeries} comparison={trafficComparison} />
                     </div>
                   </div>
 
@@ -406,7 +395,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ── Right Mission Dispatcher & Pulse (35% width = 4 cols) ── */}
-                <div className="studio-card rounded-[16px] lg:col-span-4 p-6 flex flex-col justify-between">
+                <div className="studio-card operations-panel rounded-[16px] lg:col-span-4 p-6 flex flex-col justify-between">
                   <div>
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-[var(--studio-border)] pb-3 mb-4">
@@ -416,7 +405,7 @@ export default function AdminDashboard() {
                         </span>
                         <h2 className="text-sm font-bold text-[var(--studio-text)]">Operations Control</h2>
                       </div>
-                      <div className="h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
+                      <div className="operations-live-dot h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
                     </div>
 
                     {/* Key Metrics Stack */}
@@ -535,10 +524,10 @@ export default function AdminDashboard() {
               {/* ==========================================================================
                   ZONE 2: MULTI-LENS OPERATIONAL WORKBENCHES (Tabbed Deck)
                   ========================================================================== */}
-              <section className="space-y-4" aria-label="Operational Workbenches">
+              <section className="admin-dashboard-workbenches space-y-4" aria-label="Operational Workbenches">
                 {/* Deck Switcher Tabs */}
-                <div className="flex items-center justify-between border-b border-[var(--studio-border)] pb-3 flex-wrap gap-3">
-                  <div className="flex items-center gap-1.5 p-1 rounded-[9999px] bg-[var(--studio-surface)] border border-[var(--studio-border)]">
+                <div className="admin-bottom-action-bar flex items-center justify-between border-b border-[var(--studio-border)] pb-3 flex-wrap gap-3">
+                  <div className="admin-deck-tabs flex items-center gap-1.5 p-1 rounded-[9999px] bg-[var(--studio-surface)] border border-[var(--studio-border)]">
                     {[
                       { id: 'radar', label: 'Broadcast & Subtitles Triage', icon: Tv },
                       { id: 'monetization', label: 'Monetization & Cloud Storage', icon: DollarSign },
