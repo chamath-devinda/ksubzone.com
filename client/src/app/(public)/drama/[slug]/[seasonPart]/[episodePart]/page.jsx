@@ -5,6 +5,8 @@ import Watch from '@/features/media/pages/Watch';
 import { fetchBackendJson } from '@/lib/server/backend';
 import { cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
+export const revalidate = 60;
+
 const getId = (value) => {
   if (!value) return '';
   if (typeof value === 'string') return value;
@@ -13,7 +15,7 @@ const getId = (value) => {
 
 const getDrama = cache(async (slug) => {
   return fetchBackendJson(`/api/media/dramas/${encodeURIComponent(slug)}?trackView=0`, {
-    revalidate: 300,
+    revalidate: 30,
     tags: ['dramas', `drama-${slug}`],
   });
 });

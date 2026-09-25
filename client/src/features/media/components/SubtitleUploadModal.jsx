@@ -5,6 +5,7 @@ import { X, Upload, FileText, CheckCircle2, Loader2, Copy, ExternalLink, Cloud, 
 import apiClient from '@/services/api/apiClient';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { publishMediaRefresh } from '@/utils/mediaRefresh';
 
 const EMPTY_META = {};
 
@@ -100,10 +101,16 @@ export default function SubtitleUploadModal({
         }
       });
 
+      const uploadedSubtitle = res.data?.subtitle || { fileUrl: '', storageProvider: 'r2' };
       setUploadProgress(100);
-      setUploadedResult(res.data?.subtitle || { fileUrl: '', storageProvider: 'r2' });
+      setUploadedResult(uploadedSubtitle);
+      publishMediaRefresh({ mediaId, mediaType, action: 'subtitle-uploaded' });
       confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
-      uploadSuccessCallback?.();
+      uploadSuccessCallback?.(uploadedSubtitle, {
+        ...resolvedTargetMeta,
+        mediaId,
+        mediaType,
+      });
     } catch (err) {
       const serverMsg = err.response?.data?.message || err.response?.data?.error || err.message || '';
       const debugErr = err.response?.data?.debug?.error;

@@ -188,6 +188,14 @@ class SubtitleController {
             ]);
         }
 
+        // Clear PHP caches and update the parent media timestamp before the
+        // success response. Remote Next.js revalidation itself remains queued
+        // for shutdown, so the upload stays fast while the next API read is
+        // guaranteed to see the new subtitle immediately.
+        if ($approvalStatus === 'Approved') {
+            self::triggerCacheRevalidation($mediaId, $mediaType, true);
+        }
+
         http_response_code(201);
         header('Content-Type: application/json');
         echo json_encode([
@@ -198,18 +206,14 @@ class SubtitleController {
                 '_id' => $inserted['_id'] ?? null,
                 'fileUrl' => $fileUrl,
                 'storageProvider' => $subtitle['storageProvider'],
-                'storageObjectKey' => $subtitle['storageObjectKey']
+                'storageObjectKey' => $subtitle['storageObjectKey'],
+                'mediaId' => $mediaId,
+                'mediaType' => $mediaType,
+                'approvalStatus' => $approvalStatus,
+                'language' => $language,
+                'version' => $version
             ]
         ]);
-
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        // Invalidate cache and trigger revalidation if immediately approved
-        if ($approvalStatus === 'Approved') {
-            self::triggerCacheRevalidation($mediaId, $mediaType, true);
-        }
     }
 
     public static function fetchSubtitlesForMediaWithBatchPopulate($mediaId) {
@@ -808,17 +812,13 @@ class SubtitleController {
         }
 
         $updated = $db->findOne('subtitles', ['_id' => $id]);
+        self::triggerCacheRevalidation($subtitle['mediaId'], $subtitle['mediaType'], true);
+
         header('Content-Type: application/json');
         echo json_encode([
             'message' => 'Subtitle file replaced successfully',
             'subtitle' => $updated
         ]);
-
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        self::triggerCacheRevalidation($subtitle['mediaId'], $subtitle['mediaType'], true);
     }
 
     public static function rateSubtitle($id) {
@@ -970,6 +970,8 @@ class SubtitleController {
             return;
         }
 
+        $wasPublic = ($subtitle['approvalStatus'] ?? '') === 'Approved';
+
         $db->updateOne('subtitles', ['_id' => $id], [
             'approvalStatus' => $status,
             'moderatorNotes' => $moderatorNotes
@@ -987,17 +989,13 @@ class SubtitleController {
         $subtitle['approvalStatus'] = $status;
         $subtitle['moderatorNotes'] = $moderatorNotes;
 
-        header('Content-Type: application/json');
-        echo json_encode(['message' => "Subtitle " . strtolower($status) . " successfully", 'subtitle' => $subtitle]);
-
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        // Invalidate cache and trigger revalidation
-        if ($status === 'Approved') {
+        // Both publishing and unpublishing change the public episode state.
+        if ($status === 'Approved' || $wasPublic) {
             self::triggerCacheRevalidation($subtitle['mediaId'], $subtitle['mediaType'], true);
         }
+
+        header('Content-Type: application/json');
+        echo json_encode(['message' => "Subtitle " . strtolower($status) . " successfully", 'subtitle' => $subtitle]);
     }
 
     public static function getUploaderHistory($userId) {
@@ -1037,27 +1035,25 @@ class SubtitleController {
         if (isset($body['releaseNotes'])) $updates['releaseNotes'] = $body['releaseNotes'];
         if (isset($body['moderatorNotes'])) $updates['moderatorNotes'] = $body['moderatorNotes'];
 
-        header('Content-Type: application/json');
-        echo json_encode(['message' => 'Subtitle updated successfully', 'subtitle' => $subtitle]);
-
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
+        $wasPublic = ($subtitle['approvalStatus'] ?? '') === 'Approved';
         if (!empty($updates)) {
             $db->updateOne('subtitles', ['_id' => $id], $updates);
             $subtitle = $db->findOne('subtitles', ['_id' => $id]);
 
             // An admin subtitle edit is public content activity. User views
             // and other generic writes must not affect this clock.
-            $isPublicSubtitle = ($subtitle['approvalStatus'] ?? '') === 'Approved'
-                || (($updates['approvalStatus'] ?? '') === 'Approved');
-            self::triggerCacheRevalidation(
-                $subtitle['mediaId'],
-                $subtitle['mediaType'],
-                $isPublicSubtitle
-            );
+            $isPublicSubtitle = $wasPublic || ($subtitle['approvalStatus'] ?? '') === 'Approved';
+            if ($isPublicSubtitle) {
+                self::triggerCacheRevalidation(
+                    $subtitle['mediaId'],
+                    $subtitle['mediaType'],
+                    true
+                );
+            }
         }
+
+        header('Content-Type: application/json');
+        echo json_encode(['message' => 'Subtitle updated successfully', 'subtitle' => $subtitle]);
     }
 
     public static function deleteSubtitle($id) {
@@ -1075,25 +1071,18 @@ class SubtitleController {
 
         $db->deleteOne('subtitles', ['_id' => $id]);
 
-        header('Content-Type: application/json');
-        echo json_encode(['message' => 'Subtitle deleted successfully']);
-
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        // Invalidate cache and trigger revalidation
-        if ($subtitle && ($subtitle['approvalStatus'] ?? '') === 'Approved') {
+        // Invalidate before acknowledging the delete so a public refetch can
+        // never race against the old cached subtitle list.
+        if (($subtitle['approvalStatus'] ?? '') === 'Approved') {
             self::triggerCacheRevalidation($subtitle['mediaId'], $subtitle['mediaType'], true);
         } else {
-            try {
-                \Utils\Cache::delete('home_catalog_v7');
-                \Utils\Cache::flush();
-                \Utils\Revalidate::catalog('all');
-            } catch (\Throwable $e) {
-                error_log("Subtitle delete revalidation notice (non-fatal): " . $e->getMessage());
-            }
+            \Utils\Cache::deleteByPrefix('media_subtitles_v2_');
+            \Utils\Cache::deleteByPrefix('recent_subtitles_v2_');
+            \Utils\Cache::delete('admin_dashboard_v3');
         }
+
+        header('Content-Type: application/json');
+        echo json_encode(['message' => 'Subtitle deleted successfully']);
     }
 
     /**
@@ -1102,9 +1091,8 @@ class SubtitleController {
     private static function triggerCacheRevalidation($mediaId, $mediaType, $recordActivity = true) {
         try {
             self::revalidateMediaForSubtitle($mediaId, $mediaType, $recordActivity);
-            \Utils\Cache::delete('home_catalog_v7');
-            \Utils\Cache::flush();
-            \Utils\Revalidate::catalog('all');
+            $catalogType = strtolower((string)$mediaType) === 'movie' ? 'movie' : 'drama';
+            \Utils\Revalidate::catalog($catalogType);
         } catch (\Throwable $e) {
             error_log("Subtitle cache revalidation notice (non-fatal): " . $e->getMessage());
         }
@@ -1120,8 +1108,10 @@ class SubtitleController {
             $contentUpdatedAt = gmdate(DATE_ATOM);
             $updatedAt = gmdate('Y-m-d H:i:s');
             
-            \Utils\Cache::flush();
-            \Utils\Cache::delete("media_subtitles_v2_" . md5((string)$mediaId));
+            // Batch subtitle endpoints use a comma-separated list as their
+            // cache key, so deleting only the single media ID is insufficient.
+            \Utils\Cache::deleteByPrefix('media_subtitles_v2_');
+            \Utils\Cache::deleteByPrefix('recent_subtitles_v2_');
             if ($mediaTypeClean === 'episode') {
                 $episode = $db->findOne('episodes', ['_id' => $mediaId]);
                 if ($episode) {
@@ -1138,6 +1128,7 @@ class SubtitleController {
                     
                     $drama = $db->findOne('dramas', ['_id' => $episode['dramaId']]);
                     if ($drama && !empty($drama['slug'])) {
+                        \Utils\Cache::delete('drama_detail_slug_v1_' . md5(strtolower((string)$drama['slug'])));
                         \Utils\Revalidate::media('drama', $drama['slug']);
                     }
                 }
@@ -1152,6 +1143,7 @@ class SubtitleController {
                         ]);
                     }
                     if (!empty($movie['slug'])) {
+                        \Utils\Cache::delete('movie_detail_slug_v1_' . md5(strtolower((string)$movie['slug'])));
                         \Utils\Revalidate::media('movie', $movie['slug']);
                     }
                 }
@@ -1174,6 +1166,7 @@ class SubtitleController {
                 }
                 
                 if ($drama && !empty($drama['slug'])) {
+                    \Utils\Cache::delete('drama_detail_slug_v1_' . md5(strtolower((string)$drama['slug'])));
                     \Utils\Revalidate::media('drama', $drama['slug']);
                 }
             }

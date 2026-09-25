@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Download, Languages, Loader2, AlertCircle, RefreshCw, CheckCircle, Clock, UploadCloud, Check } from 'lucide-react';
 import apiClient from '@/services/api/apiClient';
+import { publishMediaRefresh } from '@/utils/mediaRefresh';
 
 export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, onDeleteSuccess, onChanged }) {
   const [subtitles, setSubtitles] = useState([]);
@@ -56,6 +57,7 @@ export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, o
       });
       const updatedSub = res.data.subtitle;
       setSubtitles(prev => prev.map(s => s._id === subId ? { ...s, ...updatedSub } : s));
+      publishMediaRefresh({ mediaId, mediaType: updatedSub?.mediaType, action: 'subtitle-replaced' });
       setSuccessMsg('Subtitle file replaced successfully!');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
@@ -74,8 +76,14 @@ export default function SubtitleManageModal({ isOpen, onClose, mediaId, label, o
     setDeletingId(id);
     setError('');
     try {
+      const deletedSubtitle = subtitles.find(sub => sub._id === id);
       await apiClient.delete(`/api/admin/subtitles/${id}`);
       setSubtitles(prev => prev.filter(sub => sub._id !== id));
+      publishMediaRefresh({
+        mediaId,
+        mediaType: deletedSubtitle?.mediaType,
+        action: 'subtitle-deleted'
+      });
       (onDeleteSuccess || onChanged)?.(); // Refresh subtitle count badges in either manager API.
     } catch (err) {
       setError('Failed to delete subtitle. Please try again.');

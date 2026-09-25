@@ -16,14 +16,14 @@ import {
 // ISR: pages regenerate in the background at most once per hour.
 // Pages are rendered and cached on first request instead of contacting the
 // entire production catalog during deployment.
-export const revalidate = 3600;
+export const revalidate = 60;
 
 // Allow slugs published after the last build to be served on-demand.
 export const dynamicParams = true;
 
 const getMovie = cache(async (slug) => {
   return fetchBackendJson(`/api/media/movies/${encodeURIComponent(slug)}?trackView=0`, {
-    revalidate: 300,
+    revalidate: 30,
     tags: ['movies', `movie-${slug}`],
   });
 });

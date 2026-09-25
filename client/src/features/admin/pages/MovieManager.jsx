@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import DataTable from '@/features/admin/components/DataTable';
@@ -22,8 +23,14 @@ import {
   Image
 } from 'lucide-react';
 
-import SubtitleUploadModal from '@/features/media/components/SubtitleUploadModal';
-import SubtitleManageModal from '@/features/media/components/SubtitleManageModal';
+const SubtitleUploadModal = dynamic(
+  () => import('@/features/media/components/SubtitleUploadModal'),
+  { ssr: false }
+);
+const SubtitleManageModal = dynamic(
+  () => import('@/features/media/components/SubtitleManageModal'),
+  { ssr: false }
+);
 
 export default function MovieManager() {
   const { admin } = useAuth();

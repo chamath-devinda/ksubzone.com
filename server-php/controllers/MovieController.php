@@ -418,6 +418,18 @@ class MovieController {
 
 
     public static function getMovieBySlug($slug) {
+        $normalizedSlug = Slug::normalizePermalinkSlug($slug);
+        $slugCacheKey = 'movie_detail_slug_v1_' . md5(strtolower($normalizedSlug ?: (string)$slug));
+        $cachedBySlug = \Utils\Cache::get($slugCacheKey);
+        if ($cachedBySlug !== false) {
+            $cachedStatus = $cachedBySlug['movie']['status'] ?? 'Published';
+            if ($cachedStatus === 'Published' || $cachedStatus === 'Upcoming' || \Middleware\AuthMiddleware::isAdmin()) {
+                header('Content-Type: application/json');
+                echo json_encode($cachedBySlug);
+                return;
+            }
+        }
+
         $db = Database::getInstance();
         
         // Match exact slug and legacy links that stripped unique numeric suffixes.
@@ -439,6 +451,7 @@ class MovieController {
         $cacheKey = "movie_detail_" . $movie['_id'];
         $cached = \Utils\Cache::get($cacheKey);
         if ($cached !== false) {
+            \Utils\Cache::set($slugCacheKey, $cached, 30);
             header('Content-Type: application/json');
             echo json_encode($cached);
             return;
@@ -458,38 +471,21 @@ class MovieController {
             // Ignore view count write-lock errors to keep page load stable
         }
 
-        // Fetch related movies (excluding current movie, sharing similar keywords)
-        $related = [];
-        if (!empty($movie['keywords'])) {
-            $related = $db->find('movies', [
-                '_id' => ['$ne' => $movie['_id']],
-                'keywords' => ['$in' => $movie['keywords']]
-            ], ['limit' => 4, 'excludeFields' => MediaPayload::detailOnlyFields()]);
-        }
-
-        // Append metadata (isNew & subtitleCount) to main movie and related movies
+        // Append metadata (isNew & subtitleCount) to the main movie.
         $moviesArr = [&$movie];
         self::appendMetadataToMovies($moviesArr);
-        if (!empty($related)) {
-            self::appendMetadataToMovies($related);
-            $related = MediaPayload::compactMany($related);
-        }
 
         // Fetch standalone subtitles with batch populating
         $subtitles = \Controllers\SubtitleController::fetchSubtitlesForMediaWithBatchPopulate($movie['_id']);
 
-        // Fetch comments with batch populating
-        $comments = \Controllers\CommentController::fetchCommentsForTargetWithBatchPopulate($movie['_id']);
-
         $payload = [
             'movie' => $movie,
-            'related' => $related,
-            'subtitles' => $subtitles,
-            'comments' => $comments
+            'subtitles' => $subtitles
         ];
 
         // Cache details payload for 30 seconds to absorb traffic spikes without delaying subtitle releases
         \Utils\Cache::set($cacheKey, $payload, 30);
+        \Utils\Cache::set($slugCacheKey, $payload, 30);
 
         header('Content-Type: application/json');
         echo json_encode($payload);

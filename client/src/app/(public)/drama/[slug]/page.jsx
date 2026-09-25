@@ -13,10 +13,11 @@ import {
   serializeJsonLd,
   SITE_URL,
 } from '@/utils/seo';
-// ISR: pages regenerate in the background at most once per hour.
+// Keep the server-rendered page fast while limiting stale subtitle status to
+// one minute if an on-demand revalidation request is ever missed.
 // Pages are rendered and cached on first request instead of contacting the
 // entire production catalog during deployment.
-export const revalidate = 3600;
+export const revalidate = 60;
 
 // Allow slugs published after the last build to be served on-demand
 // (they will be cached after the first request).
@@ -24,7 +25,7 @@ export const dynamicParams = true;
 
 const getDrama = cache(async (slug) => {
   return fetchBackendJson(`/api/media/dramas/${encodeURIComponent(slug)}?trackView=0`, {
-    revalidate: 300,
+    revalidate: 30,
     tags: ['dramas', `drama-${slug}`],
   });
 });

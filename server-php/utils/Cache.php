@@ -2,6 +2,7 @@
 namespace Utils;
 
 class Cache {
+    const REDIS_PREFIX = 'ksubzone:';
     private static $redis = null;
     private static $enabled = null;
     private static $useFileCache = false;
@@ -40,7 +41,7 @@ class Cache {
                 if ($password !== null && $password !== '') {
                     @self::$redis->auth($password);
                 }
-                @self::$redis->setOption(\Redis::OPT_PREFIX, 'ksubzone:');
+                @self::$redis->setOption(\Redis::OPT_PREFIX, self::REDIS_PREFIX);
                 self::$enabled = true;
                 self::$useFileCache = false;
             } else {
@@ -119,6 +120,7 @@ class Cache {
         if (self::$useFileCache) {
             $filePath = self::$cacheDir . '/' . md5($key) . '.cache';
             $data = [
+                'key' => (string)$key,
                 'expire' => time() + $ttl,
                 'val' => $val
             ];
@@ -162,6 +164,61 @@ class Cache {
     }
 
     /**
+     * Delete cached values whose logical key begins with the supplied prefix.
+     * This keeps content mutations targeted instead of flushing unrelated auth,
+     * settings, and rate-limit caches on every subtitle upload.
+     */
+    public static function deleteByPrefix($prefix) {
+        $prefix = (string)$prefix;
+        if ($prefix === '' || !self::init()) {
+            return false;
+        }
+
+        if (self::$useFileCache) {
+            if (!file_exists(self::$cacheDir)) {
+                return true;
+            }
+
+            $files = glob(self::$cacheDir . '/*.cache') ?: [];
+            foreach ($files as $file) {
+                if (!is_file($file)) continue;
+
+                $content = @file_get_contents($file);
+                $data = $content !== false ? json_decode($content, true) : null;
+
+                // Cache envelopes created before prefix-aware invalidation did
+                // not store their logical key. Remove those legacy entries once
+                // so they cannot keep stale catalog responses alive.
+                if (!is_array($data) || !isset($data['key'])) {
+                    @unlink($file);
+                    continue;
+                }
+
+                if (strpos((string)$data['key'], $prefix) === 0) {
+                    @unlink($file);
+                }
+            }
+            return true;
+        }
+
+        try {
+            $keys = self::$redis->keys($prefix . '*');
+            if (!is_array($keys)) return true;
+
+            foreach ($keys as $key) {
+                $logicalKey = strpos($key, self::REDIS_PREFIX) === 0
+                    ? substr($key, strlen(self::REDIS_PREFIX))
+                    : $key;
+                self::$redis->del($logicalKey);
+            }
+            return true;
+        } catch (\Exception $e) {
+            error_log("Redis prefix delete error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Flush all prefix keys or clear all databases.
      * 
      * @return bool
@@ -188,7 +245,10 @@ class Cache {
             $keys = self::$redis->keys('*');
             if (is_array($keys) && !empty($keys)) {
                 foreach ($keys as $key) {
-                    self::$redis->del($key);
+                    $logicalKey = strpos($key, self::REDIS_PREFIX) === 0
+                        ? substr($key, strlen(self::REDIS_PREFIX))
+                        : $key;
+                    self::$redis->del($logicalKey);
                 }
             }
             return true;

@@ -389,6 +389,21 @@ class DramaController {
     }
 
     public static function getDramaBySlug($slug) {
+        // Resolve hot detail requests from cache before opening a database
+        // connection. The old ID-only key required a slug lookup even on every
+        // cache hit, which accounted for most of the public page API latency.
+        $normalizedSlug = Slug::normalizePermalinkSlug($slug);
+        $slugCacheKey = 'drama_detail_slug_v1_' . md5(strtolower($normalizedSlug ?: (string)$slug));
+        $cachedBySlug = \Utils\Cache::get($slugCacheKey);
+        if ($cachedBySlug !== false) {
+            $cachedStatus = $cachedBySlug['drama']['status'] ?? 'Published';
+            if ($cachedStatus === 'Published' || $cachedStatus === 'Upcoming' || \Middleware\AuthMiddleware::isAdmin()) {
+                header('Content-Type: application/json');
+                echo json_encode($cachedBySlug);
+                return;
+            }
+        }
+
         $db = Database::getInstance();
 
         $drama = Slug::findByPermalinkSlug($db, 'dramas', $slug);
@@ -409,6 +424,7 @@ class DramaController {
         $cacheKey = "drama_detail_" . $drama['_id'];
         $cached = \Utils\Cache::get($cacheKey);
         if ($cached !== false) {
+            \Utils\Cache::set($slugCacheKey, $cached, 30);
             header('Content-Type: application/json');
             echo json_encode($cached);
             return;
@@ -533,33 +549,17 @@ class DramaController {
         }
         unset($ep);
 
-        // Fetch related dramas (excluding current, sharing keywords)
-        $related = [];
-        if (!empty($drama['keywords'])) {
-            $related = $db->find('dramas', [
-                '_id' => ['$ne' => $drama['_id']],
-                'keywords' => ['$in' => $drama['keywords']]
-            ], ['limit' => 4, 'excludeFields' => MediaPayload::detailOnlyFields()]);
-
-            self::appendSubtitleSummariesToDramas($related);
-            $related = MediaPayload::compactMany($related);
-        }
-
-        // Fetch comments using batch user populating
-        $comments = \Controllers\CommentController::fetchCommentsForTargetWithBatchPopulate($drama['_id']);
-
         $payload = [
             'drama' => $drama,
             'seasons' => $seasons,
             'episodes' => $episodes,
-            'related' => $related,
             'subtitles' => $standaloneSubtitles,
-            'episodeSubtitles' => $episodeSubtitles,
-            'comments' => $comments
+            'episodeSubtitles' => $episodeSubtitles
         ];
 
         // Cache details payload for 30 seconds to absorb traffic spikes without delaying subtitle releases
         \Utils\Cache::set($cacheKey, $payload, 30);
+        \Utils\Cache::set($slugCacheKey, $payload, 30);
 
         header('Content-Type: application/json');
         echo json_encode($payload);

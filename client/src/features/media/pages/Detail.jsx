@@ -15,6 +15,7 @@ import { getMediaImage, handleImageFallback } from '@/utils/mediaImages';
 import { downloadSubtitle } from '@/utils/subtitleDownload';
 import AdSlot from '@/components/ads/AdSlot';
 import { cleanMediaText, cleanMediaTitle } from '@/utils/seo';
+import { subscribeToMediaRefresh } from '@/utils/mediaRefresh';
 import MediaSubtitlesSection from '../components/MediaSubtitlesSection';
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
@@ -28,6 +29,11 @@ const asText = (value, fallback = '') => {
 const asNumber = (value, fallback = 0) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
+};
+const getId = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value._id || value.$oid || String(value);
 };
 
 export default function Detail({ type = 'Movie', initialData, topOnly = false, slug: propSlug }) {
@@ -69,8 +75,13 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
       return res.data;
     },
     initialData,
-    staleTime: 60_000,
-    refetchOnMount: false,
+    // Render cached SSR data immediately, then verify it in the background.
+    // This self-heals a missed ISR purge without delaying first paint.
+    initialDataUpdatedAt: initialData ? 0 : undefined,
+    staleTime: 15_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: true,
     retry: 2
   });
 
@@ -78,12 +89,6 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
   const media = rawMedia && typeof rawMedia === 'object' && !Array.isArray(rawMedia) ? rawMedia : null;
   const seasons = asArray(data?.seasons);
   const episodes = asArray(data?.episodes);
-
-  const getId = (value) => {
-    if (!value) return '';
-    if (typeof value === 'string') return value;
-    return value._id || value.$oid || String(value);
-  };
 
   // Sync selected season when seasons list changes
   useEffect(() => {
@@ -142,9 +147,11 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
     },
     enabled: !topOnly && !!media?._id,
     initialData: asArray(data?.subtitles),
-    staleTime: 10_000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
+    initialDataUpdatedAt: data?.subtitles ? 0 : undefined,
+    staleTime: 15_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: true
   });
 
   const { data: episodeSubtitlesById = {}, isFetching: episodeSubtitlesLoading, refetch: refetchEpisodeSubtitles } = useQuery({
@@ -184,10 +191,32 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
       });
       return grouped;
     },
-    staleTime: 10_000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
+    initialDataUpdatedAt: data?.episodeSubtitles ? 0 : undefined,
+    staleTime: 15_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: true
   });
+
+  const episodeMediaIds = activeEpisodes.map(ep => getId(ep._id)).filter(Boolean).join(',');
+
+  // An upload in another same-origin admin tab broadcasts a tiny refresh
+  // event. Refresh only the currently visible media instead of polling every
+  // detail page or forcing a full navigation.
+  useEffect(() => subscribeToMediaRefresh((update) => {
+    const changedId = String(update?.mediaId || '');
+    if (!changedId) return;
+
+    const isCurrentMedia = changedId === getId(media?._id);
+    const isCurrentEpisode = episodeMediaIds.split(',').includes(changedId);
+    if (!isCurrentMedia && !isCurrentEpisode) return;
+
+    void refetchMedia();
+    if (!topOnly) {
+      void refetchSubtitles();
+      if (type === 'Drama') void refetchEpisodeSubtitles();
+    }
+  }), [episodeMediaIds, media?._id, refetchEpisodeSubtitles, refetchMedia, refetchSubtitles, topOnly, type]);
 
   // Fetch Comments
   const { data: rawComments = [], refetch: refetchComments } = useQuery({
@@ -196,7 +225,9 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
       const res = await apiClient.get(`/api/media/comments/target/${media._id}`);
       return res.data;
     },
-    enabled: !topOnly && !!media?._id && !data?.comments,
+    // Comments sit below the fold; defer this independent request so subtitle
+    // status and the episode list become interactive first.
+    enabled: !topOnly && !!media?._id && !data?.comments && loadRecommendations,
     initialData: data?.comments || [],
     staleTime: 1000 * 60 // 1 minute
   });

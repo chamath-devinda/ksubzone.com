@@ -13,6 +13,7 @@ export default function ModalDrawer({
   title,
   children,
   size = 'md', // 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full'
+  minHeightClass = '',
   maxHeightClass = 'max-h-[92vh]',
   footer = null
 }) {
@@ -54,7 +55,7 @@ export default function ModalDrawer({
       {isOpen && (
         <div
           data-admin-theme={theme || 'light'}
-          className={`admin-portal-wrapper ${isLight ? 'admin-theme-light' : 'admin-theme-dark'}`}
+          className={`admin-portal-wrapper admin-theme-wrapper ${isLight ? 'admin-theme-light' : 'admin-theme-dark'}`}
         >
           <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 lg:p-6">
             {/* Backdrop blur overlay */}
@@ -90,11 +91,11 @@ export default function ModalDrawer({
                 opacity: 0 
               }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`admin-modal-drawer admin-main w-full border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#11131A] text-slate-900 dark:text-slate-100 shadow-2xl relative overflow-hidden z-10 flex flex-col
+              className={`admin-modal-drawer admin-main w-full border border-slate-200/80 dark:border-[#1A1A1A] bg-white dark:bg-black text-slate-900 dark:text-slate-100 shadow-2xl relative overflow-hidden overscroll-contain z-10 flex flex-col transform-gpu
                 /* Mobile Styles */
                 fixed bottom-0 inset-x-0 rounded-t-2xl max-h-[94vh] border-b-0
                 /* Desktop Styles */
-                md:relative md:bottom-auto md:inset-x-auto md:rounded-2xl ${maxHeightClass} ${sizeClasses[size] || sizeClasses.md}
+                md:relative md:bottom-auto md:inset-x-auto md:rounded-2xl ${minHeightClass} ${maxHeightClass} ${sizeClasses[size] || sizeClasses.md}
               `}
             >
               {/* Grab handle bar on mobile */}
@@ -103,7 +104,7 @@ export default function ModalDrawer({
               </div>
 
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 dark:border-[#1A1A1A] bg-slate-50/90 dark:bg-black flex-shrink-0">
                 <h3 id={titleId} className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate mr-4">
                   {title}
                 </h3>
@@ -124,7 +125,7 @@ export default function ModalDrawer({
 
               {/* Optional Sticky Footer */}
               {footer && (
-                <div className="px-6 py-3.5 border-t border-slate-200/60 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#151821]/90 flex-shrink-0">
+                <div className="px-6 py-3.5 border-t border-slate-200/60 dark:border-[#1A1A1A] bg-slate-50/90 dark:bg-black flex-shrink-0">
                   {footer}
                 </div>
               )}

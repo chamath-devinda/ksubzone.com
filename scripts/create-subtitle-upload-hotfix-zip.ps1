@@ -1,4 +1,4 @@
-# KSubZone subtitle upload PHP compatibility hotfix packager
+# KSubZone subtitle freshness and API performance hotfix packager
 # Produces a minimal archive that can be extracted over the live API root.
 
 $ErrorActionPreference = 'Stop'
@@ -15,7 +15,10 @@ if (-not $resolvedTemp.StartsWith($resolvedWorkspace + '\', [System.StringCompar
 }
 
 $files = @(
+    'controllers\DramaController.php',
+    'controllers\MovieController.php',
     'controllers\SubtitleController.php',
+    'utils\Cache.php',
     'utils\Revalidate.php'
 )
 

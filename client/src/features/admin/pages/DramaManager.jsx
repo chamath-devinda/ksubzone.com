@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import apiClient from '@/services/api/apiClient';
 import DataTable from '@/features/admin/components/DataTable';
@@ -23,8 +24,14 @@ import {
   Image
 } from 'lucide-react';
 
-import SubtitleUploadModal from '@/features/media/components/SubtitleUploadModal';
-import SubtitleManageModal from '@/features/media/components/SubtitleManageModal';
+const SubtitleUploadModal = dynamic(
+  () => import('@/features/media/components/SubtitleUploadModal'),
+  { ssr: false }
+);
+const SubtitleManageModal = dynamic(
+  () => import('@/features/media/components/SubtitleManageModal'),
+  { ssr: false }
+);
 
 export default function DramaManager() {
   const { admin } = useAuth();
@@ -80,6 +87,8 @@ export default function DramaManager() {
   const [expandedData, setExpandedData] = useState({ seasons: [], episodes: [] });
   const [loadingExpansion, setLoadingExpansion] = useState(false);
   const [expansionError, setExpansionError] = useState('');
+  const structureCacheRef = useRef(new Map());
+  const structureRequestsRef = useRef(new Map());
 
   // Season Modal State
   const [showSeasonModal, setShowSeasonModal] = useState(false);
@@ -137,17 +146,43 @@ export default function DramaManager() {
   }, [filterStatus]);
 
   // Explorer expander
-  const fetchDramaStructure = async (dramaId) => {
-    const res = await apiClient.get(`/api/admin/dramas/${dramaId}/structure`);
-    const payload = res?.data;
-    if (!payload || typeof payload !== 'object') {
-      throw new Error('The server returned an invalid season catalog response.');
+  const fetchDramaStructure = async (dramaId, { force = false } = {}) => {
+    const cached = structureCacheRef.current.get(dramaId);
+    if (!force && cached && Date.now() - cached.cachedAt < 30_000) {
+      return cached.data;
     }
 
-    return {
-      seasons: Array.isArray(payload.seasons) ? payload.seasons : [],
-      episodes: Array.isArray(payload.episodes) ? payload.episodes : []
-    };
+    if (!force && structureRequestsRef.current.has(dramaId)) {
+      return structureRequestsRef.current.get(dramaId);
+    }
+
+    const request = (async () => {
+      const res = await apiClient.get(`/api/admin/dramas/${dramaId}/structure`);
+      const payload = res?.data;
+      if (!payload || typeof payload !== 'object') {
+        throw new Error('The server returned an invalid season catalog response.');
+      }
+
+      const data = {
+        seasons: Array.isArray(payload.seasons) ? payload.seasons : [],
+        episodes: Array.isArray(payload.episodes) ? payload.episodes : []
+      };
+      structureCacheRef.current.set(dramaId, { data, cachedAt: Date.now() });
+      return data;
+    })();
+
+    structureRequestsRef.current.set(dramaId, request);
+    try {
+      return await request;
+    } finally {
+      if (structureRequestsRef.current.get(dramaId) === request) {
+        structureRequestsRef.current.delete(dramaId);
+      }
+    }
+  };
+
+  const prefetchDramaStructure = (dramaId) => {
+    void fetchDramaStructure(dramaId).catch(() => {});
   };
 
   const handleOpenExplorer = async (drama) => {
@@ -166,19 +201,42 @@ export default function DramaManager() {
     }
   };
 
-  const refreshExplorer = async () => {
+  const refreshExplorer = async (options = {}) => {
     if (!explorerDrama) return;
+    const silent = options?.silent === true;
     setExpansionError('');
-    setLoadingExpansion(true);
+    if (!silent) setLoadingExpansion(true);
     try {
-      setExpandedData(await fetchDramaStructure(explorerDrama._id));
+      setExpandedData(await fetchDramaStructure(explorerDrama._id, { force: true }));
     } catch (err) {
       const message = err?.message || 'Failed to retrieve season catalog.';
       setExpansionError(message);
       toast.error(message);
     } finally {
-      setLoadingExpansion(false);
+      if (!silent) setLoadingExpansion(false);
     }
+  };
+
+  const handleSubtitleUploadSuccess = (subtitle, targetMeta = {}) => {
+    const targetId = String(targetMeta.mediaId || uploadTarget?.mediaId || '');
+    if (targetId) {
+      // Keep the explorer stable and update the badge immediately. The silent
+      // server refresh below reconciles the exact count without collapsing the
+      // modal back to its loading state.
+      setExpandedData(prev => ({
+        ...prev,
+        episodes: prev.episodes.map(ep => {
+          if (String(ep._id) !== targetId) return ep;
+          const currentCount = Number(ep.subtitleCount ?? ep.subtitles?.length ?? 0);
+          return {
+            ...ep,
+            subtitleCount: currentCount + 1,
+            subtitles: subtitle ? [...(ep.subtitles || []), subtitle] : (ep.subtitles || []),
+          };
+        }),
+      }));
+    }
+    void refreshExplorer({ silent: true });
   };
 
   // Drama Actions
@@ -471,6 +529,8 @@ export default function DramaManager() {
           <button
             type="button"
             onClick={() => handleOpenExplorer(drama)}
+            onMouseEnter={() => prefetchDramaStructure(drama._id)}
+            onFocus={() => prefetchDramaStructure(drama._id)}
             className="btn-oio-pill flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg transition text-[11px] font-bold shadow-sm active:scale-95"
             title="Explore Seasons & Episodes"
           >
@@ -784,6 +844,8 @@ export default function DramaManager() {
         onClose={() => setExplorerDrama(null)}
         title={explorerDrama ? `Series Explorer: ${explorerDrama.title}` : 'Seasons & Episodes Explorer'}
         size="xl"
+        minHeightClass="md:min-h-[620px]"
+        maxHeightClass="max-h-[94vh] md:h-[min(720px,88vh)] md:max-h-[88vh]"
       >
         <div className="space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
@@ -801,7 +863,7 @@ export default function DramaManager() {
           </div>
 
           {loadingExpansion ? (
-            <div className="text-xs text-slate-400 text-center py-12 flex flex-col items-center gap-2">
+            <div className="min-h-[420px] text-xs text-slate-400 text-center flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
               <span>Loading seasons and episodes structure...</span>
             </div>
@@ -818,7 +880,7 @@ export default function DramaManager() {
               </button>
             </div>
           ) : expandedData.seasons.length === 0 ? (
-            <div className="text-center py-12 bg-[#151821] rounded-xl border border-white/[0.06] text-slate-400 text-xs space-y-2">
+            <div className="text-center py-12 bg-black rounded-xl border border-[#1A1A1A] text-slate-400 text-xs space-y-2">
               <p className="font-semibold text-slate-300">No seasons defined yet</p>
               <p className="text-[11px] text-slate-500">Click the "+ Add Season" button above to begin adding episodes.</p>
             </div>
@@ -830,7 +892,7 @@ export default function DramaManager() {
                   .sort((a, b) => Number(a.episodeNumber) - Number(b.episodeNumber));
 
                 return (
-                  <div key={season._id} className="border border-white/[0.06] rounded-xl p-4 bg-[#151821] space-y-3.5">
+                  <div key={season._id} className="border border-[#1A1A1A] rounded-xl p-4 bg-black space-y-3.5">
                     <div className="flex justify-between items-start gap-4 pb-2 border-b border-white/[0.04]">
                       <div>
                         <span className="font-bold text-xs text-violet-400 uppercase tracking-wider">
@@ -870,14 +932,14 @@ export default function DramaManager() {
                     {/* Episode List */}
                     <div className="space-y-1.5">
                       {seasonEpisodes.length === 0 ? (
-                        <p className="text-xs text-slate-500 py-2 text-center bg-[#11131A] rounded-lg border border-white/[0.04]">
+                        <p className="text-xs text-slate-500 py-2 text-center bg-black rounded-lg border border-[#1A1A1A]">
                           No episodes in this season. Click "+ Add Ep" to create one.
                         </p>
                       ) : (
                         seasonEpisodes.map((ep) => (
                           <div
                             key={ep._id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between text-xs p-2.5 rounded-lg border border-white/[0.04] bg-[#11131A] hover:bg-[#13151D] transition gap-2.5"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between text-xs p-2.5 rounded-lg border border-[#1A1A1A] bg-black hover:border-violet-500/35 transition gap-2.5"
                           >
                             <div className="flex items-center gap-2.5 overflow-hidden">
                               <span className="font-mono text-[10px] font-bold text-violet-300 bg-violet-500/15 border border-violet-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
@@ -1125,7 +1187,7 @@ export default function DramaManager() {
           setUploadTarget(null);
         }}
         target={uploadTarget}
-        onSuccess={refreshExplorer}
+        onSuccess={handleSubtitleUploadSuccess}
       />
 
       {/* Subtitle Management Modal Box */}
