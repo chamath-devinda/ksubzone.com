@@ -13,8 +13,10 @@ function hasCreative(doc) {
       const style = doc.defaultView?.getComputedStyle(el) || el.style;
       if (style?.display === 'none' || style?.visibility === 'hidden' || style?.opacity === '0') return false;
       const rect = el.getBoundingClientRect();
-      if (rect.left < -50 || rect.top < -50 || rect.width < 10 || rect.height < 10) return false;
-      return true;
+      if (rect.left < -50 || rect.top < -50) return false;
+      if (rect.width >= 10 && rect.height >= 10) return true;
+      if (el.tagName === 'IFRAME' && (Number(el.width) >= 10 || parseInt(el.style?.width, 10) >= 10)) return true;
+      return false;
     } catch {
       return false;
     }
@@ -148,7 +150,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         // external third-party creative content. Treat this as a successful load.
         finish(true);
       }
-    }, 12000);
+    }, 25000);
 
     timeout = setTimeout(() => {
       inspect();
@@ -175,7 +177,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         width={responsive ? '100%' : width}
         height={height}
         scrolling="no"
-        loading="lazy"
+        loading="eager"
         data-ad-state={ready ? 'loaded' : 'loading'}
         className="block border-0 bg-transparent mx-auto"
         style={{

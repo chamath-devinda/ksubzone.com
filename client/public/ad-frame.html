@@ -20,8 +20,8 @@
 <body>
   <script type="text/javascript">
     (function () {
-      var host = 'https://alwingulla.com';
-      var fallbackHost = 'https://nobleduringsurveillance.com';
+      var host = 'https://nobleduringsurveillance.com';
+      var fallbackHost = 'https://www.profitablecreativeformat.com';
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
@@ -45,22 +45,38 @@
         document.body.style.height = zone.height + 'px';
       }
 
+      var loadedNotified = false;
       function notifyLoaded() {
+        if (loadedNotified) return;
+        loadedNotified = true;
         try {
           window.parent.postMessage({ type: 'AD_LOADED', zone: zoneName }, '*');
         } catch (e) {}
       }
 
+      function checkAndNotify() {
+        var elements = document.querySelectorAll('iframe, img, a[href] img, div[id^="container-"] > *');
+        if (elements.length > 0) {
+          notifyLoaded();
+          return true;
+        }
+        return false;
+      }
+
       // Notify parent window when ad is rendered and visible on screen
       try {
         var obs = new MutationObserver(function () {
-          var elements = document.querySelectorAll('iframe, img, a[href] img, div[id^="container-"] > *');
-          if (elements.length > 0) {
-            notifyLoaded();
-          }
+          checkAndNotify();
         });
         obs.observe(document.body, { childList: true, subtree: true });
       } catch (e) {}
+
+      var pollTimer = setInterval(function () {
+        if (checkAndNotify()) {
+          clearInterval(pollTimer);
+        }
+      }, 500);
+      setTimeout(function () { clearInterval(pollTimer); }, 20000);
 
       if (zone.native) {
         var container = document.createElement('div');
@@ -73,11 +89,13 @@
         s.async = true;
         s.setAttribute('data-cfasync', 'false');
         s.src = host + '/' + zone.key + '/invoke.js';
+        s.onload = function() { checkAndNotify(); };
         s.onerror = function() {
           var fb = document.createElement('script');
           fb.async = true;
           fb.setAttribute('data-cfasync', 'false');
           fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
+          fb.onload = function() { checkAndNotify(); };
           document.body.appendChild(fb);
         };
         document.body.appendChild(s);
@@ -91,14 +109,21 @@
         width: zone.width,
         params: {}
       };
+      var atOptions = window.atOptions;
 
       var script = document.createElement('script');
       script.type = 'text/javascript';
+      script.async = false;
+      script.setAttribute('data-cfasync', 'false');
       script.src = host + '/' + zone.key + '/invoke.js';
+      script.onload = function() { checkAndNotify(); };
       script.onerror = function() {
         var fb = document.createElement('script');
         fb.type = 'text/javascript';
+        fb.async = false;
+        fb.setAttribute('data-cfasync', 'false');
         fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
+        fb.onload = function() { checkAndNotify(); };
         document.body.appendChild(fb);
       };
       document.body.appendChild(script);

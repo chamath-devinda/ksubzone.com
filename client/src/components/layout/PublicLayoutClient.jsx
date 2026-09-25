@@ -6,7 +6,6 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import MaintenanceMode from '@/components/layout/MaintenanceMode';
 import { usePathname } from 'next/navigation';
 import apiClient from '@/services/api/apiClient';
-import { AdProvider } from '@/components/ads/AdProvider';
 import ScrollToTop from '@/components/ui/ScrollToTop';
 import TopProgressBar from '@/components/ui/TopProgressBar';
 
@@ -51,10 +50,10 @@ export default function PublicLayoutClient({ children }) {
   }
 
   return (
-    <AdProvider>
+    <>
       <TopProgressBar />
       <ScrollToTop />
       {children}
-    </AdProvider>
+    </>
   );
 }
