@@ -146,7 +146,40 @@ export default function DramaManager() {
   }, [filterStatus]);
 
   // Explorer expander
-  const fetchDramaStructure = async (dramaId, { force = false } = {}) => {
+  const normalizeStructure = (payload) => {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('The server returned an invalid season catalog response.');
+    }
+
+    const episodeSubtitlesByMediaId = new Map();
+    for (const subtitle of (Array.isArray(payload.episodeSubtitles) ? payload.episodeSubtitles : [])) {
+      const mediaId = String(subtitle?.mediaId || '');
+      if (!mediaId) continue;
+      const current = episodeSubtitlesByMediaId.get(mediaId) || [];
+      current.push(subtitle);
+      episodeSubtitlesByMediaId.set(mediaId, current);
+    }
+
+    const episodes = Array.isArray(payload.episodes) ? payload.episodes : [];
+    return {
+      seasons: Array.isArray(payload.seasons) ? payload.seasons : [],
+      episodes: episodes.map((episode) => {
+        const embedded = Array.isArray(episode?.subtitles) ? episode.subtitles : [];
+        const subtitles = embedded.length
+          ? embedded
+          : (episodeSubtitlesByMediaId.get(String(episode?._id || '')) || []);
+        return {
+          ...episode,
+          subtitles,
+          subtitleCount: Number.isFinite(Number(episode?.subtitleCount))
+            ? Number(episode.subtitleCount)
+            : subtitles.length,
+        };
+      }),
+    };
+  };
+
+  const fetchDramaStructure = async (dramaId, { force = false, fallbackSlug = '' } = {}) => {
     const cached = structureCacheRef.current.get(dramaId);
     if (!force && cached && Date.now() - cached.cachedAt < 30_000) {
       return cached.data;
@@ -157,16 +190,28 @@ export default function DramaManager() {
     }
 
     const request = (async () => {
-      const res = await apiClient.get(`/api/admin/dramas/${dramaId}/structure`);
-      const payload = res?.data;
-      if (!payload || typeof payload !== 'object') {
-        throw new Error('The server returned an invalid season catalog response.');
+      let payload;
+      try {
+        const res = await apiClient.get(`/api/admin/dramas/${dramaId}/structure`, {
+          timeout: 10_000,
+          // The public-detail fallback below is quicker and less disruptive
+          // than issuing three identical requests when an edge proxy is busy.
+          skipRateLimitRetry: true,
+        });
+        payload = res?.data;
+      } catch (error) {
+        const canUsePublishedFallback = [429, 502, 503, 504].includes(Number(error?.status))
+          && String(fallbackSlug || '').trim() !== '';
+        if (!canUsePublishedFallback) throw error;
+
+        const fallback = await apiClient.get(
+          `/api/media/dramas/${encodeURIComponent(fallbackSlug)}?trackView=0`,
+          { timeout: 10_000 },
+        );
+        payload = fallback?.data;
       }
 
-      const data = {
-        seasons: Array.isArray(payload.seasons) ? payload.seasons : [],
-        episodes: Array.isArray(payload.episodes) ? payload.episodes : []
-      };
+      const data = normalizeStructure(payload);
       structureCacheRef.current.set(dramaId, { data, cachedAt: Date.now() });
       return data;
     })();
@@ -187,7 +232,7 @@ export default function DramaManager() {
     setExpansionError('');
     setLoadingExpansion(true);
     try {
-      setExpandedData(await fetchDramaStructure(drama._id));
+      setExpandedData(await fetchDramaStructure(drama._id, { fallbackSlug: drama.slug }));
     } catch (err) {
       const message = getStructureErrorMessage(err);
       setExpansionError(message);
@@ -207,7 +252,10 @@ export default function DramaManager() {
     setExpansionError('');
     if (!silent) setLoadingExpansion(true);
     try {
-      setExpandedData(await fetchDramaStructure(explorerDrama._id, { force: true }));
+      setExpandedData(await fetchDramaStructure(explorerDrama._id, {
+        force: true,
+        fallbackSlug: explorerDrama.slug,
+      }));
     } catch (err) {
       const message = getStructureErrorMessage(err);
       setExpansionError(message);

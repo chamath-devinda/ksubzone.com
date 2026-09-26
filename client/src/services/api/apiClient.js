@@ -84,7 +84,7 @@ apiClient.interceptors.response.use(
     // Hosting/CDN layers can briefly answer read requests with 429. Retry GET
     // requests with bounded backoff so management tables do not fall into an
     // empty state during a short traffic burst.
-    if (status === 429 && requestConfig?.method?.toLowerCase() === 'get') {
+    if (status === 429 && requestConfig?.method?.toLowerCase() === 'get' && !requestConfig.skipRateLimitRetry) {
       const retryCount = requestConfig.__rateLimitRetryCount || 0;
       if (retryCount < 3) {
         requestConfig.__rateLimitRetryCount = retryCount + 1;

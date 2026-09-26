@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import apiClient from '@/services/api/apiClient';
 import { defaultSiteContent, mergeSiteContent } from '@/config/siteContent';
 
@@ -20,7 +20,7 @@ export const SiteContentProvider = ({ children, initialContent }) => {
   );
   const [loading, setLoading] = useState(!initialContent);
 
-  const refreshSiteContent = async () => {
+  const refreshSiteContent = useCallback(async () => {
     try {
       siteContentRequest ||= apiClient.get('/api/site-content').finally(() => {
         siteContentRequest = null;
@@ -34,13 +34,14 @@ export const SiteContentProvider = ({ children, initialContent }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [initialContent]);
 
   useEffect(() => {
-    if (!initialContent) {
-      refreshSiteContent();
-    }
-  }, [initialContent]);
+    // Always reconcile the server-rendered snapshot once in the browser.
+    // This makes an admin save visible on the next public page load even if
+    // a warm server instance had rendered an older layout snapshot.
+    void refreshSiteContent();
+  }, [refreshSiteContent]);
 
   useEffect(() => {
     const faviconUrl = content?.brand?.faviconUrl || content?.brand?.logoUrl;
@@ -54,7 +55,7 @@ export const SiteContentProvider = ({ children, initialContent }) => {
     icon.setAttribute('href', faviconUrl);
   }, [content?.brand?.faviconUrl, content?.brand?.logoUrl]);
 
-  const value = useMemo(() => ({ content, loading, refreshSiteContent }), [content, loading]);
+  const value = useMemo(() => ({ content, loading, refreshSiteContent }), [content, loading, refreshSiteContent]);
 
   return (
     <SiteContentContext.Provider value={value}>

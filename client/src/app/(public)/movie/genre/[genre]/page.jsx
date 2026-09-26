@@ -11,9 +11,9 @@ import { fetchBackendJson } from '@/lib/server/backend';
 
 const getGenreData = cache(async (genreSlug) => {
   const [genres, moviesData] = await Promise.all([
-    fetchBackendJson('/api/media/genres', { revalidate: 3600, tags: ['genres'] }),
+    fetchBackendJson('/api/media/genres', { revalidate: 30, tags: ['genres'] }),
     fetchBackendJson(`/api/media/movies?genre=${encodeURIComponent(genreSlug)}&limit=100`, {
-      revalidate: 3600,
+      revalidate: 30,
       tags: ['movies', `movie-genre-${genreSlug}`],
     }),
   ]);

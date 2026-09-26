@@ -5,6 +5,39 @@ use Config\Database;
 use Utils\Slug;
 
 class ArticleController {
+    /**
+     * Queue every public surface touched by an article mutation. Article
+     * pages were cached for an hour but their CRUD handlers did not purge the
+     * corresponding Next.js paths/tags, leaving public visitors on old copy.
+     */
+    private static function revalidatePublicArticlePages($article = null, $previousArticle = null) {
+        try {
+            \Utils\Revalidate::path('/articles', ['articles']);
+
+            foreach ([$article, $previousArticle] as $record) {
+                if (!is_array($record)) continue;
+
+                $slug = trim((string)($record['slug'] ?? ''));
+                if ($slug !== '') {
+                    \Utils\Revalidate::path('/articles/' . $slug, ['articles', 'article-' . $slug]);
+                }
+
+                $category = trim((string)($record['category'] ?? ''));
+                $categorySlug = $category === '' ? '' : Slug::slugify($category);
+                if ($categorySlug !== '') {
+                    \Utils\Revalidate::path(
+                        '/articles/category/' . $categorySlug,
+                        ['articles', 'article-category-' . $categorySlug]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            // Publishing already succeeded; a later page revalidation must
+            // never turn it into a failed admin save.
+            error_log('Article revalidation notice: ' . $e->getMessage());
+        }
+    }
+
     private static function parseList($value) {
         if (is_array($value)) {
             return array_filter(array_map('trim', $value));
@@ -200,7 +233,10 @@ class ArticleController {
         }
 
         $payload['viewCount'] = 0;
+        $payload['updatedAt'] = gmdate('Y-m-d H:i:s');
+        $payload['contentUpdatedAt'] = gmdate(DATE_ATOM);
         $inserted = $db->insertOne('articles', $payload);
+        self::revalidatePublicArticlePages($inserted);
 
         http_response_code(201);
         echo json_encode(['message' => 'Article created successfully', 'article' => $inserted]);
@@ -242,8 +278,12 @@ class ArticleController {
             $updates['metaDescription'] = substr($source, 0, 155);
         }
 
+        $updates['updatedAt'] = gmdate('Y-m-d H:i:s');
+        $updates['contentUpdatedAt'] = gmdate(DATE_ATOM);
+
         $db->updateOne('articles', ['_id' => $id], $updates);
         $saved = $db->findOne('articles', ['_id' => $id]);
+        self::revalidatePublicArticlePages($saved, $article);
 
         header('Content-Type: application/json');
         echo json_encode(['message' => 'Article updated successfully', 'article' => $saved]);
@@ -251,12 +291,20 @@ class ArticleController {
 
     public static function deleteArticle($id) {
         $db = Database::getInstance();
+        $article = $db->findOne('articles', ['_id' => $id]);
+        if (!$article) {
+            http_response_code(404);
+            echo json_encode(['message' => 'Article not found']);
+            return;
+        }
         $deleted = $db->deleteOne('articles', ['_id' => $id]);
         if (!$deleted) {
             http_response_code(404);
             echo json_encode(['message' => 'Article not found']);
             return;
         }
+
+        self::revalidatePublicArticlePages(null, $article);
 
         header('Content-Type: application/json');
         echo json_encode(['message' => 'Article deleted successfully']);

@@ -74,7 +74,7 @@ export default async function HomePage() {
   const siteContentPromise = getServerSiteContent();
   
   const catalogRes = await fetchBackendJson('/api/media/home', {
-    revalidate: 300,
+    revalidate: 30,
     tags: ['home', 'dramas', 'movies'],
     fallback: {},
   });

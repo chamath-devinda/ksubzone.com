@@ -7,7 +7,7 @@ import { serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 const getArticle = cache(async (slug) => {
   return fetchBackendJson(`/api/articles/${encodeURIComponent(slug)}?trackView=0`, {
-    revalidate: 3600,
+    revalidate: 30,
     tags: ['articles', `article-${slug}`],
   });
 });

@@ -13,7 +13,7 @@ export const metadata = {
 
 export default async function ArticlesPage() {
   const data = await fetchBackendJson('/api/articles?status=Published&limit=30', {
-    revalidate: 3600,
+    revalidate: 30,
     tags: ['articles'],
     fallback: { articles: [] },
   });

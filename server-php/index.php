@@ -126,10 +126,13 @@ if (in_array($uri, ['/api/clear-opcache-xyz', '/api/clear-cache-xyz', '/api/stat
 if (strpos($uri, '/api/') === 0) {
     $publicCacheSeconds = 0;
     if ($method === 'GET') {
+        // These endpoints are changed directly from the management portal.
+        // Do not let an edge cache keep an older admin save visible to public
+        // visitors after the backend and Next.js caches have been invalidated.
         if ($uri === '/api/site-content') {
-            $publicCacheSeconds = 300; // 5 minutes
+            $publicCacheSeconds = 0;
         } elseif ($uri === '/api/media/home') {
-            $publicCacheSeconds = 60; // 1 minute
+            $publicCacheSeconds = 0;
         } elseif ($uri === '/api/media/sitemap-catalog') {
             $publicCacheSeconds = 1800; // 30 minutes
         } elseif ($uri === '/api/subtitles/recent') {
@@ -137,19 +140,21 @@ if (strpos($uri, '/api/') === 0) {
         } elseif (preg_match('#^/api/subtitles/media/[a-f0-9,]+$#', $uri)) {
             $publicCacheSeconds = 0; // Strictly uncached so new subtitles appear immediately
         } elseif ($uri === '/api/media/movies' || $uri === '/api/media/dramas') {
-            $publicCacheSeconds = 30; // 30 seconds
+            $publicCacheSeconds = 0;
         } elseif (preg_match('#^/api/media/movies/[^/]+$#', $uri) || preg_match('#^/api/media/dramas/[^/]+$#', $uri)) {
             $publicCacheSeconds = 0; // Strictly uncached so drama/movie status and episodes stay fresh
         } elseif ($uri === '/api/articles') {
-            $publicCacheSeconds = 3600; // 1 hour
+            $publicCacheSeconds = 0;
         } elseif (preg_match('#^/api/articles/[^/]+$#', $uri)) {
-            $publicCacheSeconds = 3600; // 1 hour
+            $publicCacheSeconds = 0;
         } elseif (in_array($uri, [
             '/api/media/genres',
             '/api/media/recommendations',
             '/api/media/search-suggestions'
         ], true)) {
-            $publicCacheSeconds = ($uri === '/api/media/genres') ? 7200 : (($uri === '/api/media/recommendations') ? 300 : 60);
+            // Genre counts and artwork are derived from mutable movie/drama
+            // records, so they must change as soon as an editor saves media.
+            $publicCacheSeconds = ($uri === '/api/media/genres') ? 0 : (($uri === '/api/media/recommendations') ? 300 : 60);
         }
     }
 
@@ -917,6 +922,10 @@ $routes = [
                 $setting = $db->insertOne('settings', ['key' => 'siteContent', 'value' => $body]);
             }
             \Utils\Cache::delete('site_content_v1');
+            // Root layouts and public components consume this payload through
+            // the `site-content` cache tag. Queue its refresh after returning
+            // the successful save response.
+            \Utils\Revalidate::path('/', ['site-content']);
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Site content saved successfully', 'content' => $setting['value'] ?? $body]);
         }
@@ -963,6 +972,10 @@ $routes = [
             }
             if (preg_match('/(?:api[_-]?key|api[_-]?token|secret|password)/i', (string)$key)) {
                 $setting['value'] = '********';
+            }
+            if ($key === 'siteContent') {
+                \Utils\Cache::delete('site_content_v1');
+                \Utils\Revalidate::path('/', ['site-content']);
             }
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Settings saved successfully', 'setting' => $setting]);

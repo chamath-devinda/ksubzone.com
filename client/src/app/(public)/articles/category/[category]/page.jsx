@@ -11,7 +11,7 @@ import { serializeJsonLd } from '@/utils/seo';
 const getCategoryData = cache(async (categorySlug) => {
   const data = await fetchBackendJson(
     `/api/articles?status=Published&category=${encodeURIComponent(categorySlug)}&limit=100`,
-    { revalidate: 3600, tags: ['articles', `article-category-${categorySlug}`] },
+    { revalidate: 30, tags: ['articles', `article-category-${categorySlug}`] },
   );
   const articles = data?.articles || [];
   const match = articles.find((article) => (

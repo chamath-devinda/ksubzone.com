@@ -6,7 +6,7 @@ import { fetchBackendJson } from '@/lib/server/backend';
 
 async function getGenresData() {
   return fetchBackendJson('/api/media/genres', {
-    revalidate: 3600,
+    revalidate: 30,
     tags: ['genres'],
     fallback: [],
   });

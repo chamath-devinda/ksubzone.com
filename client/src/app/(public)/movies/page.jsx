@@ -42,7 +42,7 @@ export default async function MoviesPage({ searchParams }) {
 
   const initialData = await fetchBackendJson(
     `/api/media/movies?status=Published&sort=popular&page=${page}&limit=${limit}`,
-    { revalidate: 300, tags: ['movies'] },
+    { revalidate: 30, tags: ['movies'] },
   );
   initialData.movies = compactCatalogItems(initialData.movies);
 

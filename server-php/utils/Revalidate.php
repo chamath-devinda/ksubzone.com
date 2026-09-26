@@ -155,11 +155,17 @@ class Revalidate {
 
         // 2. Dispatch revalidation with tags to Next.js Vercel frontend
         $type = strtolower((string)$type);
-        $homeTags = ['home'];
+        $homeTags = ['home', 'genres'];
         if ($type === 'movie' || $type === 'all') $homeTags[] = 'movies';
         if ($type === 'drama' || $type === 'all') $homeTags[] = 'dramas';
 
         self::path('/', $homeTags);
+        // Genre counts/backdrops are computed from the media catalog too.
+        // Refresh this route and its shared tag with every catalog mutation.
+        $genreTags = ['genres'];
+        if ($type === 'movie' || $type === 'all') $genreTags[] = 'movies';
+        if ($type === 'drama' || $type === 'all') $genreTags[] = 'dramas';
+        self::path('/genres', $genreTags);
         if ($type === 'movie' || $type === 'all') {
             \Utils\Cache::deleteByPrefix('search_movies_v2_');
             self::path('/movies', ['movies']);

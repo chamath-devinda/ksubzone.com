@@ -48,7 +48,7 @@ export default async function DramasPage({ searchParams }) {
 
   const initialData = await fetchBackendJson(
     `/api/media/dramas?status=Published&sort=popular&page=${page}&limit=${limit}`,
-    { revalidate: 300, tags: ['dramas'] },
+    { revalidate: 30, tags: ['dramas'] },
   );
   initialData.dramas = compactCatalogItems(initialData.dramas);
 

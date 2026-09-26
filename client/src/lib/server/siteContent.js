@@ -1,28 +1,21 @@
 import { fetchBackendJson } from './backend';
 
-let cachedSiteContent = null;
-let lastFetchTime = 0;
-const CACHE_TTL_MS = 1800 * 1000; // 30 minutes
-
+/**
+ * Fetch site settings through Next's tagged cache rather than a process-wide
+ * variable. The old 30-minute module cache survived an admin save on warm
+ * server instances, so public pages could keep rendering obsolete settings.
+ */
 export async function getServerSiteContent() {
-  const now = Date.now();
-  if (cachedSiteContent && now - lastFetchTime < CACHE_TTL_MS) {
-    return cachedSiteContent;
-  }
-
   try {
-    const data = await fetchBackendJson('/api/site-content', {
+    return await fetchBackendJson('/api/site-content', {
+      revalidate: 30,
+      tags: ['site-content'],
       attempts: 2,
       timeoutMs: 3000,
       fallback: null,
     });
-    if (data) {
-      cachedSiteContent = data;
-      lastFetchTime = now;
-    }
-    return data || cachedSiteContent;
   } catch (err) {
-    console.warn('[siteContent] Failed to fetch live site-content, returning cached or null');
-    return cachedSiteContent;
+    console.warn('[siteContent] Failed to fetch live site content.');
+    return null;
   }
 }
