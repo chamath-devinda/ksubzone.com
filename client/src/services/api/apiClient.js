@@ -34,6 +34,20 @@ const apiClient = axios.create({
   }
 });
 
+const isRelativeApiRequest = (config) => {
+  const url = String(config?.url || '');
+  return typeof window !== 'undefined'
+    && !/^https?:\/\//i.test(url)
+    && (config?.baseURL === '' || config?.baseURL === undefined || config?.baseURL === '/');
+};
+
+const isHtmlProxyFailure = (error) => {
+  const status = error?.response?.status;
+  if (![403, 502, 503, 504].includes(status)) return false;
+  const body = error?.response?.data;
+  return typeof body === 'string' && /<(?:!doctype|html|body)\b/i.test(body);
+};
+
 // Request Interceptor: Automatically inject Authorization token
 apiClient.interceptors.request.use(
   (config) => {
@@ -79,6 +93,21 @@ apiClient.interceptors.response.use(
         requestConfig.baseURL = '';
         return apiClient(requestConfig);
       }
+    }
+
+    // Shared-hosting/CDN WAFs sometimes return an HTML 403/5xx page for
+    // authenticated admin writes instead of forwarding the JSON request to
+    // the PHP API. Retry that transport failure against the API origin once.
+    // JSON 401/403 permission responses are deliberately not retried.
+    if (
+      requestConfig
+      && !requestConfig.__originRetried
+      && isRelativeApiRequest(requestConfig)
+      && (isHtmlProxyFailure(error) || [502, 503, 504].includes(status))
+    ) {
+      requestConfig.__originRetried = true;
+      requestConfig.baseURL = 'https://api.ksubzone.com';
+      return apiClient(requestConfig);
     }
 
     // Hosting/CDN layers can briefly answer read requests with 429. Retry GET

@@ -48,6 +48,14 @@
       }
 
       var loadedNotified = false;
+      function isVisible(el) {
+        if (!el) return false;
+        var style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+        var rect = el.getBoundingClientRect();
+        return rect.left >= -50 && rect.top >= -50 && rect.width >= 10 && rect.height >= 10;
+      }
+
       function notifyLoaded() {
         if (loadedNotified) return;
         loadedNotified = true;
@@ -57,10 +65,19 @@
       }
 
       function checkAndNotify() {
-        var elements = document.querySelectorAll('iframe, img, a[href] img, div[id^="container-"] > *');
-        if (elements.length > 0) {
-          notifyLoaded();
-          return true;
+        var elements = document.querySelectorAll('iframe, img[src]:not([src=""]), video, object, embed, ins, [data-creative], a[href] img');
+        for (var i = 0; i < elements.length; i += 1) {
+          if (isVisible(elements[i])) {
+            notifyLoaded();
+            return true;
+          }
+        }
+        var containers = document.querySelectorAll('div[id^="container-"]');
+        for (var j = 0; j < containers.length; j += 1) {
+          if (containers[j].children.length > 0 && isVisible(containers[j])) {
+            notifyLoaded();
+            return true;
+          }
         }
         return false;
       }

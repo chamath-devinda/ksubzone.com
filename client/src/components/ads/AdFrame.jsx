@@ -71,7 +71,11 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
 
     function handleMessage(event) {
       if (event.data?.type === 'AD_LOADED') {
-        finish(true);
+        // The delivery script can create tracking/verification iframes before
+        // it creates the actual creative. Only accept the message when the
+        // frame contains a visible ad, otherwise the slot becomes a false
+        // positive and disappears with a blank box.
+        inspect();
       }
     }
     window.addEventListener('message', handleMessage);

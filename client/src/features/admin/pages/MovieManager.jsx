@@ -169,15 +169,27 @@ export default function MovieManager() {
     };
 
     try {
+      let res;
       if (editingMovie) {
-        await apiClient.put(`/api/admin/movies/${editingMovie._id}`, payload);
+        res = await apiClient.put(`/api/admin/movies/${editingMovie._id}`, payload);
         toast.success('Movie details updated successfully.');
       } else {
-        await apiClient.post('/api/admin/movies', payload);
+        res = await apiClient.post('/api/admin/movies', payload);
         toast.success('New movie entry created successfully.');
       }
       setShowModal(false);
-      fetchMovies(filterStatus, true);
+      const savedMovie = res?.data?.movie;
+      if (savedMovie?._id) {
+        setMovies((current) => editingMovie
+          ? current.map((movie) => movie._id === savedMovie._id ? savedMovie : movie)
+          : [savedMovie, ...current]);
+      }
+      await fetchMovies(filterStatus, true);
+      if (savedMovie?._id) {
+        setMovies((current) => editingMovie
+          ? current.map((movie) => movie._id === savedMovie._id ? savedMovie : movie)
+          : (current.some((movie) => movie._id === savedMovie._id) ? current : [savedMovie, ...current]));
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save movie details.');
     } finally {

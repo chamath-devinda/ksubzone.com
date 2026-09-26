@@ -343,15 +343,27 @@ export default function DramaManager() {
     };
 
     try {
+      let res;
       if (editingDrama) {
-        await apiClient.put(`/api/admin/dramas/${editingDrama._id}`, payload);
+        res = await apiClient.put(`/api/admin/dramas/${editingDrama._id}`, payload);
         toast.success('Drama series updated successfully.');
       } else {
-        await apiClient.post('/api/admin/dramas', payload);
+        res = await apiClient.post('/api/admin/dramas', payload);
         toast.success('New Drama series registered successfully.');
       }
       setShowDramaModal(false);
-      fetchDramas(filterStatus, true);
+      const savedDrama = res?.data?.drama;
+      if (savedDrama?._id) {
+        setDramas((current) => editingDrama
+          ? current.map((drama) => drama._id === savedDrama._id ? savedDrama : drama)
+          : [savedDrama, ...current]);
+      }
+      await fetchDramas(filterStatus, true);
+      if (savedDrama?._id) {
+        setDramas((current) => editingDrama
+          ? current.map((drama) => drama._id === savedDrama._id ? savedDrama : drama)
+          : (current.some((drama) => drama._id === savedDrama._id) ? current : [savedDrama, ...current]));
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save drama configuration.');
     } finally {
