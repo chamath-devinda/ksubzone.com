@@ -139,20 +139,21 @@ export default function AdSlot({ slotId, className = '' }) {
         : 'min-h-[66px] md:min-h-[106px]';
 
   if (slotFailed) {
-    if (config?.showDevelopmentPlaceholders) {
-      return (
-        <aside
-          ref={hostRef}
-          aria-label="Advertisement Placeholder"
-          data-ad-slot={slotId}
-          className={`mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border border-dashed border-amber-500/20 bg-amber-500/[0.03] p-4 text-center ${reservationClass} ${className}`}
-        >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">Ad Slot: {zoneName || placement.format}</span>
-          <span className="text-xs text-slate-400">{slotId}</span>
-        </aside>
-      );
-    }
-    return null;
+    return (
+      <aside
+        ref={hostRef}
+        aria-label="KSubZone promotion"
+        data-ad-slot={slotId}
+        data-ad-fallback="true"
+        className={`mx-auto flex w-full max-w-5xl ${isSidebar ? 'max-w-[160px]' : ''} ${isSquare ? 'max-w-[300px]' : ''} flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-950/80 via-[#17112f] to-fuchsia-950/70 p-4 text-center ${reservationClass} ${className}`}
+      >
+        <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-violet-300">KSubZone</span>
+        <span className="text-xs font-semibold text-white">Fresh Sinhala subtitles & Korean dramas</span>
+        <a href="/search" className="mt-1 rounded-full border border-violet-300/30 bg-violet-500/20 px-3 py-1 text-[10px] font-bold text-violet-100 transition hover:bg-violet-500/40">
+          Explore now
+        </a>
+      </aside>
+    );
   }
 
   return (
