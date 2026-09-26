@@ -165,9 +165,11 @@ export const adConfig = Object.freeze({
     article_mid_native: { pages: ['article'], format: 'native', provider: 'adsterra', lazy: true },
     episode_content_banner: { pages: ['episode'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     listing_content_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
-    listing_mid_native: { pages: ['listing'], format: 'native', provider: 'adsterra', lazy: true },
-    listing_mid_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
-    listing_bottom_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
+    // Listing pages keep these slots eager so the ad network gets a request
+    // immediately after navigation, even when the catalog is long or paginated.
+    listing_mid_native: { pages: ['listing'], format: 'native', provider: 'adsterra', lazy: false },
+    listing_mid_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
+    listing_bottom_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
     genres_mid_banner: { pages: ['listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
     site_footer_banner: { pages: ['home', 'movie', 'drama', 'article', 'listing'], format: 'responsiveBanner', provider: 'adsterra', lazy: true },
   },

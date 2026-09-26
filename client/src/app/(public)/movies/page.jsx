@@ -1,4 +1,5 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import MoviesList from '@/features/media/pages/MoviesList';
 import { compactCatalogItems } from '@/utils/mediaCatalog';
 import { permalinkSlug } from '@/utils/slug';
@@ -37,7 +38,7 @@ export function generateMetadata({ searchParams }) {
 
 export default async function MoviesPage({ searchParams }) {
   const page = Math.max(1, Number(searchParams?.page) || 1);
-  const limit = 12;
+  const limit = 50;
 
   const initialData = await fetchBackendJson(
     `/api/media/movies?status=Published&sort=popular&page=${page}&limit=${limit}`,
@@ -47,6 +48,10 @@ export default async function MoviesPage({ searchParams }) {
 
   const items = initialData?.movies || [];
   const totalPages = initialData?.totalPages || 1;
+
+  if (page > totalPages) {
+    redirect(totalPages === 1 ? '/movies' : `/movies?page=${totalPages}`);
+  }
 
   const structuredData = {
     '@context': 'https://schema.org',

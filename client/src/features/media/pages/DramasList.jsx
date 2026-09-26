@@ -28,13 +28,13 @@ export default function DramasList({ initialData, initialPage = 1, totalPages: t
   const [country, setCountry] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const page = initialPage;
-  const limit = 18;
+  const limit = 50;
   const hasInitialData = Array.isArray(initialData?.dramas) && initialData.dramas.length > 0;
 
   const { data, isLoading } = useQuery({
     queryKey: ['dramasDirectory', sortBy, country, page],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/media/dramas?sort=${sortBy}&country=${country}&page=${page}&limit=${limit}`);
+      const res = await apiClient.get(`/api/media/dramas?status=Published&sort=${sortBy}&country=${country}&page=${page}&limit=${limit}`);
       return res.data;
     },
     initialData: (sortBy === 'popular' && country === '' && page === 1 && hasInitialData) ? initialData : undefined,

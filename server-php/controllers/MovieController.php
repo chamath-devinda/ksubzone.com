@@ -108,7 +108,7 @@ class MovieController {
         $page = max(1, (int)($_GET['page'] ?? 1));
         // Public catalog responses are deliberately bounded at the API edge.
         // Admin management has a separate route and is not affected.
-        $limit = max(1, min((int)($_GET['limit'] ?? 12), 24));
+        $limit = max(1, min((int)($_GET['limit'] ?? 12), 50));
         $search = $_GET['search'] ?? null;
         $genre = $_GET['genre'] ?? null;
         $year = $_GET['year'] ?? null;

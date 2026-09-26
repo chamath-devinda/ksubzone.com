@@ -158,6 +158,14 @@ class DramaController {
     public static function getDramaStructure($id) {
         try {
             $id = trim((string)$id);
+            $cacheKey = 'admin_drama_structure_v1_' . md5($id);
+            $cachedStructure = \Utils\Cache::get($cacheKey);
+            if ($cachedStructure !== false && is_array($cachedStructure)) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($cachedStructure, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                return;
+            }
+
             $db = Database::getInstance();
             $drama = $db->findOne('dramas', ['_id' => $id]);
             if (!$drama) {
@@ -262,6 +270,9 @@ class DramaController {
                 'seasons' => array_values($seasons),
                 'episodes' => array_values($episodes)
             ];
+            // Explorer data changes through the admin season/episode CRUD
+            // handlers, which flush this short-lived cache after writes.
+            \Utils\Cache::set($cacheKey, $payload, 45);
             $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
             if ($encoded === false) {
                 throw new \RuntimeException('Unable to encode drama structure response');
@@ -279,7 +290,7 @@ class DramaController {
 
     public static function getAllDramas() {
         $page = max(1, (int)($_GET['page'] ?? 1));
-        $limit = max(1, min((int)($_GET['limit'] ?? 12), 24));
+        $limit = max(1, min((int)($_GET['limit'] ?? 12), 50));
         $search = $_GET['search'] ?? null;
         $genre = $_GET['genre'] ?? null;
         $year = $_GET['year'] ?? null;

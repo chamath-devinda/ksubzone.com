@@ -1,4 +1,5 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import DramasList from '@/features/media/pages/DramasList';
 import { compactCatalogItems } from '@/utils/mediaCatalog';
 import { permalinkSlug } from '@/utils/slug';
@@ -43,7 +44,7 @@ export function generateMetadata({ searchParams }) {
 export default async function DramasPage({ searchParams }) {
   // Read the page number from the URL query string — crawlable by Googlebot.
   const page = Math.max(1, Number(searchParams?.page) || 1);
-  const limit = 12;
+  const limit = 50;
 
   const initialData = await fetchBackendJson(
     `/api/media/dramas?status=Published&sort=popular&page=${page}&limit=${limit}`,
@@ -53,6 +54,10 @@ export default async function DramasPage({ searchParams }) {
 
   const items = initialData?.dramas || [];
   const totalPages = initialData?.totalPages || 1;
+
+  if (page > totalPages) {
+    redirect(totalPages === 1 ? '/dramas' : `/dramas?page=${totalPages}`);
+  }
 
   const structuredData = {
     '@context': 'https://schema.org',

@@ -28,6 +28,7 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const abortControllerRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
@@ -42,14 +43,18 @@ export default function Navbar() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMobileSearchOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    if (!mobileMenuOpen) return undefined;
+    if (!mobileMenuOpen && !mobileSearchOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setMobileMenuOpen(false);
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setMobileSearchOpen(false);
+      }
     };
 
     document.body.style.overflow = 'hidden';
@@ -59,13 +64,13 @@ export default function Navbar() {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', closeOnEscape);
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, mobileSearchOpen]);
 
   useEffect(() => {
-    if (mobileMenuOpen) {
+    if (mobileSearchOpen) {
       mobileSearchInputRef.current?.focus();
     }
-  }, [mobileMenuOpen]);
+  }, [mobileSearchOpen]);
 
   const searchRef = useRef(null);
   const defaultNavLinks = [
@@ -167,6 +172,8 @@ export default function Navbar() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setShowSuggestions(false);
+      setMobileSearchOpen(false);
+      setMobileMenuOpen(false);
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
@@ -184,13 +191,16 @@ export default function Navbar() {
     <div className="relative w-full">
       {/* MOBILE BACKDROP OVERLAY */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {(mobileMenuOpen || mobileSearchOpen) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/75 backdrop-blur-md z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setMobileSearchOpen(false);
+            }}
           />
         )}
       </AnimatePresence>
@@ -427,24 +437,99 @@ export default function Navbar() {
             {/* MOBILE MENU TOGGLE */}
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(true)}
+              onClick={() => {
+                setMobileSearchOpen(true);
+                setMobileMenuOpen(false);
+              }}
               aria-label="Open search"
+              aria-expanded={mobileSearchOpen}
+              aria-controls="mobile-search"
               className="h-10 w-10 flex-shrink-0 rounded-xl lg:hidden text-slate-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition flex items-center justify-center"
             >
               <Search className="w-5 h-5" />
             </button>
 
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle mobile menu"
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-navigation"
+              onClick={() => {
+                if (mobileSearchOpen) {
+                  setMobileSearchOpen(false);
+                } else {
+                  setMobileMenuOpen(value => !value);
+                }
+              }}
+              aria-label={mobileMenuOpen || mobileSearchOpen ? 'Close mobile panel' : 'Toggle mobile menu'}
+              aria-expanded={mobileMenuOpen || mobileSearchOpen}
+              aria-controls={mobileSearchOpen ? 'mobile-search' : 'mobile-navigation'}
               className="h-10 w-10 flex-shrink-0 rounded-xl lg:hidden text-slate-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition flex items-center justify-center"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen || mobileSearchOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
+
+        {/* MOBILE SEARCH PANEL: keep search separate from the navigation drawer */}
+        <AnimatePresence>
+          {mobileSearchOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              id="mobile-search"
+              className="lg:hidden mx-3 sm:mx-6 mt-2 relative z-50 text-left"
+            >
+              <form onSubmit={handleSearchSubmit} className="relative w-full" ref={searchRef}>
+                <input
+                  ref={mobileSearchInputRef}
+                  type="text"
+                  aria-label={searchPlaceholder}
+                  placeholder={searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-11 pl-10 pr-4 rounded-2xl text-sm glass-input placeholder-slate-400 bg-transparent"
+                />
+                {isSearching ? (
+                  <Loader2 className="absolute left-3.5 top-3.5 w-4 h-4 text-brand-primary animate-spin pointer-events-none" />
+                ) : (
+                  <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                )}
+              </form>
+
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-transparent">
+                  <p className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Discover
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {suggestions.map((item) => (
+                      <Link
+                        key={`mobile-${item._id}`}
+                        href={`/${item.type}/${permalinkSlug(item)}`}
+                        prefetch={false}
+                        onClick={() => {
+                          setSearchQuery('');
+                          setShowSuggestions(false);
+                          setMobileSearchOpen(false);
+                        }}
+                        className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 transition hover:bg-white/[0.08]"
+                      >
+                        <img
+                          src={getMediaImage(item, 'thumb')}
+                          alt={item.title}
+                          className="h-12 w-9 flex-shrink-0 rounded-lg border border-white/10 object-cover"
+                          onError={(event) => handleImageFallback(event, item, 'thumb')}
+                        />
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="truncate text-xs font-bold text-white">{item.title}</p>
+                          <p className="mt-0.5 text-[10px] font-extrabold uppercase tracking-wider text-brand-primary">{item.type}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* MOBILE MENU DRAWER */}
         <AnimatePresence>
@@ -456,7 +541,7 @@ export default function Navbar() {
               id="mobile-navigation"
               className="lg:hidden mx-3 sm:mx-6 mt-2 max-h-[calc(100dvh-5.25rem)] overflow-y-auto overscroll-contain glass-panel-heavy border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col gap-4 shadow-2xl backdrop-blur-2xl relative z-50 text-left"
             >
-              <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <form onSubmit={handleSearchSubmit} className="relative w-full" ref={searchRef}>
                 <input
                   ref={mobileSearchInputRef}
                   type="text"

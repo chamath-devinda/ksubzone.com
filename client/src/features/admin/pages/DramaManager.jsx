@@ -181,10 +181,6 @@ export default function DramaManager() {
     }
   };
 
-  const prefetchDramaStructure = (dramaId) => {
-    void fetchDramaStructure(dramaId).catch(() => {});
-  };
-
   const handleOpenExplorer = async (drama) => {
     setExplorerDrama(drama);
     setExpandedData({ seasons: [], episodes: [] });
@@ -193,13 +189,17 @@ export default function DramaManager() {
     try {
       setExpandedData(await fetchDramaStructure(drama._id));
     } catch (err) {
-      const message = err?.message || 'Failed to retrieve season catalog.';
+      const message = getStructureErrorMessage(err);
       setExpansionError(message);
       toast.error(message);
     } finally {
       setLoadingExpansion(false);
     }
   };
+
+  const getStructureErrorMessage = (err) => err?.status === 429
+    ? 'The server is busy right now. Please wait a moment and try again.'
+    : (err?.message || 'Failed to retrieve season catalog.');
 
   const refreshExplorer = async (options = {}) => {
     if (!explorerDrama) return;
@@ -209,7 +209,7 @@ export default function DramaManager() {
     try {
       setExpandedData(await fetchDramaStructure(explorerDrama._id, { force: true }));
     } catch (err) {
-      const message = err?.message || 'Failed to retrieve season catalog.';
+      const message = getStructureErrorMessage(err);
       setExpansionError(message);
       toast.error(message);
     } finally {
@@ -529,8 +529,6 @@ export default function DramaManager() {
           <button
             type="button"
             onClick={() => handleOpenExplorer(drama)}
-            onMouseEnter={() => prefetchDramaStructure(drama._id)}
-            onFocus={() => prefetchDramaStructure(drama._id)}
             className="btn-oio-pill flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg transition text-[11px] font-bold shadow-sm active:scale-95"
             title="Explore Seasons & Episodes"
           >
