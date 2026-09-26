@@ -30,6 +30,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const abortControllerRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -58,6 +59,12 @@ export default function Navbar() {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', closeOnEscape);
     };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      mobileSearchInputRef.current?.focus();
+    }
   }, [mobileMenuOpen]);
 
   const searchRef = useRef(null);
@@ -419,6 +426,15 @@ export default function Navbar() {
 
             {/* MOBILE MENU TOGGLE */}
             <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open search"
+              className="h-10 w-10 flex-shrink-0 rounded-xl lg:hidden text-slate-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition flex items-center justify-center"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle mobile menu"
               aria-expanded={mobileMenuOpen}
@@ -442,6 +458,7 @@ export default function Navbar() {
             >
               <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <input
+                  ref={mobileSearchInputRef}
                   type="text"
                   aria-label={searchPlaceholder}
                   placeholder={searchPlaceholder}

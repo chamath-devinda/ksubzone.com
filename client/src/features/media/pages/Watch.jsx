@@ -213,7 +213,9 @@ export default function Watch({
 
   const formattedSeason = `S${String(seasonNumber).padStart(2, '0')}`;
   const formattedEpisode = `E${String(episodeNumber).padStart(2, '0')}`;
-  const totalDownloads = subtitles.reduce((acc, s) => acc + (s.downloads || 0), 0) || 128;
+  // Show the authoritative counters returned with the approved subtitle records.
+  // Do not fall back to a fabricated value when an episode has no downloads yet.
+  const totalDownloads = subtitles.reduce((acc, s) => acc + (Number(s.downloads) || 0), 0);
 
   // Primary Uploader Info
   const primaryUploaderName = mainSubtitle?.uploaderRole === 'Admin' 

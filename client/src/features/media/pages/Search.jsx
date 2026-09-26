@@ -31,6 +31,9 @@ export default function Search() {
   const initialQuery = searchParams.get('q') || '';
   const initialCategory = searchParams.get('category') || 'drama';
   const initialGenre = searchParams.get('genre') || '';
+  const initialYear = searchParams.get('year') || '';
+  const initialCountry = searchParams.get('country') || '';
+  const initialRating = searchParams.get('rating') || '';
   const initialSort = searchParams.get('sort') || 'newest';
   const initialTrending = searchParams.get('trending') === 'true';
   const initialIsHistorical = searchParams.get('isHistorical') === 'true';
@@ -39,9 +42,9 @@ export default function Search() {
   const [category, setCategory] = useState(initialCategory); // all, drama or movie
   const [genre, setGenre] = useState(initialGenre);
   const [debouncedGenre, setDebouncedGenre] = useState(initialGenre);
-  const [year, setYear] = useState('');
-  const [country, setCountry] = useState('');
-  const [rating, setRating] = useState('');
+  const [year, setYear] = useState(initialYear);
+  const [country, setCountry] = useState(initialCountry);
+  const [rating, setRating] = useState(initialRating);
   const [sortBy, setSortBy] = useState(initialSort);
   const [trendingOnly, setTrendingOnly] = useState(initialTrending);
   const [isHistorical, setIsHistorical] = useState(initialIsHistorical);
@@ -57,11 +60,24 @@ export default function Search() {
     setCategory(initialCategory);
     setGenre(initialGenre);
     setDebouncedGenre(initialGenre);
+    setYear(initialYear);
+    setCountry(initialCountry);
+    setRating(initialRating);
     setSortBy(initialSort);
     setTrendingOnly(initialTrending);
     setIsHistorical(initialIsHistorical);
     setPage(1);
-  }, [initialQuery, initialCategory, initialGenre, initialSort, initialTrending, initialIsHistorical]);
+  }, [
+    initialQuery,
+    initialCategory,
+    initialGenre,
+    initialYear,
+    initialCountry,
+    initialRating,
+    initialSort,
+    initialTrending,
+    initialIsHistorical
+  ]);
 
   // Debounce search text changes (Fast 180ms)
   useEffect(() => {
@@ -169,6 +185,9 @@ export default function Search() {
       ...(searchText ? { q: searchText } : {}),
       ...(category !== 'drama' ? { category } : {}),
       ...(genre ? { genre } : {}),
+      ...(year ? { year } : {}),
+      ...(country ? { country } : {}),
+      ...(rating ? { rating } : {}),
       ...(sortBy !== 'newest' ? { sort: sortBy } : {}),
       ...(trendingOnly ? { trending: 'true' } : {}),
       ...(isHistorical ? { isHistorical: 'true' } : {})
@@ -196,6 +215,19 @@ export default function Search() {
   const handleCategoryChange = (nextCategory) => {
     setCategory(nextCategory);
     setPage(1);
+    // Keep the address bar and the active filter in sync. This prevents a
+    // stale category from making an all-catalog historical search look empty.
+    setSearchParams({
+      ...(searchText ? { q: searchText } : {}),
+      ...(nextCategory !== 'drama' ? { category: nextCategory } : {}),
+      ...(genre ? { genre } : {}),
+      ...(year ? { year } : {}),
+      ...(country ? { country } : {}),
+      ...(rating ? { rating } : {}),
+      ...(sortBy !== 'newest' ? { sort: sortBy } : {}),
+      ...(trendingOnly ? { trending: 'true' } : {}),
+      ...(isHistorical ? { isHistorical: 'true' } : {})
+    });
   };
 
   return (

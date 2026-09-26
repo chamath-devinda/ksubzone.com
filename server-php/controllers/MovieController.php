@@ -219,7 +219,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v7');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v8');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -242,10 +242,10 @@ class MovieController {
             'fields' => $heroFields
         ]);
         
-        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'fields' => $cardFields]);
+        $historicalMovies = $db->find('movies', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 10, 'fields' => $cardFields]);
         
-        // 4. Historical dramas (status: Published, isHistorical: true, sort: imdbRating DESC, limit 6)
-        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 6, 'fields' => $cardFields]);
+        // 4. Historical dramas (status: Published, isHistorical: true, sort: imdbRating DESC, limit 10)
+        $historicalDramas = $db->find('dramas', array_merge($statusFilter, ['isHistorical' => true]), ['sort' => ['imdbRating' => -1], 'limit' => 10, 'fields' => $cardFields]);
         
         // 5. Trending movies (status: Published, sort: viewCount DESC, limit 10)
         $trendingMovies = $db->find('movies', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
@@ -410,7 +410,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v7', $catalogData, 60);
+        \Utils\Cache::set('home_catalog_v8', $catalogData, 60);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);

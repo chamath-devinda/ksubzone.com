@@ -148,7 +148,7 @@ class Revalidate {
     public static function catalog($type = 'all') {
         // 1. Invalidate only catalog-shaped backend caches. A global flush can
         // evict auth/settings caches and makes every admin write unnecessarily slow.
-        \Utils\Cache::delete('home_catalog_v7');
+        \Utils\Cache::delete('home_catalog_v8');
         \Utils\Cache::delete('home_catalog');
         \Utils\Cache::delete('admin_dashboard_v3');
         \Utils\Cache::deleteByPrefix('admin_missing_subtitle_alerts_v1_');
