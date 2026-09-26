@@ -79,54 +79,31 @@
       setTimeout(function () { clearInterval(pollTimer); }, 20000);
 
       if (zone.native) {
-        var container = document.createElement('div');
-        container.id = 'container-' + zone.key;
-        container.style.width = '100%';
-        container.style.minHeight = '280px';
-        document.body.appendChild(container);
-
-        var s = document.createElement('script');
-        s.async = true;
-        s.setAttribute('data-cfasync', 'false');
-        s.src = host + '/' + zone.key + '/invoke.js';
-        s.onload = function() { checkAndNotify(); };
-        s.onerror = function() {
-          var fb = document.createElement('script');
-          fb.async = true;
-          fb.setAttribute('data-cfasync', 'false');
-          fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
-          fb.onload = function() { checkAndNotify(); };
-          document.body.appendChild(fb);
-        };
-        document.body.appendChild(s);
+        // Adsterra's native tag must be parser-inserted so its invoke script
+        // can discover the container while the document is being written.
+        document.write(
+          '<div id="container-' + zone.key + '" style="width:100%;min-height:280px"></div>' +
+          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" ' +
+            'onerror="this.onerror=null;this.src=\'' + fallbackHost + '/' + zone.key + '/invoke.js\';"><\/script>'
+        );
         return;
       }
 
-      window.atOptions = {
-        key: zone.key,
-        format: 'iframe',
-        height: zone.height,
-        width: zone.width,
-        params: {}
-      };
-      var atOptions = window.atOptions;
-
-      var script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = false;
-      script.setAttribute('data-cfasync', 'false');
-      script.src = host + '/' + zone.key + '/invoke.js';
-      script.onload = function() { checkAndNotify(); };
-      script.onerror = function() {
-        var fb = document.createElement('script');
-        fb.type = 'text/javascript';
-        fb.async = false;
-        fb.setAttribute('data-cfasync', 'false');
-        fb.src = fallbackHost + '/' + zone.key + '/invoke.js';
-        fb.onload = function() { checkAndNotify(); };
-        document.body.appendChild(fb);
-      };
-      document.body.appendChild(script);
+      // Keep the official banner format parser-inserted as well. Dynamic
+      // script insertion leaves the publisher iframe empty on some browsers.
+      document.write(
+        '<script type="text/javascript">' +
+          'window.atOptions={' +
+            'key:"' + zone.key + '",' +
+            'format:"iframe",' +
+            'height:' + zone.height + ',' +
+            'width:' + zone.width + ',' +
+            'params:{}' +
+          '};atOptions=window.atOptions;' +
+        '<\/script>' +
+        '<script type="text/javascript" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" ' +
+          'onerror="this.onerror=null;this.src=\'' + fallbackHost + '/' + zone.key + '/invoke.js\';"><\/script>'
+      );
     }());
   </script>
 </body>
