@@ -6,7 +6,7 @@ import { permalinkSlug } from '@/utils/slug';
 import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 import { fetchBackendJson } from '@/lib/server/backend';
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 export function generateMetadata({ searchParams }) {
   const page = Number(searchParams?.page) || 1;
@@ -42,7 +42,7 @@ export default async function MoviesPage({ searchParams }) {
 
   const initialData = await fetchBackendJson(
     `/api/media/movies?status=Published&sort=popular&page=${page}&limit=${limit}`,
-    { revalidate: 30, tags: ['movies'] },
+    { revalidate: 10, tags: ['movies'] },
   );
   initialData.movies = compactCatalogItems(initialData.movies);
 

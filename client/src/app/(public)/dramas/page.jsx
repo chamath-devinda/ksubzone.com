@@ -6,8 +6,8 @@ import { permalinkSlug } from '@/utils/slug';
 import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 import { fetchBackendJson } from '@/lib/server/backend';
 
-// ISR: catalog listing refreshes hourly in the background.
-export const revalidate = 300;
+// ISR: catalog listing refreshes every minute in the background.
+export const revalidate = 60;
 
 export function generateMetadata({ searchParams }) {
   // Pages beyond page 1 get a noindex signal to prevent duplicate-content
@@ -48,7 +48,7 @@ export default async function DramasPage({ searchParams }) {
 
   const initialData = await fetchBackendJson(
     `/api/media/dramas?status=Published&sort=popular&page=${page}&limit=${limit}`,
-    { revalidate: 30, tags: ['dramas'] },
+    { revalidate: 10, tags: ['dramas'] },
   );
   initialData.dramas = compactCatalogItems(initialData.dramas);
 
