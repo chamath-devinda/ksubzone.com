@@ -55,7 +55,15 @@ export const SiteContentProvider = ({ children, initialContent }) => {
     icon.setAttribute('href', faviconUrl);
   }, [content?.brand?.faviconUrl, content?.brand?.logoUrl]);
 
-  const value = useMemo(() => ({ content, loading, refreshSiteContent }), [content, loading, refreshSiteContent]);
+  // Keep both names while older admin screens migrate. SiteManager uses the
+  // short `refresh` contract after a save; public consumers use the explicit
+  // name. They intentionally point to the same in-flight-safe function.
+  const value = useMemo(() => ({
+    content,
+    loading,
+    refreshSiteContent,
+    refresh: refreshSiteContent,
+  }), [content, loading, refreshSiteContent]);
 
   return (
     <SiteContentContext.Provider value={value}>

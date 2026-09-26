@@ -20,9 +20,10 @@
 <body>
   <script type="text/javascript">
     (function () {
-      // The user's active Adsterra account serves scripts from this host.
-      var host = 'https://nobleduringsurveillance.com';
-      var fallbackHost = 'https://alwingulla.com';
+      // Use the currently responding Adsterra delivery host. The previous
+      // primary host returned HTTP 403 for every configured zone.
+      var host = 'https://alwingulla.com';
+      var fallbackHost = 'https://nobleduringsurveillance.com';
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
