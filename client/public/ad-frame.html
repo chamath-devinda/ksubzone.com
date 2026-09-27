@@ -20,10 +20,11 @@
 <body>
   <script type="text/javascript">
     (function () {
-      // Use the currently responding Adsterra delivery host. The previous
-      // primary host returned HTTP 403 for every configured zone.
-      var host = 'https://alwingulla.com';
-      var fallbackHost = 'https://nobleduringsurveillance.com';
+      // Use the publisher delivery host that returns the configured zone
+      // creative. Some alternate delivery hosts return only a tracking
+      // wrapper, which leaves the ad frame visibly blank.
+      var host = 'https://nobleduringsurveillance.com';
+      var fallbackHost = 'https://www.profitablecreativeformat.com';
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
