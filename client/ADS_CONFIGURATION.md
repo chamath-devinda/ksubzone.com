@@ -1,5 +1,12 @@
 # KSubZone advertising configuration
 
+> **Permanent provider-host note — do not change the active Adsterra delivery host.**
+> Keep `nobleduringsurveillance.com` in `src/config/ads.js` and `public/ad-frame.html`.
+> The alternate `alwingulla.com` host returns a tracking wrapper instead of the
+> configured creatives, which makes the site's ad slots appear blank. Do not
+> replace this host or the `www.profitablecreativeformat.com` fallback unless the
+> publisher supplies and verifies a new official delivery host.
+
 The monetization system is centralized in `src/config/ads.js`. Production ads are enabled by default only in production; local development renders labeled placeholders unless explicitly overridden.
 
 ## Environment switches
@@ -44,7 +51,7 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 
 ## Official provider code locations
 
-- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`, using the active `https://alwingulla.com` delivery host.
+- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`, using the active `https://nobleduringsurveillance.com` delivery host and `https://www.profitablecreativeformat.com` fallback.
 - Monetag: no official Monetag code has been supplied. Keep `NEXT_PUBLIC_MONETAG_ENABLED=false`. When official code is available, paste only its exact script URLs into `providers.monetag.zones.multiTagScriptUrl`, `inPagePushScriptUrl`, and `onClickScriptUrl`. The OnClick URL is already connected to the guarded intrusive loader; MultiTag and In-Page Push remain inert placeholders until their exact official snippets and required initialization details are supplied.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.
