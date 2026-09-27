@@ -219,7 +219,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v9');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v10');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -258,11 +258,9 @@ class MovieController {
         $popularMovies = $trendingMovies;
         $popularDramas = $trendingDramas;
 
-        // 9. Upcoming movies and dramas. The homepage should include every
-        // upcoming title managed in the admin panel; applying a small limit
-        // here made newer records silently disappear from the public section.
-        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'fields' => $cardFields]);
-        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'fields' => $cardFields]);
+        // 9. Upcoming movies and dramas (up to 10 records per type).
+        $upcomingMovies = $db->find('movies', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 10, 'fields' => $cardFields]);
+        $upcomingDramas = $db->find('dramas', ['status' => 'Upcoming'], ['sort' => ['releaseDate' => 1], 'limit' => 10, 'fields' => $cardFields]);
 
         // Batch append subtitle summaries to all fetched drama lists
         $allDramas = [];
@@ -410,7 +408,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v9', $catalogData, 60);
+        \Utils\Cache::set('home_catalog_v10', $catalogData, 60);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);
