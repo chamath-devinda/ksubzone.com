@@ -4,8 +4,9 @@
 > Keep `nobleduringsurveillance.com` in `src/config/ads.js` and `public/ad-frame.html`.
 > The alternate `alwingulla.com` host returns a tracking wrapper instead of the
 > configured creatives, which makes the site's ad slots appear blank. Do not
-> replace this host or the `www.profitablecreativeformat.com` fallback unless the
-> publisher supplies and verifies a new official delivery host.
+> replace this host unless the publisher supplies and verifies a new official
+> delivery host. There is no local-house or second-provider fallback in the
+> Adsterra-only path.
 
 The monetization system is centralized in `src/config/ads.js`. Production ads are enabled by default only in production; local development renders labeled placeholders unless explicitly overridden.
 
@@ -13,7 +14,7 @@ The monetization system is centralized in `src/config/ads.js`. Production ads ar
 
 ```text
 NEXT_PUBLIC_ADS_ENABLED=true
-NEXT_PUBLIC_AD_MODE=HYBRID
+NEXT_PUBLIC_AD_MODE=ADSTERRA_ONLY
 NEXT_PUBLIC_ADSTERRA_ENABLED=true
 NEXT_PUBLIC_MONETAG_ENABLED=false
 NEXT_PUBLIC_BANNER_ADS_ENABLED=true
@@ -51,7 +52,7 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 
 ## Official provider code locations
 
-- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`, using the active `https://nobleduringsurveillance.com` delivery host and `https://www.profitablecreativeformat.com` fallback.
+- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`, using the active `https://nobleduringsurveillance.com` delivery host.
 - Monetag: no official Monetag code has been supplied. Keep `NEXT_PUBLIC_MONETAG_ENABLED=false`. When official code is available, paste only its exact script URLs into `providers.monetag.zones.multiTagScriptUrl`, `inPagePushScriptUrl`, and `onClickScriptUrl`. The OnClick URL is already connected to the guarded intrusive loader; MultiTag and In-Page Push remain inert placeholders until their exact official snippets and required initialization details are supplied.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.
@@ -60,7 +61,7 @@ Never place ad scripts in the root layout or individual page files. Add page pos
 
 - Admin, authentication, profile/account, static, 404, and error routes do not load ads.
 - Below-the-fold slots use lazy loading and reserve responsive space before loading.
-- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. The frames grant the provider the same-origin cookie access required by the official Adsterra runtime while retaining navigation and popup sandbox restrictions.
+- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. The frames grant the provider the same-origin cookie access required by the official Adsterra runtime while retaining navigation and popup sandbox restrictions. If the provider returns no creative, the same hardcoded Adsterra zone is retried with exponential backoff; no local house creative is substituted.
 - The intrusive loader chooses one provider. Adsterra popunder and Monetag OnClick therefore cannot run together.
 - A/B assignments persist in `localStorage` under `ksubzone_ad_variant`.
 - Provider initialization is centralized so a consent check can be added in `AdProvider` before any third-party script runs.

@@ -4,10 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAds } from './AdProvider';
 import AdFrame from './AdFrame';
 
-function buildAdFrameUrl(zoneName) {
+function buildAdFrameUrl(zoneName, retryAttempt = 0) {
   // A real same-origin frame URL preserves the publisher page as the referrer.
   // Ad networks reject `srcDoc` documents because they have an empty referrer.
-  return `/ad-frame.html?zone=${encodeURIComponent(zoneName)}`;
+  return `/ad-frame.html?zone=${encodeURIComponent(zoneName)}&retry=${retryAttempt}`;
 }
 
 function useMediaQuery(query) {
@@ -31,8 +31,9 @@ export default function AdSlot({ slotId, className = '' }) {
   const { config, pageType, resolvePlacement, emitAdEvent } = useAds();
   const placement = useMemo(() => resolvePlacement(slotId), [resolvePlacement, slotId]);
   const hostRef = useRef(null);
+  const retryTimerRef = useRef(null);
   const [adLoaded, setAdLoaded] = useState(false);
-  const [slotFailed, setSlotFailed] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [nearViewport, setNearViewport] = useState(false);
 
   const { matches: isDesktop, ready: desktopReady } = useMediaQuery('(min-width: 768px)');
@@ -70,7 +71,17 @@ export default function AdSlot({ slotId, className = '' }) {
 
   useEffect(() => {
     setAdLoaded(false);
-    setSlotFailed(false);
+    setRetryAttempt(0);
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
   }, [slotId, zoneName, pageType]);
 
   useEffect(() => {
@@ -89,14 +100,16 @@ export default function AdSlot({ slotId, className = '' }) {
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);
 
-  const source = useMemo(() => (zone && zoneName ? buildAdFrameUrl(zoneName) : ''), [zone, zoneName]);
+  const source = useMemo(
+    () => (zone && zoneName ? buildAdFrameUrl(zoneName, retryAttempt) : ''),
+    [retryAttempt, zone, zoneName]
+  );
 
   // Execute the official publisher Adsterra codes directly
   const canRender = Boolean(
     placement?.provider === 'adsterra'
     && zone
     && viewportAllowed
-    && !slotFailed
     && (!placement.lazy || nearViewport)
     && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled))
   );
@@ -110,19 +123,31 @@ export default function AdSlot({ slotId, className = '' }) {
 
   const renderedAd = canRender ? (
     <AdFrame
-      key={`${slotId}:${zoneName}`}
+      key={`${slotId}:${zoneName}:${retryAttempt}`}
       title={isNativePlacement ? 'Native advertisement' : isSidebar ? 'Sidebar advertisement' : 'Advertisement'}
       source={source}
       width={zone.width}
       height={isNativePlacement ? (zone.reservedHeight || 320) : zone.height}
       responsive={isNativePlacement}
       onLoad={() => {
+        if (retryTimerRef.current) {
+          clearTimeout(retryTimerRef.current);
+          retryTimerRef.current = null;
+        }
         setAdLoaded(true);
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
       onUnavailable={(reason) => {
-        setSlotFailed(true);
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
+        // Keep the real Adsterra slot mounted and retry with a cache-busted
+        // frame. Do not replace an unfilled provider slot with a local promo.
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+        const delay = Math.min(60_000, 5_000 * (2 ** Math.min(retryAttempt, 3)));
+        retryTimerRef.current = setTimeout(() => {
+          retryTimerRef.current = null;
+          setAdLoaded(false);
+          setRetryAttempt((attempt) => attempt + 1);
+        }, delay);
       }}
     />
   ) : null;
@@ -137,24 +162,6 @@ export default function AdSlot({ slotId, className = '' }) {
       : isSquare
         ? 'min-h-[250px]'
         : 'min-h-[66px] md:min-h-[106px]';
-
-  if (slotFailed) {
-    return (
-      <aside
-        ref={hostRef}
-        aria-label="KSubZone promotion"
-        data-ad-slot={slotId}
-        data-ad-fallback="true"
-        className={`mx-auto flex w-full max-w-5xl ${isSidebar ? 'max-w-[160px]' : ''} ${isSquare ? 'max-w-[300px]' : ''} flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-950/80 via-[#17112f] to-fuchsia-950/70 p-4 text-center ${reservationClass} ${className}`}
-      >
-        <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-violet-300">KSubZone</span>
-        <span className="text-xs font-semibold text-white">Fresh Sinhala subtitles & Korean dramas</span>
-        <a href="/search" className="mt-1 rounded-full border border-violet-300/30 bg-violet-500/20 px-3 py-1 text-[10px] font-bold text-violet-100 transition hover:bg-violet-500/40">
-          Explore now
-        </a>
-      </aside>
-    );
-  }
 
   return (
     <aside

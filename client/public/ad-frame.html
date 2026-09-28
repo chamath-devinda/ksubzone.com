@@ -24,7 +24,6 @@
       // creative. Some alternate delivery hosts return only a tracking
       // wrapper, which leaves the ad frame visibly blank.
       var host = 'https://nobleduringsurveillance.com';
-      var fallbackHost = 'https://www.profitablecreativeformat.com';
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
@@ -103,8 +102,7 @@
         // can discover the container while the document is being written.
         document.write(
           '<div id="container-' + zone.key + '" style="width:100%;min-height:280px"></div>' +
-          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" ' +
-            'onerror="this.onerror=null;this.src=\'' + fallbackHost + '/' + zone.key + '/invoke.js\';"><\/script>'
+          '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js"><\/script>'
         );
         return;
       }
@@ -122,7 +120,7 @@
           '};atOptions=window.atOptions;' +
         '<\/script>' +
         '<script type="text/javascript" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" ' +
-          'onerror="this.onerror=null;this.src=\'' + fallbackHost + '/' + zone.key + '/invoke.js\';"><\/script>'
+          '><\/script>'
       );
     }());
   </script>
