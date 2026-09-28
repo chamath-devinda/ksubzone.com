@@ -8,6 +8,26 @@ import GlassCard from '@/components/ui/GlassCard';
 import { Search as SearchIcon, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteContent';
 
+async function fetchCatalogResults(type, params) {
+  const query = new URLSearchParams({ type });
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      query.set(key, String(value));
+    }
+  });
+
+  const response = await fetch(`/search-data?${query.toString()}`, {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store'
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.message || `Search request failed (${response.status}).`);
+  }
+
+  return payload || {};
+}
+
 export default function Search() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -107,10 +127,10 @@ export default function Search() {
   }, [enableSmartSearch]);
 
   // Fetch search results
-  const fetchUrl = category === 'movie' ? '/api/media/movies' : '/api/media/dramas';
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['searchResults', category, status, debouncedSearchText, debouncedGenre, year, country, rating, sortBy, trendingOnly, isHistorical, page, isAiMode],
     staleTime: 1000 * 60 * 3, // 3 minutes cache for fast back-and-forth search
+    retry: 2,
     queryFn: async () => {
       // If AI mode is enabled and there is text, use the AI endpoint
       if (isAiMode && debouncedSearchText.trim().length > 2) {
@@ -142,12 +162,12 @@ export default function Search() {
 
       if (category === 'all') {
         const [moviesRes, dramasRes] = await Promise.all([
-          apiClient.get('/api/media/movies', { params }),
-          apiClient.get('/api/media/dramas', { params })
+          fetchCatalogResults('movies', params),
+          fetchCatalogResults('dramas', params)
         ]);
 
-        const movies = (moviesRes.data.movies || []).map(item => ({ ...item, _mediaType: 'movie' }));
-        const dramas = (dramasRes.data.dramas || []).map(item => ({ ...item, _mediaType: 'drama' }));
+        const movies = (moviesRes.movies || []).map(item => ({ ...item, _mediaType: 'movie' }));
+        const dramas = (dramasRes.dramas || []).map(item => ({ ...item, _mediaType: 'drama' }));
         const items = [...movies, ...dramas];
 
         if (sortBy === 'rating') {
@@ -164,16 +184,11 @@ export default function Search() {
 
         return {
           items,
-          totalPages: Math.max(moviesRes.data.totalPages || 1, dramasRes.data.totalPages || 1)
+          totalPages: Math.max(moviesRes.totalPages || 1, dramasRes.totalPages || 1)
         };
       }
 
-      const res = await apiClient.get(fetchUrl, {
-        params: {
-          ...params
-        }
-      });
-      return res.data;
+      return fetchCatalogResults(category === 'movie' ? 'movies' : 'dramas', params);
     }
   });
 
@@ -444,7 +459,19 @@ export default function Search() {
 
         {/* Results grid */}
         <div className="md:col-span-3 flex flex-col gap-6">
-          {isLoading ? (
+          {isError && !data ? (
+            <div role="alert" className="glass-panel p-8 sm:p-16 rounded-2xl sm:rounded-3xl border border-white/5 text-center">
+              <p className="text-sm font-bold text-slate-200">Search could not load right now.</p>
+              <p className="text-xs text-slate-500 mt-1">Please try again in a moment.</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="mt-4 rounded-lg bg-brand-primary px-4 py-2 text-xs font-bold text-white hover:bg-brand-primary/80"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-luxury-800 rounded-2xl animate-pulse border border-white/5" />
