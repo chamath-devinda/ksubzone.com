@@ -55,10 +55,12 @@ export default function GlassCard({ item, type, priority = false }) {
     return 'bg-slate-800/60 border-white/10 text-slate-300';
   };
 
+  // Card routes are prefetched on deliberate hover/touch, not all at once as
+  // the home-page grids enter the viewport.
   return (
     <Link 
       href={detailsUrl} 
-      prefetch={true}
+      prefetch={false}
       className={`block relative group w-full min-w-0 perspective-1000 select-none cursor-pointer ${isNavigating ? 'pointer-events-none' : ''}`} 
       onMouseEnter={triggerPrefetch}
       onPointerDown={triggerPrefetch}

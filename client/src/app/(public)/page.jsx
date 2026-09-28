@@ -90,17 +90,17 @@ export default async function HomePage() {
       tags: ['home', 'dramas', 'movies'],
       fallback: {},
     }),
-    fetchBackendJson('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=50', {
+    fetchBackendJson('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=10', {
       revalidate: 10,
       tags: ['home', 'movies'],
       fallback: { movies: [] },
     }),
-    fetchBackendJson('/api/media/dramas?status=Upcoming&sort=oldest&page=1&limit=50', {
+    fetchBackendJson('/api/media/dramas?status=Upcoming&sort=oldest&page=1&limit=10', {
       revalidate: 10,
       tags: ['home', 'dramas'],
       fallback: { dramas: [] },
     }),
-    fetchBackendJson('/api/media/dramas?status=Published&isHistorical=true&sort=rating&page=1&limit=50', {
+    fetchBackendJson('/api/media/dramas?status=Published&isHistorical=true&sort=rating&page=1&limit=10', {
       revalidate: 30,
       tags: ['home', 'dramas'],
       fallback: { dramas: [] },

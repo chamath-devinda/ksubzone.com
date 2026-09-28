@@ -52,15 +52,17 @@ export default function Home({
   const hasInitialCatalog = hasCatalogRows(initialHomeCatalog);
   const hasInitialMovies = hasListRows(initialLibraryMovies, 'movies');
   const hasInitialDramas = hasListRows(initialLibraryDramas, 'dramas');
+  const hasInitialUpcoming = Array.isArray(initialHomeCatalog.upcomingMovies)
+    && Array.isArray(initialHomeCatalog.upcomingDramas);
 
-  // Fetch combined Home Catalog data (single API request)
+  // The server provides the combined home snapshot and the two focused lists
+  // that can lag in its compact endpoint.
   const { data: homeCatalog = initialHomeCatalog, isLoading: homeCatalogLoading } = useQuery({
     queryKey: ['homeCatalog'],
     queryFn: async () => {
-      const [homeResponse, historicalDramasResponse, publishedMoviesResponse] =
-        await Promise.all([
-          apiClient.get('/api/media/home'),
-          fetch('/search-data?type=dramas&status=Published&isHistorical=true&sort=rating&page=1&limit=50', {
+      const [homeResponse, historicalDramasResponse, publishedMoviesResponse] = await Promise.all([
+        apiClient.get('/api/media/home'),
+        fetch('/search-data?type=dramas&status=Published&isHistorical=true&sort=rating&page=1&limit=10', {
             headers: { Accept: 'application/json' },
             cache: 'no-store'
           })
@@ -86,9 +88,10 @@ export default function Home({
       };
     },
     initialData: hasInitialCatalog ? initialHomeCatalog : undefined,
-    // The server snapshot renders instantly; silently reconcile catalog changes in the background
-    staleTime: 10_000,
-    refetchOnMount: 'always',
+    // The server snapshot already contains the public lists. Avoid re-fetching
+    // the same catalog immediately on every full page load.
+    staleTime: 30_000,
+    refetchOnMount: true,
     retry: 2
   });
 
@@ -99,8 +102,8 @@ export default function Home({
     queryKey: ['homeUpcomingCatalog'],
     queryFn: async () => {
       const [moviesRes, dramasRes] = await Promise.all([
-        apiClient.get('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=50'),
-        apiClient.get('/api/media/dramas?status=Upcoming&sort=oldest&page=1&limit=50')
+        apiClient.get('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=10'),
+        apiClient.get('/api/media/dramas?status=Upcoming&sort=oldest&page=1&limit=10')
       ]);
 
       return {
@@ -108,8 +111,12 @@ export default function Home({
         upcomingDramas: dramasRes.data?.dramas || []
       };
     },
-    staleTime: 10_000,
-    refetchOnMount: 'always',
+    initialData: hasInitialUpcoming ? {
+      upcomingMovies: initialHomeCatalog.upcomingMovies,
+      upcomingDramas: initialHomeCatalog.upcomingDramas
+    } : undefined,
+    staleTime: 30_000,
+    refetchOnMount: true,
     retry: 2
   });
 
