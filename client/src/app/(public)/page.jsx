@@ -1,6 +1,6 @@
 import React from 'react';
 import Home from '@/features/media/pages/Home';
-import { compactHomeCatalog } from '@/utils/mediaCatalog';
+import { compactCatalogItems, compactHomeCatalog, mergeCatalogItems } from '@/utils/mediaCatalog';
 import {
   SITE_URL,
   normalizeBrandName,
@@ -73,13 +73,36 @@ export default async function HomePage() {
   // site settings before it can start loading the catalog.
   const siteContentPromise = getServerSiteContent();
   
-  const catalogRes = await fetchBackendJson('/api/media/home', {
-    revalidate: 30,
-    tags: ['home', 'dramas', 'movies'],
-    fallback: {},
-  });
+  const [catalogRes, upcomingMoviesRes, upcomingDramasRes] = await Promise.all([
+    fetchBackendJson('/api/media/home', {
+      revalidate: 30,
+      tags: ['home', 'dramas', 'movies'],
+      fallback: {},
+    }),
+    fetchBackendJson('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=50', {
+      revalidate: 10,
+      tags: ['home', 'movies'],
+      fallback: { movies: [] },
+    }),
+    fetchBackendJson('/api/media/dramas?status=Upcoming&sort=oldest&page=1&limit=50', {
+      revalidate: 10,
+      tags: ['home', 'dramas'],
+      fallback: { dramas: [] },
+    }),
+  ]);
 
-  initialHomeCatalog = compactHomeCatalog(catalogRes);
+  const compactCatalog = compactHomeCatalog(catalogRes);
+  initialHomeCatalog = {
+    ...compactCatalog,
+    upcomingMovies: mergeCatalogItems(
+      compactCatalog.upcomingMovies,
+      compactCatalogItems(upcomingMoviesRes?.movies)
+    ),
+    upcomingDramas: mergeCatalogItems(
+      compactCatalog.upcomingDramas,
+      compactCatalogItems(upcomingDramasRes?.dramas)
+    ),
+  };
   // Home already contains the same view-ranked records. Reuse them instead
   // of making two more server requests and embedding duplicate JSON.
   initialLibraryMovies = {

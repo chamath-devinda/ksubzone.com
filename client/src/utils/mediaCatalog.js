@@ -58,6 +58,28 @@ export function compactCatalogItems(items, includeSynopsis = false) {
     : [];
 }
 
+export function mergeCatalogItems(...collections) {
+  const merged = new Map();
+
+  collections.forEach((items) => {
+    if (!Array.isArray(items)) return;
+
+    items.forEach((item, index) => {
+      if (!item || typeof item !== 'object') return;
+
+      const identity = item._id
+        ? `id:${String(item._id)}`
+        : item.slug
+          ? `slug:${String(item.slug)}`
+          : `fallback:${String(item.title || '')}:${String(item.releaseDate || '')}:${index}`;
+      const current = merged.get(identity);
+      merged.set(identity, current ? { ...current, ...item } : item);
+    });
+  });
+
+  return Array.from(merged.values());
+}
+
 export function compactHomeCatalog(catalog = {}) {
   return {
     latestMovies: compactCatalogItems(catalog.latestMovies, true),

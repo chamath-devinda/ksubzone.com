@@ -11,6 +11,7 @@ import { useSiteContent } from '@/hooks/useSiteContent';
 import AdSlot from '@/components/ads/AdSlot';
 import StickyAnchorAd from '@/components/ads/StickyAnchorAd';
 import SideAdLayout from '@/components/ads/SideAdLayout';
+import { mergeCatalogItems } from '@/utils/mediaCatalog';
 import { 
   Film, Tv, Send,
   Flame, Star, Calendar, Compass, 
@@ -23,6 +24,20 @@ function hasCatalogRows(catalog) {
 
 function hasListRows(payload, key) {
   return Array.isArray(payload?.[key]) && payload[key].length > 0;
+}
+
+function releaseTimestamp(value) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+
+  const text = String(value).trim();
+  const dayFirst = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dayFirst) {
+    const [, day, month, year] = dayFirst;
+    return Date.UTC(Number(year), Number(month) - 1, Number(day));
+  }
+
+  const timestamp = Date.parse(text);
+  return Number.isFinite(timestamp) ? timestamp : Number.MAX_SAFE_INTEGER;
 }
 
 export default function Home({ 
@@ -47,6 +62,27 @@ export default function Home({
     },
     initialData: hasInitialCatalog ? initialHomeCatalog : undefined,
     // The server snapshot renders instantly; silently reconcile catalog changes in the background
+    staleTime: 10_000,
+    refetchOnMount: 'always',
+    retry: 2
+  });
+
+  // The compact home endpoint can temporarily lag behind newly saved admin
+  // records. Read the authoritative Upcoming lists as well and merge them into
+  // the home row so the section always has the newest ten available titles.
+  const { data: upcomingCatalog = {} } = useQuery({
+    queryKey: ['homeUpcomingCatalog'],
+    queryFn: async () => {
+      const [moviesRes, dramasRes] = await Promise.all([
+        apiClient.get('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=50'),
+        apiClient.get('/api/media/dramas?status=Upcoming&sort=oldest&page=1&limit=50')
+      ]);
+
+      return {
+        upcomingMovies: moviesRes.data?.movies || [],
+        upcomingDramas: dramasRes.data?.dramas || []
+      };
+    },
     staleTime: 10_000,
     refetchOnMount: 'always',
     retry: 2
@@ -127,11 +163,20 @@ export default function Home({
       .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
       .slice(0, 10);
 
+    const upcomingDramas = mergeCatalogItems(
+      homeCatalog.upcomingDramas,
+      upcomingCatalog.upcomingDramas
+    );
+    const upcomingMovies = mergeCatalogItems(
+      homeCatalog.upcomingMovies,
+      upcomingCatalog.upcomingMovies
+    );
     const upcomingTitles = [
-      ...withType(homeCatalog.upcomingDramas, 'drama'),
-      ...withType(homeCatalog.upcomingMovies, 'movie')
+      ...withType(upcomingDramas, 'drama'),
+      ...withType(upcomingMovies, 'movie')
     ]
-      .sort((a, b) => new Date(a.releaseDate || 0) - new Date(b.releaseDate || 0))
+      .filter((item) => item.status === 'Upcoming')
+      .sort((a, b) => releaseTimestamp(a.releaseDate) - releaseTimestamp(b.releaseDate))
       .slice(0, 10);
 
     return [
@@ -182,7 +227,7 @@ export default function Home({
         items: historicalTitles
       }
     ];
-  }, [homeCatalog, homeCatalogLoading]);
+  }, [homeCatalog, homeCatalogLoading, upcomingCatalog]);
 
   const movies = (moviesData?.movies || []).map(item => ({ ...item, mediaType: 'movie' }));
   const dramas = (dramasData?.dramas || []).map(item => ({ ...item, mediaType: 'drama' }));
