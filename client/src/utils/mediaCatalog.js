@@ -80,6 +80,25 @@ export function mergeCatalogItems(...collections) {
   return Array.from(merged.values());
 }
 
+function catalogText(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => typeof item === 'string' ? item : item?.name || '')
+      .join(' ');
+  }
+  return typeof value === 'string' ? value : '';
+}
+
+export function isHistoricalMovie(item) {
+  if (item?.status !== 'Published') return false;
+  if (item.isHistorical === true) return true;
+
+  const metadata = [item.title, item.originalTitle, item.keywords, item.genres, item.genre]
+    .map(catalogText)
+    .join(' ');
+  return /\b(?:historical|sageuk|joseon|goryeo|dynasty|period[\s-]+drama|costume[\s-]+drama|coup[\s-]+d['’]?etat)\b/i.test(metadata);
+}
+
 export function compactHomeCatalog(catalog = {}) {
   return {
     latestMovies: compactCatalogItems(catalog.latestMovies, true),

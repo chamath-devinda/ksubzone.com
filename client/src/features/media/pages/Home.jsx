@@ -11,7 +11,7 @@ import { useSiteContent } from '@/hooks/useSiteContent';
 import AdSlot from '@/components/ads/AdSlot';
 import StickyAnchorAd from '@/components/ads/StickyAnchorAd';
 import SideAdLayout from '@/components/ads/SideAdLayout';
-import { mergeCatalogItems } from '@/utils/mediaCatalog';
+import { isHistoricalMovie, mergeCatalogItems } from '@/utils/mediaCatalog';
 import { 
   Film, Tv, Send,
   Flame, Star, Calendar, Compass, 
@@ -57,8 +57,33 @@ export default function Home({
   const { data: homeCatalog = initialHomeCatalog, isLoading: homeCatalogLoading } = useQuery({
     queryKey: ['homeCatalog'],
     queryFn: async () => {
-      const res = await apiClient.get('/api/media/home');
-      return res.data;
+      const [homeResponse, historicalDramasResponse, publishedMoviesResponse] =
+        await Promise.all([
+          apiClient.get('/api/media/home'),
+          fetch('/search-data?type=dramas&status=Published&isHistorical=true&sort=rating&page=1&limit=50', {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store'
+          })
+            .then((response) => response.ok ? response.json() : null)
+            .catch(() => null),
+          fetch('/search-data?type=movies&status=Published&sort=rating&page=1&limit=50', {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store'
+          })
+            .then((response) => response.ok ? response.json() : null)
+            .catch(() => null)
+        ]);
+      return {
+        ...homeResponse.data,
+        historicalDramas: mergeCatalogItems(
+          homeResponse.data?.historicalDramas,
+          historicalDramasResponse?.dramas
+        ),
+        historicalMovies: mergeCatalogItems(
+          homeResponse.data?.historicalMovies,
+          publishedMoviesResponse?.movies?.filter(isHistoricalMovie)
+        )
+      };
     },
     initialData: hasInitialCatalog ? initialHomeCatalog : undefined,
     // The server snapshot renders instantly; silently reconcile catalog changes in the background
@@ -142,9 +167,16 @@ export default function Home({
       })
       .slice(0, 10);
     
+    const historicalMovies = mergeCatalogItems(
+      homeCatalog.historicalMovies,
+      homeCatalog.latestMovies,
+      homeCatalog.trendingMovies
+    ).filter(isHistoricalMovie);
+    const historicalDramas = (homeCatalog.historicalDramas || [])
+      .filter((item) => item.status === 'Published');
     const historicalTitles = [
-      ...withType(homeCatalog.historicalDramas, 'drama'),
-      ...withType(homeCatalog.historicalMovies, 'movie')
+      ...withType(historicalDramas, 'drama'),
+      ...withType(historicalMovies, 'movie')
     ]
       .sort((a, b) => (b.imdbRating || b.tmdbRating || 0) - (a.imdbRating || a.tmdbRating || 0))
       .slice(0, 10);

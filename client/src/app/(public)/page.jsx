@@ -1,6 +1,11 @@
 import React from 'react';
 import Home from '@/features/media/pages/Home';
-import { compactCatalogItems, compactHomeCatalog, mergeCatalogItems } from '@/utils/mediaCatalog';
+import {
+  compactCatalogItems,
+  compactHomeCatalog,
+  isHistoricalMovie,
+  mergeCatalogItems,
+} from '@/utils/mediaCatalog';
 import {
   SITE_URL,
   normalizeBrandName,
@@ -73,7 +78,13 @@ export default async function HomePage() {
   // site settings before it can start loading the catalog.
   const siteContentPromise = getServerSiteContent();
   
-  const [catalogRes, upcomingMoviesRes, upcomingDramasRes] = await Promise.all([
+  const [
+    catalogRes,
+    upcomingMoviesRes,
+    upcomingDramasRes,
+    historicalDramasRes,
+    publishedMoviesRes,
+  ] = await Promise.all([
     fetchBackendJson('/api/media/home', {
       revalidate: 30,
       tags: ['home', 'dramas', 'movies'],
@@ -89,11 +100,29 @@ export default async function HomePage() {
       tags: ['home', 'dramas'],
       fallback: { dramas: [] },
     }),
+    fetchBackendJson('/api/media/dramas?status=Published&isHistorical=true&sort=rating&page=1&limit=50', {
+      revalidate: 30,
+      tags: ['home', 'dramas'],
+      fallback: { dramas: [] },
+    }),
+    fetchBackendJson('/api/media/movies?status=Published&sort=rating&page=1&limit=50', {
+      revalidate: 30,
+      tags: ['home', 'movies'],
+      fallback: { movies: [] },
+    }),
   ]);
 
   const compactCatalog = compactHomeCatalog(catalogRes);
   initialHomeCatalog = {
     ...compactCatalog,
+    historicalDramas: mergeCatalogItems(
+      compactCatalog.historicalDramas,
+      compactCatalogItems(historicalDramasRes?.dramas)
+    ),
+    historicalMovies: mergeCatalogItems(
+      compactCatalog.historicalMovies,
+      compactCatalogItems(publishedMoviesRes?.movies?.filter(isHistoricalMovie))
+    ),
     upcomingMovies: mergeCatalogItems(
       compactCatalog.upcomingMovies,
       compactCatalogItems(upcomingMoviesRes?.movies)
