@@ -131,7 +131,8 @@ export default function Home({
       ...withType(homeCatalog.upcomingDramas, 'drama'),
       ...withType(homeCatalog.upcomingMovies, 'movie')
     ]
-      .sort((a, b) => new Date(a.releaseDate || 0) - new Date(b.releaseDate || 0));
+      .sort((a, b) => new Date(a.releaseDate || 0) - new Date(b.releaseDate || 0))
+      .slice(0, 10);
 
     return [
       {

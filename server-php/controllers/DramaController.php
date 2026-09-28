@@ -921,7 +921,7 @@ class DramaController {
         self::bumpDramaUpdatedAt($dramaId);
 
         // Invalidate cache and trigger revalidation
-        \Utils\Cache::delete('home_catalog_v10');
+        \Utils\Cache::delete('home_catalog_v11');
         \Utils\Cache::delete('home_catalog');
         \Utils\Cache::delete("drama_detail_" . $dramaId);
         \Utils\Cache::flush();
@@ -956,7 +956,7 @@ class DramaController {
         }
 
         // Invalidate cache and trigger revalidation
-        \Utils\Cache::delete('home_catalog_v10');
+        \Utils\Cache::delete('home_catalog_v11');
         \Utils\Cache::delete('home_catalog');
         if ($episode && !empty($episode['dramaId'])) {
             \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);
@@ -1022,7 +1022,7 @@ class DramaController {
         }
 
         // Invalidate cache and trigger revalidation
-        \Utils\Cache::delete('home_catalog_v10');
+        \Utils\Cache::delete('home_catalog_v11');
         \Utils\Cache::delete('home_catalog');
         if ($episode && !empty($episode['dramaId'])) {
             \Utils\Cache::delete("drama_detail_" . $episode['dramaId']);

@@ -563,6 +563,7 @@ class TmdbController {
             }
 
             // Invalidate cache and trigger revalidation
+            \Utils\Cache::delete('home_catalog_v11');
             \Utils\Cache::delete('home_catalog');
             \Utils\Revalidate::path('/');
             if ($media && !empty($media['slug'])) {

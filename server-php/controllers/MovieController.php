@@ -219,7 +219,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v10');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v11');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -408,7 +408,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v10', $catalogData, 60);
+        \Utils\Cache::set('home_catalog_v11', $catalogData, 60);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);

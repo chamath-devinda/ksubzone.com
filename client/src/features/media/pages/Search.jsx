@@ -29,7 +29,10 @@ export default function Search() {
   const enableSmartSearch = content?.ai?.enableSmartSearch !== false;
   
   const initialQuery = searchParams.get('q') || '';
-  const initialCategory = searchParams.get('category') || 'drama';
+  // Navbar searches are intended to cover the complete catalog. A category
+  // is still respected when it is explicitly provided in the URL.
+  const initialCategory = searchParams.get('category') || 'all';
+  const initialStatus = searchParams.get('status') || '';
   const initialGenre = searchParams.get('genre') || '';
   const initialYear = searchParams.get('year') || '';
   const initialCountry = searchParams.get('country') || '';
@@ -40,6 +43,7 @@ export default function Search() {
   const [searchText, setSearchText] = useState(initialQuery);
   const [debouncedSearchText, setDebouncedSearchText] = useState(initialQuery);
   const [category, setCategory] = useState(initialCategory); // all, drama or movie
+  const status = initialStatus;
   const [genre, setGenre] = useState(initialGenre);
   const [debouncedGenre, setDebouncedGenre] = useState(initialGenre);
   const [year, setYear] = useState(initialYear);
@@ -70,6 +74,7 @@ export default function Search() {
   }, [
     initialQuery,
     initialCategory,
+    initialStatus,
     initialGenre,
     initialYear,
     initialCountry,
@@ -104,7 +109,7 @@ export default function Search() {
   // Fetch search results
   const fetchUrl = category === 'movie' ? '/api/media/movies' : '/api/media/dramas';
   const { data, isLoading } = useQuery({
-    queryKey: ['searchResults', category, debouncedSearchText, debouncedGenre, year, country, rating, sortBy, trendingOnly, isHistorical, page, isAiMode],
+    queryKey: ['searchResults', category, status, debouncedSearchText, debouncedGenre, year, country, rating, sortBy, trendingOnly, isHistorical, page, isAiMode],
     staleTime: 1000 * 60 * 3, // 3 minutes cache for fast back-and-forth search
     queryFn: async () => {
       // If AI mode is enabled and there is text, use the AI endpoint
@@ -127,6 +132,7 @@ export default function Search() {
         year: year || undefined,
         country: country || undefined,
         rating: rating || undefined,
+        status: status || undefined,
         sort: sortBy,
         trending: trendingOnly ? 'true' : undefined,
         isHistorical: isHistorical ? 'true' : undefined,
@@ -184,6 +190,7 @@ export default function Search() {
     setSearchParams({
       ...(searchText ? { q: searchText } : {}),
       ...(category !== 'drama' ? { category } : {}),
+      ...(status ? { status } : {}),
       ...(genre ? { genre } : {}),
       ...(year ? { year } : {}),
       ...(country ? { country } : {}),
@@ -199,7 +206,7 @@ export default function Search() {
   const handleReset = () => {
     setSearchText('');
     setDebouncedSearchText('');
-    setCategory('drama');
+    setCategory('all');
     setGenre('');
     setDebouncedGenre('');
     setYear('');
@@ -220,6 +227,7 @@ export default function Search() {
     setSearchParams({
       ...(searchText ? { q: searchText } : {}),
       ...(nextCategory !== 'drama' ? { category: nextCategory } : {}),
+      ...(status ? { status } : {}),
       ...(genre ? { genre } : {}),
       ...(year ? { year } : {}),
       ...(country ? { country } : {}),
