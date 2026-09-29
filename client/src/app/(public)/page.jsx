@@ -16,6 +16,11 @@ import {
 import { fetchBackendJson } from '@/lib/server/backend';
 import { getServerSiteContent } from '@/lib/server/siteContent';
 
+// Render the document on request so a build-time API outage can never bake an
+// empty homepage into the deployment. The catalog fetches below remain cached
+// individually through their explicit `revalidate` settings.
+export const revalidate = 0;
+
 const absoluteAssetUrl = (value, fallback) => {
   try {
     return new URL(value || fallback, `${SITE_URL}/`).toString();
@@ -88,7 +93,7 @@ export default async function HomePage() {
     fetchBackendJson('/api/media/home', {
       revalidate: 30,
       tags: ['home', 'dramas', 'movies'],
-      fallback: {},
+      notFoundStatuses: [],
     }),
     fetchBackendJson('/api/media/movies?status=Upcoming&sort=oldest&page=1&limit=10', {
       revalidate: 10,

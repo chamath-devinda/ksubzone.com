@@ -29,9 +29,9 @@ export const metadata = {
 async function getSitemapCatalog() {
   try {
     const [catalog, genresRes, articlesRes] = await Promise.all([
-      fetchBackendJson('/api/media/sitemap-catalog', {
+      fetchBackendJson('/api/media/sitemap-catalog?version=3', {
         revalidate: 3600,
-        tags: ['sitemap', 'dramas', 'movies', 'episodes'],
+        tags: ['sitemap-catalog-v3', 'dramas', 'movies', 'episodes'],
       }),
       fetchBackendJson('/api/media/genres', {
         revalidate: 3600,

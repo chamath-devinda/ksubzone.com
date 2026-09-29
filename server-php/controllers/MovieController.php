@@ -737,7 +737,7 @@ class MovieController {
     }
 
     public static function getSitemapCatalog() {
-        $cached = \Utils\Cache::get('sitemap_catalog_v2');
+        $cached = \Utils\Cache::get('sitemap_catalog_v3');
         if ($cached !== false) {
             header('Content-Type: application/json');
             echo json_encode($cached);
@@ -767,6 +767,20 @@ class MovieController {
         $allEpisodes = $db->find('episodes', [], [
             'fields' => ['_id', 'dramaId', 'seasonId', 'episodeNumber', 'updatedAt', 'createdAt']
         ]);
+        $episodeIds = array_values(array_filter(array_map(function($episode) {
+            return $episode['_id'] ?? null;
+        }, $allEpisodes)));
+        $approvedEpisodeSubtitles = empty($episodeIds) ? [] : $db->find('subtitles', [
+            'mediaId' => ['$in' => $episodeIds],
+            'approvalStatus' => 'Approved'
+        ], [
+            'fields' => ['mediaId']
+        ]);
+        $episodesWithApprovedSubtitles = [];
+        foreach ($approvedEpisodeSubtitles as $subtitle) {
+            $mediaId = (string)($subtitle['mediaId'] ?? '');
+            if ($mediaId !== '') $episodesWithApprovedSubtitles[$mediaId] = true;
+        }
 
         $dramaMap = [];
         foreach ($dramas as $drama) {
@@ -780,6 +794,11 @@ class MovieController {
         $episodeUrls = [];
         $seenEpisodeUrls = [];
         foreach ($allEpisodes as $episode) {
+            // Pending episodes have no subtitle download yet and duplicate the
+            // parent drama page. Keep them out of the indexable URL set until
+            // an approved subtitle makes the episode page useful to searchers.
+            if (!isset($episodesWithApprovedSubtitles[(string)($episode['_id'] ?? '')])) continue;
+
             $drama = $dramaMap[(string)($episode['dramaId'] ?? '')] ?? null;
             $season = $seasonMap[(string)($episode['seasonId'] ?? '')] ?? null;
             if (!$drama || !$season) continue;
@@ -821,7 +840,7 @@ class MovieController {
             'episodes' => $episodeUrls
         ];
 
-        \Utils\Cache::set('sitemap_catalog_v2', $payload, 3600);
+        \Utils\Cache::set('sitemap_catalog_v3', $payload, 3600);
         header('Content-Type: application/json');
         echo json_encode($payload);
     }

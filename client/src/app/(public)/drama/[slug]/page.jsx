@@ -81,15 +81,10 @@ export async function generateMetadata({ params }) {
 
 export default async function DramaDetailPage({ params }) {
   const { slug } = params;
-  let initialData;
-  try {
-    initialData = await getDrama(slug);
-  } catch (error) {
-    console.error('Drama detail prefetch failed; handing off to client retry:', error);
-    // Let the client query retry the public endpoint. This keeps a transient
-    // origin/CDN failure from replacing the whole portal with the root error UI.
-    return <Detail type="Drama" />;
-  }
+  // Do not return a client-only loading shell on server-fetch errors. Let the
+  // request fail temporarily (5xx) so crawlers retry instead of indexing an
+  // apparently successful but content-empty drama page.
+  const initialData = await getDrama(slug);
   const media = initialData?.drama;
   if (!media) notFound();
 

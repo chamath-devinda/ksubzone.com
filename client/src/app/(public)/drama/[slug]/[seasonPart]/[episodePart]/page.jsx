@@ -35,6 +35,9 @@ export async function generateMetadata({ params }) {
       const activeEpisodeDoc = episodes.find(
         ep => getId(ep.seasonId) === getId(activeSeasonDoc?._id) && ep.episodeNumber === episodeNumber
       );
+      const activeEpisodeId = getId(activeEpisodeDoc?._id);
+      const hasApprovedSubtitle = Number(activeEpisodeDoc?.subtitleCount || 0) > 0
+        || (data?.episodeSubtitles || []).some(subtitle => getId(subtitle?.mediaId) === activeEpisodeId);
 
       if (drama && activeEpisodeDoc) {
         const titleStr = `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')}${activeEpisodeDoc.episodeTitle ? ` "${activeEpisodeDoc.episodeTitle}"` : ''} Sinhala Subtitles | KSubZone`;
@@ -45,6 +48,7 @@ export async function generateMetadata({ params }) {
           alternates: {
             canonical: canonicalUrl,
           },
+          ...(hasApprovedSubtitle ? {} : { robots: { index: false, follow: true } }),
           openGraph: {
             title: `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')} Subtitles`,
             description: activeEpisodeDoc.episodeDescription,

@@ -4,11 +4,14 @@ import { Grid, Film, Tv, Sparkles } from 'lucide-react';
 import AdSlot from '@/components/ads/AdSlot';
 import { fetchBackendJson } from '@/lib/server/backend';
 
+// Keep generated HTML request-time while caching the genre data independently.
+export const revalidate = 0;
+
 async function getGenresData() {
   return fetchBackendJson('/api/media/genres', {
     revalidate: 30,
     tags: ['genres'],
-    fallback: [],
+    notFoundStatuses: [],
   });
 }
 

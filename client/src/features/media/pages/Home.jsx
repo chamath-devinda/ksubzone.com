@@ -315,9 +315,9 @@ export default function Home({
       </div>
 
       <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center" aria-labelledby="site-introduction-title">
-        <h2 id="site-introduction-title" className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white font-display">
+        <h1 id="site-introduction-title" className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white font-display">
           KSubZone - Sinhala Subtitles for Korean Dramas & Movies
-        </h2>
+        </h1>
         <p className="mx-auto mt-3 max-w-3xl text-xs sm:text-sm md:text-base leading-relaxed text-slate-300">
           Download 100% free, synchronized Sinhala (<span className="text-brand-primary font-bold">සිංහල උපසිරැසි</span>) and English subtitles in SRT, VTT, and ASS formats. Explore trending K-Dramas, blockbuster movies, episode schedules, and verified downloads.
         </p>

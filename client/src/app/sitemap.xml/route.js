@@ -58,9 +58,9 @@ function deduplicateEntries(entries) {
  */
 async function buildSitemapXml() {
   const [catalog, articleData, genres] = await Promise.all([
-    fetchBackendJson('/api/media/sitemap-catalog', {
+    fetchBackendJson('/api/media/sitemap-catalog?version=3', {
       revalidate: 3600,
-      tags: ['sitemap', 'dramas', 'movies', 'episodes'],
+      tags: ['sitemap-catalog-v3', 'dramas', 'movies', 'episodes'],
     }),
     fetchBackendJson('/api/articles?status=Published&limit=500', {
       revalidate: 3600,

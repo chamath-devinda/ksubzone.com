@@ -79,13 +79,9 @@ export async function generateMetadata({ params }) {
 
 export default async function MovieDetailPage({ params }) {
   const { slug } = params;
-  let initialData;
-  try {
-    initialData = await getMovie(slug);
-  } catch (error) {
-    console.error('Movie detail prefetch failed; handing off to client retry:', error);
-    return <Detail type="Movie" />;
-  }
+  // Never turn a server-side API outage into a 200 response containing only a
+  // client-side loading state; a thrown fetch error produces a retryable 5xx.
+  const initialData = await getMovie(slug);
   const media = initialData?.movie;
   if (!media) notFound();
 

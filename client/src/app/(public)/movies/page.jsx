@@ -6,7 +6,9 @@ import { permalinkSlug } from '@/utils/slug';
 import { buildBreadcrumbSchema, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 import { fetchBackendJson } from '@/lib/server/backend';
 
-export const revalidate = 60;
+// Keep the HTML render request-time while caching the catalog fetch itself.
+// This avoids publishing an empty build-time snapshot if the API is unavailable.
+export const revalidate = 0;
 
 export function generateMetadata({ searchParams }) {
   const page = Number(searchParams?.page) || 1;
@@ -42,7 +44,7 @@ export default async function MoviesPage({ searchParams }) {
 
   const initialData = await fetchBackendJson(
     `/api/media/movies?status=Published&sort=popular&page=${page}&limit=${limit}`,
-    { revalidate: 10, tags: ['movies'] },
+    { revalidate: 10, tags: ['movies'], notFoundStatuses: [] },
   );
   initialData.movies = compactCatalogItems(initialData.movies);
 
