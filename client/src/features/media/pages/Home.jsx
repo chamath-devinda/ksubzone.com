@@ -14,7 +14,7 @@ import SideAdLayout from '@/components/ads/SideAdLayout';
 import { isHistoricalMovie, mergeCatalogItems } from '@/utils/mediaCatalog';
 import { 
   Film, Tv, Send,
-  Flame, Star, Calendar, Compass, 
+  Flame, Eye, Star, Calendar, Compass,
   Layers, Filter, RefreshCw, ArrowRight
 } from 'lucide-react';
 
@@ -128,6 +128,14 @@ export default function Home({
       .slice(0, 10);
   }, [homeCatalog.latestMovies, homeCatalog.latestDramas]);
 
+  const trendingTickerItems = React.useMemo(() => [
+    ...(homeCatalog.selectedTrendingDramas || []).map((item) => ({ ...item, mediaType: 'drama' })),
+    ...(homeCatalog.selectedTrendingMovies || []).map((item) => ({ ...item, mediaType: 'movie' }))
+  ]
+    .filter((item) => item.status === 'Published')
+    .sort((a, b) => (Number(b.viewCount) || 0) - (Number(a.viewCount) || 0))
+    .slice(0, 10), [homeCatalog.selectedTrendingDramas, homeCatalog.selectedTrendingMovies]);
+
   const categoryRowsLoading = homeCatalogLoading;
 
   // Fetch Library Movies (reactive to sort and country)
@@ -221,11 +229,11 @@ export default function Home({
     return [
       {
         id: 'trending',
-        title: 'Trending Now',
-        description: 'Most popular Korean titles this week across the platform.',
-        icon: Flame,
-        iconColor: 'text-rose-500',
-        badge: 'HOT',
+        title: 'Most Viewed',
+        description: 'The most-viewed Korean dramas and movies on KSubZone.',
+        icon: Eye,
+        iconColor: 'text-brand-primary',
+        badge: 'TOP 10',
         link: '/search?category=all&trending=true&sort=views',
         items: trendingTitles.length > 0 ? trendingTitles : popularTitles
       },
@@ -341,6 +349,42 @@ export default function Home({
       {/* Main Page Content Container */}
       <SideAdLayout slotPrefix="home">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full flex flex-col gap-12 sm:gap-16 mt-2 sm:mt-4">
+
+        {trendingTickerItems.length > 0 && (
+          <section className="home-trending-section" aria-labelledby="home-trending-heading">
+            <div className="home-trending-header">
+              <h2 id="home-trending-heading" className="flex items-center gap-2.5 text-xl sm:text-2xl font-black tracking-tight text-white font-display">
+                <span className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-1.5 text-rose-400">
+                  <Flame className="h-5 w-5" aria-hidden="true" />
+                </span>
+                Trending Now
+              </h2>
+            </div>
+            <div className="home-trending-viewport" role="region" aria-label="Top 10 trending movie and drama cards">
+              <div className="home-trending-track">
+                {[false, true].map((isDuplicate) => (
+                  <div
+                    key={isDuplicate ? 'duplicate' : 'primary'}
+                    className="home-trending-group"
+                    aria-hidden={isDuplicate || undefined}
+                  >
+                    {trendingTickerItems.map((item, index) => (
+                      <div className="home-trending-card" key={`${item.mediaType}-${item._id || item.slug || item.title}-${index}`}>
+                        {!isDuplicate && <span className="home-trending-rank">#{index + 1}</span>}
+                        <GlassCard
+                          item={item}
+                          type={item.mediaType}
+                          prefetchOnHover={false}
+                          tabIndex={isDuplicate ? -1 : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
         
         {/* Curated Category Rows */}
         <section className="flex flex-col gap-10 sm:gap-14 border-t border-white/[0.07] pt-9 sm:pt-12">

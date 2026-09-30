@@ -9,7 +9,7 @@ import { permalinkSlug } from '@/utils/slug';
 import { getMediaImage, imageFallbackFor } from '@/utils/mediaImages';
 import { formatTimeAgo } from '@/utils/timeAgo';
 
-export default function GlassCard({ item, type, priority = false }) {
+export default function GlassCard({ item, type, priority = false, prefetchOnHover = true, tabIndex }) {
   const mediaType = type || (item.seasons ? 'drama' : 'movie');
   const detailsUrl = `/${mediaType}/${permalinkSlug(item)}`;
   const rating = item.imdbRating || item.tmdbRating || 0;
@@ -61,8 +61,9 @@ export default function GlassCard({ item, type, priority = false }) {
     <Link 
       href={detailsUrl} 
       prefetch={false}
+      tabIndex={tabIndex}
       className={`block relative group w-full min-w-0 perspective-1000 select-none cursor-pointer ${isNavigating ? 'pointer-events-none' : ''}`} 
-      onMouseEnter={triggerPrefetch}
+      onMouseEnter={prefetchOnHover ? triggerPrefetch : undefined}
       onPointerDown={triggerPrefetch}
       onTouchStart={triggerPrefetch}
       onClick={handleClick}

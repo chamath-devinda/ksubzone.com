@@ -339,7 +339,7 @@ export default function DramaManager() {
       slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || undefined,
       releaseDate: releaseDate ? releaseDate : null,
       runtime: Number(runtime), country, language, director, trailer,
-      tmdbRating: Number(tmdbRating), imdbRating: Number(imdbRating), status, isHistorical
+      tmdbRating: Number(tmdbRating), imdbRating: Number(imdbRating), status, isTrending, isHistorical
     };
 
     try {
@@ -870,6 +870,18 @@ export default function DramaManager() {
                       className="rounded border-white/20 bg-[#08090D] text-violet-600 focus:ring-0"
                     />
                     <span>Mark as Historical Drama</span>
+                  </label>
+                  <label className="mt-2 flex items-start gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isTrending}
+                      onChange={e => setIsTrending(e.target.checked)}
+                      className="mt-0.5 rounded border-white/20 bg-[#08090D] text-violet-600 focus:ring-0"
+                    />
+                    <span>
+                      Show in Trending Now ticker
+                      <span className="mt-0.5 block text-[10px] text-slate-500">Published selections are ranked by views; up to 10 titles appear.</span>
+                    </span>
                   </label>
                 </div>
               </div>

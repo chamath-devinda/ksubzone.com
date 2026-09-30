@@ -107,6 +107,8 @@ export function compactHomeCatalog(catalog = {}) {
     historicalDramas: compactCatalogItems(catalog.historicalDramas),
     trendingMovies: compactCatalogItems(catalog.trendingMovies),
     trendingDramas: compactCatalogItems(catalog.trendingDramas),
+    selectedTrendingMovies: compactCatalogItems(catalog.selectedTrendingMovies),
+    selectedTrendingDramas: compactCatalogItems(catalog.selectedTrendingDramas),
     popularMovies: compactCatalogItems(catalog.popularMovies),
     popularDramas: compactCatalogItems(catalog.popularDramas),
     upcomingMovies: compactCatalogItems(catalog.upcomingMovies),

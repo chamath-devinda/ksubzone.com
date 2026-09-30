@@ -219,7 +219,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v12');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v13');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -252,6 +252,11 @@ class MovieController {
         
         // 6. Trending dramas (status: Published, sort: viewCount DESC, limit 10)
         $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
+
+        // Manually curated ticker selection; keep separate from the automatic
+        // Most Viewed rows above and rank the selected records by views.
+        $selectedTrendingMovies = $db->find('movies', array_merge($statusFilter, ['isTrending' => true]), ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
+        $selectedTrendingDramas = $db->find('dramas', array_merge($statusFilter, ['isTrending' => true]), ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
         
         // Popular and trending use the same view-count ranking. Reuse these
         // records instead of issuing two duplicate remote database queries.
@@ -267,6 +272,7 @@ class MovieController {
         foreach ($latestDramas as $d) { $allDramas[$d['_id']] = $d; }
         foreach ($historicalDramas as $d) { $allDramas[$d['_id']] = $d; }
         foreach ($trendingDramas as $d) { $allDramas[$d['_id']] = $d; }
+        foreach ($selectedTrendingDramas as $d) { $allDramas[$d['_id']] = $d; }
         foreach ($popularDramas as $d) { $allDramas[$d['_id']] = $d; }
         foreach ($upcomingDramas as $d) { $allDramas[$d['_id']] = $d; }
         
@@ -314,6 +320,12 @@ class MovieController {
             $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
         }
         unset($d);
+        foreach ($selectedTrendingDramas as &$d) {
+            $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
+            $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
+            $d['contentUpdatedAt'] = $dramaMetadata[$d['_id']]['contentUpdatedAt'];
+        }
+        unset($d);
         foreach ($popularDramas as &$d) {
             $d['isNew'] = $dramaMetadata[$d['_id']]['isNew'];
             $d['subtitleSummary'] = $dramaMetadata[$d['_id']]['subtitleSummary'];
@@ -332,6 +344,7 @@ class MovieController {
         foreach ($latestMovies as $m) { $allMovies[$m['_id']] = $m; }
         foreach ($historicalMovies as $m) { $allMovies[$m['_id']] = $m; }
         foreach ($trendingMovies as $m) { $allMovies[$m['_id']] = $m; }
+        foreach ($selectedTrendingMovies as $m) { $allMovies[$m['_id']] = $m; }
         foreach ($popularMovies as $m) { $allMovies[$m['_id']] = $m; }
         foreach ($upcomingMovies as $m) { $allMovies[$m['_id']] = $m; }
         
@@ -376,6 +389,13 @@ class MovieController {
             $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
         }
         unset($m);
+        foreach ($selectedTrendingMovies as &$m) {
+            $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
+            $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
+            $m['subtitleSummary'] = $movieMetadata[$m['_id']]['subtitleSummary'];
+            $m['contentUpdatedAt'] = $movieMetadata[$m['_id']]['contentUpdatedAt'];
+        }
+        unset($m);
         foreach ($popularMovies as &$m) {
             $m['isNew'] = $movieMetadata[$m['_id']]['isNew'];
             $m['subtitleCount'] = $movieMetadata[$m['_id']]['subtitleCount'];
@@ -398,6 +418,8 @@ class MovieController {
             'historicalDramas' => MediaPayload::compactMany($historicalDramas),
             'trendingMovies' => MediaPayload::compactMany($trendingMovies),
             'trendingDramas' => MediaPayload::compactMany($trendingDramas),
+            'selectedTrendingMovies' => MediaPayload::compactMany($selectedTrendingMovies),
+            'selectedTrendingDramas' => MediaPayload::compactMany($selectedTrendingDramas),
             // Retain the response keys for older clients. Both rankings have
             // identical semantics, so the frontend reuses trending records.
             'popularMovies' => [],
@@ -408,7 +430,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v12', $catalogData, 60);
+        \Utils\Cache::set('home_catalog_v13', $catalogData, 60);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);
