@@ -7,6 +7,7 @@ import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
+import { applyDailyBrandAccentColor } from '@/features/admin/brandingColor';
 import {
   Wand2, Bot, Trash2, Settings, FileText, CheckCircle2,
   UploadCloud, Download, Sparkles, AlertTriangle, RefreshCw, Languages
@@ -47,7 +48,7 @@ const stringifySRT = (subs) => {
 
 const START_BRAND_AD = `<font color="#ffcc00">නවතම කොරියානු චිත්‍රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`;
 
-const END_BRAND_AD = `{\\an5}{\\fad(1000,1000)}<font color="#FF2400" size="34"><b>මීලඟ කතාංගයත් සමඟ නැවත හමුවෙමු...!</b></font>\n<font color="#ffcc00">නවතම කොරියානු චිත්‍රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`;
+const END_BRAND_AD = `{\\an5}{\\fad(1000,1000)}<font color="{dailyColor}" size="34"><b>මීලඟ කතාංගයත් සමඟ නැවත හමුවෙමු...!</b></font>\n<font color="#ffcc00">නවතම කොරියානු චිත්‍රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`;
 
 const DEFAULT_OPTIONS = {
   fixOverlaps: true,
@@ -374,7 +375,7 @@ export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
 
           // Music Notes
           if (config.removeMusic) {
-            text = text.replace(/[♪♫♩#]/g, '');
+            text = text.replace(/[♫♩#]/g, '');
           }
 
           // Speaker Names
@@ -639,7 +640,7 @@ export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
           adsToInject.push({
             start: msToTime(endAdStartMs),
             end: msToTime(endAdEndMs),
-            text: END_BRAND_AD
+            text: applyDailyBrandAccentColor(END_BRAND_AD)
           });
 
           subs = [...subs, ...adsToInject.map((ad, idx) => ({
@@ -1070,7 +1071,7 @@ export default function SrtCleaner({ onNavigate, embedded = false } = {}) {
                     <Switch optionKey="removeHtml" label="Remove HTML Tags" />
                     <Switch optionKey="removeAds" label="Remove Ads & Watermarks" />
                     <Switch optionKey="removeSpeakers" label="Remove Speaker Names" />
-                    <Switch optionKey="removeMusic" label="Remove Music Notes (♪)" />
+                    <Switch optionKey="removeMusic" label="Remove ♫ / ♩ / # (preserve ♪)" />
                     <Switch optionKey="removeSdh" label="Remove SDH Descriptions" />
                     <Switch optionKey="removeRoundBrackets" label="Remove Text in (Round Brackets)" />
                     <Switch optionKey="removeSquareBrackets" label="Remove Text in [Square Brackets]" />

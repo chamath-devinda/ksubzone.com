@@ -6,6 +6,7 @@ import apiClient from '@/services/api/apiClient';
 import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
+import { applyDailyBrandAccentColor } from '@/features/admin/brandingColor';
 import {
   Languages, Sparkles, UploadCloud, Download, AlertTriangle, Play,
   CheckCircle, Plus, Trash2, Edit2, RefreshCw, Layers, ArrowRight, Check, Eye, Settings, FileText, Undo, Wand2
@@ -301,10 +302,10 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
     `<font color="#ffcc00">නවතම කොරියානු චිත්‍රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`
   );
   const [startBrandingText, setStartBrandingText] = useState(
-    `{\\an5}{\\fad(1000,1000)}<font color="#FF2400" size="34"><b>✤ {drama} ✤</b></font>\n<font color="#FFFFFF" size="22"><b>— Episode | {episode} —</b></font>\n<font color="#ffcc00">නවතම කොරියානු චිත්රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`
+    `{\\an5}{\\fad(1000,1000)}<font color="{dailyColor}" size="34"><b>✤ {drama} ✤</b></font>\n<font color="#FFFFFF" size="22"><b>— Episode | {episode} —</b></font>\n<font color="#ffcc00">නවතම කොරියානු චිත්රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`
   );
   const [endingBrandingText, setEndingBrandingText] = useState(
-    `{\\an5}{\\fad(1000,1000)}<font color="#FF2400" size="34"><b>මීලඟ කතාංගයත් සමඟ නැවත හමුවෙමු...!</b></font>\n<font color="#ffcc00">නවතම කොරියානු චිත්‍රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`
+    `{\\an5}{\\fad(1000,1000)}<font color="{dailyColor}" size="34"><b>මීලඟ කතාංගයත් සමඟ නැවත හමුවෙමු...!</b></font>\n<font color="#ffcc00">නවතම කොරියානු චිත්‍රපටවල සහා රූපවාහිනි කතාමාලා සඳහා සිංහල උපසිරැසි</font>\n<font color="#ff9416">ලබා ගෑනිමට පිවිසෙන්න </font>www.ksubzone.com <font color="#ff9416">අපගේ වෙබ් අඩවියට.</font>`
   );
 
   // Ad Inject Configs
@@ -496,7 +497,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
     workingSubs = workingSubs.map((sub) => {
       const action = file.competitorActions[sub.id];
       if (action === 'replace') {
-        return { ...sub, text: brandingText };
+        return { ...sub, text: applyDailyBrandAccentColor(brandingText) };
       } else if (action === 'remove') {
         return null; // Flag for deletion
       }
@@ -531,7 +532,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
       adsToInject.push({
         start: startTimeStart,
         end: startTimeEnd,
-        text: resolvedStartBranding
+        text: applyDailyBrandAccentColor(resolvedStartBranding)
       });
     }
 
@@ -545,7 +546,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
       adsToInject.push({
         start: msToTime(adStartMs),
         end: msToTime(adEndMs),
-        text: endingBrandingText
+        text: applyDailyBrandAccentColor(endingBrandingText)
       });
     }
 
@@ -557,7 +558,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
           adsToInject.push({
             start: gap.recommendedStart,
             end: gap.recommendedEnd,
-            text: brandingText
+            text: applyDailyBrandAccentColor(brandingText)
           });
         }
       });
@@ -1013,7 +1014,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                       <Sparkles className="w-4 h-4 text-brand-primary" /> Start Advertisement Template (Dynamic)
                     </h2>
                     <p className="text-slate-400 text-xs">
-                      Use <code>{'{drama}'}</code> and <code>{'{episode}'}</code> placeholders. They will be replaced dynamically for each file in the batch.
+                      Use <code>{'{drama}'}</code>, <code>{'{episode}'}</code>, and <code>{'{dailyColor}'}</code>. The title accent rotates daily using Sri Lanka time.
                     </p>
                     <textarea
                       value={startBrandingText}
@@ -1029,7 +1030,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                       <Layers className="w-4 h-4 text-brand-accent" /> Middle Gap & Competitor Branding Template
                     </h2>
                     <p className="text-slate-400 text-xs">
-                      This template is used for middle timeline gaps and when replacing competitor credits.
+                      Used for middle timeline gaps and competitor replacements. Include <code>{'{dailyColor}'}</code> where you want the daily accent color.
                     </p>
                     <textarea
                       value={brandingText}
@@ -1145,6 +1146,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                           </div>
                           <div>
                             <span className="text-[10px] text-slate-500 uppercase block mb-1">Ending Advertisement Template</span>
+                            <p className="text-[9px] text-slate-500 mb-2">The <code>{'{dailyColor}'}</code> accent also rotates daily in this template.</p>
                             <textarea
                               value={endingBrandingText}
                               onChange={(e) => setEndingBrandingText(e.target.value)}
