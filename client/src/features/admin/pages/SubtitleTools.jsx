@@ -79,6 +79,9 @@ const stringifySRT = (subs) => {
   }).join('\n\n') + '\n';
 };
 
+const getSrtFormattingTokens = (text) => text.match(/<\/?[^>\n]+>|\{\\[^}\n]*\}/g) || [];
+const isProtectedPromoText = (text) => /(?:https?:\/\/|www\.|ksubzone(?:\.com)?|subtitles?\s+by|translated\s+by)/i.test(text);
+
 // Clean base name helper
 const cleanBaseName = (fileName) => {
   let base = fileName.replace(/\.[a-zA-Z0-9]+$/i, '');
@@ -287,6 +290,8 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
   const [editingBlockId, setEditingBlockId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [translationEngine, setTranslationEngine] = useState('gemini');
+  const [translationMode, setTranslationMode] = useState('translate');
+  const polishingSinhala = translationMode === 'polish-si';
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Global Configs
@@ -594,15 +599,16 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
   const translateSingleFile = async (fileId) => {
     const file = files.find(f => f.id === fileId);
     if (!file) return;
+    const polishingSinhala = translationMode === 'polish-si';
 
     updateFileState(fileId, {
       isTranslating: true,
       translationError: '',
       translationProgress: 0,
-      translateStatusMsg: 'Initializing AI translation...'
+      translateStatusMsg: polishingSinhala ? 'Initializing Sinhala subtitle polishing...' : 'Initializing AI translation...'
     });
 
-    const chunkSize = translationEngine === 'gemini' ? 40 : 150; // Optimal chunk size (smaller for Gemini timeouts, larger for Google Translate efficiency)
+    const chunkSize = polishingSinhala || translationEngine === 'gemini' ? 40 : 150;
     const totalSubs = file.processedSubs.length;
     const totalChunks = Math.ceil(totalSubs / chunkSize);
     const updatedSubs = [...file.processedSubs];
@@ -614,7 +620,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
         const chunk = updatedSubs.slice(startIndex, endIndex);
 
         updateFileState(fileId, {
-          translateStatusMsg: `Translating subtitle blocks ${startIndex + 1} to ${endIndex} of ${totalSubs}...`
+          translateStatusMsg: `${polishingSinhala ? 'Polishing' : 'Translating'} subtitle blocks ${startIndex + 1} to ${endIndex} of ${totalSubs}...`
         });
 
         const chunkSrtText = stringifySRT(chunk);
@@ -631,12 +637,14 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
 
         for (let attempt = 1; attempt <= retries; attempt++) {
           try {
-            response = await apiClient.post('/api/admin/ai/translate', {
-              srtContent: chunkSrtText,
-              engine: translationEngine
-            }, {
-              timeout: 120000
-            });
+            response = await apiClient.post(
+              polishingSinhala ? '/api/admin/ai/polish' : '/api/admin/ai/translate',
+              {
+                srtContent: chunkSrtText,
+                ...(polishingSinhala ? { mode: 'polish-si' } : { engine: translationEngine })
+              },
+              { timeout: 120000 }
+            );
             break; // Success, break out of retry loop
           } catch (apiErr) {
             const status = apiErr.response?.status;
@@ -661,15 +669,24 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
           }
         }
 
-        const translatedChunkText = response.data.translatedSrt;
-        const parsedTranslatedChunk = parseSRT(translatedChunkText);
+        const translatedChunkText = polishingSinhala ? response.data.polishedSrt : response.data.translatedSrt;
+        const parsedTranslatedChunk = parseSRT(translatedChunkText || '');
+        if (parsedTranslatedChunk.length !== chunk.length) {
+          throw new Error(`AI returned ${parsedTranslatedChunk.length} subtitle blocks; expected ${chunk.length}. This batch was not applied.`);
+        }
 
-        // Map translations back by index matching
+        // Preserve original block structure and reject any AI response that changes timing/order.
         for (let j = 0; j < chunk.length; j++) {
           const translatedItem = parsedTranslatedChunk[j];
-          if (translatedItem) {
-            updatedSubs[startIndex + j].text = translatedItem.text;
+          if (translatedItem.start.trim() !== chunk[j].start.trim() || translatedItem.end.trim() !== chunk[j].end.trim()) {
+            throw new Error(`AI changed the timestamps in subtitle block ${chunk[j].id}. This batch was not applied.`);
           }
+          if (JSON.stringify(getSrtFormattingTokens(translatedItem.text)) !== JSON.stringify(getSrtFormattingTokens(chunk[j].text))) {
+            throw new Error(`AI changed formatting tags in subtitle block ${chunk[j].id}. This batch was not applied.`);
+          }
+          updatedSubs[startIndex + j].text = polishingSinhala && isProtectedPromoText(chunk[j].text)
+            ? chunk[j].text
+            : translatedItem.text;
         }
         
         const percentage = Math.round(((c + 1) / totalChunks) * 100);
@@ -683,7 +700,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
         editableSrtText: stringifySRT(updatedSubs),
         isTranslating: false,
         isTranslated: true,
-        translateStatusMsg: 'AI Subtitle Translation completed successfully!'
+        translateStatusMsg: polishingSinhala ? 'Sinhala subtitles polished successfully!' : 'AI Subtitle Translation completed successfully!'
       });
     } catch (err) {
       console.error(err);
@@ -1322,36 +1339,63 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                     <Sparkles className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-white uppercase tracking-wider">AI Subtitle Translator (Gemini)</h2>
-                    <p className="text-slate-400 text-xs mt-0.5">Translate your English subtitle dialogues to natural, high-quality Sinhala.</p>
+                    <h2 className="text-lg font-black text-white uppercase tracking-wider">AI Subtitle Translation &amp; Sinhala Polishing</h2>
+                    <p className="text-slate-400 text-xs mt-0.5">
+                      {polishingSinhala
+                        ? 'Polish Google-translated Sinhala subtitles into natural, fluent spoken Sinhala.'
+                        : 'Translate English subtitle dialogues into natural, high-quality Sinhala.'}
+                    </p>
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-brand-primary/5 border border-brand-primary/10 text-xs text-slate-300 leading-relaxed space-y-2">
                   <p className="font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-brand-primary" /> Batch AI Translation:
+                    <AlertTriangle className="w-4 h-4 text-brand-primary" /> {polishingSinhala ? 'Sinhala Subtitle Polishing:' : 'Batch AI Translation:'}
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-slate-400">
-                    <li>Subtitles are split into batches of 40 blocks and translated sequentially.</li>
-                    <li>You can translate only the selected file, or trigger all files in a batch.</li>
-                    <li>Exact timestamps, sequence numbers, and formatting tags are preserved.</li>
+                    <li>{polishingSinhala ? 'Existing Sinhala dialogue is rewritten for natural flow without translating it again.' : 'Subtitles are split into batches and translated sequentially.'}</li>
+                    <li>{polishingSinhala ? 'English-only lines, ads, links, sound cues, and formatting tags are kept as-is.' : 'You can translate only the selected file, or trigger all files in a batch.'}</li>
+                    <li>Original block count, timestamps, sequence, and formatting tags are preserved.</li>
                   </ul>
+                </div>
+
+                <div className="bg-luxury-950 border border-white/5 p-4.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-200">Subtitle Action</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Choose whether to translate English or improve an existing Sinhala translation.</p>
+                  </div>
+                  <select
+                    value={translationMode}
+                    onChange={(e) => setTranslationMode(e.target.value)}
+                    disabled={files.some(f => f.isTranslating)}
+                    className="h-10 px-3.5 bg-luxury-900 border border-white/10 rounded-xl outline-none focus:border-brand-primary text-slate-300 text-xs cursor-pointer min-w-[220px]"
+                  >
+                    <option value="translate">Translate English → Sinhala</option>
+                    <option value="polish-si">Polish existing Sinhala</option>
+                  </select>
                 </div>
 
                 {/* Translation Engine Selector */}
                 <div className="bg-luxury-950 border border-white/5 p-4.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
-                    <span className="font-bold text-slate-200">Translation Engine</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Choose between Gemini 1.5 Flash (AI) or Google Translate (Free)</p>
+                    <span className="font-bold text-slate-200">{polishingSinhala ? 'Polishing Engine' : 'Translation Engine'}</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      {polishingSinhala ? 'Gemini AI rewrites the Sinhala dialogue; Google Translate is not used.' : 'Choose between Gemini AI or Google Translate (Free).'}
+                    </p>
                   </div>
-                  <select
-                    value={translationEngine}
-                    onChange={(e) => setTranslationEngine(e.target.value)}
-                    className="h-10 px-3.5 bg-luxury-900 border border-white/10 rounded-xl outline-none focus:border-brand-primary text-slate-300 text-xs cursor-pointer min-w-[180px]"
-                  >
-                    <option value="gemini">Gemini 1.5 Flash (AI)</option>
-                    <option value="google">Google Translate (Free)</option>
-                  </select>
+                  {polishingSinhala ? (
+                    <span className="h-10 px-3.5 bg-luxury-900 border border-white/10 rounded-xl text-slate-300 text-xs flex items-center min-w-[180px]">Gemini AI</span>
+                  ) : (
+                    <select
+                      value={translationEngine}
+                      onChange={(e) => setTranslationEngine(e.target.value)}
+                      disabled={files.some(f => f.isTranslating)}
+                      className="h-10 px-3.5 bg-luxury-900 border border-white/10 rounded-xl outline-none focus:border-brand-primary text-slate-300 text-xs cursor-pointer min-w-[180px]"
+                    >
+                      <option value="gemini">Gemini AI</option>
+                      <option value="google">Google Translate (Free)</option>
+                    </select>
+                  )}
                 </div>
 
                 {/* Progress Indicators for All Files */}
@@ -1369,7 +1413,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-slate-300 truncate max-w-[250px]">{file.name}</span>
                         {file.isTranslating ? (
-                          <span className="text-[10px] text-brand-accent font-mono animate-pulse">Translating ({file.translationProgress}%)</span>
+                          <span className="text-[10px] text-brand-accent font-mono animate-pulse">{polishingSinhala ? 'Polishing' : 'Translating'} ({file.translationProgress}%)</span>
                         ) : file.isTranslated ? (
                           <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
                             <CheckCircle className="w-3.5 h-3.5" /> Ready
@@ -1414,7 +1458,7 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                     disabled={files.some(f => f.isTranslating) || !activeFile}
                     className="px-5 py-3 bg-brand-primary/10 border border-brand-primary/20 hover:bg-brand-primary/20 text-brand-primary rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Languages className="w-4 h-4" /> Translate Selected
+                    <Languages className="w-4 h-4" /> {polishingSinhala ? 'Polish Selected' : 'Translate Selected'}
                   </button>
                   <button
                     onClick={handleTranslateAll}
@@ -1423,11 +1467,11 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
                   >
                     {files.some(f => f.isTranslating) ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" /> Translating Batch...
+                        <RefreshCw className="w-4 h-4 animate-spin" /> {polishingSinhala ? 'Polishing Batch...' : 'Translating Batch...'}
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4" /> Translate All Files
+                        <Sparkles className="w-4 h-4" /> {polishingSinhala ? 'Polish All Files' : 'Translate All Files'}
                       </>
                     )}
                   </button>
