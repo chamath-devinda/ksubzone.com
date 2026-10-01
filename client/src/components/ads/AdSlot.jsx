@@ -162,7 +162,6 @@ export default function AdSlot({ slotId, className = '' }) {
         : 'min-h-[66px] md:min-h-[106px]';
 
   return (
-  return (
     <aside
       ref={hostRef}
       aria-label="Advertisement"
