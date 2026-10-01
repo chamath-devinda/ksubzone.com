@@ -219,7 +219,7 @@ class MovieController {
 
     public static function getHomeCatalog() {
         // Cache layer
-        $cachedCatalog = \Utils\Cache::get('home_catalog_v13');
+        $cachedCatalog = \Utils\Cache::get('home_catalog_v14');
         if ($cachedCatalog !== false) {
             header('Content-Type: application/json');
             echo json_encode($cachedCatalog);
@@ -253,10 +253,13 @@ class MovieController {
         // 6. Trending dramas (status: Published, sort: viewCount DESC, limit 10)
         $trendingDramas = $db->find('dramas', $statusFilter, ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
 
-        // Manually curated ticker selection; keep separate from the automatic
-        // Most Viewed rows above and rank the selected records by views.
-        $selectedTrendingMovies = $db->find('movies', array_merge($statusFilter, ['isTrending' => true]), ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
-        $selectedTrendingDramas = $db->find('dramas', array_merge($statusFilter, ['isTrending' => true]), ['sort' => ['viewCount' => -1], 'limit' => 10, 'fields' => $cardFields]);
+        // A fresh admin selection must enter the top ten even if its view
+        // count is lower than titles selected earlier. Include public
+        // Upcoming titles, while keeping Draft records off the homepage.
+        $selectedFilter = ['status' => ['$in' => ['Published', 'Upcoming']], 'isTrending' => true];
+        $selectedSort = ['trendingSelectedAt' => -1, 'contentUpdatedAt' => -1, 'viewCount' => -1];
+        $selectedTrendingMovies = $db->find('movies', $selectedFilter, ['sort' => $selectedSort, 'limit' => 10, 'fields' => $cardFields]);
+        $selectedTrendingDramas = $db->find('dramas', $selectedFilter, ['sort' => $selectedSort, 'limit' => 10, 'fields' => $cardFields]);
         
         // Popular and trending use the same view-count ranking. Reuse these
         // records instead of issuing two duplicate remote database queries.
@@ -430,7 +433,7 @@ class MovieController {
 
         // Keep this short so an import/update remains visible even if a write
         // path fails to invalidate the shared cache for any reason.
-        \Utils\Cache::set('home_catalog_v13', $catalogData, 60);
+        \Utils\Cache::set('home_catalog_v14', $catalogData, 60);
 
         header('Content-Type: application/json');
         echo json_encode($catalogData);
@@ -527,6 +530,10 @@ class MovieController {
             return $db->findOne('movies', ['slug' => $candidate]);
         }, $data['title']);
         $data['contentUpdatedAt'] = gmdate(DATE_ATOM);
+        unset($data['trendingSelectedAt']);
+        if (!empty($data['isTrending'])) {
+            $data['trendingSelectedAt'] = $data['contentUpdatedAt'];
+        }
 
         // Generate AI SEO package
         $seoContent = AiSeoController::generateSeoForTitle($data['title'], $data['description'] ?? '', 'Movie', [
@@ -563,6 +570,15 @@ class MovieController {
             http_response_code(404);
             echo json_encode(['message' => 'Movie not found']);
             return;
+        }
+
+        unset($updates['trendingSelectedAt']);
+        if (array_key_exists('isTrending', $updates)) {
+            if (!empty($updates['isTrending']) && empty($movie['isTrending'])) {
+                $updates['trendingSelectedAt'] = gmdate(DATE_ATOM);
+            } elseif (empty($updates['isTrending'])) {
+                $updates['trendingSelectedAt'] = null;
+            }
         }
 
         // Re-generate SEO package only when title or description has actually changed

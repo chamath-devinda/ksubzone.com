@@ -23,6 +23,7 @@ const CATALOG_FIELDS = [
   'isNew',
   'isHistorical',
   'isTrending',
+  'trendingSelectedAt',
   'subtitleCount',
   'subtitleSummary',
   'mediaType',
@@ -78,6 +79,28 @@ export function mergeCatalogItems(...collections) {
   });
 
   return Array.from(merged.values());
+}
+
+export function getCuratedTrendingItems(catalog = {}) {
+  const timestamp = (value) => {
+    const parsed = Date.parse(value || '');
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  return [
+    ...(catalog.selectedTrendingDramas || []).map((item) => ({ ...item, mediaType: 'drama' })),
+    ...(catalog.selectedTrendingMovies || []).map((item) => ({ ...item, mediaType: 'movie' }))
+  ]
+    .filter((item) => item.status === 'Published' || item.status === 'Upcoming')
+    .sort((a, b) => {
+      const aSelected = Boolean(a.trendingSelectedAt);
+      const bSelected = Boolean(b.trendingSelectedAt);
+      if (aSelected !== bSelected) return Number(bSelected) - Number(aSelected);
+      const aTime = timestamp(a.trendingSelectedAt || a.contentUpdatedAt || a.createdAt);
+      const bTime = timestamp(b.trendingSelectedAt || b.contentUpdatedAt || b.createdAt);
+      return bTime - aTime || (Number(b.viewCount) || 0) - (Number(a.viewCount) || 0);
+    })
+    .slice(0, 10);
 }
 
 function catalogText(value) {

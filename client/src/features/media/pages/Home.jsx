@@ -11,7 +11,7 @@ import { useSiteContent } from '@/hooks/useSiteContent';
 import AdSlot from '@/components/ads/AdSlot';
 import StickyAnchorAd from '@/components/ads/StickyAnchorAd';
 import SideAdLayout from '@/components/ads/SideAdLayout';
-import { isHistoricalMovie, mergeCatalogItems } from '@/utils/mediaCatalog';
+import { getCuratedTrendingItems, isHistoricalMovie, mergeCatalogItems } from '@/utils/mediaCatalog';
 import { 
   Film, Tv, Send,
   Flame, Eye, Star, Calendar, Compass,
@@ -128,13 +128,10 @@ export default function Home({
       .slice(0, 10);
   }, [homeCatalog.latestMovies, homeCatalog.latestDramas]);
 
-  const trendingTickerItems = React.useMemo(() => [
-    ...(homeCatalog.selectedTrendingDramas || []).map((item) => ({ ...item, mediaType: 'drama' })),
-    ...(homeCatalog.selectedTrendingMovies || []).map((item) => ({ ...item, mediaType: 'movie' }))
-  ]
-    .filter((item) => item.status === 'Published')
-    .sort((a, b) => (Number(b.viewCount) || 0) - (Number(a.viewCount) || 0))
-    .slice(0, 10), [homeCatalog.selectedTrendingDramas, homeCatalog.selectedTrendingMovies]);
+  const trendingTickerItems = React.useMemo(
+    () => getCuratedTrendingItems(homeCatalog),
+    [homeCatalog.selectedTrendingDramas, homeCatalog.selectedTrendingMovies]
+  );
 
   const categoryRowsLoading = homeCatalogLoading;
 

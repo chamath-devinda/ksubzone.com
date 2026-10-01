@@ -588,8 +588,8 @@ export default function MovieManager() {
                       className="mt-0.5 rounded border-white/20 bg-[#08090D] text-violet-600 focus:ring-0"
                     />
                     <span>
-                      Show in Trending Now ticker
-                      <span className="mt-0.5 block text-[10px] text-slate-500">Published selections are ranked by views; up to 10 titles appear.</span>
+                      Show in Trending Now
+                      <span className="mt-0.5 block text-[10px] text-slate-500">The 10 most recently selected Published or Upcoming titles appear. Drafts stay hidden.</span>
                     </span>
                   </label>
                 </div>

@@ -597,6 +597,10 @@ class DramaController {
             return $db->findOne('dramas', ['slug' => $candidate]);
         }, $data['title']);
         $data['contentUpdatedAt'] = gmdate(DATE_ATOM);
+        unset($data['trendingSelectedAt']);
+        if (!empty($data['isTrending'])) {
+            $data['trendingSelectedAt'] = $data['contentUpdatedAt'];
+        }
 
         // Generate AI SEO package
         $seoContent = AiSeoController::generateSeoForTitle($data['title'], $data['description'] ?? '', 'Drama', [
@@ -644,6 +648,15 @@ class DramaController {
             http_response_code(404);
             echo json_encode(['message' => 'Drama not found']);
             return;
+        }
+
+        unset($updates['trendingSelectedAt']);
+        if (array_key_exists('isTrending', $updates)) {
+            if (!empty($updates['isTrending']) && empty($drama['isTrending'])) {
+                $updates['trendingSelectedAt'] = gmdate(DATE_ATOM);
+            } elseif (empty($updates['isTrending'])) {
+                $updates['trendingSelectedAt'] = null;
+            }
         }
 
         // Handle manual slug update - sanitize and ensure uniqueness

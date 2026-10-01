@@ -50,6 +50,7 @@ class MediaPayload {
         'isNew',
         'isHistorical',
         'isTrending',
+        'trendingSelectedAt',
         'subtitleCount',
         'subtitleSummary',
         'mediaType',
