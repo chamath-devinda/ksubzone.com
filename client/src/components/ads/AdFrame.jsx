@@ -154,9 +154,9 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         // external third-party creative content. Treat this as a successful load.
         finish(true);
       }
-    // Give the publisher runtime enough time to create a late creative. The
-    // parent slot retries the same hardcoded Adsterra zone after this timeout.
-    }, 25000);
+    // Let the parent slot retry the same real provider zone after this
+    // bounded wait, while real creatives still finish immediately.
+    }, 10000);
 
     timeout = setTimeout(() => {
       inspect();

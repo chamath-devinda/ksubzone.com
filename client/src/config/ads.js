@@ -11,10 +11,8 @@ export const AD_MODES = Object.freeze({
   OFF: 'OFF',
 });
 
-// Use the configured Adsterra zones directly. A second ad provider or a local
-// house creative must never replace the publisher's actual ad code.
-const requestedMode = String(process.env.NEXT_PUBLIC_AD_MODE || AD_MODES.ADSTERRA_ONLY).toUpperCase();
-const mode = Object.values(AD_MODES).includes(requestedMode) ? requestedMode : AD_MODES.ADSTERRA_ONLY;
+const requestedMode = String(process.env.NEXT_PUBLIC_AD_MODE || AD_MODES.HYBRID).toUpperCase();
+const mode = Object.values(AD_MODES).includes(requestedMode) ? requestedMode : AD_MODES.HYBRID;
 const isProduction = process.env.NODE_ENV === 'production';
 // Adsterra reports earnings in USD. This display-only rate can be updated at
 // deploy time without ever changing the provider's source-of-truth figures.

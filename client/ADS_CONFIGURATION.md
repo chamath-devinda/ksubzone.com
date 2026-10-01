@@ -1,12 +1,8 @@
 # KSubZone advertising configuration
 
-> **Permanent provider-host note — do not change the active Adsterra delivery host.**
-> Keep `nobleduringsurveillance.com` in `src/config/ads.js` and `public/ad-frame.html`.
-> The alternate `alwingulla.com` host returns a tracking wrapper instead of the
-> configured creatives, which makes the site's ad slots appear blank. Do not
-> replace this host unless the publisher supplies and verifies a new official
-> delivery host. There is no local-house or second-provider fallback in the
-> Adsterra-only path.
+> Keep `nobleduringsurveillance.com` as the primary Adsterra delivery host.
+> If delivery fails, the real Adsterra slot is retried with cache-busted frames;
+> no local KSubZone promo is shown in place of an ad.
 
 The monetization system is centralized in `src/config/ads.js`. Production ads are enabled by default only in production; local development renders labeled placeholders unless explicitly overridden.
 
@@ -61,7 +57,7 @@ Never place ad scripts in the root layout or individual page files. Add page pos
 
 - Admin, authentication, profile/account, static, 404, and error routes do not load ads.
 - Below-the-fold slots use lazy loading and reserve responsive space before loading.
-- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. The frames grant the provider the same-origin cookie access required by the official Adsterra runtime while retaining navigation and popup sandbox restrictions. If the provider returns no creative, the same hardcoded Adsterra zone is retried with exponential backoff; no local house creative is substituted.
+- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. The frames grant the provider the same-origin cookie access required by the official Adsterra runtime while retaining navigation and popup sandbox restrictions. If the provider returns no creative, the same real Adsterra zone is retried with exponential backoff; no local house creative is substituted.
 - The intrusive loader chooses one provider. Adsterra popunder and Monetag OnClick therefore cannot run together.
 - A/B assignments persist in `localStorage` under `ksubzone_ad_variant`.
 - Provider initialization is centralized so a consent check can be added in `AdProvider` before any third-party script runs.

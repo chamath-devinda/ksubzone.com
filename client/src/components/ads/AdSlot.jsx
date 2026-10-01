@@ -139,10 +139,8 @@ export default function AdSlot({ slotId, className = '' }) {
       }}
       onUnavailable={(reason) => {
         emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
-        // Keep the real Adsterra slot mounted and retry with a cache-busted
-        // frame. Do not replace an unfilled provider slot with a local promo.
         if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-        const delay = Math.min(60_000, 5_000 * (2 ** Math.min(retryAttempt, 3)));
+        const delay = Math.min(60_000, 5_000 * Math.pow(2, Math.min(retryAttempt, 3)));
         retryTimerRef.current = setTimeout(() => {
           retryTimerRef.current = null;
           setAdLoaded(false);
@@ -163,6 +161,7 @@ export default function AdSlot({ slotId, className = '' }) {
         ? 'min-h-[250px]'
         : 'min-h-[66px] md:min-h-[106px]';
 
+  return (
   return (
     <aside
       ref={hostRef}
