@@ -178,6 +178,12 @@ export default function Navbar() {
     }
   };
 
+  const handleSuggestionSelect = () => {
+    setSearchQuery('');
+    setShowSuggestions(false);
+    setMobileSearchOpen(false);
+  };
+
   const handleMarkAsRead = async (id) => {
     try {
       await apiClient.put(`/api/auth/notifications/${id}/read`);
@@ -265,34 +271,51 @@ export default function Navbar() {
               </div>
 
               <AnimatePresence>
-                {showSuggestions && suggestions.length > 0 && (
+                {showSuggestions && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    className="absolute top-12 right-0 w-80 glass-panel-heavy rounded-2xl p-2.5 shadow-2xl border border-white/10 z-50 backdrop-blur-2xl"
+                    role="listbox"
+                    aria-label="Search suggestions"
+                    className="absolute top-11 right-0 w-[22rem] overflow-hidden glass-panel-heavy rounded-2xl p-2 shadow-2xl border border-brand-primary/30 z-[60] backdrop-blur-2xl"
                   >
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 py-1">Direct Suggestions</p>
-                    {suggestions.map((item) => (
-                      <Link
-                        key={item._id}
-                        href={`/${item.type}/${permalinkSlug(item)}`}
-                        prefetch={false}
-                        onClick={() => { setSearchQuery(''); setShowSuggestions(false); }}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.06] transition duration-200"
-                      >
-                        <img
-                          src={getMediaImage(item, 'thumb')}
-                          alt={item.title}
-                          className="w-9 h-12 object-cover rounded-lg flex-shrink-0 border border-white/10"
-                          onError={(event) => handleImageFallback(event, item, 'thumb')}
-                        />
-                        <div className="overflow-hidden">
-                          <p className="text-xs font-bold text-white truncate">{item.title}</p>
-                          <p className="text-[10px] text-brand-primary uppercase font-extrabold tracking-wider mt-0.5">{item.type}</p>
-                        </div>
-                      </Link>
-                    ))}
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2.5 py-1.5">Suggested titles</p>
+                    {suggestions.length > 0 ? (
+                      <div className="max-h-[22rem] overflow-y-auto space-y-0.5 pr-0.5">
+                        {suggestions.map((item) => (
+                          <Link
+                            key={item._id}
+                            role="option"
+                            href={`/${item.type}/${permalinkSlug(item)}`}
+                            prefetch={false}
+                            onClick={handleSuggestionSelect}
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-brand-primary/15 transition duration-200"
+                          >
+                            <img
+                              src={getMediaImage(item, 'thumb')}
+                              alt={item.title}
+                              className="w-10 h-14 object-cover rounded-lg flex-shrink-0 border border-white/10"
+                              onError={(event) => handleImageFallback(event, item, 'thumb')}
+                            />
+                            <div className="min-w-0 overflow-hidden">
+                              <p className="text-xs font-bold text-white truncate">{item.title}</p>
+                              {item.originalTitle && <p className="text-[10px] text-slate-400 truncate mt-0.5">{item.originalTitle}</p>}
+                              <p className="text-[10px] text-brand-primary uppercase font-extrabold tracking-wider mt-1">{item.type}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="px-2.5 py-4 text-center text-xs text-slate-400">No title suggestions found.</p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-1 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-[11px] font-bold text-slate-200 transition hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-white"
+                    >
+                      <span>Search all results for “{searchQuery.trim()}”</span>
+                      <Search className="h-3.5 w-3.5 text-brand-primary" />
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -494,22 +517,18 @@ export default function Navbar() {
                 )}
               </form>
 
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-transparent">
+              {showSuggestions && (
+                <div className="mt-2 overflow-hidden rounded-2xl border border-brand-primary/30 glass-panel-heavy shadow-2xl">
                   <p className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Discover
+                    Suggested titles
                   </p>
-                  <div className="flex flex-col gap-1">
+                  {suggestions.length > 0 ? <div className="flex flex-col gap-1 px-1 pb-1">
                     {suggestions.map((item) => (
                       <Link
                         key={`mobile-${item._id}`}
                         href={`/${item.type}/${permalinkSlug(item)}`}
                         prefetch={false}
-                        onClick={() => {
-                          setSearchQuery('');
-                          setShowSuggestions(false);
-                          setMobileSearchOpen(false);
-                        }}
+                        onClick={handleSuggestionSelect}
                         className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 transition hover:bg-white/[0.08]"
                       >
                         <img
@@ -524,7 +543,10 @@ export default function Navbar() {
                         </div>
                       </Link>
                     ))}
-                  </div>
+                  </div> : <p className="px-3 pb-3 text-center text-xs text-slate-400">No title suggestions found.</p>}
+                  <button type="button" onClick={() => handleSearchSubmit({ preventDefault: () => {} })} className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-xs font-bold text-slate-200">
+                    <span>View all results for “{searchQuery.trim()}”</span><Search className="h-4 w-4 text-brand-primary" />
+                  </button>
                 </div>
               )}
             </motion.div>
