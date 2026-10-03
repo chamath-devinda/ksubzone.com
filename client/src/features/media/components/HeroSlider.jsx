@@ -305,7 +305,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
 
                     <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/55 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-                      Now Showing
+                      Subtitles Available
                     </div>
                     
                     {/* Integrated poster caption */}
