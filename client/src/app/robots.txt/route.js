@@ -3,12 +3,7 @@ import { SITE_URL } from '@/utils/seo';
 export const dynamic = 'force-static';
 
 export function GET() {
-  const body = [
-    // ── Googlebot ─────────────────────────────────────────────────────────────
-    // Explicitly grant access to all crawlable content and JS/CSS assets that
-    // Googlebot needs to render pages correctly. Blocking these causes
-    // "Googlebot cannot access CSS and JS files" warnings in GSC.
-    'User-agent: Googlebot',
+  const crawlRules = [
     'Allow: /',
     'Allow: /_next/static/',
     'Allow: /_next/image',
@@ -28,19 +23,29 @@ export function GET() {
     'Disallow: /profile/',
     'Disallow: /auth',
     'Disallow: /api/',
+  ];
+
+  const body = [
+    // ── Googlebot ─────────────────────────────────────────────────────────────
+    // Explicitly grant access to all crawlable content and JS/CSS assets that
+    // Googlebot needs to render pages correctly. Blocking these causes
+    // "Googlebot cannot access CSS and JS files" warnings in GSC.
+    'User-agent: Googlebot',
+    ...crawlRules,
+    '',
+    // Bing powers Microsoft Edge's search integration. This explicit block
+    // makes the permission unambiguous in Bing Webmaster Tools.
+    'User-agent: Bingbot',
+    ...crawlRules,
+    '',
+    // Brave Search uses Bravebot. The wildcard also covers it, but keeping an
+    // explicit block makes this browser/search-engine support auditable.
+    'User-agent: Bravebot',
+    ...crawlRules,
     '',
     // ── All other bots ────────────────────────────────────────────────────────
     'User-agent: *',
-    'Allow: /',
-    'Allow: /_next/static/',
-    'Allow: /_next/image',
-    'Allow: /media-fallback/',
-    'Disallow: /management',
-    'Disallow: /management/',
-    'Disallow: /profile',
-    'Disallow: /profile/',
-    'Disallow: /auth',
-    'Disallow: /api/',
+    ...crawlRules,
     '',
     // ── Sitemap declaration ───────────────────────────────────────────────────
     // Must be the exact canonical URL (www, https, no trailing slash on sitemap).

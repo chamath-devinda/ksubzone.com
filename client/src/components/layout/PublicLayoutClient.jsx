@@ -5,9 +5,39 @@ import { useSiteContent } from '@/hooks/useSiteContent';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import MaintenanceMode from '@/components/layout/MaintenanceMode';
 import { usePathname } from 'next/navigation';
-import apiClient from '@/services/api/apiClient';
 import ScrollToTop from '@/components/ui/ScrollToTop';
 import TopProgressBar from '@/components/ui/TopProgressBar';
+
+// A random first-party identifier lets the analytics endpoint distinguish
+// browsers that share an ISP, mobile carrier, office, or home IP. It contains
+// no account or personal information; the server only uses a one-way,
+// day-scoped fingerprint and never stores this value in the database.
+const VISITOR_ID_STORAGE_KEY = 'ksubzone-visitor-id';
+
+function createVisitorId() {
+  if (window.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    return `v1_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  return `v1_${`${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`.slice(0, 32).padEnd(32, '0')}`;
+}
+
+function getVisitorId() {
+  try {
+    const existing = window.localStorage.getItem(VISITOR_ID_STORAGE_KEY);
+    if (/^v1_[a-f0-9]{32}$/i.test(existing || '')) return existing;
+
+    const visitorId = createVisitorId();
+    window.localStorage.setItem(VISITOR_ID_STORAGE_KEY, visitorId);
+    return visitorId;
+  } catch {
+    // Private-mode storage can be unavailable. The backend safely falls back
+    // to its privacy-preserving network fingerprint in that case.
+    return '';
+  }
+}
 
 /**
  * Thin client shell that sits INSIDE the server-rendered public layout.
@@ -29,9 +59,19 @@ export default function PublicLayoutClient({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const logVisit = async () => {
+    const logVisit = () => {
       try {
-        await apiClient.post('/api/analytics/visit');
+        const visitorId = getVisitorId();
+        // Keep this a simple first-party request. It is not a third-party
+        // tracker, so Brave Shields and Edge tracking prevention do not need
+        // to allow an external analytics domain for the visit to be counted.
+        void fetch('/api/analytics/visit', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          keepalive: true,
+          headers: visitorId ? { 'X-KSubZone-Visitor-Id': visitorId } : undefined,
+        }).catch(() => {});
       } catch {
         // Intentionally silent — analytics must never break page rendering.
       }

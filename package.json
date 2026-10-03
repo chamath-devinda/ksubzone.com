@@ -13,7 +13,7 @@
     "import:mongo": "node scripts/import-mongo-to-sqlite.js",
     "start:server": "node server-php/run-server.js",
     "test": "node --test tests/r2-features.test.mjs",
-    "test:php": "php server-php/tests/test-r2-features.php",
+    "test:php": "php server-php/tests/test-r2-features.php && php server-php/tests/test-visitor-guard.php",
     "test:all": "npm run test && npm run test:php && npm run test:admin",
     "migrate:subtitles": "php server-php/scripts/migrate-subtitles-to-r2.php",
     "migrate:subtitles:node": "node scripts/migrate-subtitles-to-r2.mjs",

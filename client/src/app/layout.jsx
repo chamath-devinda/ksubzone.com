@@ -19,6 +19,7 @@ import { SITE_URL } from '@/utils/seo';
 import { getServerSiteContent } from '@/lib/server/siteContent';
 
 const ParticleBackground = dynamic(() => import('@/components/layout/ParticleBackground'), { ssr: false });
+const bingSiteVerification = process.env.BING_SITE_VERIFICATION?.trim();
 
 const milker = localFont({
   src: '../../public/fonts/Milker.otf',
@@ -53,6 +54,9 @@ export const metadata = {
       'max-video-preview': -1,
     },
   },
+  ...(bingSiteVerification
+    ? { verification: { other: { 'msvalidate.01': bingSiteVerification } } }
+    : {}),
   openGraph: {
     siteName: 'KSubZone',
     type: 'website',

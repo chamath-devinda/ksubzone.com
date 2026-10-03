@@ -4,10 +4,13 @@ namespace Utils;
 /**
  * VisitorGuard — Real unique visitor deduplication & bot filter.
  *
- * Uses SHA-256 hashed, anonymised IP fingerprints stored as temp files.
- * No database writes, no sessions, no cookies — works with SQLite & MongoDB.
+ * Uses SHA-256 hashed, day-scoped fingerprints stored as temp files. A
+ * first-party browser nonce is preferred when supplied by the public site;
+ * this prevents visitors behind the same carrier/office IP from being merged.
+ * No database writes or account identifiers are involved.
  *
- * Visitor keys expire after 24 hours (one slot per day per IP).
+ * Visitor keys expire after 24 hours (one slot per browser/day, with an IP
+ * fallback when browser storage is unavailable).
  */
 class VisitorGuard {
 
@@ -52,9 +55,13 @@ class VisitorGuard {
      * @param string $extra  Optional extra context (e.g. content ID) to scope the key.
      */
     public static function getVisitorKey(string $extra = ''): string {
-        $ip  = self::getAnonymisedIp();
+        $browserId = self::getBrowserVisitId();
+        // The browser nonce is random and is never persisted by this service.
+        // When it is unavailable (privacy mode/old browser), retain the
+        // existing privacy-preserving IP fallback.
+        $visitor = $browserId ?: self::getAnonymisedIp();
         $day = date('Y-m-d');
-        return hash('sha256', $ip . '|' . $day . '|' . $extra);
+        return hash('sha256', $visitor . '|' . $day . '|' . $extra);
     }
 
     /**
@@ -131,6 +138,16 @@ class VisitorGuard {
         // Salt the masked IP to prevent reverse brute-force matching
         $salt = $_ENV['JWT_SECRET'] ?? 'ksubzone_daily_secure_salt_2026';
         return hash_hmac('sha256', $maskedIp, $salt);
+    }
+
+    /**
+     * Accept only the public site's random v1 visitor nonce. Never accept
+     * arbitrary header data as an analytics key: it would allow unbounded
+     * marker-file creation and could make the dashboard easy to inflate.
+     */
+    private static function getBrowserVisitId(): string {
+        $visitorId = strtolower(trim($_SERVER['HTTP_X_KSUBZONE_VISITOR_ID'] ?? ''));
+        return preg_match('/^v1_[a-f0-9]{32}$/', $visitorId) ? $visitorId : '';
     }
 
     /** Creates the visitor store directory if it does not exist. */

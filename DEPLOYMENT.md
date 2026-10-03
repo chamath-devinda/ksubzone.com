@@ -40,6 +40,15 @@ BACKEND_URL=https://api.ksubzone.com
 REVALIDATION_TOKEN=<a-long-random-secret>
 ```
 
+To verify the same deployment in Bing Webmaster Tools (which supplies results
+to Microsoft Edge integrations), add this optional Vercel environment variable
+after obtaining the value from Bing. It emits the required `msvalidate.01`
+meta tag; do not commit the verification token to source.
+
+```text
+BING_SITE_VERIFICATION=your-bing-verification-token
+```
+
 `https://api.ksubzone.com` is the shared-hosting PHP origin; `www.ksubzone.com`
 is reserved for the Vercel frontend. Do not add
 `NEXT_PUBLIC_BACKEND_URL` in Vercel: leaving it unset makes browser requests use
