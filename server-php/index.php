@@ -665,6 +665,11 @@ $routes = [
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
         'Controllers\MovieController::createMovie'
     ]],
+    ['PUT', '/api/admin/movies/([^/]+)/trending', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
+        function($id) { \Utils\TrendingSelection::update('movies', $id); }
+    ]],
     ['PUT', '/api/admin/movies/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_movies'); },
@@ -706,6 +711,11 @@ $routes = [
         'Middleware\AuthMiddleware::protectAdmin',
         function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
         'Controllers\DramaController::createDrama'
+    ]],
+    ['PUT', '/api/admin/dramas/([^/]+)/trending', [
+        'Middleware\AuthMiddleware::protectAdmin',
+        function() { \Middleware\AuthMiddleware::hasPermission('manage_dramas'); },
+        function($id) { \Utils\TrendingSelection::update('dramas', $id); }
     ]],
     ['PUT', '/api/admin/dramas/([^/]+)', [
         'Middleware\AuthMiddleware::protectAdmin',

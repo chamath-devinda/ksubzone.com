@@ -122,6 +122,10 @@ class DramaController {
             $filter['title'] = ['$regex' => $search, '$options' => 'i'];
         }
 
+        if (($_GET['trending'] ?? '') === 'true') {
+            $filter['isTrending'] = true;
+        }
+
         $dramas = $db->find('dramas', $filter, [
             'sort' => ['createdAt' => -1],
             'limit' => $limit

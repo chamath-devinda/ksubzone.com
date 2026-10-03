@@ -20,8 +20,10 @@ import {
   Globe,
   Video,
   Eye,
-  Image
+  Image,
+  Flame
 } from 'lucide-react';
+import TrendingSelectionPanel, { setTrendingSelection } from '@/features/admin/components/TrendingSelectionPanel';
 
 const SubtitleUploadModal = dynamic(
   () => import('@/features/media/components/SubtitleUploadModal'),
@@ -77,6 +79,23 @@ export default function MovieManager() {
   const [status, setStatus] = useState('Published');
   const [saving, setSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
+  const [trendingRefreshKey, setTrendingRefreshKey] = useState(0);
+
+  const handleToggleTrending = async (movie) => {
+    const nextState = !movie.isTrending;
+    try {
+      await setTrendingSelection('movie', movie._id, nextState);
+      setMovies((prev) => prev.map((m) => m._id === movie._id ? { ...m, isTrending: nextState, trendingSelectedAt: nextState ? new Date().toISOString() : null } : m));
+      setTrendingRefreshKey((k) => k + 1);
+      toast.success(nextState ? `Added "${movie.title}" to Trending Now` : `Removed "${movie.title}" from Trending Now`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update Trending state');
+    }
+  };
+
+  const handleTrendingPanelChange = (movieId, isTrending) => {
+    setMovies((prev) => prev.map((m) => m._id === movieId ? { ...m, isTrending, trendingSelectedAt: isTrending ? new Date().toISOString() : null } : m));
+  };
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -191,6 +210,7 @@ export default function MovieManager() {
           ? current.map((movie) => movie._id === savedMovie._id ? savedMovie : movie)
           : (current.some((movie) => movie._id === savedMovie._id) ? current : [savedMovie, ...current]));
       }
+      setTrendingRefreshKey((k) => k + 1);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save movie details.');
     } finally {
@@ -228,6 +248,12 @@ export default function MovieManager() {
             <span className="font-bold text-slate-100 block text-xs truncate max-w-[280px]">{movie.title}</span>
             <span className="text-[10px] text-slate-500 font-mono block truncate">{movie.director || 'Unknown Director'}</span>
             <div className="flex gap-1.5 items-center mt-1 flex-wrap">
+              {movie.isTrending && (
+                <span className="px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[9px] font-bold uppercase flex items-center gap-1">
+                  <Flame className="w-2.5 h-2.5" />
+                  Trending
+                </span>
+              )}
               {movie.isHistorical && (
                 <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold uppercase">
                   Historical
@@ -298,6 +324,18 @@ export default function MovieManager() {
         <div className="flex justify-end gap-1.5 items-center">
           <button
             type="button"
+            onClick={() => handleToggleTrending(movie)}
+            className={`w-7 h-7 flex items-center justify-center rounded-full shadow-sm transition active:scale-95 border ${
+              movie.isTrending
+                ? 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30'
+                : 'bg-white/[0.04] text-slate-400 border-white/[0.06] hover:text-white hover:bg-white/[0.08]'
+            }`}
+            title={movie.isTrending ? "Remove from Trending Now" : "Show in Trending Now"}
+          >
+            <Flame className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
             onClick={() => openSubtitleUpload({
               mediaId: movie._id,
               mediaType: 'Movie',
@@ -346,6 +384,13 @@ export default function MovieManager() {
           <Plus className="w-3.5 h-3.5" /> Add Movie
         </button>
       </div>
+
+      {/* Trending Selection Panel */}
+      <TrendingSelectionPanel
+        mediaType="movie"
+        refreshKey={trendingRefreshKey}
+        onChange={handleTrendingPanelChange}
+      />
 
       {/* Status Filter Tabs */}
       <div className="flex gap-1.5 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">

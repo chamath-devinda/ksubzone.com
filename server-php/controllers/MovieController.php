@@ -15,6 +15,7 @@ class MovieController {
         if ($status !== 'All') $filter['status'] = $status;
         $query = trim((string)($_GET['search'] ?? ''));
         if ($query !== '') $filter['title'] = ['$regex' => preg_quote(substr($query, 0, 100), '/'), '$options' => 'i'];
+        if (($_GET['trending'] ?? '') === 'true') $filter['isTrending'] = true;
         $total = $db->count('movies', $filter);
         $movies = $db->find('movies', $filter, ['sort' => ['createdAt' => -1], 'limit' => $limit, 'skip' => ($page - 1) * $limit]);
         self::appendMetadataToMovies($movies);

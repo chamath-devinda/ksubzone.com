@@ -21,8 +21,10 @@ import {
   Calendar,
   Layers,
   ChevronRight,
-  Image
+  Image,
+  Flame
 } from 'lucide-react';
+import TrendingSelectionPanel, { setTrendingSelection } from '@/features/admin/components/TrendingSelectionPanel';
 
 const SubtitleUploadModal = dynamic(
   () => import('@/features/media/components/SubtitleUploadModal'),
@@ -58,6 +60,23 @@ export default function DramaManager() {
 
   // Filter and pagination
   const [filterStatus, setFilterStatus] = useState('All');
+  const [trendingRefreshKey, setTrendingRefreshKey] = useState(0);
+
+  const handleToggleTrending = async (drama) => {
+    const nextState = !drama.isTrending;
+    try {
+      await setTrendingSelection('drama', drama._id, nextState);
+      setDramas((prev) => prev.map((d) => d._id === drama._id ? { ...d, isTrending: nextState, trendingSelectedAt: nextState ? new Date().toISOString() : null } : d));
+      setTrendingRefreshKey((k) => k + 1);
+      toast.success(nextState ? `Added "${drama.title}" to Trending Now` : `Removed "${drama.title}" from Trending Now`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update Trending state');
+    }
+  };
+
+  const handleTrendingPanelChange = (dramaId, isTrending) => {
+    setDramas((prev) => prev.map((d) => d._id === dramaId ? { ...d, isTrending, trendingSelectedAt: isTrending ? new Date().toISOString() : null } : d));
+  };
 
   // Modal triggers
   const [showDramaModal, setShowDramaModal] = useState(false);
@@ -364,6 +383,7 @@ export default function DramaManager() {
           ? current.map((drama) => drama._id === savedDrama._id ? savedDrama : drama)
           : (current.some((drama) => drama._id === savedDrama._id) ? current : [savedDrama, ...current]));
       }
+      setTrendingRefreshKey((k) => k + 1);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save drama configuration.');
     } finally {
@@ -528,6 +548,12 @@ export default function DramaManager() {
             <span className="font-bold text-slate-100 block text-xs truncate max-w-[260px]">{drama.title}</span>
             <span className="text-[10px] text-slate-500 font-mono block truncate">{drama.director || 'Unknown Director'}</span>
             <div className="flex gap-1.5 items-center mt-1 flex-wrap">
+              {drama.isTrending && (
+                <span className="px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[9px] font-bold uppercase flex items-center gap-1">
+                  <Flame className="w-2.5 h-2.5" />
+                  Trending
+                </span>
+              )}
               {drama.isHistorical && (
                 <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold uppercase">
                   Historical
@@ -588,6 +614,18 @@ export default function DramaManager() {
         <div className="flex justify-end gap-1.5 items-center">
           <button
             type="button"
+            onClick={() => handleToggleTrending(drama)}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg shadow-sm transition active:scale-95 border ${
+              drama.isTrending
+                ? 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30'
+                : 'bg-white/[0.04] text-slate-400 border-white/[0.06] hover:text-white hover:bg-white/[0.08]'
+            }`}
+            title={drama.isTrending ? "Remove from Trending Now" : "Show in Trending Now"}
+          >
+            <Flame className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
             onClick={() => handleOpenExplorer(drama)}
             className="btn-oio-pill flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg transition text-[11px] font-bold shadow-sm active:scale-95"
             title="Explore Seasons & Episodes"
@@ -633,6 +671,13 @@ export default function DramaManager() {
           <Plus className="w-3.5 h-3.5" /> Add Drama
         </button>
       </div>
+
+      {/* Trending Selection Panel */}
+      <TrendingSelectionPanel
+        mediaType="drama"
+        refreshKey={trendingRefreshKey}
+        onChange={handleTrendingPanelChange}
+      />
 
       {/* Status Filter Tabs */}
       <div className="flex gap-1.5 bg-[#11131A] p-1 rounded-xl border border-white/[0.06] w-fit">
