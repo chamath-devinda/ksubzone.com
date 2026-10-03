@@ -12,8 +12,8 @@ const PUBLIC_STATUSES = new Set(['Published', 'Upcoming']);
  * edit endpoint (which also bumps the "Latest" activity clock).
  */
 export async function setTrendingSelection(mediaType, id, isTrending) {
-  const res = await apiClient.put(`/api/admin/${mediaType}s/${id}/trending`, { isTrending });
-  return res?.data?.item || null;
+  const res = await apiClient.put(`/api/admin/${mediaType}s/${id}`, { isTrending });
+  return res?.data?.[mediaType] || res?.data?.item || null;
 }
 
 function selectionTime(item) {
