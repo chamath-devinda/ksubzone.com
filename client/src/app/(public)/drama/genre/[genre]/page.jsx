@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import GlassCard from '@/components/ui/GlassCard';
 import { Tv } from 'lucide-react';
 import { permalinkSlug } from '@/utils/slug';
-import { serializeJsonLd } from '@/utils/seo';
+import { buildSeoTitle, serializeJsonLd } from '@/utils/seo';
 import AdSlot from '@/components/ads/AdSlot';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import { fetchBackendJson } from '@/lib/server/backend';
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }) {
   const { genre } = params;
   const { genreName } = await getGenreData(genre);
   return {
-    title: `Best ${genreName} Korean Dramas (Sinhala Subtitles) | KSubZone`,
+    title: buildSeoTitle(`${genreName} Korean Dramas - Sinhala Subtitles`),
     description: `Download Sinhala and English subtitles for the best ${genreName} Korean dramas on KSubZone. Explore cast, synopsis, and subtitle files.`,
     alternates: {
       canonical: `https://www.ksubzone.com/drama/genre/${genre}`,

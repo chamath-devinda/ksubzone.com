@@ -16,8 +16,9 @@ export function generateMetadata({ searchParams }) {
     ? `${SITE_URL}/movies`
     : `${SITE_URL}/movies?page=${page}`;
 
+  const title = 'Korean Movies with Sinhala Subtitles | KSubZone';
   return {
-    title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
+    title,
     description: 'Download synchronized Sinhala & English subtitles for popular Korean movies. Explore ratings, reviews, cast listings, and timing files.',
     keywords: ['korean movies', 'sinhala subtitles', 'k-movie subtitles', 'ksubzone movies'],
     alternates: {
@@ -25,14 +26,14 @@ export function generateMetadata({ searchParams }) {
     },
     ...(page > 1 ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
-      title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
+      title,
       description: 'Download synchronized Sinhala & English subtitles for popular Korean movies.',
       url: canonical,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Korean Movies with Sinhala & English Subtitles | KSubZone',
+      title,
       description: 'Download synchronized Sinhala & English subtitles for popular Korean movies.',
     },
   };

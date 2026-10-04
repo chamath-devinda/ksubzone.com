@@ -6,7 +6,7 @@ import { BookOpen, CalendarDays, Clock3, Eye, ArrowRight } from 'lucide-react';
 import AdSlot from '@/components/ads/AdSlot';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import { fetchBackendJson } from '@/lib/server/backend';
-import { serializeJsonLd } from '@/utils/seo';
+import { buildSeoTitle, serializeJsonLd } from '@/utils/seo';
 
 const getCategoryData = cache(async (categorySlug) => {
   const data = await fetchBackendJson(
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }) {
   const { categoryName, articles } = await getCategoryData(category);
   if (articles.length === 0) notFound();
   return {
-    title: `${categoryName} Articles & Guides (K-Drama & Movie) | KSubZone`,
+    title: buildSeoTitle(`${categoryName} Articles & Guides`),
     description: `Read the latest ${categoryName} articles, reviews, guides, character analysis, and Sinhala subtitle notes on KSubZone.`,
     alternates: {
       canonical: `https://www.ksubzone.com/articles/category/${category}`,

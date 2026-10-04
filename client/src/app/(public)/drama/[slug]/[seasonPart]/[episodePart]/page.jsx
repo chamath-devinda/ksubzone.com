@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import Watch from '@/features/media/pages/Watch';
 import { fetchBackendJson } from '@/lib/server/backend';
-import { cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
+import { buildSeoTitle, cleanMediaTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 export const revalidate = 60;
 
@@ -40,7 +40,9 @@ export async function generateMetadata({ params }) {
         || (data?.episodeSubtitles || []).some(subtitle => getId(subtitle?.mediaId) === activeEpisodeId);
 
       if (drama && activeEpisodeDoc) {
-        const titleStr = `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')}${activeEpisodeDoc.episodeTitle ? ` "${activeEpisodeDoc.episodeTitle}"` : ''} Sinhala Subtitles | KSubZone`;
+        const titleStr = buildSeoTitle(
+          `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')} Sinhala Subtitles`
+        );
         const canonicalUrl = `${SITE_URL}/drama/${slug}/season-${seasonNumber}/episode-${episodeNumber}`;
         return {
           title: titleStr,
@@ -50,7 +52,7 @@ export async function generateMetadata({ params }) {
           },
           ...(hasApprovedSubtitle ? {} : { robots: { index: false, follow: true } }),
           openGraph: {
-            title: `${cleanTitle} S${String(seasonNumber).padStart(2, '0')}E${String(episodeNumber).padStart(2, '0')} Subtitles`,
+            title: titleStr,
             description: activeEpisodeDoc.episodeDescription,
             url: canonicalUrl,
             images: drama.poster ? [{ url: drama.poster }] : [],

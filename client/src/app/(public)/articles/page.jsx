@@ -7,7 +7,7 @@ import { fetchBackendJson } from '@/lib/server/backend';
 export const revalidate = 0;
 
 export const metadata = {
-  title: 'KSubZone Articles - K-Drama Guides, Reviews & Sinhala Subtitle Notes',
+  title: 'K-Drama Guides & Subtitle News | KSubZone',
   description: 'Read Korean drama articles, watch guides, character analysis, Sinhala subtitle notes, and movie recommendations on KSubZone.',
   keywords: ['kdrama articles', 'korean drama guides', 'sinhala subtitles', 'ksubzone articles'],
   alternates: {

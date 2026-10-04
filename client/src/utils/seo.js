@@ -1,4 +1,35 @@
 export const SITE_URL = 'https://www.ksubzone.com';
+export const MAX_SEO_TITLE_LENGTH = 60;
+
+/**
+ * Keep document titles readable in search results.  Search engines can show
+ * fewer characters depending on glyph width, so leave a little room below
+ * their usual 60–65 character guidance and preserve the site name.
+ */
+export function buildSeoTitle(value = '', { maxLength = MAX_SEO_TITLE_LENGTH, suffix = ' | KSubZone' } = {}) {
+  const title = String(value || '').replace(/\s+/g, ' ').trim();
+  // Preserve the leading space in the default " | KSubZone" separator.
+  const normalizedSuffix = String(suffix || '').replace(/\s+$/, '');
+  if (!title) return normalizedSuffix.trim().replace(/^\|\s*/, '') || 'KSubZone';
+
+  const fullTitle = normalizedSuffix && !title.endsWith(normalizedSuffix)
+    ? `${title}${normalizedSuffix}`
+    : title;
+  if (fullTitle.length <= maxLength) return fullTitle;
+
+  const ending = normalizedSuffix && fullTitle.endsWith(normalizedSuffix)
+    ? normalizedSuffix
+    : '';
+  const available = Math.max(1, maxLength - ending.length - 1);
+  const shortened = title.slice(0, available);
+  const wordBoundary = shortened.lastIndexOf(' ');
+  const readableTitle = (wordBoundary >= Math.floor(available * 0.6)
+    ? shortened.slice(0, wordBoundary)
+    : shortened
+  ).trim();
+
+  return `${readableTitle}…${ending}`;
+}
 
 // A number of legacy titles contain SEO copy in the stored display name
 // (including older "Subtitiles" misspellings). Keep the slug untouched, but
@@ -78,8 +109,9 @@ export function buildMediaMetaTitle(media = {}) {
   const year = getMediaReleaseYear(media);
   const yearStr = year ? ` (${year})` : '';
 
-  // Requirement: Include drama/movie name + year + 'Sinhala Subtitles' and Sinhala keyword
-  return `${title}${yearStr} Sinhala Subtitles | ${title} සිංහල උපසිරැසි - KSubZone`;
+  // Keep the media name, year, and primary subtitle keyword without repeating
+  // the complete title. Repetition was producing 100+ character <title>s.
+  return buildSeoTitle(`${title}${yearStr} Sinhala Subtitles`);
 }
 
 export function buildMediaMetaDescription(media = {}) {

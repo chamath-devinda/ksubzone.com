@@ -122,7 +122,7 @@ export default function HeroSlider({ items = EMPTY_ITEMS, loading = false }) {
             <source media="(max-width: 639px)" srcSet={posterUrl} />
             <img
               src={backdropUrl}
-              alt=""
+              alt={`${current?.title || 'Korean entertainment'} featured backdrop`}
               fetchpriority={currentIndex === 0 ? 'high' : 'auto'}
               loading={currentIndex === 0 ? 'eager' : 'lazy'}
               decoding="async"

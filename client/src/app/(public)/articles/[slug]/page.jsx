@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import ArticleDetail from '@/features/articles/pages/ArticleDetail';
 import { fetchBackendJson } from '@/lib/server/backend';
-import { serializeJsonLd, SITE_URL } from '@/utils/seo';
+import { buildSeoTitle, serializeJsonLd, SITE_URL } from '@/utils/seo';
 
 const getArticle = cache(async (slug) => {
   return fetchBackendJson(`/api/articles/${encodeURIComponent(slug)}?trackView=0`, {
@@ -18,15 +18,16 @@ export async function generateMetadata({ params }) {
     const data = await getArticle(slug);
     const article = data?.article;
     if (article) {
+      const title = buildSeoTitle(article.metaTitle || article.title);
       return {
-        title: article.metaTitle || `${article.title} | KSubZone Articles`,
+        title,
         description: article.metaDescription || article.excerpt || 'Read this article on KSubZone.',
         keywords: article.seoKeywords || article.tags || [],
         alternates: {
           canonical: `https://www.ksubzone.com/articles/${slug}`,
         },
         openGraph: {
-          title: article.metaTitle || article.title,
+          title,
           description: article.metaDescription || article.excerpt,
           url: `https://www.ksubzone.com/articles/${slug}`,
           images: article.coverImage ? [{ url: article.coverImage }] : [],
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }) {
         },
         twitter: {
           card: 'summary_large_image',
-          title: article.metaTitle || article.title,
+          title,
           description: article.metaDescription || article.excerpt,
           images: article.coverImage ? [article.coverImage] : [],
         },

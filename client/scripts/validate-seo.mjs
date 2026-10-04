@@ -10,6 +10,7 @@ const decodeXml = (value) => value
   .replace(/&apos;/g, "'");
 
 const normalizeUrl = (value) => value.replace(/\/+$/, '') || value;
+const MAX_TITLE_LENGTH = 60;
 const errors = [];
 
 async function fetchText(url) {
@@ -54,8 +55,15 @@ const workers = Array.from({ length: Math.min(6, urls.length) }, async () => {
     try {
       const { response, body } = await fetchText(requestUrl);
       if (response.status !== 200) errors.push(`${canonicalUrl}: HTTP ${response.status}`);
-      if (!/<title[^>]*>\s*[^<]+\s*<\/title>/i.test(body)) errors.push(`${canonicalUrl}: missing title`);
+      const title = body.match(/<title[^>]*>\s*([^<]+?)\s*<\/title>/i)?.[1]?.trim();
+      if (!title) errors.push(`${canonicalUrl}: missing title`);
+      else if (title.length > MAX_TITLE_LENGTH) errors.push(`${canonicalUrl}: title is ${title.length} characters (maximum ${MAX_TITLE_LENGTH})`);
       if (!/<h1\b/i.test(body)) errors.push(`${canonicalUrl}: missing h1`);
+      const imageTags = body.match(/<img\b[^>]*>/gi) || [];
+      for (const imageTag of imageTags) {
+        const alt = imageTag.match(/\balt\s*=\s*(["'])(.*?)\1/i)?.[2]?.trim();
+        if (!alt) errors.push(`${canonicalUrl}: image is missing descriptive alt text`);
+      }
       if (/<meta[^>]+(?:name=["']robots["'][^>]+content=["'][^"']*noindex|content=["'][^"']*noindex[^>]+name=["']robots)/i.test(body)) {
         errors.push(`${canonicalUrl}: contains noindex`);
       }

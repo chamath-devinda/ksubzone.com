@@ -8,6 +8,7 @@ import {
 } from '@/utils/mediaCatalog';
 import {
   SITE_URL,
+  buildSeoTitle,
   normalizeBrandName,
   normalizeBrandText,
   normalizeSiteUrl,
@@ -37,7 +38,7 @@ export async function generateMetadata() {
       const brand = data.brand || {};
       const siteName = normalizeBrandName(brand.siteName);
       const primaryUrl = normalizeSiteUrl(brand.primaryUrl);
-      const title = normalizeBrandText(seo.homeTitle || `${siteName} - ${brand.tagline || 'K-Drama & Movie Subtitles'}`);
+      const title = buildSeoTitle(normalizeBrandText(seo.homeTitle || `${siteName} - ${brand.tagline || 'K-Drama & Movie Subtitles'}`), { suffix: '' });
       const description = seo.homeDescription || 'Download synchronized Sinhala and English subtitles for Korean dramas and movies.';
 
       return {

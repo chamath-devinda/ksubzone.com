@@ -13,7 +13,7 @@ import { fetchBackendJson } from '@/lib/server/backend';
 export const revalidate = 3600;
 
 export const metadata = {
-  title: 'KSubZone Complete HTML Sitemap - Korean Dramas, Movies & Sinhala Subtitles',
+  title: 'Korean Drama & Movie Sitemap | KSubZone',
   description: 'Explore the complete directory of Korean dramas, movies, genre catalogs, guides, and Sinhala subtitle downloads on KSubZone.',
   alternates: {
     canonical: `${SITE_URL}/sitemap`,

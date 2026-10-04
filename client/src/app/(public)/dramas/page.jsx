@@ -18,8 +18,9 @@ export function generateMetadata({ searchParams }) {
     ? `${SITE_URL}/dramas`
     : `${SITE_URL}/dramas?page=${page}`;
 
+  const title = 'Korean Dramas with Sinhala Subtitles | KSubZone';
   return {
-    title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
+    title,
     description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas. Explore episode guides, cast listings, and SRT downloads.',
     keywords: ['korean dramas', 'sinhala subtitles', 'kdrama subtitles', 'ksubzone dramas'],
     alternates: {
@@ -29,14 +30,14 @@ export function generateMetadata({ searchParams }) {
     // the first page is the canonical representative.
     ...(page > 1 ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
-      title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
+      title,
       description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas.',
       url: canonical,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Korean TV Dramas & Series with Sinhala & English Subtitles | KSubZone',
+      title,
       description: 'Download synchronized Sinhala & English subtitles for popular Korean TV shows and dramas.',
     },
   };
