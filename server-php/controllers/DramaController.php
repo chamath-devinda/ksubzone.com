@@ -7,6 +7,36 @@ use Utils\MediaPayload;
 
 class DramaController {
 
+    /** Record one privacy-preserving, deduplicated browser view for a drama. */
+    public static function recordDramaView($slug) {
+        $db = Database::getInstance();
+        $drama = Slug::findByPermalinkSlug($db, 'dramas', $slug);
+
+        if (!$drama || (($drama['status'] ?? 'Published') !== 'Published')) {
+            http_response_code(404);
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Drama not found']);
+            return;
+        }
+
+        $viewCount = (int)($drama['viewCount'] ?? 0);
+        $counted = false;
+        try {
+            if (\Utils\VisitorGuard::shouldCount((string)$drama['_id'])) {
+                $nextViews = $db->incrementJsonCounter('dramas', $drama['_id'], 'viewCount');
+                if ($nextViews !== null) {
+                    $viewCount = $nextViews;
+                    $counted = true;
+                }
+            }
+        } catch (\Exception $e) {
+            // View tracking is best-effort and must not affect public pages.
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['viewCount' => $viewCount, 'counted' => $counted]);
+    }
+
     /**
      * Return aired episodes that still have no approved subtitle. This keeps
      * the admin notification bell to one request instead of a burst of detail

@@ -41,7 +41,7 @@ export default function Watch({
   const { data: dramaData, isLoading: dramaLoading } = useQuery({
     queryKey: ['dramaDetails', slug],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/media/dramas/${slug}`);
+      const res = await apiClient.get(`/api/media/dramas/${slug}?trackView=0`);
       return res.data;
     },
     initialData: initialDramaData,

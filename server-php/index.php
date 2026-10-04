@@ -88,7 +88,7 @@ if (!empty($rawOrigin) && $isAllowedOrigin) {
 header('Vary: Origin', false);
 
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Subtitle-Proxy");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Subtitle-Proxy, X-KSubZone-Visitor-Id");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -540,8 +540,10 @@ $routes = [
     ['GET', '/api/media/recommendations', 'Controllers\MovieController::getRecommendations'],
     ['GET', '/api/media/sitemap-catalog', 'Controllers\MovieController::getSitemapCatalog'],
     ['GET', '/api/media/movies', 'Controllers\MovieController::getAllMovies'],
+    ['POST', '/api/media/movies/([^/]+)/view', [function() { \Middleware\RateLimitMiddleware::limit('movie_view', 60, 60); }, 'Controllers\MovieController::recordMovieView']],
     ['GET', '/api/media/movies/([^/]+)', 'Controllers\MovieController::getMovieBySlug'],
     ['GET', '/api/media/dramas', 'Controllers\DramaController::getAllDramas'],
+    ['POST', '/api/media/dramas/([^/]+)/view', [function() { \Middleware\RateLimitMiddleware::limit('drama_view', 60, 60); }, 'Controllers\DramaController::recordDramaView']],
     ['GET', '/api/media/dramas/([^/]+)', 'Controllers\DramaController::getDramaBySlug'],
     ['GET', '/api/articles', 'Controllers\ArticleController::getArticles'],
     ['GET', '/api/articles/([^/]+)', 'Controllers\ArticleController::getArticleBySlug'],

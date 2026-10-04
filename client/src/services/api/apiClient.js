@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { tokenService } from './tokenService';
+import { getVisitorId } from '@/utils/visitorId';
 
 // Keep browser requests same-origin. Next.js rewrites `/api/*` to the PHP API
 // using the server-only BACKEND_URL.
@@ -53,6 +54,13 @@ apiClient.interceptors.request.use(
   (config) => {
     // Ensure withCredentials is true for all requests
     config.withCredentials = true;
+
+    // Send the same random first-party ID used by site analytics. This lets
+    // public view counters deduplicate a browser for one content item/day.
+    if (typeof window !== 'undefined' && !config.headers['X-KSubZone-Visitor-Id']) {
+      const visitorId = getVisitorId();
+      if (visitorId) config.headers['X-KSubZone-Visitor-Id'] = visitorId;
+    }
 
     // Determine which token to use based on URL path to prevent token pollution
     const url = config.url || '';

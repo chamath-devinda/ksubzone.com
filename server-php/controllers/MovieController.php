@@ -6,6 +6,36 @@ use Utils\Slug;
 use Utils\MediaPayload;
 
 class MovieController {
+    /** Record one privacy-preserving, deduplicated browser view for a movie. */
+    public static function recordMovieView($slug) {
+        $db = Database::getInstance();
+        $movie = Slug::findByPermalinkSlug($db, 'movies', $slug);
+
+        if (!$movie || (($movie['status'] ?? 'Published') !== 'Published')) {
+            http_response_code(404);
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Movie not found']);
+            return;
+        }
+
+        $viewCount = (int)($movie['viewCount'] ?? 0);
+        $counted = false;
+        try {
+            if (\Utils\VisitorGuard::shouldCount((string)$movie['_id'])) {
+                $nextViews = $db->incrementJsonCounter('movies', $movie['_id'], 'viewCount');
+                if ($nextViews !== null) {
+                    $viewCount = $nextViews;
+                    $counted = true;
+                }
+            }
+        } catch (\Exception $e) {
+            // View tracking is best-effort and must not affect public pages.
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['viewCount' => $viewCount, 'counted' => $counted]);
+    }
+
     public static function getAdminMovies() {
         $db = Database::getInstance();
         $limit = max(1, min((int)($_GET['limit'] ?? 25), 100));
