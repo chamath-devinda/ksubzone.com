@@ -1,4 +1,5 @@
 const VISITOR_ID_STORAGE_KEY = 'ksubzone-visitor-id';
+let memoryVisitorId = '';
 
 function createVisitorId() {
   if (window.crypto?.getRandomValues) {
@@ -21,12 +22,13 @@ export function getVisitorId() {
     const existing = window.localStorage.getItem(VISITOR_ID_STORAGE_KEY);
     if (/^v1_[a-f0-9]{32}$/i.test(existing || '')) return existing;
 
-    const visitorId = createVisitorId();
-    window.localStorage.setItem(VISITOR_ID_STORAGE_KEY, visitorId);
-    return visitorId;
+    memoryVisitorId = memoryVisitorId || createVisitorId();
+    window.localStorage.setItem(VISITOR_ID_STORAGE_KEY, memoryVisitorId);
+    return memoryVisitorId;
   } catch {
-    // Private-mode storage can be unavailable. The backend then uses its
-    // privacy-preserving network fingerprint as the deduplication fallback.
-    return '';
+    // Keep a consistent identity for this page when storage is unavailable.
+    // Otherwise all visitors can collapse into the server proxy's IP.
+    memoryVisitorId = memoryVisitorId || createVisitorId();
+    return memoryVisitorId;
   }
 }

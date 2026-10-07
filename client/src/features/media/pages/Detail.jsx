@@ -16,6 +16,7 @@ import { downloadSubtitle } from '@/utils/subtitleDownload';
 import AdSlot from '@/components/ads/AdSlot';
 import { cleanMediaText, cleanMediaTitle } from '@/utils/seo';
 import { subscribeToMediaRefresh } from '@/utils/mediaRefresh';
+import { useMediaViewCount } from '@/hooks/useMediaViewCount';
 import MediaSubtitlesSection from '../components/MediaSubtitlesSection';
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
@@ -67,7 +68,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
   const isAdmin = !!admin || !!(user && user.hasDashboardAccess);
 
   // Fetch Media Details
-  const mediaPath = type === 'Drama' ? `/api/media/dramas/${slug}` : `/api/media/movies/${slug}`;
+  const mediaPath = `/api/media/${type === 'Drama' ? 'dramas' : 'movies'}/${encodeURIComponent(slug || '')}`;
   const endpoint = `${mediaPath}?trackView=0`;
   const { data, isLoading, error, refetch: refetchMedia } = useQuery({
     queryKey: ['mediaDetails', slug, type],
@@ -91,34 +92,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
   const seasons = asArray(data?.seasons);
   const episodes = asArray(data?.episodes);
 
-  // Server-side data fetching deliberately never records a view, otherwise
-  // crawlers and ISR refreshes inflate the counter. Count the hydrated human
-  // browser separately through a lightweight endpoint that bypasses the
-  // detail-response cache and returns the authoritative updated total.
-  useEffect(() => {
-    if (!slug || !media?._id) return undefined;
-
-    let active = true;
-    void apiClient.post(`${mediaPath}/view`, undefined, { timeout: 8_000 })
-      .then((response) => {
-        const viewCount = Number(response.data?.viewCount);
-        if (!active || !Number.isFinite(viewCount)) return;
-
-        queryClient.setQueryData(['mediaDetails', slug, type], (current) => {
-          if (!current || typeof current !== 'object') return current;
-          const key = type === 'Drama' ? 'drama' : 'movie';
-          const currentMedia = current[key];
-          if (!currentMedia || typeof currentMedia !== 'object') return current;
-          return { ...current, [key]: { ...currentMedia, viewCount } };
-        });
-      })
-      // Counting must never prevent a visitor from reading or downloading.
-      .catch(() => {});
-
-    return () => {
-      active = false;
-    };
-  }, [media?._id, mediaPath, queryClient, slug, type]);
+  const viewCount = useMediaViewCount(mediaPath, Boolean(slug && media?._id), media?.viewCount);
 
   // Sync selected season when seasons list changes
   useEffect(() => {
@@ -637,7 +611,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
                   </span>
                 )}
                 <span suppressHydrationWarning className="px-2.5 py-0.5 bg-brand-primary/10 border border-brand-primary/25 text-brand-primary text-[10px] font-extrabold uppercase tracking-widest rounded-full inline-flex items-center gap-1">
-                  <Eye className="w-2.5 h-2.5" /> {asNumber(media.viewCount)} Views
+                  <Eye className="w-2.5 h-2.5" /> {viewCount} Views
                 </span>
               </div>
 
@@ -696,7 +670,7 @@ export default function Detail({ type = 'Movie', initialData, topOnly = false, s
                 <span>•</span>
                 <span className="uppercase">{asText(media.language, 'KO')}</span>
                 <span>•</span>
-                <span suppressHydrationWarning>{asNumber(media.viewCount)} Views</span>
+                <span suppressHydrationWarning>{viewCount} Views</span>
               </div>
 
               {/* PROMINENT HERO DOWNLOAD ACTION BAR */}

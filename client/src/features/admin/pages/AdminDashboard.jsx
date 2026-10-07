@@ -91,6 +91,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadDashboard();
+    const refreshVisible = () => {
+      if (document.visibilityState === 'visible') loadDashboard({ silent: true });
+    };
+    const timer = setInterval(refreshVisible, 60_000);
+    document.addEventListener('visibilitychange', refreshVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshVisible);
+    };
   }, [loadDashboard]);
 
   const handleClearCache = async () => {
@@ -295,7 +304,7 @@ export default function AdminDashboard() {
 
               <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Key performance indicators">
                 {[
-                  { label: 'Total views', value: formatNum(totalViews), icon: Eye, note: 'Audience reach' },
+                  { label: 'Total views', value: Number(totalViews).toLocaleString('en-US'), icon: Eye, note: 'Audience reach' },
                   { label: 'Media library', value: formatNum(totalCatalog), icon: Film, note: `${totalMovies} movies · ${totalDramas} dramas` },
                   { label: 'Subtitles', value: formatNum(totalSubtitles), icon: Languages, note: pendingSubtitles ? `${pendingSubtitles} awaiting review` : 'All caught up' },
                   { label: 'Community', value: formatNum(totalUsers), icon: Users, note: 'Registered members' },
@@ -331,7 +340,7 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                         <h1 className="text-3xl sm:text-4xl font-black text-[var(--studio-text)] tracking-tight">
-                          {hasLiveStats ? formatNum(totalViews) : '—'}
+                          {hasLiveStats ? Number(totalViews).toLocaleString('en-US') : '—'}
                           <span className="text-sm font-semibold text-[var(--studio-muted)] ml-2">total views</span>
                         </h1>
                       </div>
