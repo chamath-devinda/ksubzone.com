@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSRT, decodeSubtitle } from '../client/src/utils/srt.mjs';
+import {
+  mergeAiTranslationResponse,
+  shouldSplitAiChunk,
+  SubtitleStructureError
+} from '../client/src/utils/subtitleTranslation.mjs';
 import fs from 'node:fs';
 
 test('SRT preserves Sinhala text, timestamps and multiline content', () => {
@@ -17,6 +22,48 @@ test('UTF-8 and BOM UTF-16 preserve Sinhala; invalid bytes fail explicitly', () 
   const utf16 = Buffer.concat([Buffer.from([255,254]), Buffer.from('සිංහල', 'utf16le')]);
   assert.equal(decodeSubtitle(utf16), 'සිංහල');
   assert.throws(() => decodeSubtitle(new Uint8Array([0xff, 0xff])), /encoding/);
+});
+
+test('structured AI translations preserve browser-owned subtitle structure', () => {
+  const chunk = [
+    { id: 17, start: '00:01:00,000', end: '00:01:02,000', text: '<i>Hello.</i>' },
+    { id: 18, start: '00:01:03,000', end: '00:01:05,000', text: 'www.ksubzone.com' }
+  ];
+  const result = mergeAiTranslationResponse({
+    chunk,
+    responseData: { translatedCues: ['<i>හෙලෝ.</i>', 'මේක වෙනස් කරන්න'] },
+    polishingSinhala: false,
+    parseSRT
+  });
+
+  assert.deepEqual(result, [
+    { id: 17, start: '00:01:00,000', end: '00:01:02,000', text: '<i>හෙලෝ.</i>' },
+    { id: 18, start: '00:01:03,000', end: '00:01:05,000', text: 'www.ksubzone.com' }
+  ]);
+});
+
+test('incomplete or structurally changed AI batches are marked for safe splitting', () => {
+  const chunk = [{ id: 1, start: '00:00:01,000', end: '00:00:02,000', text: '<b>Hello</b>' }];
+  assert.throws(() => mergeAiTranslationResponse({
+    chunk,
+    responseData: { translatedCues: [] },
+    polishingSinhala: false,
+    parseSRT
+  }), SubtitleStructureError);
+
+  let formattingError;
+  try {
+    mergeAiTranslationResponse({
+      chunk,
+      responseData: { translatedCues: ['හෙලෝ'] },
+      polishingSinhala: false,
+      parseSRT
+    });
+  } catch (error) {
+    formattingError = error;
+  }
+  assert.equal(shouldSplitAiChunk(formattingError), true);
+  assert.equal(shouldSplitAiChunk({ response: { data: { code: 'AI_RESPONSE_INCOMPLETE' } } }), true);
 });
 
 test('admin login has a ModSecurity-safe 403 fallback route', () => {

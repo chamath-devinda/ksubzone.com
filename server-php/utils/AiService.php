@@ -18,7 +18,7 @@ class AiService {
         return $apiKey;
     }
 
-    public static function generateContent($systemInstruction, $userPrompt, $temperature = 0.7) {
+    public static function generateContent($systemInstruction, $userPrompt, $temperature = 0.7, $generationOverrides = []) {
         $apiKey = self::getApiKey();
         
         if (!$apiKey || $apiKey === 'your_gemini_api_key_here') {
@@ -26,6 +26,16 @@ class AiService {
         }
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
+
+        $generationConfig = array_merge([
+            "temperature" => $temperature,
+            "topK" => 40,
+            "topP" => 0.95,
+            "maxOutputTokens" => 16384,
+            "thinkingConfig" => [
+                "thinkingBudget" => 0
+            ]
+        ], $generationOverrides);
 
         $payload = [
             "contents" => [
@@ -41,15 +51,7 @@ class AiService {
                     ["text" => $systemInstruction]
                 ]
             ],
-            "generationConfig" => [
-                "temperature" => $temperature,
-                "topK" => 40,
-                "topP" => 0.95,
-                "maxOutputTokens" => 8192,
-                "thinkingConfig" => [
-                    "thinkingBudget" => 0
-                ]
-            ]
+            "generationConfig" => $generationConfig
         ];
 
         $maxRetries = 5;
@@ -106,8 +108,22 @@ class AiService {
                 throw new \Exception("Gemini API Error ({$httpCode}): " . $errorMessage);
             }
 
-            if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-                return $data['candidates'][0]['content']['parts'][0]['text'];
+            $candidate = $data['candidates'][0] ?? null;
+            $finishReason = $candidate['finishReason'] ?? null;
+            if ($finishReason === 'MAX_TOKENS') {
+                throw new \UnexpectedValueException('Gemini response was truncated before all subtitle lines were returned.');
+            }
+
+            if (!empty($candidate['content']['parts'])) {
+                $textParts = [];
+                foreach ($candidate['content']['parts'] as $part) {
+                    if (isset($part['text'])) {
+                        $textParts[] = $part['text'];
+                    }
+                }
+                if (!empty($textParts)) {
+                    return implode('', $textParts);
+                }
             }
 
             throw new \Exception("Unexpected response format from Gemini API");

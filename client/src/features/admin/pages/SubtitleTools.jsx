@@ -8,6 +8,10 @@ import AdminTopBar from '@/features/admin/components/AdminTopBar';
 import { useToast } from '@/features/admin/components/Toast';
 import { applyDailyBrandAccentColor } from '@/features/admin/brandingColor';
 import {
+  mergeAiTranslationResponse,
+  shouldSplitAiChunk
+} from '@/utils/subtitleTranslation.mjs';
+import {
   Languages, Sparkles, UploadCloud, Download, AlertTriangle, Play,
   CheckCircle, Plus, Trash2, Edit2, RefreshCw, Layers, ArrowRight, Check, Eye, Settings, FileText, Undo, Wand2
 } from 'lucide-react';
@@ -79,9 +83,6 @@ const stringifySRT = (subs) => {
     return `${index + 1}\n${sub.start} --> ${sub.end}\n${sub.text}`;
   }).join('\n\n') + '\n';
 };
-
-const getSrtFormattingTokens = (text) => text.match(/<\/?[^>\n]+>|\{\\[^}\n]*\}/g) || [];
-const isProtectedPromoText = (text) => /(?:https?:\/\/|www\.|ksubzone(?:\.com)?|subtitles?\s+by|translated\s+by)/i.test(text);
 
 // Clean base name helper
 const cleanBaseName = (fileName) => {
@@ -609,10 +610,90 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
       translateStatusMsg: polishingSinhala ? 'Initializing Sinhala subtitle polishing...' : 'Initializing AI translation...'
     });
 
-    const chunkSize = polishingSinhala || translationEngine === 'gemini' ? 40 : 150;
+    // Dialogue-only Gemini responses are smaller and safer than round-tripping
+    // complete SRT blocks. Conservative chunks also avoid output truncation.
+    const chunkSize = polishingSinhala || translationEngine === 'gemini' ? 20 : 100;
     const totalSubs = file.processedSubs.length;
     const totalChunks = Math.ceil(totalSubs / chunkSize);
     const updatedSubs = [...file.processedSubs];
+
+    const requestTranslatedChunk = async (chunk, absoluteStart) => {
+      const chunkSrtText = stringifySRT(chunk);
+      let response;
+      const retries = 5;
+      const backoffDelay = 6000;
+
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          response = await apiClient.post(
+            polishingSinhala ? '/api/admin/ai/polish' : '/api/admin/ai/translate',
+            {
+              srtContent: chunkSrtText,
+              // Gemini receives cue text only. The browser keeps timestamps,
+              // sequence numbers, and ordering as the source of truth.
+              ...((polishingSinhala || translationEngine === 'gemini') ? {
+                cues: chunk.map(subtitle => ({
+                  id: String(subtitle.id),
+                  text: subtitle.text
+                }))
+              } : {}),
+              ...(polishingSinhala ? { mode: 'polish-si' } : { engine: translationEngine })
+            },
+            { timeout: 120000 }
+          );
+          break;
+        } catch (apiErr) {
+          const status = apiErr.response?.status;
+          const isRateLimit = status === 429
+            || apiErr.message?.includes('429')
+            || apiErr.response?.data?.error?.includes('429');
+
+          if (isRateLimit && attempt < retries) {
+            const currentDelay = backoffDelay * attempt + Math.floor(Math.random() * 2000);
+            updateFileState(fileId, {
+              translateStatusMsg: `Rate limit hit (429). Retrying subtitles ${absoluteStart + 1}-${absoluteStart + chunk.length} (attempt ${attempt + 1}/${retries}) in ${Math.round(currentDelay / 1000)}s...`
+            });
+            await new Promise(resolve => setTimeout(resolve, currentDelay));
+          } else if (!status && attempt < retries) {
+            const currentDelay = 3000 * attempt;
+            updateFileState(fileId, {
+              translateStatusMsg: `Network error. Retrying subtitles ${absoluteStart + 1}-${absoluteStart + chunk.length} (attempt ${attempt + 1}/${retries}) in ${Math.round(currentDelay / 1000)}s...`
+            });
+            await new Promise(resolve => setTimeout(resolve, currentDelay));
+          } else {
+            throw apiErr;
+          }
+        }
+      }
+
+      return mergeAiTranslationResponse({
+        chunk,
+        responseData: response?.data,
+        polishingSinhala,
+        parseSRT
+      });
+    };
+
+    const translateChunkSafely = async (chunk, absoluteStart, depth = 0) => {
+      try {
+        return await requestTranslatedChunk(chunk, absoluteStart);
+      } catch (error) {
+        if (shouldSplitAiChunk(error) && chunk.length > 1 && depth < 6) {
+          const midpoint = Math.ceil(chunk.length / 2);
+          const left = chunk.slice(0, midpoint);
+          const right = chunk.slice(midpoint);
+          updateFileState(fileId, {
+            translateStatusMsg: `AI response was incomplete. Recovering automatically with smaller batches (${absoluteStart + 1}-${absoluteStart + chunk.length})...`
+          });
+
+          const translatedLeft = await translateChunkSafely(left, absoluteStart, depth + 1);
+          await new Promise(resolve => setTimeout(resolve, 750));
+          const translatedRight = await translateChunkSafely(right, absoluteStart + midpoint, depth + 1);
+          return [...translatedLeft, ...translatedRight];
+        }
+        throw error;
+      }
+    };
 
     try {
       for (let c = 0; c < totalChunks; c++) {
@@ -624,70 +705,14 @@ export default function SubtitleTools({ onNavigate, embedded = false } = {}) {
           translateStatusMsg: `${polishingSinhala ? 'Polishing' : 'Translating'} subtitle blocks ${startIndex + 1} to ${endIndex} of ${totalSubs}...`
         });
 
-        const chunkSrtText = stringifySRT(chunk);
-        
         // Add a delay between requests to avoid rate limits (HTTP 429)
         if (c > 0) {
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
-        // Post to backend translation API with automatic retry and exponential backoff for rate limits
-        let response;
-        let retries = 5;
-        let backoffDelay = 6000; // 6 seconds initial delay
-
-        for (let attempt = 1; attempt <= retries; attempt++) {
-          try {
-            response = await apiClient.post(
-              polishingSinhala ? '/api/admin/ai/polish' : '/api/admin/ai/translate',
-              {
-                srtContent: chunkSrtText,
-                ...(polishingSinhala ? { mode: 'polish-si' } : { engine: translationEngine })
-              },
-              { timeout: 120000 }
-            );
-            break; // Success, break out of retry loop
-          } catch (apiErr) {
-            const status = apiErr.response?.status;
-            const isRateLimit = status === 429 || (apiErr.message && apiErr.message.includes('429')) || (apiErr.response?.data?.error && apiErr.response.data.error.includes('429'));
-            
-            if (isRateLimit && attempt < retries) {
-              const currentDelay = backoffDelay * attempt + Math.floor(Math.random() * 2000); // Backoff + jitter
-              updateFileState(fileId, {
-                translateStatusMsg: `Rate limit hit (429). Retrying chunk ${c + 1}/${totalChunks} (attempt ${attempt + 1}/${retries}) in ${Math.round(currentDelay / 1000)}s...`
-              });
-              await new Promise(resolve => setTimeout(resolve, currentDelay));
-            } else if (!status && attempt < retries) {
-              // Network/Timeout error retry
-              const currentDelay = 3000 * attempt;
-              updateFileState(fileId, {
-                translateStatusMsg: `Network error. Retrying chunk ${c + 1}/${totalChunks} (attempt ${attempt + 1}/${retries}) in ${Math.round(currentDelay / 1000)}s...`
-              });
-              await new Promise(resolve => setTimeout(resolve, currentDelay));
-            } else {
-              throw apiErr; // Permanent error or exceeded max retries
-            }
-          }
-        }
-
-        const translatedChunkText = polishingSinhala ? response.data.polishedSrt : response.data.translatedSrt;
-        const parsedTranslatedChunk = parseSRT(translatedChunkText || '');
-        if (parsedTranslatedChunk.length !== chunk.length) {
-          throw new Error(`AI returned ${parsedTranslatedChunk.length} subtitle blocks; expected ${chunk.length}. This batch was not applied.`);
-        }
-
-        // Preserve original block structure and reject any AI response that changes timing/order.
-        for (let j = 0; j < chunk.length; j++) {
-          const translatedItem = parsedTranslatedChunk[j];
-          if (translatedItem.start.trim() !== chunk[j].start.trim() || translatedItem.end.trim() !== chunk[j].end.trim()) {
-            throw new Error(`AI changed the timestamps in subtitle block ${chunk[j].id}. This batch was not applied.`);
-          }
-          if (JSON.stringify(getSrtFormattingTokens(translatedItem.text)) !== JSON.stringify(getSrtFormattingTokens(chunk[j].text))) {
-            throw new Error(`AI changed formatting tags in subtitle block ${chunk[j].id}. This batch was not applied.`);
-          }
-          updatedSubs[startIndex + j].text = polishingSinhala && isProtectedPromoText(chunk[j].text)
-            ? chunk[j].text
-            : translatedItem.text;
+        const translatedChunk = await translateChunkSafely(chunk, startIndex);
+        for (let j = 0; j < translatedChunk.length; j++) {
+          updatedSubs[startIndex + j] = translatedChunk[j];
         }
         
         const percentage = Math.round(((c + 1) / totalChunks) * 100);
