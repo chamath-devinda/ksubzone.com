@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAds } from './AdProvider';
 import AdFrame from './AdFrame';
 
+const MAX_PROVIDER_ATTEMPTS = 3;
+
 function buildAdFrameUrl(zoneName, retryAttempt = 0) {
   // A real same-origin frame URL preserves the publisher page as the referrer.
   // Ad networks reject `srcDoc` documents because they have an empty referrer.
@@ -34,6 +36,7 @@ export default function AdSlot({ slotId, className = '' }) {
   const retryTimerRef = useRef(null);
   const [adLoaded, setAdLoaded] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
+  const [providerUnavailable, setProviderUnavailable] = useState(false);
   const [nearViewport, setNearViewport] = useState(false);
 
   const { matches: isDesktop, ready: desktopReady } = useMediaQuery('(min-width: 768px)');
@@ -72,6 +75,7 @@ export default function AdSlot({ slotId, className = '' }) {
   useEffect(() => {
     setAdLoaded(false);
     setRetryAttempt(0);
+    setProviderUnavailable(false);
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current);
       retryTimerRef.current = null;
@@ -110,6 +114,7 @@ export default function AdSlot({ slotId, className = '' }) {
     placement?.provider === 'adsterra'
     && zone
     && viewportAllowed
+    && !providerUnavailable
     && (!placement.lazy || nearViewport)
     && (!isResponsiveBanner || (viewportReady && !selectedResponsiveFormatDisabled))
   );
@@ -138,13 +143,20 @@ export default function AdSlot({ slotId, className = '' }) {
         emitAdEvent('ad_slot_loaded', eventDetail);
       }}
       onUnavailable={(reason) => {
-        emitAdEvent('ad_slot_failed', { ...eventDetail, reason });
         if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-        const delay = Math.min(60_000, 5_000 * Math.pow(2, Math.min(retryAttempt, 3)));
+        const nextAttempt = retryAttempt + 1;
+        if (nextAttempt >= MAX_PROVIDER_ATTEMPTS) {
+          setProviderUnavailable(true);
+          setAdLoaded(false);
+          emitAdEvent('ad_slot_failed', { ...eventDetail, reason, attempts: nextAttempt });
+          return;
+        }
+        emitAdEvent('ad_slot_retry', { ...eventDetail, reason, attempt: nextAttempt });
+        const delay = reason === 'script_error' ? 750 : 2_000;
         retryTimerRef.current = setTimeout(() => {
           retryTimerRef.current = null;
           setAdLoaded(false);
-          setRetryAttempt((attempt) => attempt + 1);
+          setRetryAttempt(nextAttempt);
         }, delay);
       }}
     />
@@ -153,6 +165,7 @@ export default function AdSlot({ slotId, className = '' }) {
   if (!viewportAllowed) return null;
   if (!placement) return null;
   if (selectedResponsiveFormatDisabled) return null;
+  if (providerUnavailable) return null;
   const reservationClass = isNativePlacement
     ? 'min-h-[280px]'
     : isSidebar

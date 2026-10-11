@@ -1,9 +1,9 @@
 # KSubZone advertising configuration
 
-> Keep `www.highperformanceformat.com` as the primary Adsterra display host.
-> `www.profitabledisplaynetwork.com` is the parser-script fallback. If delivery
-> fails, the real Adsterra slot is retried with cache-busted frames; no local
-> KSubZone promo is shown in place of an ad.
+> Keep the publisher-provided `nobleduringsurveillance.com` host first. Display
+> frames rotate through the two verified Adsterra fallback hosts when a provider
+> script fails or returns no creative. Failed slots collapse after the bounded
+> retry cycle so visitors never see permanent blank ad space.
 
 The monetization system is centralized in `src/config/ads.js`. Production ads are enabled by default only in production; local development renders labeled placeholders unless explicitly overridden.
 
@@ -49,7 +49,7 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 
 ## Official provider code locations
 
-- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`, using the active `https://www.highperformanceformat.com` delivery host and `https://www.profitabledisplaynetwork.com` fallback.
+- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`. The publisher-provided `https://nobleduringsurveillance.com` host is primary; `https://www.highperformanceformat.com` and `https://www.profitabledisplaynetwork.com` are tried as bounded display fallbacks.
 - Monetag: no official Monetag code has been supplied. Keep `NEXT_PUBLIC_MONETAG_ENABLED=false`. When official code is available, paste only its exact script URLs into `providers.monetag.zones.multiTagScriptUrl`, `inPagePushScriptUrl`, and `onClickScriptUrl`. The OnClick URL is already connected to the guarded intrusive loader; MultiTag and In-Page Push remain inert placeholders until their exact official snippets and required initialization details are supplied.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.
@@ -58,7 +58,7 @@ Never place ad scripts in the root layout or individual page files. Add page pos
 
 - Admin, authentication, profile/account, static, 404, and error routes do not load ads.
 - Below-the-fold slots use lazy loading and reserve responsive space before loading.
-- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. The frames grant the provider the same-origin cookie access required by the official Adsterra runtime while retaining navigation and popup sandbox restrictions. If the provider returns no creative, the same real Adsterra zone is retried with exponential backoff; no local house creative is substituted.
+- Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. If a delivery script errors or returns no creative, the real zone rotates through the trusted delivery hosts. After the bounded retry cycle, the empty slot collapses; no local house creative is substituted.
 - The intrusive loader chooses one provider. Adsterra popunder and Monetag OnClick therefore cannot run together.
 - A/B assignments persist in `localStorage` under `ksubzone_ad_variant`.
 - Provider initialization is centralized so a consent check can be added in `AdProvider` before any third-party script runs.

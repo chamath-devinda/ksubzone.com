@@ -20,11 +20,14 @@
 <body>
   <script type="text/javascript">
     (function () {
-      // Use the publisher delivery host that returns the configured zone
-      // creative. Some alternate delivery hosts return only a tracking
-      // wrapper, which leaves the ad frame visibly blank.
-      var host = 'https://www.highperformanceformat.com';
-      var fallbackHost = 'https://www.profitabledisplaynetwork.com';
+      // Start with the host from the publisher-provided tags. If a delivery
+      // domain is temporarily unavailable, the parent frame increments the
+      // retry value so the next trusted Adsterra host is tried first.
+      var deliveryHosts = [
+        'https://nobleduringsurveillance.com',
+        'https://www.highperformanceformat.com',
+        'https://www.profitabledisplaynetwork.com'
+      ];
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
         bannerTablet:  { key: '8658915090686e956a2289c72ba73b71', width: 468, height: 60 },
@@ -39,6 +42,10 @@
       var zoneName = params.get('zone');
       var zone = zones[zoneName];
       if (!zone) return;
+      var retryAttempt = Math.max(0, parseInt(params.get('retry') || '0', 10) || 0);
+      var hostIndex = retryAttempt % deliveryHosts.length;
+      var host = deliveryHosts[hostIndex];
+      var fallbackHost = deliveryHosts[(hostIndex + 1) % deliveryHosts.length];
 
       // Set dimension hints
       if (zone.width && zone.height) {
@@ -63,6 +70,15 @@
         try {
           window.parent.postMessage({ type: 'AD_LOADED', zone: zoneName }, '*');
         } catch (e) {}
+      }
+
+      function scriptErrorHandler() {
+        return "if(this.dataset.deliveryFallback==='1'){" +
+          "window.parent.postMessage({type:'AD_UNAVAILABLE',zone:'" + zoneName + "',reason:'script_error'},'*');" +
+          "}else{" +
+          "this.dataset.deliveryFallback='1';" +
+          "this.src='" + fallbackHost + "/" + zone.key + "/invoke.js';" +
+          "}";
       }
 
       function checkAndNotify() {
@@ -104,7 +120,7 @@
         document.write(
           '<div id="container-' + zone.key + '" style="width:100%;min-height:280px"></div>' +
           '<script async="async" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" ' +
-            'onerror="this.onerror=null;this.src=\'' + fallbackHost + '/' + zone.key + '/invoke.js\';"><\/script>'
+            'onerror="' + scriptErrorHandler() + '"><\/script>'
         );
         return;
       }
@@ -122,7 +138,7 @@
           '};atOptions=window.atOptions;' +
         '<\/script>' +
         '<script type="text/javascript" data-cfasync="false" src="' + host + '/' + zone.key + '/invoke.js" ' +
-          'onerror="this.onerror=null;this.src=\'' + fallbackHost + '/' + zone.key + '/invoke.js\';"><\/script>'
+          'onerror="' + scriptErrorHandler() + '"><\/script>'
       );
     }());
   </script>

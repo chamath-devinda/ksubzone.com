@@ -70,12 +70,15 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
     setReady(false);
 
     function handleMessage(event) {
+      if (event.source !== frame.contentWindow) return;
       if (event.data?.type === 'AD_LOADED') {
         // The delivery script can create tracking/verification iframes before
         // it creates the actual creative. Only accept the message when the
         // frame contains a visible ad, otherwise the slot becomes a false
         // positive and disappears with a blank box.
         inspect();
+      } else if (event.data?.type === 'AD_UNAVAILABLE') {
+        finishUnavailable(event.data.reason || 'script_error');
       }
     }
     window.addEventListener('message', handleMessage);
@@ -97,6 +100,13 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
         setReady(true);
         callbacksRef.current.onLoad?.();
       }
+    };
+
+    const finishUnavailable = (reason) => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      callbacksRef.current.onUnavailable?.(reason);
     };
 
     function handleChildLoad(event) {
@@ -145,9 +155,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       try {
         const targetDoc = doc || frame.contentDocument;
         if (!hasCreative(targetDoc)) {
-          finished = true;
-          cleanup();
-          callbacksRef.current.onUnavailable?.('no_fill');
+          finishUnavailable('no_fill');
         }
       } catch {
         // A cross-origin security exception means the ad network has loaded
