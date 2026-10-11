@@ -164,7 +164,7 @@ export default function AdFrame({ title, source, width, height, onLoad, onUnavai
       }
     // Let the parent slot retry the same real provider zone after this
     // bounded wait, while real creatives still finish immediately.
-    }, 10000);
+    }, 6000);
 
     timeout = setTimeout(() => {
       inspect();

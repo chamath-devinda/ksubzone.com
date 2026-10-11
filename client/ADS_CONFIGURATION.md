@@ -1,7 +1,7 @@
 # KSubZone advertising configuration
 
-> Keep the publisher-provided `nobleduringsurveillance.com` host first. Display
-> frames rotate through the two verified Adsterra fallback hosts when a provider
+> Keep the last verified creative host, `www.highperformanceformat.com`, first.
+> Display frames rotate through the two verified Adsterra fallback hosts when a provider
 > script fails or returns no creative. Failed slots collapse after the bounded
 > retry cycle so visitors never see permanent blank ad space.
 
@@ -49,7 +49,7 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 
 ## Official provider code locations
 
-- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`. The publisher-provided `https://nobleduringsurveillance.com` host is primary; `https://www.highperformanceformat.com` and `https://www.profitabledisplaynetwork.com` are tried as bounded display fallbacks.
+- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`. The last verified creative host, `https://www.highperformanceformat.com`, is primary; `https://www.profitabledisplaynetwork.com` and the publisher-provided `https://nobleduringsurveillance.com` host are tried as bounded display fallbacks.
 - Monetag: no official Monetag code has been supplied. Keep `NEXT_PUBLIC_MONETAG_ENABLED=false`. When official code is available, paste only its exact script URLs into `providers.monetag.zones.multiTagScriptUrl`, `inPagePushScriptUrl`, and `onClickScriptUrl`. The OnClick URL is already connected to the guarded intrusive loader; MultiTag and In-Page Push remain inert placeholders until their exact official snippets and required initialization details are supplied.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.

@@ -24,9 +24,9 @@
       // domain is temporarily unavailable, the parent frame increments the
       // retry value so the next trusted Adsterra host is tried first.
       var deliveryHosts = [
-        'https://nobleduringsurveillance.com',
         'https://www.highperformanceformat.com',
-        'https://www.profitabledisplaynetwork.com'
+        'https://www.profitabledisplaynetwork.com',
+        'https://nobleduringsurveillance.com'
       ];
       var zones = {
         bannerDesktop: { key: '23a798c8294b23d3b5f73561f68cc621', width: 728, height: 90 },
@@ -43,7 +43,9 @@
       var zone = zones[zoneName];
       if (!zone) return;
       var retryAttempt = Math.max(0, parseInt(params.get('retry') || '0', 10) || 0);
-      var hostIndex = retryAttempt % deliveryHosts.length;
+      // Each parent retry skips the host that was already used as the
+      // previous frame's fallback instead of requesting it twice in a row.
+      var hostIndex = (retryAttempt * 2) % deliveryHosts.length;
       var host = deliveryHosts[hostIndex];
       var fallbackHost = deliveryHosts[(hostIndex + 1) % deliveryHosts.length];
 

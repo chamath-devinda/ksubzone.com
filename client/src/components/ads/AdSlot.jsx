@@ -99,7 +99,7 @@ export default function AdSlot({ slotId, className = '' }) {
         setNearViewport(true);
         observer.disconnect();
       }
-    }, { rootMargin: '1200px 0px' });
+    }, { rootMargin: '600px 0px' });
     observer.observe(hostRef.current);
     return () => observer.disconnect();
   }, [nearViewport, placement, viewportAllowed]);
@@ -152,7 +152,7 @@ export default function AdSlot({ slotId, className = '' }) {
           return;
         }
         emitAdEvent('ad_slot_retry', { ...eventDetail, reason, attempt: nextAttempt });
-        const delay = reason === 'script_error' ? 750 : 2_000;
+        const delay = reason === 'script_error' ? 250 : 500;
         retryTimerRef.current = setTimeout(() => {
           retryTimerRef.current = null;
           setAdLoaded(false);
