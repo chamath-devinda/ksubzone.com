@@ -13,7 +13,7 @@ The monetization system is centralized in `src/config/ads.js`. Production ads ar
 NEXT_PUBLIC_ADS_ENABLED=true
 NEXT_PUBLIC_AD_MODE=ADSTERRA_ONLY
 NEXT_PUBLIC_ADSTERRA_ENABLED=true
-NEXT_PUBLIC_MONETAG_ENABLED=false
+NEXT_PUBLIC_MONETAG_ENABLED=true
 NEXT_PUBLIC_BANNER_ADS_ENABLED=true
 NEXT_PUBLIC_DESKTOP_BANNER_ENABLED=true
 NEXT_PUBLIC_MOBILE_BANNER_ENABLED=true
@@ -50,13 +50,14 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 ## Official provider code locations
 
 - Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, popunder, and social-bar codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`. The last verified creative host, `https://www.highperformanceformat.com`, is primary; `https://www.profitabledisplaynetwork.com` and the publisher-provided `https://nobleduringsurveillance.com` host are tried as bounded display fallbacks.
-- Monetag: no official Monetag code has been supplied. Keep `NEXT_PUBLIC_MONETAG_ENABLED=false`. When official code is available, paste only its exact script URLs into `providers.monetag.zones.multiTagScriptUrl`, `inPagePushScriptUrl`, and `onClickScriptUrl`. The OnClick URL is already connected to the guarded intrusive loader; MultiTag and In-Page Push remain inert placeholders until their exact official snippets and required initialization details are supplied.
+- Monetag: the publisher-supplied MultiTag script `https://quge5.com/88/tag.min.js` is configured with zone `294194`. It loads asynchronously once on monetized public routes and preserves Monetag's required `data-zone` and `data-cfasync="false"` attributes. `NEXT_PUBLIC_MONETAG_ENABLED=false`, `NEXT_PUBLIC_ADS_ENABLED=false`, or `NEXT_PUBLIC_AD_MODE=OFF` disables it. In-Page Push and OnClick stay inactive until their separate official snippets are supplied.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.
 
 ## Safety behavior
 
 - Admin, authentication, profile/account, static, 404, and error routes do not load ads.
+- Monetag MultiTag initializes immediately after hydration on eligible public routes and stays initialized across client-side navigation, avoiding duplicate requests.
 - Below-the-fold slots use lazy loading and reserve responsive space before loading.
 - Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. If a delivery script errors or returns no creative, the real zone rotates through the trusted delivery hosts. After the bounded retry cycle, the empty slot collapses; no local house creative is substituted.
 - The intrusive loader chooses one provider. Adsterra popunder and Monetag OnClick therefore cannot run together.

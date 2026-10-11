@@ -25,6 +25,56 @@ function providerIsConfigured(provider) {
   return false;
 }
 
+function MonetagMultiTagLoader({ pageType }) {
+  useEffect(() => {
+    const route = adConfig.routes[pageType];
+    const provider = adConfig.providers.monetag;
+    const scriptUrl = provider.zones.multiTagScriptUrl;
+    const zoneId = provider.zones.multiTagZoneId;
+    const marker = 'monetag-multitag';
+    const selector = `script[data-ksubzone-ad="${marker}"]`;
+    const canLoad = adConfig.enabled
+      && adConfig.mode !== AD_MODES.OFF
+      && route?.enabled
+      && provider.enabled
+      && scriptUrl
+      && zoneId;
+
+    if (!canLoad) {
+      document.querySelector(selector)?.remove();
+      window.__ksubzoneMonetagMultiTagLoaded = false;
+      return undefined;
+    }
+
+    if (window.__ksubzoneMonetagMultiTagLoaded || document.querySelector(selector)) {
+      return undefined;
+    }
+
+    const script = document.createElement('script');
+    script.src = scriptUrl;
+    script.async = true;
+    script.setAttribute('data-zone', String(zoneId));
+    script.setAttribute('data-cfasync', 'false');
+    script.dataset.ksubzoneAd = marker;
+    script.onload = () => {
+      window.__ksubzoneMonetagMultiTagLoaded = true;
+      emitAdEvent('ad_slot_loaded', { provider: 'monetag', format: 'multitag', page_type: pageType });
+    };
+    script.onerror = () => {
+      window.__ksubzoneMonetagMultiTagLoaded = false;
+      script.remove();
+      emitAdEvent('ad_slot_failed', { provider: 'monetag', format: 'multitag', page_type: pageType });
+    };
+    document.body.appendChild(script);
+
+    // Keep a successfully initialized MultiTag instance across public client-side
+    // navigations. The route guard above removes its loader on excluded routes.
+    return undefined;
+  }, [pageType]);
+
+  return null;
+}
+
 function IntrusiveAdLoader({ pageType, provider }) {
   useEffect(() => {
     const route = adConfig.routes[pageType];
@@ -233,6 +283,7 @@ export function AdProvider({ children }) {
   return (
     <AdContext.Provider value={contextValue}>
       {children}
+      <MonetagMultiTagLoader pageType={pageType} />
       <IntrusiveAdLoader pageType={pageType} provider={activeProvider} />
       <SocialBarLoader pageType={pageType} provider={activeProvider} />
     </AdContext.Provider>

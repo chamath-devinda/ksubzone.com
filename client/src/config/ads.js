@@ -100,10 +100,10 @@ export const adConfig = Object.freeze({
       },
     },
     monetag: {
-      enabled: readBoolean(process.env.NEXT_PUBLIC_MONETAG_ENABLED, false),
-      // Paste only official Monetag code/URLs here when supplied.
+      enabled: readBoolean(process.env.NEXT_PUBLIC_MONETAG_ENABLED, true),
       zones: {
-        multiTagScriptUrl: '',
+        multiTagScriptUrl: 'https://quge5.com/88/tag.min.js',
+        multiTagZoneId: '294194',
         inPagePushScriptUrl: '',
         onClickScriptUrl: '',
       },
