@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../utils/AdsterraReport.php';
 require_once __DIR__ . '/../utils/JWT.php';
+require_once __DIR__ . '/../controllers/DramaController.php';
 
 $checks = 0;
 function check($condition, $name) {
@@ -27,4 +28,18 @@ check(\Utils\JWT::verify($token, $secret)['role'] === 'admin', 'Signed admin tok
 check(\Utils\JWT::verify($token . 'tampered', $secret) === false, 'Tampered signature rejected');
 check(\Utils\JWT::verify(\Utils\JWT::sign(['id' => 'abc123'], $secret, -1), $secret) === false, 'Expired token rejected');
 check(\Utils\JWT::verify('invalid', $secret) === false, 'Malformed token rejected');
+
+$coverageMethod = new ReflectionMethod(\Controllers\DramaController::class, 'countSubtitledEpisodesByDrama');
+$coverageMethod->setAccessible(true);
+$coverage = $coverageMethod->invoke(null, [
+    ['_id' => 'ep-1', 'dramaId' => 'drama-1'],
+    ['_id' => 'ep-2', 'dramaId' => 'drama-1'],
+    ['_id' => 'ep-3', 'dramaId' => 'drama-2']
+], [
+    ['mediaId' => 'ep-1'],
+    ['mediaId' => 'ep-1'], // A second language/version must not double count.
+    ['mediaId' => 'ep-2'],
+    ['mediaId' => 'unknown-episode']
+]);
+check(($coverage['drama-1'] ?? 0) === 2 && !isset($coverage['drama-2']), 'Subtitle coverage counts unique episodes per drama');
 echo "$checks checks passed\n";

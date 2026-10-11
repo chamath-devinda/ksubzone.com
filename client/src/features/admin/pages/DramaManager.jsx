@@ -304,6 +304,12 @@ export default function DramaManager() {
       }));
     }
     void refreshExplorer({ silent: true });
+    void fetchDramas(filterStatus, true);
+  };
+
+  const handleSubtitleCollectionChanged = () => {
+    void refreshExplorer({ silent: true });
+    void fetchDramas(filterStatus, true);
   };
 
   // Drama Actions
@@ -561,6 +567,19 @@ export default function DramaManager() {
               )}
               <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-slate-400 text-[9px] font-bold uppercase font-mono">
                 {drama.episodeCount || 0} eps
+              </span>
+              <span
+                className={`px-1.5 py-0.5 rounded border text-[9px] font-bold uppercase font-mono flex items-center gap-1 ${
+                  Number(drama.subtitledEpisodeCount || 0) > 0
+                    ? Number(drama.subtitledEpisodeCount || 0) >= Number(drama.episodeCount || 0)
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                      : 'bg-violet-500/10 border-violet-500/20 text-violet-400'
+                    : 'bg-white/[0.04] border-white/[0.06] text-slate-500'
+                }`}
+                title={`${Number(drama.subtitledEpisodeCount || 0)} of ${Number(drama.episodeCount || 0)} episodes have approved subtitles`}
+              >
+                <Languages className="w-2.5 h-2.5" />
+                {Number(drama.subtitledEpisodeCount || 0)} / {Number(drama.episodeCount || 0)} subs
               </span>
             </div>
           </div>
@@ -1314,7 +1333,7 @@ export default function DramaManager() {
         }}
         mediaId={manageTarget?.mediaId}
         label={manageTarget?.label}
-        onChanged={refreshExplorer}
+        onChanged={handleSubtitleCollectionChanged}
       />
     </div>
   );

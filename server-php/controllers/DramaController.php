@@ -6,6 +6,37 @@ use Utils\Slug;
 use Utils\MediaPayload;
 
 class DramaController {
+    /**
+     * Count unique episodes with at least one approved subtitle per drama.
+     * The subtitle query passed by the caller is already approval-filtered;
+     * keeping this aggregation separate makes duplicate languages/versions
+     * count as one covered episode.
+     */
+    private static function countSubtitledEpisodesByDrama($episodes, $subtitles) {
+        $dramaIdByEpisodeId = [];
+        foreach ($episodes as $episode) {
+            $episodeId = (string)($episode['_id'] ?? '');
+            $dramaId = (string)($episode['dramaId'] ?? '');
+            if ($episodeId !== '' && $dramaId !== '') {
+                $dramaIdByEpisodeId[$episodeId] = $dramaId;
+            }
+        }
+
+        $coveredEpisodesByDrama = [];
+        foreach ($subtitles as $subtitle) {
+            $episodeId = (string)($subtitle['mediaId'] ?? '');
+            $dramaId = $dramaIdByEpisodeId[$episodeId] ?? null;
+            if ($dramaId === null) continue;
+            $coveredEpisodesByDrama[$dramaId][$episodeId] = true;
+        }
+
+        $counts = [];
+        foreach ($coveredEpisodesByDrama as $dramaId => $episodeSet) {
+            $counts[$dramaId] = count($episodeSet);
+        }
+        return $counts;
+    }
+
 
     /** Record one privacy-preserving, deduplicated browser view for a drama. */
     public static function recordDramaView($slug) {
@@ -163,6 +194,8 @@ class DramaController {
 
         $dramaIds = array_map(function($d) { return (string)$d['_id']; }, $dramas);
         $episodeCounts = [];
+        $episodes = [];
+        $subtitledEpisodeCounts = [];
         if (!empty($dramaIds)) {
             $episodes = $db->find('episodes', ['dramaId' => ['$in' => $dramaIds]], [
                 'fields' => ['dramaId']
@@ -173,10 +206,27 @@ class DramaController {
                     $episodeCounts[$dId] = ($episodeCounts[$dId] ?? 0) + 1;
                 }
             }
+
+            $episodeIds = array_values(array_filter(array_map(function($episode) {
+                return (string)($episode['_id'] ?? '');
+            }, $episodes)));
+            if (!empty($episodeIds)) {
+                $approvedEpisodeSubtitles = $db->find('subtitles', [
+                    'mediaId' => ['$in' => $episodeIds],
+                    'approvalStatus' => 'Approved'
+                ], [
+                    'fields' => ['mediaId']
+                ]);
+                $subtitledEpisodeCounts = self::countSubtitledEpisodesByDrama($episodes, $approvedEpisodeSubtitles);
+            }
         }
         foreach ($dramas as &$drama) {
             $dId = (string)$drama['_id'];
             $drama['episodeCount'] = $episodeCounts[$dId] ?? (int)($drama['episodeCount'] ?? 0);
+            $drama['subtitledEpisodeCount'] = min(
+                $drama['episodeCount'],
+                $subtitledEpisodeCounts[$dId] ?? 0
+            );
         }
         unset($drama);
 

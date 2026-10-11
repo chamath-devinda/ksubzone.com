@@ -94,6 +94,7 @@ test('premium admin redesign keeps real-data and inline-operation contracts', ()
   const seo = fs.readFileSync(new URL('../client/src/features/admin/pages/SeoManager.jsx', import.meta.url), 'utf8');
   const router = fs.readFileSync(new URL('../server-php/index.php', import.meta.url), 'utf8');
   const dramaController = fs.readFileSync(new URL('../server-php/controllers/DramaController.php', import.meta.url), 'utf8');
+  const dramaManager = fs.readFileSync(new URL('../client/src/features/admin/pages/DramaManager.jsx', import.meta.url), 'utf8');
   const subtitleController = fs.readFileSync(new URL('../server-php/controllers/SubtitleController.php', import.meta.url), 'utf8');
 
   assert.match(dashboard, /workspace-intro-grid/);
@@ -104,5 +105,7 @@ test('premium admin redesign keeps real-data and inline-operation contracts', ()
   assert.match(router, /api\/admin\/notifications/);
   assert.match(router, /episodes\/\(\[\^\/\]\+\)\/release/);
   assert.match(dramaController, /releaseStatus.*Released/);
+  assert.match(dramaController, /subtitledEpisodeCount/);
+  assert.match(dramaManager, /subtitledEpisodeCount/);
   assert.match(subtitleController, /Resolve uploader references in batches/);
 });
