@@ -25,7 +25,7 @@ const excludeFiles = new Set([
   'install_mongo.ps1',
   'run-server.js'
 ]);
-const excludeDirs = new Set(['uploads', 'temp', '.git', 'node_modules']);
+const excludeDirs = new Set(['uploads', 'temp', 'tests', '.git', 'node_modules']);
 
 function copyRecursive(src, dst) {
   const entries = fs.readdirSync(src, { withFileTypes: true });
