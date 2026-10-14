@@ -25,6 +25,60 @@ function providerIsConfigured(provider) {
   return false;
 }
 
+function OnClickAdLoader({ pageType }) {
+  useEffect(() => {
+    const route = adConfig.routes[pageType];
+    const scriptUrl = adConfig.providers.adsterra.zones.onClick.scriptUrl;
+    const canLoad = adConfig.enabled
+      && adConfig.mode !== AD_MODES.OFF
+      && route?.enabled
+      && route?.onClick
+      && adConfig.formats.onClick
+      && adConfig.providers.adsterra.enabled
+      && scriptUrl;
+
+    if (!canLoad) return undefined;
+
+    let script = null;
+    const activate = () => {
+      if (window.__ksubzoneOnClickAdLoaded) return;
+      let lastLoaded = 0;
+      try {
+        lastLoaded = Number(window.localStorage.getItem(adConfig.onClick.storageKey) || 0);
+      } catch {
+        // Storage may be unavailable in strict privacy modes.
+      }
+      if (Date.now() - lastLoaded < adConfig.onClick.cooldownMs) return;
+      if (document.querySelector('script[data-ksubzone-ad="adsterra-onclick"]')) return;
+
+      script = document.createElement('script');
+      script.src = scriptUrl;
+      script.async = true;
+      script.dataset.ksubzoneAd = 'adsterra-onclick';
+      script.onload = () => emitAdEvent('ad_slot_loaded', {
+        provider: 'adsterra',
+        format: 'onclick',
+        page_type: pageType,
+      });
+      window.__ksubzoneOnClickAdLoaded = true;
+      document.body.appendChild(script);
+      try {
+        window.localStorage.setItem(adConfig.onClick.storageKey, String(Date.now()));
+      } catch {
+        // The DOM marker still prevents duplicate loading on this page.
+      }
+    };
+
+    window.addEventListener('pointerdown', activate, { once: true, passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', activate);
+      if (script?.parentNode) script.parentNode.removeChild(script);
+    };
+  }, [pageType]);
+
+  return null;
+}
+
 export function AdProvider({ children }) {
   const nextPathname = usePathname();
   const [currentPathname, setCurrentPathname] = useState(() => {
@@ -134,6 +188,7 @@ export function AdProvider({ children }) {
   return (
     <AdContext.Provider value={contextValue}>
       {children}
+      <OnClickAdLoader pageType={pageType} />
     </AdContext.Provider>
   );
 }

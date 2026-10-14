@@ -20,6 +20,8 @@ NEXT_PUBLIC_MOBILE_BANNER_ENABLED=true
 NEXT_PUBLIC_SQUARE_ADS_ENABLED=true
 NEXT_PUBLIC_NATIVE_ADS_ENABLED=true
 NEXT_PUBLIC_SIDEBAR_ADS_ENABLED=true
+NEXT_PUBLIC_ONCLICK_ADS_ENABLED=true
+NEXT_PUBLIC_ONCLICK_COOLDOWN_MS=43200000
 NEXT_PUBLIC_ADSTERRA_TRAFFIC_PERCENTAGE=50
 NEXT_PUBLIC_AD_REVENUE_LKR_PER_USD=330
 ```
@@ -45,7 +47,7 @@ The responsive primary slot loads only one approved unit: 320x50 below 768px and
 
 ## Official provider code locations
 
-- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, and native codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`. The last verified creative host, `https://www.highperformanceformat.com`, is primary; `https://www.profitabledisplaynetwork.com` and the publisher-provided `https://nobleduringsurveillance.com` host are tried as bounded display fallbacks.
+- Adsterra: the official 728x90 desktop, 320x50 mobile, 468x60 tablet, 300x250 square, desktop-only 160x600 sidebar, 160x300 banner, native, and click-activated OnClick codes supplied by the publisher are configured in `src/config/ads.js` under `providers.adsterra.zones` and `public/ad-frame.html`. The last verified creative host, `https://www.highperformanceformat.com`, is primary; `https://www.profitabledisplaynetwork.com` and the publisher-provided `https://nobleduringsurveillance.com` host are tried as bounded display fallbacks.
 - Monetag: disabled. Its MultiTag was removed because it can deliver popup-capable formats outside the framed display placements.
 
 Never place ad scripts in the root layout or individual page files. Add page positions through `placements`, then render the reusable `AdSlot` component.
@@ -55,6 +57,6 @@ Never place ad scripts in the root layout or individual page files. Add page pos
 - Admin, authentication, profile/account, static, 404, and error routes do not load ads.
 - Below-the-fold slots use lazy loading and reserve responsive space before loading.
 - Display and native snippets run inside dedicated frames so their `atOptions` values cannot conflict. If a delivery script errors or returns no creative, the real zone rotates through the trusted delivery hosts. After the bounded retry cycle, the empty slot collapses; no local house creative is substituted.
-- Popunder, OnClick, MultiTag, and social-bar scripts are not loaded. Advertising is limited to explicit framed display placements.
+- The OnClick unit loads only after a visitor click and is frequency-capped. Automatic MultiTag and social-bar popup-style scripts are not loaded.
 - A/B assignments persist in `localStorage` under `ksubzone_ad_variant`.
 - Provider initialization is centralized so a consent check can be added in `AdProvider` before any third-party script runs.

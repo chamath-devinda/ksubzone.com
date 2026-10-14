@@ -37,11 +37,26 @@ export const adConfig = Object.freeze({
     square: readBoolean(process.env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
     native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
     sidebar: readBoolean(process.env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
+    onClick: readBoolean(
+      process.env.NEXT_PUBLIC_ONCLICK_ADS_ENABLED ?? process.env.NEXT_PUBLIC_POPUNDER_ENABLED,
+      true
+    ),
+  },
+  onClick: {
+    cooldownMs: Math.max(60 * 60 * 1000, Number(
+      process.env.NEXT_PUBLIC_ONCLICK_COOLDOWN_MS
+      || process.env.NEXT_PUBLIC_POPUNDER_COOLDOWN_MS
+      || 2 * 60 * 60 * 1000
+    )),
+    storageKey: 'ksubzone_onclick_ad_loaded_at',
   },
   providers: {
     adsterra: {
       enabled: readBoolean(process.env.NEXT_PUBLIC_ADSTERRA_ENABLED, true),
       zones: {
+        onClick: {
+          scriptUrl: 'https://www.highperformanceformat.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
+        },
         native: {
           key: '90963118e211fbe13565d79b0d81a39d',
           scriptUrl: 'https://www.highperformanceformat.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
@@ -96,18 +111,18 @@ export const adConfig = Object.freeze({
     },
   },
   routes: {
-    home: { enabled: true, banner: true, square: true, native: true, sidebar: true },
-    movie: { enabled: true, banner: true, square: true, native: true, sidebar: true },
-    drama: { enabled: true, banner: true, square: true, native: true, sidebar: true },
-    episode: { enabled: true, banner: true, square: true, native: true, sidebar: true },
-    article: { enabled: true, banner: true, square: true, native: true, sidebar: true },
-    search: { enabled: false, banner: false, square: false, native: false, sidebar: false },
-    listing: { enabled: true, banner: true, square: true, native: true, sidebar: true },
-    static: { enabled: false, banner: false, square: false, native: false, sidebar: false },
-    auth: { enabled: false, banner: false, square: false, native: false, sidebar: false },
-    account: { enabled: false, banner: false, square: false, native: false, sidebar: false },
-    admin: { enabled: false, banner: false, square: false, native: false, sidebar: false },
-    error: { enabled: false, banner: false, square: false, native: false, sidebar: false },
+    home: { enabled: true, banner: true, square: true, native: true, sidebar: true, onClick: true },
+    movie: { enabled: true, banner: true, square: true, native: true, sidebar: true, onClick: true },
+    drama: { enabled: true, banner: true, square: true, native: true, sidebar: true, onClick: true },
+    episode: { enabled: true, banner: true, square: true, native: true, sidebar: true, onClick: true },
+    article: { enabled: true, banner: true, square: true, native: true, sidebar: true, onClick: true },
+    search: { enabled: false, banner: false, square: false, native: false, sidebar: false, onClick: false },
+    listing: { enabled: true, banner: true, square: true, native: true, sidebar: true, onClick: true },
+    static: { enabled: false, banner: false, square: false, native: false, sidebar: false, onClick: false },
+    auth: { enabled: false, banner: false, square: false, native: false, sidebar: false, onClick: false },
+    account: { enabled: false, banner: false, square: false, native: false, sidebar: false, onClick: false },
+    admin: { enabled: false, banner: false, square: false, native: false, sidebar: false, onClick: false },
+    error: { enabled: false, banner: false, square: false, native: false, sidebar: false, onClick: false },
   },
   placements: {
     home_below_hero: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
