@@ -25,147 +25,6 @@ function providerIsConfigured(provider) {
   return false;
 }
 
-function MonetagMultiTagLoader({ pageType }) {
-  useEffect(() => {
-    const route = adConfig.routes[pageType];
-    const provider = adConfig.providers.monetag;
-    const scriptUrl = provider.zones.multiTagScriptUrl;
-    const zoneId = provider.zones.multiTagZoneId;
-    const marker = 'monetag-multitag';
-    const selector = `script[data-ksubzone-ad="${marker}"]`;
-    const canLoad = adConfig.enabled
-      && adConfig.mode !== AD_MODES.OFF
-      && route?.enabled
-      && provider.enabled
-      && scriptUrl
-      && zoneId;
-
-    if (!canLoad) {
-      document.querySelector(selector)?.remove();
-      window.__ksubzoneMonetagMultiTagLoaded = false;
-      return undefined;
-    }
-
-    if (window.__ksubzoneMonetagMultiTagLoaded || document.querySelector(selector)) {
-      return undefined;
-    }
-
-    const script = document.createElement('script');
-    script.src = scriptUrl;
-    script.async = true;
-    script.setAttribute('data-zone', String(zoneId));
-    script.setAttribute('data-cfasync', 'false');
-    script.dataset.ksubzoneAd = marker;
-    script.onload = () => {
-      window.__ksubzoneMonetagMultiTagLoaded = true;
-      emitAdEvent('ad_slot_loaded', { provider: 'monetag', format: 'multitag', page_type: pageType });
-    };
-    script.onerror = () => {
-      window.__ksubzoneMonetagMultiTagLoaded = false;
-      script.remove();
-      emitAdEvent('ad_slot_failed', { provider: 'monetag', format: 'multitag', page_type: pageType });
-    };
-    document.body.appendChild(script);
-
-    // Keep a successfully initialized MultiTag instance across public client-side
-    // navigations. The route guard above removes its loader on excluded routes.
-    return undefined;
-  }, [pageType]);
-
-  return null;
-}
-
-function IntrusiveAdLoader({ pageType, provider }) {
-  useEffect(() => {
-    const route = adConfig.routes[pageType];
-    const isAdsterra = provider === 'adsterra';
-    const scriptUrl = isAdsterra
-      ? adConfig.providers.adsterra.zones.popunder.scriptUrl
-      : adConfig.providers.monetag.zones.onClickScriptUrl;
-    const canLoad = adConfig.enabled
-      && route?.enabled
-      && route?.intrusive
-      && adConfig.formats.popunder
-      && adConfig.providers[provider]?.enabled
-      && scriptUrl;
-
-    if (!canLoad) return undefined;
-
-    let script = null;
-    const activate = () => {
-      if (window.__ksubzoneIntrusiveAdLoaded) return;
-      let lastLoaded = 0;
-      try {
-        lastLoaded = Number(window.localStorage.getItem(adConfig.intrusive.storageKey) || 0);
-      } catch {
-        // Storage may be unavailable in strict privacy modes; ad loading still remains guarded per page.
-      }
-      if (Date.now() - lastLoaded < adConfig.intrusive.popunderCooldownMs) return;
-      const marker = `${provider}-intrusive`;
-      if (document.querySelector(`script[data-ksubzone-ad="${marker}"]`)) return;
-
-      script = document.createElement('script');
-      script.src = scriptUrl;
-      script.async = true;
-      script.dataset.ksubzoneAd = marker;
-      script.onload = () => emitAdEvent('ad_slot_loaded', { provider, format: 'intrusive', page_type: pageType });
-      window.__ksubzoneIntrusiveAdLoaded = true;
-      document.body.appendChild(script);
-      try {
-        window.localStorage.setItem(adConfig.intrusive.storageKey, String(Date.now()));
-      } catch {
-        // Ignore blocked storage; the DOM marker still prevents duplicate loading on this page.
-      }
-    };
-
-    window.addEventListener('pointerdown', activate, { once: true, passive: true });
-    return () => {
-      window.removeEventListener('pointerdown', activate);
-      if (script?.parentNode) script.parentNode.removeChild(script);
-    };
-  }, [pageType, provider]);
-
-  return null;
-}
-
-function SocialBarLoader({ pageType, provider }) {
-  useEffect(() => {
-    const route = adConfig.routes[pageType];
-    const scriptUrl = adConfig.providers.adsterra.zones.socialBar.scriptUrl;
-    const canLoad = adConfig.enabled
-      && route?.enabled
-      && route?.intrusive
-      && provider === 'adsterra'
-      && adConfig.providers.adsterra.enabled
-      && adConfig.formats.socialBar
-      && scriptUrl;
-
-    if (!canLoad || window.__ksubzoneSocialBarLoaded) return undefined;
-
-    let script = null;
-    const activate = () => {
-      if (window.__ksubzoneSocialBarLoaded || document.querySelector('script[data-ksubzone-ad="adsterra-social-bar"]')) return;
-      script = document.createElement('script');
-      script.src = scriptUrl;
-      script.async = true;
-      script.dataset.ksubzoneAd = 'adsterra-social-bar';
-      script.onload = () => emitAdEvent('ad_slot_loaded', { provider: 'adsterra', format: 'social_bar', page_type: pageType });
-      window.__ksubzoneSocialBarLoaded = true;
-      document.body.appendChild(script);
-    };
-
-    // Intrusive third-party code should never compete with the first paint.
-    window.addEventListener('pointerdown', activate, { once: true, passive: true });
-
-    return () => {
-      window.removeEventListener('pointerdown', activate);
-      if (script?.parentNode) script.parentNode.removeChild(script);
-    };
-  }, [pageType, provider]);
-
-  return null;
-}
-
 export function AdProvider({ children }) {
   const nextPathname = usePathname();
   const [currentPathname, setCurrentPathname] = useState(() => {
@@ -209,14 +68,6 @@ export function AdProvider({ children }) {
     if (adConfig.mode === AD_MODES.AB_TEST) return variantReady ? (variant === 'A' ? 'adsterra' : 'monetag') : null;
     return 'adsterra';
   }, [variant, variantReady]);
-
-  const activeProvider = useMemo(() => {
-    if (!defaultProvider) return null;
-    if (providerIsConfigured(defaultProvider) && adConfig.providers[defaultProvider]?.enabled) return defaultProvider;
-    if (![AD_MODES.HYBRID, AD_MODES.AB_TEST].includes(adConfig.mode)) return defaultProvider;
-    const fallback = defaultProvider === 'adsterra' ? 'monetag' : 'adsterra';
-    return providerIsConfigured(fallback) && adConfig.providers[fallback]?.enabled ? fallback : defaultProvider;
-  }, [defaultProvider]);
 
   const resolvePlacement = useCallback((slotId) => {
     const placement = adConfig.placements[slotId];
@@ -283,9 +134,6 @@ export function AdProvider({ children }) {
   return (
     <AdContext.Provider value={contextValue}>
       {children}
-      <MonetagMultiTagLoader pageType={pageType} />
-      <IntrusiveAdLoader pageType={pageType} provider={activeProvider} />
-      <SocialBarLoader pageType={pageType} provider={activeProvider} />
     </AdContext.Provider>
   );
 }

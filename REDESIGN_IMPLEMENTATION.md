@@ -34,7 +34,7 @@ Submit only `https://www.ksubzone.com/sitemap.xml` in Google Search Console. Goo
 
 ## Ad placement policy
 
-See `client/ADS_CONFIGURATION.md` for the slot-by-slot map. All provider code is isolated in reserved frames. The hero and download controls never contain an ad, and the subtitle anchor lands on the subtitle section rather than an advertisement. Side rails are limited to viewports at least 1600px wide. Social bar and in-page push remain disabled by default.
+See `client/ADS_CONFIGURATION.md` for the slot-by-slot map. All provider code is isolated in reserved frames. The hero and download controls never contain an ad, and the subtitle anchor lands on the subtitle section rather than an advertisement. Side rails are limited to viewports at least 1600px wide. Popup-capable and social-overlay ad loaders are not included.
 
 ## Ongoing speed recommendations
 

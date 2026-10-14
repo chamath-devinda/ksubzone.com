@@ -70,8 +70,6 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en-LK" className={`dark ${milker.variable}`}>
       <head>
-        <link rel="preconnect" href="https://quge5.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://quge5.com" />
         <link rel="preconnect" href="https://www.highperformanceformat.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.profitabledisplaynetwork.com" />
         <link rel="dns-prefetch" href="https://nobleduringsurveillance.com" />

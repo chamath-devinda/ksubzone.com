@@ -37,24 +37,11 @@ export const adConfig = Object.freeze({
     square: readBoolean(process.env.NEXT_PUBLIC_SQUARE_ADS_ENABLED, true),
     native: readBoolean(process.env.NEXT_PUBLIC_NATIVE_ADS_ENABLED, true),
     sidebar: readBoolean(process.env.NEXT_PUBLIC_SIDEBAR_ADS_ENABLED, true),
-    popunder: readBoolean(process.env.NEXT_PUBLIC_POPUNDER_ENABLED, true),
-    socialBar: readBoolean(process.env.NEXT_PUBLIC_SOCIAL_BAR_ENABLED, true),
-    inPagePush: readBoolean(process.env.NEXT_PUBLIC_IN_PAGE_PUSH_ENABLED, false),
-  },
-  intrusive: {
-    popunderCooldownMs: Math.max(60 * 60 * 1000, Number(process.env.NEXT_PUBLIC_POPUNDER_COOLDOWN_MS || 2 * 60 * 60 * 1000)),
-    storageKey: 'ksubzone_intrusive_ad_loaded_at',
   },
   providers: {
     adsterra: {
       enabled: readBoolean(process.env.NEXT_PUBLIC_ADSTERRA_ENABLED, true),
       zones: {
-        popunder: {
-          scriptUrl: 'https://www.highperformanceformat.com/40/bd/11/40bd1125e79449d58c39753268112ba1.js',
-        },
-        socialBar: {
-          scriptUrl: 'https://www.highperformanceformat.com/14/40/7a/14407a1eff4e14302920f95abb22c22a.js',
-        },
         native: {
           key: '90963118e211fbe13565d79b0d81a39d',
           scriptUrl: 'https://www.highperformanceformat.com/90963118e211fbe13565d79b0d81a39d/invoke.js',
@@ -100,28 +87,27 @@ export const adConfig = Object.freeze({
       },
     },
     monetag: {
-      enabled: readBoolean(process.env.NEXT_PUBLIC_MONETAG_ENABLED, true),
+      enabled: readBoolean(process.env.NEXT_PUBLIC_MONETAG_ENABLED, false),
       zones: {
-        multiTagScriptUrl: 'https://quge5.com/88/tag.min.js',
-        multiTagZoneId: '294194',
+        multiTagScriptUrl: '',
         inPagePushScriptUrl: '',
         onClickScriptUrl: '',
       },
     },
   },
   routes: {
-    home: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    movie: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    drama: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    episode: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    article: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    search: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
-    listing: { enabled: true, banner: true, square: true, native: true, sidebar: true, intrusive: true },
-    static: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
-    auth: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
-    account: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
-    admin: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
-    error: { enabled: false, banner: false, square: false, native: false, sidebar: false, intrusive: false },
+    home: { enabled: true, banner: true, square: true, native: true, sidebar: true },
+    movie: { enabled: true, banner: true, square: true, native: true, sidebar: true },
+    drama: { enabled: true, banner: true, square: true, native: true, sidebar: true },
+    episode: { enabled: true, banner: true, square: true, native: true, sidebar: true },
+    article: { enabled: true, banner: true, square: true, native: true, sidebar: true },
+    search: { enabled: false, banner: false, square: false, native: false, sidebar: false },
+    listing: { enabled: true, banner: true, square: true, native: true, sidebar: true },
+    static: { enabled: false, banner: false, square: false, native: false, sidebar: false },
+    auth: { enabled: false, banner: false, square: false, native: false, sidebar: false },
+    account: { enabled: false, banner: false, square: false, native: false, sidebar: false },
+    admin: { enabled: false, banner: false, square: false, native: false, sidebar: false },
+    error: { enabled: false, banner: false, square: false, native: false, sidebar: false },
   },
   placements: {
     home_below_hero: { pages: ['home'], format: 'responsiveBanner', provider: 'adsterra', lazy: false },
